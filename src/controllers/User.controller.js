@@ -32,10 +32,32 @@ export const loginUser = async (req, res) => {
 }
 
 // Function to handle user login via Microsoft Auth
-export const loginUserMicrosoftAuth = (req, res) => {
-  res.status(200).json({ message: 'Hello World' })
-}
+export const loginUserMicrosoftAuth = async (req, res) => {
+  const { accessToken } = req.body
 
+  if (!accessToken) {
+    return res.status(400).json({
+      message: 'Missing required field: access_token'
+    })
+  }
+
+  try {
+    const { token } = await UserService.microsoftLogin(accessToken)
+    return res.status(200).json({
+      status: 'ok',
+      message: 'Logged in successfully',
+      token
+    })
+  } catch (error) {
+    if (error instanceof ErrorUtils) {
+      return res.status(error.status).json({
+        message: error.message
+      })
+    }
+
+    return res.status(500).json({ message: 'Internal Server Error' })
+  }
+}
 // Function to manage the registration of a new user
 export const registerUser = async (req, res) => {
   const { name, gmail, roleId } = req.body
@@ -127,16 +149,105 @@ export const getUserById = async (req, res) => {
 }
 
 // Function to update a user's information by ID
-export const updateUser = (req, res) => {
-  res.status(200).json({ message: 'Hello World' })
+export const updateUser = async (req, res) => {
+  const { id } = req.params
+  const { userId } = req
+  const updates = req.body
+
+  try {
+    const isAuthorized = await UserService.isAuthorized(userId)
+    if (!isAuthorized) {
+      return res.status(403).json({
+        message: 'Unauthorized'
+      })
+    }
+
+    if (Object.keys(updates).length === 0) {
+      return res.status(400).json({
+        message: 'No update fields provided'
+      })
+    }
+
+    const updatedUser = await UserService.updateUser(id, updates)
+    return res.status(200).json({
+      updatedUser
+    })
+  } catch (error) {
+    if (error.status && error.message) {
+      return res.status(error.status).json({
+        message: error.message
+      })
+    }
+    return res.status(500).json({ message: 'Internal Server Error' })
+  }
+}
+
+// Function to update a user's profile picture
+export const updateUserPicture = async (req, res) => {
+  const { id } = req.params
+  const { userId } = req
+  const profilePicture = req.file
+
+  try {
+    const isAuthorized = await UserService.canAccessUser(userId, id)
+    if (!isAuthorized) {
+      return res.status(403).json({ message: 'Unauthorized' })
+    }
+
+    if (!profilePicture) {
+      return res.status(400).json({ message: 'Profile picture is required' })
+    }
+
+    const profilePictureUrl = await UserService.updateUserPicture(id, profilePicture)
+
+    return res.status(200).json({
+      profilePictureUrl
+    })
+  } catch (error) {
+    if (error.status && error.message) {
+      return res.status(error.status).json({
+        message: error.message,
+        ...(error.errors && { errors: error.errors })
+      })
+    }
+
+    return res.status(500).json({ message: 'Internal Server Error' })
+  }
 }
 
 // Function to delete a user by ID
-export const deleteUser = (req, res) => {
-  res.status(200).json({ message: 'Hello World' })
+export const deleteUser = async (req, res) => {
+  const { id } = req.params
+  const { userId } = req
+
+  if (!id) {
+    return res.status(400).json({
+      message: 'Missing required fields: Id'
+    })
+  }
+
+  const isAuthorized = await UserService.isAuthorized(userId)
+  if (!isAuthorized) {
+    return res.status(403).json({
+      message: 'Unauthorized'
+    })
+  }
+  try {
+    await UserService.deleteUser(id)
+    return res.sendStatus(204)
+  } catch (error) {
+    if (error.status && error.message) {
+      return res.status(error.status).json({
+        message: error.message,
+        ...(error.errors && { errors: error.errors })
+      })
+    }
+
+    return res.status(500).json({ message: 'Internal Server Error' })
+  }
 }
 
-// Function to handle password recovery
-export const forgotPassword = (req, res) => {
-  res.status(200).json({ message: 'Hello World' })
-}
+// // Function to handle password recovery
+// export const forgotPassword = (req, res) => {
+//   res.status(200).json({ message: 'Hello World' })
+// }

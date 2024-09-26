@@ -23,17 +23,50 @@ class UserRepository {
   // Updates an existing user in the database by their ID
   static async update (id, userData) {
     const { name, password, gmail, roleId, profilePicture } = userData
+
     const query = `
       UPDATE users 
-      SET name = ?, password = ?, gmail = ?, role_id = ?, profile_picture = ?
+      SET 
+        name = IFNULL(?, name), 
+        password = IFNULL(?, password), 
+        gmail = IFNULL(?, gmail), 
+        role_id = IFNULL(?, role_id), 
+        profile_picture = IFNULL(?, profile_picture)
       WHERE id = ?
     `
+
     try {
-      await pool.query(query, [name, password, gmail, roleId, profilePicture, id])
-      return true
+      const [result] = await pool.query(query, [name, password, gmail, roleId, profilePicture, id])
+
+      if (result.affectedRows === 0) {
+        return false
+      }
+
+      const updatedUser = await this.findById(id)
+      return { success: true, user: updatedUser }
     } catch (error) {
       console.error('Error updating user:', error)
       throw new ErrorUtils(500, 'Error updating user in the database')
+    }
+  }
+
+  // Update the user's profile picture in the database
+  static async updateProfilePicture (id, profilePicture) {
+    const query = `
+    UPDATE users
+    SET profile_picture = ?
+    WHERE id = ?
+  `
+    try {
+      const [result] = await pool.query(query, [profilePicture, id])
+
+      if (result.affectedRows === 0) {
+        return false
+      }
+      return true
+    } catch (error) {
+      console.error('Error updating user profile picture:', error)
+      throw new ErrorUtils(500, 'Error updating profile picture in the database')
     }
   }
 
@@ -45,7 +78,7 @@ class UserRepository {
     try {
       const [result] = await pool.query(query, [id])
       if (result.affectedRows === 0) {
-        throw new ErrorUtils(404, 'User not found')
+        return false
       }
       return true
     } catch (error) {
@@ -109,6 +142,20 @@ class UserRepository {
     } catch (error) {
       console.error('Error retrieving all users:', error)
       throw new ErrorUtils(500, 'Error retrieving all users')
+    }
+  }
+
+  // Used for testing
+  static async deleteAllExceptByGmail (gmail) {
+    const query = `
+      DELETE FROM users WHERE gmail != ?
+    `
+    try {
+      const [result] = await pool.query(query, [gmail])
+      return result.affectedRows
+    } catch (error) {
+      console.error('Error deleting all users except one by gmail:', error)
+      throw new ErrorUtils(500, 'Error deleting users from the database')
     }
   }
 }

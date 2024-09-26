@@ -20,3 +20,7 @@ CREATE TABLE users (
     profile_picture VARCHAR(255) DEFAULT NULL, 
     FOREIGN KEY (role_id) REFERENCES roles(id)
 );
+
+
+INSERT INTO roles (name) 
+VALUES ('Admin'), ('Analyst');

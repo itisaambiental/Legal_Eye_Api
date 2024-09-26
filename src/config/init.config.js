@@ -19,7 +19,7 @@ export const initializeAdmin = async () => {
     const adminData = {
       name: ADMIN_NAME,
       gmail: ADMIN_GMAIL,
-      roleId: Number(ADMIN_ROLE)
+      roleId: ADMIN_ROLE
     }
 
     const profilePicturePath = path.join(__dirname, '../resources/foto.jpg')

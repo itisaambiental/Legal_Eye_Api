@@ -10,6 +10,7 @@ import { generateWelcomeEmail } from '../utils/EmailFunctions.js'
 import jwt from 'jsonwebtoken'
 import { JWT_SECRET, JWT_EXPIRATION } from '../config/variables.config.js'
 import FileService from '../services/File.service.js'
+import { getUserData } from '../utils/microsoftAPICalls.js'
 
 // Class to handle user
 class UserService {
@@ -102,6 +103,38 @@ class UserService {
     }
   }
 
+  // Microsoft login
+  static async microsoftLogin (accessToken) {
+    try {
+      const userEmail = await getUserData(accessToken)
+
+      const user = await UserRepository.findByGmail(userEmail)
+      if (!user) {
+        throw new ErrorUtils(401, 'Invalid email')
+      }
+
+      const userForToken = {
+        id: user.id,
+        username: user.name,
+        userType: user.roleId
+      }
+
+      const token = jwt.sign(
+        { userForToken },
+        JWT_SECRET,
+        { expiresIn: JWT_EXPIRATION }
+      )
+
+      return { token }
+    } catch (error) {
+      if (error instanceof ErrorUtils) {
+        throw error
+      }
+
+      throw new ErrorUtils(500, 'Failed to login with Microsoft')
+    }
+  }
+
   // Retrieve all users
   static async getAllUsers () {
     try {
@@ -155,6 +188,75 @@ class UserService {
         throw error
       }
       throw new ErrorUtils(500, 'Failed to retrieve user')
+    }
+  }
+
+  // Update a user's information by ID
+  static async updateUser (userId, updates) {
+    try {
+      const validFields = ['name', 'roleId']
+      const fieldsToUpdate = {}
+
+      for (const key in updates) {
+        if (validFields.includes(key)) {
+          fieldsToUpdate[key] = updates[key]
+        }
+      }
+
+      if (Object.keys(fieldsToUpdate).length === 0) {
+        throw new ErrorUtils(400, 'No valid fields to update')
+      }
+
+      const updatedUser = await UserRepository.update(userId, fieldsToUpdate)
+
+      if (!updatedUser.success) {
+        throw new ErrorUtils(404, 'User not found')
+      }
+
+      return updatedUser.user
+    } catch (error) {
+      throw new ErrorUtils(500, 'Failed to update user')
+    }
+  }
+
+  // Function to update a user's profile picture
+  static async updateUserPicture (userId, profilePicture) {
+    try {
+      const uploadResponse = await FileService.uploadFile(profilePicture)
+
+      if (uploadResponse.response.$metadata.httpStatusCode !== 200) {
+        throw new ErrorUtils(500, 'Failed to upload profile picture')
+      }
+      const profilePictureKey = uploadResponse.uniqueFileName
+      const savePicture = await UserRepository.updateProfilePicture(userId, profilePictureKey)
+
+      if (!savePicture) {
+        throw new ErrorUtils(404, 'User not found')
+      }
+
+      const profilePictureUrl = await FileService.getFile(profilePictureKey)
+
+      return profilePictureUrl
+    } catch (error) {
+      throw new ErrorUtils(500, 'Failed to update profile picture')
+    }
+  }
+
+  // Delete a user by ID
+  static async deleteUser (id) {
+    try {
+      const userDeleted = await UserRepository.delete(id)
+
+      if (!userDeleted) {
+        throw new ErrorUtils(404, 'User not found')
+      }
+
+      return userDeleted
+    } catch (error) {
+      if (error instanceof ErrorUtils) {
+        throw error
+      }
+      throw new ErrorUtils(500, 'Failed to delete user')
     }
   }
 

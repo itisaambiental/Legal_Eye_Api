@@ -6,8 +6,9 @@ import {
   getAllUsers,
   getUserById,
   updateUser,
-  deleteUser,
-  forgotPassword
+  updateUserPicture,
+  deleteUser
+  // forgotPassword
 } from '../controllers/User.controller.js'
 import UserExtractor from '../middleware/access_token.js'
 import { upload } from '../config/multer.config.js'
@@ -30,12 +31,15 @@ router.get('/users/', UserExtractor, getAllUsers)
 router.get('/user/:id', UserExtractor, getUserById)
 
 // Route to update a specific user by ID
-router.patch('/user/:id', updateUser)
+router.patch('/user/:id', UserExtractor, updateUser)
+
+// Route to update a specific user picture
+router.patch('/user/picture/:id', upload.single('profilePicture'), UserExtractor, updateUserPicture)
 
 // Route to delete a specific user by ID
-router.delete('/user/:id', deleteUser)
+router.delete('/user/:id', UserExtractor, deleteUser)
 
-// Route for password recovery
-router.post('/user/forgot-password', forgotPassword)
+// // Route for password recovery
+// router.post('/user/forgot-password', forgotPassword)
 
 export default router
