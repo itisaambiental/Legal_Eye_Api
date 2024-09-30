@@ -84,8 +84,9 @@ class UserService {
 
       const userForToken = {
         id: user.id,
+        gmail: user.gmail,
         username: user.name,
-        userType: user.roleId
+        userType: user.role_id
       }
 
       const token = jwt.sign(
@@ -115,8 +116,9 @@ class UserService {
 
       const userForToken = {
         id: user.id,
+        gmail: user.gmail,
         username: user.name,
-        userType: user.roleId
+        userType: user.role_id
       }
 
       const token = jwt.sign(
@@ -215,6 +217,10 @@ class UserService {
 
       return updatedUser.user
     } catch (error) {
+      if (error instanceof ErrorUtils) {
+        throw error
+      }
+
       throw new ErrorUtils(500, 'Failed to update user')
     }
   }
@@ -238,7 +244,11 @@ class UserService {
 
       return profilePictureUrl
     } catch (error) {
-      throw new ErrorUtils(500, 'Failed to update profile picture')
+      if (error instanceof ErrorUtils) {
+        throw error
+      }
+
+      throw new ErrorUtils(500, 'Failed to update user picture')
     }
   }
 

@@ -7,7 +7,8 @@ import {
   getUserById,
   updateUser,
   updateUserPicture,
-  deleteUser
+  deleteUser,
+  verifyToken
   // forgotPassword
 } from '../controllers/User.controller.js'
 import UserExtractor from '../middleware/access_token.js'
@@ -38,6 +39,8 @@ router.patch('/user/picture/:id', upload.single('profilePicture'), UserExtractor
 
 // Route to delete a specific user by ID
 router.delete('/user/:id', UserExtractor, deleteUser)
+
+router.get('/user/verify/:token', verifyToken)
 
 // // Route for password recovery
 // router.post('/user/forgot-password', forgotPassword)

@@ -1,7 +1,8 @@
 // controllers/User.controller.js
 import UserService from '../services/User.service.js'
 import ErrorUtils from '../utils/Error.js'
-
+import jsonwebtoken from 'jsonwebtoken'
+import { JWT_SECRET } from '../config/variables.config.js'
 // Function to handle user login
 export const loginUser = async (req, res) => {
   const { gmail, password } = req.body
@@ -247,6 +248,19 @@ export const deleteUser = async (req, res) => {
   }
 }
 
+export const verifyToken = async (req, res) => {
+  const token = req.params
+  if (!token) {
+    return res.status(400).send({ error: 'Token is required' })
+  }
+
+  try {
+    jsonwebtoken.verify(token.token, JWT_SECRET)
+    return res.status(200).send({ valid: true })
+  } catch (error) {
+    return res.send({ valid: false })
+  }
+}
 // // Function to handle password recovery
 // export const forgotPassword = (req, res) => {
 //   res.status(200).json({ message: 'Hello World' })
