@@ -27,10 +27,8 @@ export const initializeAdmin = async () => {
       }
 
       await UserService.registerUser(adminData, profilePicture)
-      console.log('Admin user created successfully.')
     }
 
-    // Verifica si ya existe el usuario de soporte
     const existingSupportUser = await UserRepository.findByGmail(ADMIN_GMAIL_SUPPORT)
     if (!existingSupportUser) {
       const supportData = {
@@ -47,7 +45,6 @@ export const initializeAdmin = async () => {
       }
 
       await UserService.registerUser(supportData, profilePictureSupport)
-      console.log('Support user created successfully.')
     }
   } catch (error) {
     if (error instanceof ErrorUtils) {
