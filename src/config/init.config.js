@@ -39,7 +39,7 @@ export const initializeAdmin = async () => {
         roleId: ADMIN_ROLE_SUPPORT
       }
 
-      const profilePicturePathSupport = path.join(__dirname, '../resources/foto_support.jpg') // Usar otra imagen si es necesario
+      const profilePicturePathSupport = path.join(__dirname, '../resources/foto.jpg')
       const profilePictureSupport = {
         originalname: 'foto_support.jpg',
         mimetype: 'image/jpeg',
