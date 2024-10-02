@@ -3,13 +3,12 @@
   "version": "1.0.0",
   "main": "index.js",
   "type": "module",
- "scripts": {
-  "dev": "NODE_ENV=development nodemon src/index.js",
-  "start": "NODE_ENV=production node src/index.js",
-  "test": "NODE_OPTIONS=--experimental-vm-modules NODE_ENV=test jest --verbose --silent",
-  "test:watch": "npm run test -- --watch"
-}
-,
+  "scripts": {
+    "dev": "NODE_ENV=development nodemon src/index.js",
+    "start": "NODE_ENV=production node src/index.js",
+    "test": "NODE_OPTIONS=--experimental-vm-modules NODE_ENV=test jest --verbose --silent",
+    "test:watch": "npm run test -- --watch"
+  },
   "keywords": [],
   "author": "Alfredo Castellano",
   "license": "ISC",
@@ -21,6 +20,7 @@
     "bcrypt": "^5.1.1",
     "bull": "^4.16.3",
     "cors": "^2.8.5",
+    "date-fns": "^4.1.0",
     "dotenv": "^16.4.5",
     "express": "4.21.0",
     "jsonwebtoken": "^9.0.2",

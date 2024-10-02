@@ -76,7 +76,7 @@ describe('User API tests', () => {
         .post('/api/user/register')
         .set('Authorization', `Bearer ${tokenAdmin}`)
         .send({
-          gmail: 'testuser@example.com',
+          gmail: 'testuser@isaambiental.com',
           name: 'Alfredo',
           roleId: '2'
         })
@@ -112,7 +112,7 @@ describe('User API tests', () => {
       const users = response.body.users
       expect(users.length).toBe(2)
       expect(users[0].gmail).toBe(ADMIN_GMAIL)
-      expect(users[1].gmail).toBe('testuser@example.com')
+      expect(users[1].gmail).toBe('testuser@isaambiental.com')
     })
   })
 

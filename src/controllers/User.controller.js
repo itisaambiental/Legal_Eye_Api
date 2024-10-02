@@ -261,7 +261,43 @@ export const verifyToken = async (req, res) => {
     return res.send({ valid: false })
   }
 }
-// // Function to handle password recovery
-// export const forgotPassword = (req, res) => {
-//   res.status(200).json({ message: 'Hello World' })
-// }
+// Function to handle password recovery
+export const resetPassword = async (req, res) => {
+  const { gmail } = req.body
+  try {
+    await UserService.requestPasswordReset(gmail)
+    return res.sendStatus(200)
+  } catch (error) {
+    if (error.status && error.message) {
+      return res.status(error.status).json({
+        message: error.message,
+        ...(error.errors && { errors: error.errors })
+      })
+    }
+
+    return res.status(500).json({ message: 'Internal Server Error' })
+  }
+}
+
+// Function to handle code verification
+export const verifyCode = async (req, res) => {
+  const { gmail, code } = req.body
+
+  try {
+    const isValid = await UserService.verifyPasswordResetCode(gmail, code)
+    if (isValid) {
+      return res.sendStatus(200)
+    } else {
+      return res.status(400).json({ message: 'Invalid or expired code' })
+    }
+  } catch (error) {
+    if (error.status && error.message) {
+      return res.status(error.status).json({
+        message: error.message,
+        ...(error.errors && { errors: error.errors })
+      })
+    }
+
+    return res.status(500).json({ message: 'Internal Server Error' })
+  }
+}

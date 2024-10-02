@@ -20,6 +20,24 @@ class UserRepository {
     }
   }
 
+  // Updates the user's password in the database
+  static async updateUserPassword (gmail, hashedPassword) {
+    const query = `
+    UPDATE users
+    SET password = ?
+    WHERE gmail = ?
+  `
+    const values = [hashedPassword, gmail]
+
+    try {
+      const [result] = await pool.query(query, values)
+      return result.affectedRows > 0
+    } catch (error) {
+      console.error('Error updating user password:', error)
+      throw new ErrorUtils(500, 'Error updating user password')
+    }
+  }
+
   // Updates an existing user in the database by their ID
   static async update (id, userData) {
     const { name, password, gmail, roleId, profilePicture } = userData
@@ -156,6 +174,36 @@ class UserRepository {
     } catch (error) {
       console.error('Error deleting all users except one by gmail:', error)
       throw new ErrorUtils(500, 'Error deleting users from the database')
+    }
+  }
+
+  static async saveVerificationCode ({ gmail, code, expiresAt }) {
+    const query = `
+      INSERT INTO verification_codes (gmail, code, expires_at)
+      VALUES (?, ?, ?)
+    `
+    const values = [gmail, code, expiresAt]
+    try {
+      await pool.query(query, values)
+    } catch (error) {
+      console.error('Error saving verification code to database:', error)
+      throw new ErrorUtils(500, 'Error saving verification code to database')
+    }
+  }
+
+  static async getVerificationCode (gmail, code) {
+    const query = `
+      SELECT * FROM verification_codes
+      WHERE gmail = ? AND code = ?
+    `
+    const values = [gmail, code]
+
+    try {
+      const [result] = await pool.query(query, values)
+      return result[0]
+    } catch (error) {
+      console.error('Error retrieving verification code from database:', error)
+      throw new ErrorUtils(500, 'Error retrieving verification code from database')
     }
   }
 }

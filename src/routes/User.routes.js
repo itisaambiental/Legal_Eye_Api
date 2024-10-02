@@ -8,8 +8,9 @@ import {
   updateUser,
   updateUserPicture,
   deleteUser,
-  verifyToken
-  // forgotPassword
+  verifyToken,
+  resetPassword,
+  verifyCode
 } from '../controllers/User.controller.js'
 import UserExtractor from '../middleware/access_token.js'
 import { upload } from '../config/multer.config.js'
@@ -42,7 +43,10 @@ router.delete('/user/:id', UserExtractor, deleteUser)
 
 router.get('/user/verify/:token', verifyToken)
 
-// // Route for password recovery
-// router.post('/user/forgot-password', forgotPassword)
+// Route for password recovery
+router.post('/user/reset-password', resetPassword)
+
+// Route for password recovery verification
+router.post('/user/verify-code', verifyCode)
 
 export default router

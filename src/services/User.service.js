@@ -6,11 +6,13 @@ import { generatePassword } from '../utils/generatePassword.js'
 import { z } from 'zod'
 import ErrorUtils from '../utils/Error.js'
 import emailQueue from '../workers/emailWorker.js'
-import { generateWelcomeEmail } from '../utils/EmailFunctions.js'
+import { generateWelcomeEmail, generatePasswordResetEmail, generatePasswordResetEmailSend } from '../utils/EmailFunctions.js'
 import jwt from 'jsonwebtoken'
 import { JWT_SECRET, JWT_EXPIRATION } from '../config/variables.config.js'
 import FileService from '../services/File.service.js'
 import { getUserData } from '../utils/microsoftAPICalls.js'
+import generateVerificationCode from '../utils/generateCode.js'
+import { addMinutes } from 'date-fns'
 
 // Class to handle user
 class UserService {
@@ -305,6 +307,60 @@ class UserService {
         throw error
       }
       throw new ErrorUtils(500, 'Authorization failed')
+    }
+  }
+
+  static async requestPasswordReset (gmail) {
+    try {
+      const verificationCode = generateVerificationCode()
+
+      const expiresAt = addMinutes(new Date(), 1)
+
+      await UserRepository.saveVerificationCode({ gmail, code: verificationCode, expiresAt })
+
+      const emailData = generatePasswordResetEmail(gmail, verificationCode)
+
+      await emailQueue.add(emailData)
+    } catch (error) {
+      throw new ErrorUtils(500, 'Failed to send verification code')
+    }
+  }
+
+  // Verifies if the provided code for a given email is valid and not expired, then generates a new password
+  static async verifyPasswordResetCode (gmail, code) {
+    try {
+      const verification = await UserRepository.getVerificationCode(gmail, code)
+
+      if (!verification) {
+        throw new ErrorUtils(400, 'Invalid verification code')
+      }
+
+      // eslint-disable-next-line camelcase
+      const { expires_at } = verification
+      const currentTime = new Date()
+
+      // eslint-disable-next-line camelcase
+      if (currentTime > expires_at) {
+        throw new ErrorUtils(400, 'Verification code has expired')
+      }
+
+      // The verification code is valid, generate a new password
+      const password = generatePassword()
+      const salt = await bcrypt.genSalt()
+      const hashedPassword = await bcrypt.hash(password, salt)
+
+      const userUpdated = await UserRepository.updateUserPassword(gmail, hashedPassword)
+
+      if (!userUpdated) {
+        throw new ErrorUtils(500, 'Failed to update user password')
+      }
+
+      const emailData = generatePasswordResetEmailSend(gmail, password)
+      await emailQueue.add(emailData)
+
+      return true
+    } catch (error) {
+      throw new ErrorUtils(500, 'Failed verifying verification code')
     }
   }
 }
