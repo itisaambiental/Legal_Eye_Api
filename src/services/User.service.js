@@ -49,11 +49,21 @@ class UserService {
         profilePicture: profilePictureKey
       })
 
-      const emailData = generateWelcomeEmail(parsedUser, password)
+      let profilePictureUrl = null
+      if (profilePictureKey) {
+        profilePictureUrl = await FileService.getFile(profilePictureKey)
+      }
 
+      const emailData = generateWelcomeEmail(parsedUser, password)
       await emailQueue.add(emailData)
 
-      return { userId }
+      return {
+        id: userId,
+        name: parsedUser.name,
+        gmail: parsedUser.gmail,
+        roleId: parsedUser.roleId,
+        profile_picture: profilePictureUrl
+      }
     } catch (error) {
       if (error instanceof z.ZodError) {
         const validationErrors = error.errors.map((e) => ({

@@ -79,9 +79,9 @@ export const registerUser = async (req, res) => {
   }
 
   try {
-    const { userId } = await UserService.registerUser(req.body, profilePicture)
+    const user = await UserService.registerUser(req.body, profilePicture)
 
-    return res.status(201).json({ userId })
+    return res.status(201).json({ user })
   } catch (error) {
     if (error.status && error.message) {
       return res.status(error.status).json({

@@ -2,7 +2,7 @@ import { z } from 'zod'
 
 // Validation schema for a user's data
 const userSchema = z.object({
-  name: z.string().min(3, 'The name is required and must have at least 3 characters'),
+  name: z.string().min(1, 'The name is required'),
   gmail: z.string()
     .email('The email must be valid')
     .refine((email) => email.endsWith('@isaambiental.com'), {
