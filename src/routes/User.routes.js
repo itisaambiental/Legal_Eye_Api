@@ -9,6 +9,7 @@ import {
   updateUser,
   updateUserPicture,
   deleteUser,
+  deleteUsersBatch,
   verifyToken,
   resetPassword,
   verifyCode
@@ -45,6 +46,10 @@ router.patch('/user/picture/:id', upload.single('profilePicture'), UserExtractor
 // Route to delete a specific user by ID
 router.delete('/user/:id', UserExtractor, deleteUser)
 
+// Route to delete multiple users using an array of Ids
+router.delete('/users/batch', UserExtractor, deleteUsersBatch)
+
+// Route to verify the JWT Token
 router.get('/user/verify/:token', verifyToken)
 
 // Route for password recovery

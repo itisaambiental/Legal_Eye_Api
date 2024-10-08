@@ -106,6 +106,26 @@ class UserRepository {
     }
   }
 
+  // Delete users in the database
+  static async deleteBatch (userIds) {
+    const query = `
+      DELETE FROM users WHERE id IN (?)
+    `
+
+    try {
+      const [result] = await pool.query(query, [userIds])
+
+      if (result.affectedRows === 0) {
+        return false
+      }
+
+      return true
+    } catch (error) {
+      console.error('Error deleting users:', error)
+      throw new ErrorUtils(500, 'Error deleting users from the database')
+    }
+  }
+
   // Retrieves a user from the database by their ID
   static async findById (id) {
     const query = `
@@ -121,6 +141,21 @@ class UserRepository {
     } catch (error) {
       console.error('Error retrieving user by ID:', error)
       throw new ErrorUtils(500, 'Error retrieving user by ID')
+    }
+  }
+
+  // Retrieves users from the database using an array of Ids
+  static async findByIds (userIds) {
+    const query = `
+      SELECT id FROM users WHERE id IN (?)
+    `
+
+    try {
+      const [rows] = await pool.query(query, [userIds])
+      return rows.map(row => row.id)
+    } catch (error) {
+      console.error('Error finding users by IDs:', error)
+      throw new ErrorUtils(500, 'Error finding users by IDs')
     }
   }
 

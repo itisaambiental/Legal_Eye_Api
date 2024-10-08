@@ -274,6 +274,43 @@ export const deleteUser = async (req, res) => {
   }
 }
 
+// Function to delete multiple users using an array of Ids
+export const deleteUsersBatch = async (req, res) => {
+  const { userIds } = req.body
+  const { userId } = req
+
+  if (!userIds || !Array.isArray(userIds) || userIds.length === 0) {
+    return res.status(400).json({
+      message: 'Missing required fields: userIds'
+    })
+  }
+
+  const isAuthorized = await UserService.isAuthorized(userId)
+  if (!isAuthorized) {
+    return res.status(403).json({
+      message: 'Unauthorized'
+    })
+  }
+
+  try {
+    const result = await UserService.deleteUsersBatch(userIds)
+    if (result.success) {
+      return res.sendStatus(204)
+    } else {
+      return res.status(404).json({ message: result.message })
+    }
+  } catch (error) {
+    if (error.status && error.message) {
+      return res.status(error.status).json({
+        message: error.message,
+        ...(error.errors && { errors: error.errors })
+      })
+    }
+
+    return res.status(500).json({ message: 'Internal Server Error' })
+  }
+}
+
 export const verifyToken = async (req, res) => {
   const token = req.params
   if (!token) {

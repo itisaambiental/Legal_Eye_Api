@@ -295,6 +295,27 @@ class UserService {
     }
   }
 
+  // Delete using an array of Ids
+  static async deleteUsersBatch (userIds) {
+    try {
+      const existingUsers = await UserRepository.findByIds(userIds)
+
+      if (existingUsers.length !== userIds.length) {
+        const notFoundIds = userIds.filter(id => !existingUsers.includes(id))
+        throw new ErrorUtils(404, `Users not found for IDs: ${notFoundIds.join(', ')}`)
+      }
+
+      await UserRepository.deleteBatch(userIds)
+
+      return { success: true }
+    } catch (error) {
+      if (error instanceof ErrorUtils) {
+        throw error
+      }
+      throw new ErrorUtils(500, 'Failed to delete users')
+    }
+  }
+
   // Check if user is authorized
   static async isAuthorized (userId) {
     try {
