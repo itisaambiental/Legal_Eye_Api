@@ -166,6 +166,19 @@ class UserService {
     }
   }
 
+  // Retrieve all roles
+  static async getAllRoles () {
+    try {
+      const roles = await UserRepository.findAllRoles()
+      return roles
+    } catch (error) {
+      if (error instanceof ErrorUtils) {
+        throw error
+      }
+      throw new ErrorUtils(500, 'Failed to retrieve users')
+    }
+  }
+
   // Retrieve a user by ID
   static async getUserById (id) {
     try {

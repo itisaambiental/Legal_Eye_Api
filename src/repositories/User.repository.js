@@ -1,4 +1,5 @@
 import { pool } from '../config/db.config.js'
+import Role from '../models/Roles.model.js'
 import User from '../models/User.model.js'
 import ErrorUtils from '../utils/Error.js'
 
@@ -160,6 +161,20 @@ class UserRepository {
     } catch (error) {
       console.error('Error retrieving all users:', error)
       throw new ErrorUtils(500, 'Error retrieving all users')
+    }
+  }
+
+  // Retrieves all roles from the database
+  static async findAllRoles () {
+    const query = `
+        SELECT * FROM roles
+      `
+    try {
+      const [rows] = await pool.query(query)
+      return rows.map(role => new Role(role.id, role.name))
+    } catch (error) {
+      console.error('Error retrieving all roles:', error)
+      throw new ErrorUtils(500, 'Error retrieving all roles')
     }
   }
 

@@ -4,6 +4,7 @@ import {
   loginUser,
   loginUserMicrosoftAuth,
   getAllUsers,
+  getAllRoles,
   getUserById,
   updateUser,
   updateUserPicture,
@@ -28,6 +29,9 @@ router.post('/user/register', upload.single('profilePicture'), UserExtractor, re
 
 // Route to get all users
 router.get('/users/', UserExtractor, getAllUsers)
+
+// Route to get all roles
+router.get('/roles/', UserExtractor, getAllRoles)
 
 // Route to get a specific user by ID
 router.get('/user/:id', UserExtractor, getUserById)

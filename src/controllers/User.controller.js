@@ -120,6 +120,32 @@ export const getAllUsers = async (req, res) => {
   }
 }
 
+// Function to get all roles
+export const getAllRoles = async (req, res) => {
+  const { userId } = req
+
+  const isAuthorized = await UserService.isAuthorized(userId)
+  if (!isAuthorized) {
+    return res.status(403).json({
+      message: 'Unauthorized'
+    })
+  }
+
+  try {
+    const roles = await UserService.getAllRoles()
+    return res.status(200).json({ roles })
+  } catch (error) {
+    if (error.status && error.message) {
+      return res.status(error.status).json({
+        message: error.message,
+        ...(error.errors && { errors: error.errors })
+      })
+    }
+
+    return res.status(500).json({ message: 'Internal Server Error' })
+  }
+}
+
 // Function to get the details of a specific user by ID
 export const getUserById = async (req, res) => {
   const { id } = req.params
