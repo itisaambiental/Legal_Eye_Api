@@ -6,6 +6,7 @@ import {
   getAllUsers,
   getAllRoles,
   getUserById,
+  getUsersByRole,
   updateUser,
   updateUserPicture,
   deleteUser,
@@ -36,6 +37,9 @@ router.get('/roles/', UserExtractor, getAllRoles)
 
 // Route to get a specific user by ID
 router.get('/user/:id', UserExtractor, getUserById)
+
+// Route to get users by role ID
+router.get('/users/role/:roleId', UserExtractor, getUsersByRole)
 
 // Route to update a specific user by ID
 router.patch('/user/:id', UserExtractor, updateUser)

@@ -159,6 +159,24 @@ class UserRepository {
     }
   }
 
+  // Retrieves users from the database by their role ID
+  static async findByRole (roleId) {
+    const query = `
+    SELECT * FROM users WHERE role_id = ?
+  `
+    try {
+      const [rows] = await pool.query(query, [roleId])
+      if (rows.length === 0) {
+        return []
+      }
+
+      return rows.map(user => new User(user.id, user.name, user.password, user.gmail, user.role_id, user.profile_picture))
+    } catch (error) {
+      console.error('Error retrieving users by role:', error)
+      throw new ErrorUtils(500, 'Error retrieving users by role')
+    }
+  }
+
   // Check if a user exists in the database by its ID
   static async userExists (id) {
     const query = `

@@ -218,6 +218,38 @@ class UserService {
     }
   }
 
+  // Retrieve users by role ID
+  static async getUsersByRole (roleId) {
+    try {
+      const users = await UserRepository.findByRole(roleId)
+
+      if (users.length === 0) {
+        return []
+      }
+
+      const usersWithProfilePictures = await Promise.all(users.map(async (user) => {
+        let profilePictureUrl = null
+        if (user.profile_picture) {
+          profilePictureUrl = await FileService.getFile(user.profile_picture)
+        }
+
+        const { password, ..._user } = user
+
+        return {
+          ..._user,
+          profile_picture: profilePictureUrl
+        }
+      }))
+
+      return usersWithProfilePictures
+    } catch (error) {
+      if (error instanceof ErrorUtils) {
+        throw error
+      }
+      throw new ErrorUtils(500, 'Failed to retrieve users by role')
+    }
+  }
+
   // Update a user's information by ID
   static async updateUser (userId, updates) {
     try {

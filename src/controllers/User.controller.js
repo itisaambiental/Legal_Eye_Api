@@ -175,6 +175,33 @@ export const getUserById = async (req, res) => {
   }
 }
 
+// Function to get users by role ID
+export const getUsersByRole = async (req, res) => {
+  const { roleId } = req.params
+  const { userId } = req
+
+  try {
+    const isAuthorized = await UserService.isAuthorized(userId)
+    if (!isAuthorized) {
+      return res.status(403).json({
+        message: 'Unauthorized'
+      })
+    }
+
+    const users = await UserService.getUsersByRole(roleId)
+    return res.status(200).json({ users })
+  } catch (error) {
+    if (error.status && error.message) {
+      return res.status(error.status).json({
+        message: error.message,
+        ...(error.errors && { errors: error.errors })
+      })
+    }
+
+    return res.status(500).json({ message: 'Internal Server Error' })
+  }
+}
+
 // Function to update a user's information by ID
 export const updateUser = async (req, res) => {
   const { id } = req.params
