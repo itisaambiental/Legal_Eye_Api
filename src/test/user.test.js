@@ -83,8 +83,8 @@ describe('User API tests', () => {
         .expect(201)
         .expect('Content-Type', /application\/json/)
 
-      analystUserId = response.body.userId
-      expect(response.body.userId).toBeDefined()
+      analystUserId = response.body.user.id
+      expect(response.body.user.id).toBeDefined()
     })
 
     test('Should return 400 when required fields are missing during registration', async () => {
