@@ -206,7 +206,11 @@ export const getUsersByRole = async (req, res) => {
 export const updateUser = async (req, res) => {
   const { id } = req.params
   const { userId } = req
-  const updates = req.body
+  const updates = { ...req.body }
+
+  if (req.file) {
+    updates.profilePicture = req.file
+  }
 
   try {
     const isAuthorized = await UserService.isAuthorized(userId)
@@ -223,6 +227,7 @@ export const updateUser = async (req, res) => {
     }
 
     const updatedUser = await UserService.updateUser(id, updates)
+    console.log(updatedUser)
     return res.status(200).json({
       updatedUser
     })

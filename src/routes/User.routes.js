@@ -42,7 +42,7 @@ router.get('/user/:id', UserExtractor, getUserById)
 router.get('/users/role/:roleId', UserExtractor, getUsersByRole)
 
 // Route to update a specific user by ID
-router.patch('/user/:id', UserExtractor, updateUser)
+router.patch('/user/:id', upload.single('profilePicture'), UserExtractor, updateUser)
 
 // Route to update a specific user picture
 router.patch('/user/picture/:id', upload.single('profilePicture'), UserExtractor, updateUserPicture)

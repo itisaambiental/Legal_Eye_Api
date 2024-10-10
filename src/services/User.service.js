@@ -253,7 +253,7 @@ class UserService {
   // Update a user's information by ID
   static async updateUser (userId, updates) {
     try {
-      const validFields = ['name', 'roleId']
+      const validFields = ['name', 'roleId', 'gmail', 'profilePicture']
       const fieldsToUpdate = {}
 
       for (const key in updates) {
@@ -266,18 +266,42 @@ class UserService {
         throw new ErrorUtils(400, 'No valid fields to update')
       }
 
+      if (fieldsToUpdate.gmail) {
+        const existingUser = await UserRepository.findByGmailExcludingUserId(fieldsToUpdate.gmail, userId)
+        if (existingUser) {
+          throw new ErrorUtils(400, 'Gmail already exists')
+        }
+      }
+
+      if (fieldsToUpdate.profilePicture) {
+        const uploadResponse = await FileService.uploadFile(fieldsToUpdate.profilePicture)
+        if (uploadResponse.response.$metadata.httpStatusCode === 200) {
+          fieldsToUpdate.profilePicture = uploadResponse.uniqueFileName
+        } else {
+          throw new ErrorUtils(500, 'Failed to upload profile picture')
+        }
+      }
+
       const updatedUser = await UserRepository.update(userId, fieldsToUpdate)
 
       if (!updatedUser.success) {
         throw new ErrorUtils(404, 'User not found')
       }
 
-      return updatedUser.user
+      let profilePictureUrl = null
+      if (updatedUser.user.profile_picture) {
+        profilePictureUrl = await FileService.getFile(updatedUser.user.profile_picture)
+      }
+
+      const { password, ...userWithoutPassword } = updatedUser.user
+      return {
+        ...userWithoutPassword,
+        profile_picture: profilePictureUrl
+      }
     } catch (error) {
       if (error instanceof ErrorUtils) {
         throw error
       }
-
       throw new ErrorUtils(500, 'Failed to update user')
     }
   }

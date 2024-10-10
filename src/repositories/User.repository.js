@@ -44,25 +44,26 @@ class UserRepository {
     const { name, password, gmail, roleId, profilePicture } = userData
 
     const query = `
-      UPDATE users 
-      SET 
-        name = IFNULL(?, name), 
-        password = IFNULL(?, password), 
-        gmail = IFNULL(?, gmail), 
-        role_id = IFNULL(?, role_id), 
-        profile_picture = IFNULL(?, profile_picture)
-      WHERE id = ?
-    `
+    UPDATE users 
+    SET 
+      name = IFNULL(?, name), 
+      password = IFNULL(?, password), 
+      gmail = IFNULL(?, gmail), 
+      role_id = IFNULL(?, role_id), 
+      profile_picture = IFNULL(?, profile_picture)
+    WHERE id = ?
+  `
 
     try {
       const [result] = await pool.query(query, [name, password, gmail, roleId, profilePicture, id])
 
       if (result.affectedRows === 0) {
-        return false
+        return { success: false }
       }
 
       const updatedUser = await this.findById(id)
-      return { success: true, user: updatedUser }
+      const { password: userPassword, ...userWithoutPassword } = updatedUser
+      return { success: true, user: userWithoutPassword }
     } catch (error) {
       console.error('Error updating user:', error)
       throw new ErrorUtils(500, 'Error updating user in the database')
@@ -201,6 +202,13 @@ class UserRepository {
       console.error('Error finding user by gmail:', error)
       throw new ErrorUtils(500, 'Error finding user by gmail')
     }
+  }
+
+  // Finds a user in the database by their gmail excluding UserId
+  static async findByGmailExcludingUserId (gmail, excludeUserId) {
+    const query = 'SELECT * FROM users WHERE gmail = ? AND id != ?'
+    const [result] = await pool.query(query, [gmail, excludeUserId])
+    return result[0]
   }
 
   // Retrieves all users from the database
