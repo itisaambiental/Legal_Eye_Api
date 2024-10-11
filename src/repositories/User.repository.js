@@ -21,7 +21,7 @@ class UserRepository {
     }
   }
 
-  // Updates the usehttps://legaleyeapp-production.up.railway.app/usersr's password in the database
+  // Updates the users password in the database
   static async updateUserPassword (gmail, hashedPassword) {
     const query = `
     UPDATE users
@@ -44,26 +44,27 @@ class UserRepository {
     const { name, password, gmail, roleId, profilePicture } = userData
 
     const query = `
-    UPDATE users 
-    SET 
-      name = IFNULL(?, name), 
-      password = IFNULL(?, password), 
-      gmail = IFNULL(?, gmail), 
-      role_id = IFNULL(?, role_id), 
-      profile_picture = ?
-    WHERE id = ?
-  `
+      UPDATE users 
+      SET 
+        name = IFNULL(?, name), 
+        password = IFNULL(?, password), 
+        gmail = IFNULL(?, gmail), 
+        role_id = IFNULL(?, role_id), 
+        profile_picture = ?
+      WHERE id = ?
+    `
 
     try {
-      const profilePictureValue = profilePicture === undefined ? null : profilePicture
+      const profilePictureValue = profilePicture ?? null
       const [result] = await pool.query(query, [name, password, gmail, roleId, profilePictureValue, id])
       if (result.affectedRows === 0) {
-        return { success: false }
+        return null
       }
+
       const updatedUser = await this.findById(id)
       const { password: userPassword, ...userWithoutPassword } = updatedUser
 
-      return { success: true, user: userWithoutPassword }
+      return { user: userWithoutPassword }
     } catch (error) {
       console.error('Error updating user:', error)
       throw new ErrorUtils(500, 'Error updating user in the database')

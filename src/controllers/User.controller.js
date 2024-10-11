@@ -107,7 +107,6 @@ export const getAllUsers = async (req, res) => {
 
   try {
     const users = await UserService.getAllUsers()
-    console.log(users)
     return res.status(200).json({ users })
   } catch (error) {
     if (error.status && error.message) {
@@ -226,10 +225,11 @@ export const updateUser = async (req, res) => {
         message: 'No update fields provided'
       })
     }
+    const { updatedUser, token } = await UserService.updateUser(id, updates, userId)
 
-    const updatedUser = await UserService.updateUser(id, updates)
     return res.status(200).json({
-      updatedUser
+      updatedUser,
+      token
     })
   } catch (error) {
     if (error.status && error.message) {
@@ -369,7 +369,6 @@ export const resetPassword = async (req, res) => {
         ...(error.errors && { errors: error.errors })
       })
     }
-
     return res.status(500).json({ message: 'Internal Server Error' })
   }
 }

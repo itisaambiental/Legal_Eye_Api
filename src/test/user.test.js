@@ -241,3 +241,23 @@ describe('User API tests', () => {
     })
   })
 })
+
+describe('Password reset and verification', () => {
+  test('Should successfully send a password reset code', async () => {
+    await api
+      .post('/api/user/reset-password')
+      .send({ gmail: ADMIN_GMAIL })
+      .expect(200)
+      .expect('Content-Type', /text\/plain/)
+  })
+
+  test('Should return 400 for expired or invalid reset code', async () => {
+    const response = await api
+      .post('/api/user/verify-code')
+      .send({ gmail: ADMIN_GMAIL, code: 'invalidCode' })
+      .expect(400)
+      .expect('Content-Type', /application\/json/)
+
+    expect(response.body.message).toBe('Invalid or expired code')
+  })
+})

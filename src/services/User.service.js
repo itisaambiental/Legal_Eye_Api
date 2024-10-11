@@ -251,7 +251,7 @@ class UserService {
   }
 
   // Update a user's information by ID
-  static async updateUser (userId, updates) {
+  static async updateUser (userId, updates, currentUserId) {
     try {
       const validFields = ['name', 'roleId', 'gmail', 'profilePicture']
       const fieldsToUpdate = {}
@@ -273,7 +273,16 @@ class UserService {
         }
       }
 
-      if (fieldsToUpdate.profilePicture) {
+      const currentUser = await UserRepository.findById(userId)
+      if (!currentUser) {
+        throw new ErrorUtils(404, 'User not found')
+      }
+
+      if (fieldsToUpdate.profilePicture == null) {
+        fieldsToUpdate.profilePicture = null
+      } else if (typeof fieldsToUpdate.profilePicture === 'string') {
+        fieldsToUpdate.profilePicture = currentUser.profile_picture
+      } else {
         const uploadResponse = await FileService.uploadFile(fieldsToUpdate.profilePicture)
         if (uploadResponse.response.$metadata.httpStatusCode === 200) {
           fieldsToUpdate.profilePicture = uploadResponse.uniqueFileName
@@ -283,8 +292,7 @@ class UserService {
       }
 
       const updatedUser = await UserRepository.update(userId, fieldsToUpdate)
-
-      if (!updatedUser.success) {
+      if (!updatedUser) {
         throw new ErrorUtils(404, 'User not found')
       }
 
@@ -294,9 +302,24 @@ class UserService {
       }
 
       const { password, ...userWithoutPassword } = updatedUser.user
+      let token = null
+
+      if (Number(userId) === Number(currentUserId)) {
+        const userForToken = {
+          id: updatedUser.user.id,
+          gmail: updatedUser.user.gmail,
+          username: updatedUser.user.name,
+          userType: updatedUser.user.roleId
+        }
+        token = jwt.sign({ userForToken }, JWT_SECRET, { expiresIn: JWT_EXPIRATION })
+      }
+
       return {
-        ...userWithoutPassword,
-        profile_picture: profilePictureUrl
+        updatedUser: {
+          ...userWithoutPassword,
+          profile_picture: profilePictureUrl
+        },
+        token
       }
     } catch (error) {
       if (error instanceof ErrorUtils) {
@@ -432,7 +455,7 @@ class UserService {
       const verification = await UserRepository.getVerificationCode(gmail, code)
 
       if (!verification) {
-        throw new ErrorUtils(400, 'Invalid verification code')
+        return false
       }
 
       // eslint-disable-next-line camelcase
@@ -441,10 +464,9 @@ class UserService {
 
       // eslint-disable-next-line camelcase
       if (currentTime > expires_at) {
-        throw new ErrorUtils(400, 'Verification code has expired')
+        return false
       }
 
-      // The verification code is valid, generate a new password
       const password = generatePassword()
       const salt = await bcrypt.genSalt()
       const hashedPassword = await bcrypt.hash(password, salt)
