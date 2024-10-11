@@ -3,13 +3,7 @@ import UserRepository from '../repositories/User.repository.js'
 import {
   ADMIN_GMAIL,
   ADMIN_NAME,
-  ADMIN_ROLE,
-  ADMIN_GMAIL_2,
-  ADMIN_NAME_2,
-  ADMIN_ROLE_2,
-  ADMIN_GMAIL_SUPPORT,
-  ADMIN_ROLE_SUPPORT,
-  ADMIN_NAME_SUPPORT
+  ADMIN_ROLE
 } from './variables.config.js'
 import ErrorUtils from '../utils/Error.js'
 import fs from 'fs'
@@ -37,42 +31,6 @@ export const initializeAdmin = async () => {
       }
 
       await UserService.registerUser(adminData, profilePicture)
-    }
-
-    const existingAdmin2 = await UserRepository.findByGmail(ADMIN_GMAIL_2)
-    if (!existingAdmin2) {
-      const adminData2 = {
-        name: ADMIN_NAME_2,
-        gmail: ADMIN_GMAIL_2,
-        roleId: ADMIN_ROLE_2
-      }
-
-      const profilePicturePath2 = path.join(__dirname, '../resources/foto.jpg')
-      const profilePicture2 = {
-        originalname: 'foto.jpg',
-        mimetype: 'image/jpeg',
-        buffer: fs.readFileSync(profilePicturePath2)
-      }
-
-      await UserService.registerUser(adminData2, profilePicture2)
-    }
-
-    const existingSupportUser = await UserRepository.findByGmail(ADMIN_GMAIL_SUPPORT)
-    if (!existingSupportUser) {
-      const supportData = {
-        name: ADMIN_NAME_SUPPORT,
-        gmail: ADMIN_GMAIL_SUPPORT,
-        roleId: ADMIN_ROLE_SUPPORT
-      }
-
-      const profilePicturePathSupport = path.join(__dirname, '../resources/foto.jpg')
-      const profilePictureSupport = {
-        originalname: 'foto_support.jpg',
-        mimetype: 'image/jpeg',
-        buffer: fs.readFileSync(profilePicturePathSupport)
-      }
-
-      await UserService.registerUser(supportData, profilePictureSupport)
     }
   } catch (error) {
     if (error instanceof ErrorUtils) {
