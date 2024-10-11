@@ -227,7 +227,6 @@ export const updateUser = async (req, res) => {
     }
 
     const updatedUser = await UserService.updateUser(id, updates)
-    console.log(updatedUser)
     return res.status(200).json({
       updatedUser
     })
