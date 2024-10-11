@@ -21,7 +21,7 @@ class UserRepository {
     }
   }
 
-  // Updates the user's password in the database
+  // Updates the usehttps://legaleyeapp-production.up.railway.app/usersr's password in the database
   static async updateUserPassword (gmail, hashedPassword) {
     const query = `
     UPDATE users
@@ -50,19 +50,19 @@ class UserRepository {
       password = IFNULL(?, password), 
       gmail = IFNULL(?, gmail), 
       role_id = IFNULL(?, role_id), 
-      profile_picture = IFNULL(?, profile_picture)
+      profile_picture = ?
     WHERE id = ?
   `
 
     try {
-      const [result] = await pool.query(query, [name, password, gmail, roleId, profilePicture, id])
-
+      const profilePictureValue = profilePicture === undefined ? null : profilePicture
+      const [result] = await pool.query(query, [name, password, gmail, roleId, profilePictureValue, id])
       if (result.affectedRows === 0) {
         return { success: false }
       }
-
       const updatedUser = await this.findById(id)
       const { password: userPassword, ...userWithoutPassword } = updatedUser
+
       return { success: true, user: userWithoutPassword }
     } catch (error) {
       console.error('Error updating user:', error)

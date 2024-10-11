@@ -107,6 +107,7 @@ export const getAllUsers = async (req, res) => {
 
   try {
     const users = await UserService.getAllUsers()
+    console.log(users)
     return res.status(200).json({ users })
   } catch (error) {
     if (error.status && error.message) {

@@ -3,6 +3,8 @@ name: Node.js API REST
 on:
   push:
     branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
 
 jobs:
   show-date-time:
