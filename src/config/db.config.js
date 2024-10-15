@@ -13,7 +13,7 @@ import {
   NODE_ENV
 } from './variables.config.js'
 
-console.log(DATABASE_TEST)
+console.log("Test", DATABASE_TEST)
 
 let pool
 
