@@ -24,14 +24,7 @@ jobs:
         run: npm ci
 
       - name: Run tests
-        env: 
-          PORT:   ${{ secrets.PORT }}
-          JWT_SECRET: ${{ secrets.JWT_SECRET }}
-          DB_PORT: ${{ secrets.DB_PORT }}
-          HOST_DATABASE: ${{ secrets.HOST_DATABASE }}
-          PASSWORD_DATABASE: ${{ secrets.PASSWORD_DATABASE }}
-          USER_DATABASE: ${{ secrets.USER_DATABASE }}
-          DATABASE_TEST: ${{ secrets.DATABASE_TEST }}
+        env:
           ADMIN_GMAIL: ${{ secrets.ADMIN_GMAIL }}
           ADMIN_NAME: ${{ secrets.ADMIN_NAME }}
           ADMIN_PASSWORD_TEST: ${{ secrets.ADMIN_PASSWORD_TEST }}
@@ -39,14 +32,26 @@ jobs:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_REGION: ${{ secrets.AWS_REGION }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          GMAIL_USER: ${{ secrets.GMAIL_USER }}
+          DATABASE_TEST: ${{ secrets.DATABASE_TEST }}
+          DB_PORT: ${{ secrets.DB_PORT }}
           GMAIL_PASS: ${{ secrets.GMAIL_PASS }}
-          REDIS_PASS_TEST: ${{ secrets.REDIS_PASS_TEST }}
-          REDIS_USER_TEST: ${{ secrets.REDIS_USER_TEST }}
-          REDIS_HOST_TEST: ${{ secrets.REDIS_HOST_TEST }}
-          REDIS_PORT_TEST: ${{ secrets.REDIS_PORT_TEST }}
-          S3_BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME }}
+          GMAIL_USER: ${{ secrets.GMAIL_USER }}
+          HOST_DATABASE: ${{ secrets.HOST_DATABASE }}
+          JWT_EXPIRATION: ${{ secrets.JWT_EXPIRATION }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
           MICROSOFT_GRAPH_API: ${{ secrets.MICROSOFT_GRAPH_API }}
+          PASSWORD_DATABASE: ${{ secrets.PASSWORD_DATABASE }}
+          PORT: ${{ secrets.PORT }}
+          REDIS_HOST_TEST: ${{ secrets.REDIS_HOST_TEST }}
+          REDIS_PASS_TEST: ${{ secrets.REDIS_PASS_TEST }}
+          REDIS_PORT_TEST: ${{ secrets.REDIS_PORT_TEST }}
+          REDIS_USER_TEST: ${{ secrets.REDIS_USER_TEST }}
+          S3_BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_SERVER: ${{ secrets.SMTP_SERVER }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          USER_DATABASE: ${{ secrets.USER_DATABASE }}
         run: |
           npm test  # Ejecuta tus pruebas aquí
 

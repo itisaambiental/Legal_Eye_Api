@@ -13,8 +13,6 @@ import {
   NODE_ENV
 } from './variables.config.js'
 
-console.log("Test", DATABASE_TEST)
-
 let pool
 
 try {
