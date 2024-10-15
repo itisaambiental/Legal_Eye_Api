@@ -24,7 +24,8 @@ jobs:
         run: npm ci
 
       - name: Run tests
-        env:  
+        env: 
+          PORT:   ${{ secrets.PORT }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
           DB_PORT: ${{ secrets.DB_PORT }}
           HOST_DATABASE: ${{ secrets.HOST_DATABASE }}
