@@ -260,4 +260,82 @@ describe('Password reset and verification', () => {
 
     expect(response.body.message).toBe('Invalid or expired code')
   })
+
+  describe('Batch delete users', () => {
+    const userIdsToDelete = []
+
+    beforeAll(async () => {
+      const usersToCreate = [
+        { gmail: 'batchuser1@isaambiental.com', name: 'User One', roleId: '2' },
+        { gmail: 'batchuser2@isaambiental.com', name: 'User Two', roleId: '2' },
+        { gmail: 'batchuser3@isaambiental.com', name: 'User Three', roleId: '2' }
+      ]
+
+      for (const userData of usersToCreate) {
+        const response = await api
+          .post('/api/user/register')
+          .set('Authorization', `Bearer ${tokenAdmin}`)
+          .send(userData)
+          .expect(201)
+          .expect('Content-Type', /application\/json/)
+
+        userIdsToDelete.push(response.body.user.id)
+      }
+    })
+
+    test('Should successfully delete multiple users', async () => {
+      await api
+        .delete('/api/users/batch')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send({ userIds: userIdsToDelete })
+        .expect(204)
+
+      const response = await api
+        .get('/api/users/')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .expect(200)
+        .expect('Content-Type', /application\/json/)
+
+      const remainingUsers = response.body.users
+      const deletedUserExists = remainingUsers.some(user => userIdsToDelete.includes(user.id))
+
+      expect(deletedUserExists).toBe(false)
+    })
+
+    test('Should return 400 when userIds is missing or empty', async () => {
+      const response = await api
+        .delete('/api/users/batch')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send({ userIds: [] })
+        .expect(400)
+        .expect('Content-Type', /application\/json/)
+
+      expect(response.body.message).toBe('Missing required fields: userIds')
+    })
+
+    test('Should return 403 when unauthorized user attempts to delete users', async () => {
+      const unauthorizedToken = 'someInvalidToken'
+
+      const response = await api
+        .delete('/api/users/batch')
+        .set('Authorization', `Bearer ${unauthorizedToken}`)
+        .send({ userIds: userIdsToDelete })
+        .expect(401)
+        .expect('Content-Type', /application\/json/)
+
+      expect(response.body.error).toBe('token missing or invalid')
+    })
+
+    test('Should return 404 if any userId does not exist', async () => {
+      const nonExistentUserId = 'nonExistentId'
+      const response = await api
+        .delete('/api/users/batch')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send({ userIds: [nonExistentUserId, ...userIdsToDelete] })
+        .expect(404)
+        .expect('Content-Type', /application\/json/)
+
+      expect(response.body.message).toContain(`Users not found for IDs: ${nonExistentUserId}`)
+    })
+  })
 })
