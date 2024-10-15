@@ -8,12 +8,8 @@ import {
   HOST_DATABASE,
   DATABASE,
   DB_PORT,
-  PASSWORD_DATABASE_DEV,
-  USER_DATABASE_DEV,
-  HOST_DATABASE_DEV,
   DATABASE_DEV,
   DATABASE_TEST,
-  DB_PORT_DEV,
   NODE_ENV
 } from './variables.config.js'
 
@@ -22,19 +18,19 @@ let pool
 try {
   if (NODE_ENV === 'test') {
     pool = createPool({
-      port: DB_PORT_DEV,
-      host: HOST_DATABASE_DEV,
-      user: USER_DATABASE_DEV,
-      password: PASSWORD_DATABASE_DEV,
+      port: DB_PORT,
+      host: HOST_DATABASE,
+      user: USER_DATABASE,
+      password: PASSWORD_DATABASE,
       database: DATABASE_TEST,
       connectTimeout: 10000
     })
   } else if (NODE_ENV === 'development') {
     pool = createPool({
-      port: DB_PORT_DEV,
-      host: HOST_DATABASE_DEV,
-      user: USER_DATABASE_DEV,
-      password: PASSWORD_DATABASE_DEV,
+      port: DB_PORT,
+      host: HOST_DATABASE,
+      user: USER_DATABASE,
+      password: PASSWORD_DATABASE,
       database: DATABASE_DEV,
       connectTimeout: 10000
     })

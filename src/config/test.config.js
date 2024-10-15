@@ -10,4 +10,4 @@ afterAll(async () => {
   await pool.end()
   await emailQueue.close()
   server.close()
-})
+}, 10000)

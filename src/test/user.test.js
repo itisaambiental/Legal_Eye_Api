@@ -110,7 +110,7 @@ describe('User API tests', () => {
         .expect('Content-Type', /application\/json/)
 
       const users = response.body.users
-      expect(users.length).toBe(2)
+      expect(users).toHaveLength(2)
       expect(users[0].gmail).toBe(ADMIN_GMAIL)
       expect(users[1].gmail).toBe('testuser@isaambiental.com')
     })
@@ -224,7 +224,7 @@ describe('User API tests', () => {
         .expect('Content-Type', /application\/json/)
 
       const users = response.body.users
-      expect(users.length).toBe(1)
+      expect(users).toHaveLength(1)
       expect(users[0].gmail).toBe(ADMIN_GMAIL)
     })
 

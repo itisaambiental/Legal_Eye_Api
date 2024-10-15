@@ -5,7 +5,7 @@ const isDevelopmentOrTest = NODE_ENV === 'development' || NODE_ENV === 'test'
 
 const transporter = nodemailer.createTransport({
   host: isDevelopmentOrTest ? 'smtp.gmail.com' : 'smtp.gmail.com',
-  port: isDevelopmentOrTest ? 587 : 465,
+  port: isDevelopmentOrTest ? 587 : 587,
   secure: NODE_ENV === 'production',
   auth: {
     user: GMAIL_USER,

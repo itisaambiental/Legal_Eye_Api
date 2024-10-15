@@ -1,8 +1,8 @@
 -- Create Database
-CREATE DATABASE LegalEye_Dev;
+CREATE DATABASE LegalEye;
 
 -- Use Database
-USE LegalEye_Dev;
+USE LegalEye;
 
 -- Table to store roles
 CREATE TABLE roles (

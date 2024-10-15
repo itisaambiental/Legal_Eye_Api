@@ -1,5 +1,3 @@
-// variables.config.js
-
 // Export Environment Variables
 import dotenv from 'dotenv'
 dotenv.config()
@@ -8,17 +6,13 @@ export const {
   PORT,
   JWT_SECRET,
   JWT_EXPIRATION,
-  DATABASE,
   DB_PORT,
   HOST_DATABASE,
   PASSWORD_DATABASE,
   USER_DATABASE,
+  DATABASE,
   DATABASE_DEV,
   DATABASE_TEST,
-  DB_PORT_DEV,
-  HOST_DATABASE_DEV,
-  PASSWORD_DATABASE_DEV,
-  USER_DATABASE_DEV,
   GMAIL_USER,
   GMAIL_PASS,
   NODE_ENV,
@@ -30,6 +24,10 @@ export const {
   REDIS_USER_DEV,
   REDIS_HOST_DEV,
   REDIS_PORT_DEV,
+  REDIS_PASS_TEST,
+  REDIS_USER_TEST,
+  REDIS_HOST_TEST,
+  REDIS_PORT_TEST,
   AWS_ACCESS_KEY_ID,
   AWS_SECRET_ACCESS_KEY,
   AWS_REGION,

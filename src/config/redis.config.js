@@ -8,14 +8,38 @@ import {
   REDIS_USER_DEV,
   REDIS_HOST_DEV,
   REDIS_PORT_DEV,
+  REDIS_PASS_TEST,
+  REDIS_USER_TEST,
+  REDIS_HOST_TEST,
+  REDIS_PORT_TEST,
   NODE_ENV
 } from './variables.config.js'
 
 export const redisConfig = {
-  host: NODE_ENV === 'production' ? REDIS_HOST : REDIS_HOST_DEV,
-  port: NODE_ENV === 'production' ? REDIS_PORT : REDIS_PORT_DEV,
-  password: NODE_ENV === 'production' ? REDIS_PASS : REDIS_PASS_DEV,
-  username: NODE_ENV === 'production' ? REDIS_USER : REDIS_USER_DEV,
+  host: NODE_ENV === 'production'
+    ? REDIS_HOST
+    : NODE_ENV === 'test'
+      ? REDIS_HOST_TEST
+      : REDIS_HOST_DEV,
+
+  port: NODE_ENV === 'production'
+    ? REDIS_PORT
+    : NODE_ENV === 'test'
+      ? REDIS_PORT_TEST
+      : REDIS_PORT_DEV,
+
+  password: NODE_ENV === 'production'
+    ? REDIS_PASS
+    : NODE_ENV === 'test'
+      ? REDIS_PASS_TEST
+      : REDIS_PASS_DEV,
+
+  username: NODE_ENV === 'production'
+    ? REDIS_USER
+    : NODE_ENV === 'test'
+      ? REDIS_USER_TEST
+      : REDIS_USER_DEV,
+
   db: 0,
   connectTimeout: 10000
 }
