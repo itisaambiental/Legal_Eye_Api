@@ -24,10 +24,10 @@ export const loginUser = async (req, res) => {
   } catch (error) {
     if (error instanceof ErrorUtils) {
       return res.status(error.status).json({
-        message: error.message
+        message: error.message,
+        ...(error.errors && { errors: error.errors })
       })
     }
-
     return res.status(500).json({ message: 'Internal Server Error' })
   }
 }
@@ -52,19 +52,21 @@ export const loginUserMicrosoftAuth = async (req, res) => {
   } catch (error) {
     if (error instanceof ErrorUtils) {
       return res.status(error.status).json({
-        message: error.message
+        message: error.message,
+        ...(error.errors && { errors: error.errors })
       })
     }
-
     return res.status(500).json({ message: 'Internal Server Error' })
   }
 }
+
 // Function to manage the registration of a new user
 export const registerUser = async (req, res) => {
   const { name, gmail, roleId } = req.body
   const profilePicture = req.file
   const { userId } = req
 
+  console.log(name, gmail, roleId)
   if (!name || !gmail || !roleId) {
     return res.status(400).json({
       message: 'Missing required fields: name, gmail, roleId'
@@ -83,13 +85,12 @@ export const registerUser = async (req, res) => {
 
     return res.status(201).json({ user })
   } catch (error) {
-    if (error.status && error.message) {
+    if (error instanceof ErrorUtils) {
       return res.status(error.status).json({
         message: error.message,
         ...(error.errors && { errors: error.errors })
       })
     }
-
     return res.status(500).json({ message: 'Internal Server Error' })
   }
 }
@@ -109,13 +110,12 @@ export const getAllUsers = async (req, res) => {
     const users = await UserService.getAllUsers()
     return res.status(200).json({ users })
   } catch (error) {
-    if (error.status && error.message) {
+    if (error instanceof ErrorUtils) {
       return res.status(error.status).json({
         message: error.message,
         ...(error.errors && { errors: error.errors })
       })
     }
-
     return res.status(500).json({ message: 'Internal Server Error' })
   }
 }
@@ -135,13 +135,12 @@ export const getAllRoles = async (req, res) => {
     const roles = await UserService.getAllRoles()
     return res.status(200).json({ roles })
   } catch (error) {
-    if (error.status && error.message) {
+    if (error instanceof ErrorUtils) {
       return res.status(error.status).json({
         message: error.message,
         ...(error.errors && { errors: error.errors })
       })
     }
-
     return res.status(500).json({ message: 'Internal Server Error' })
   }
 }
@@ -164,13 +163,12 @@ export const getUserById = async (req, res) => {
 
     return res.status(200).json({ user })
   } catch (error) {
-    if (error.status && error.message) {
+    if (error instanceof ErrorUtils) {
       return res.status(error.status).json({
         message: error.message,
         ...(error.errors && { errors: error.errors })
       })
     }
-
     return res.status(500).json({ message: 'Internal Server Error' })
   }
 }
@@ -191,13 +189,12 @@ export const getUsersByRole = async (req, res) => {
     const users = await UserService.getUsersByRole(roleId)
     return res.status(200).json({ users })
   } catch (error) {
-    if (error.status && error.message) {
+    if (error instanceof ErrorUtils) {
       return res.status(error.status).json({
         message: error.message,
         ...(error.errors && { errors: error.errors })
       })
     }
-
     return res.status(500).json({ message: 'Internal Server Error' })
   }
 }
@@ -232,9 +229,10 @@ export const updateUser = async (req, res) => {
       token
     })
   } catch (error) {
-    if (error.status && error.message) {
+    if (error instanceof ErrorUtils) {
       return res.status(error.status).json({
-        message: error.message
+        message: error.message,
+        ...(error.errors && { errors: error.errors })
       })
     }
     return res.status(500).json({ message: 'Internal Server Error' })
@@ -263,13 +261,12 @@ export const updateUserPicture = async (req, res) => {
       profilePictureUrl
     })
   } catch (error) {
-    if (error.status && error.message) {
+    if (error instanceof ErrorUtils) {
       return res.status(error.status).json({
         message: error.message,
         ...(error.errors && { errors: error.errors })
       })
     }
-
     return res.status(500).json({ message: 'Internal Server Error' })
   }
 }
@@ -295,13 +292,12 @@ export const deleteUser = async (req, res) => {
     await UserService.deleteUser(id)
     return res.sendStatus(204)
   } catch (error) {
-    if (error.status && error.message) {
+    if (error instanceof ErrorUtils) {
       return res.status(error.status).json({
         message: error.message,
         ...(error.errors && { errors: error.errors })
       })
     }
-
     return res.status(500).json({ message: 'Internal Server Error' })
   }
 }
@@ -332,30 +328,16 @@ export const deleteUsersBatch = async (req, res) => {
       return res.status(404).json({ message: result.message })
     }
   } catch (error) {
-    if (error.status && error.message) {
+    if (error instanceof ErrorUtils) {
       return res.status(error.status).json({
         message: error.message,
         ...(error.errors && { errors: error.errors })
       })
     }
-
     return res.status(500).json({ message: 'Internal Server Error' })
   }
 }
 
-export const verifyToken = async (req, res) => {
-  const token = req.params
-  if (!token) {
-    return res.status(400).send({ error: 'Token is required' })
-  }
-
-  try {
-    jsonwebtoken.verify(token.token, JWT_SECRET)
-    return res.status(200).send({ valid: true })
-  } catch (error) {
-    return res.send({ valid: false })
-  }
-}
 // Function to handle password recovery
 export const resetPassword = async (req, res) => {
   const { gmail } = req.body
@@ -363,7 +345,7 @@ export const resetPassword = async (req, res) => {
     await UserService.requestPasswordReset(gmail)
     return res.sendStatus(200)
   } catch (error) {
-    if (error.status && error.message) {
+    if (error instanceof ErrorUtils) {
       return res.status(error.status).json({
         message: error.message,
         ...(error.errors && { errors: error.errors })
@@ -385,13 +367,26 @@ export const verifyCode = async (req, res) => {
       return res.status(400).json({ message: 'Invalid or expired code' })
     }
   } catch (error) {
-    if (error.status && error.message) {
+    if (error instanceof ErrorUtils) {
       return res.status(error.status).json({
         message: error.message,
         ...(error.errors && { errors: error.errors })
       })
     }
-
     return res.status(500).json({ message: 'Internal Server Error' })
+  }
+}
+
+export const verifyToken = async (req, res) => {
+  const token = req.params
+  if (!token) {
+    return res.status(400).send({ error: 'Token is required' })
+  }
+
+  try {
+    jsonwebtoken.verify(token.token, JWT_SECRET)
+    return res.status(200).send({ valid: true })
+  } catch (error) {
+    return res.send({ valid: false })
   }
 }

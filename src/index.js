@@ -2,8 +2,7 @@ import { app } from './app.js'
 import { PORT } from './config/variables.config.js'
 import { initializeAdmin } from './config/init.config.js'
 
-const DEFAULT_PORT = 3000
-const serverPort = PORT || DEFAULT_PORT
+const serverPort = PORT || 3000
 
 if (process.env.NODE_ENV !== 'test') {
   initializeAdmin()

@@ -29,5 +29,40 @@ CREATE TABLE verification_codes (
     expires_at TIMESTAMP NOT NULL
 );
 
-INSERT INTO roles (name) 
-VALUES ('Admin'), ('Analyst');
+
+CREATE TABLE legal_basis (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    legal_name VARCHAR(255) NOT NULL,
+    abbreviation VARCHAR(20),
+    classification ENUM(
+        'Ley', 
+        'Reglamento', 
+        'Norma', 
+        'Acuerdos', 
+        'Código', 
+        'Decreto', 
+        'Lineamiento', 
+        'Orden Jurídico', 
+        'Aviso', 
+        'Convocatoria', 
+        'Plan', 
+        'Programa',
+        'Recomendaciones'
+    ) NOT NULL,
+    jurisdiction ENUM('Estatal', 'Federal', 'Local') NOT NULL,
+    state VARCHAR(255),
+    municipality VARCHAR(255),
+    url VARCHAR(255),
+    last_reform DATE
+);
+
+
+
+CREATE TABLE article (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    legal_basis_id INT NOT NULL,
+    article_name VARCHAR(255) NOT NULL,
+    description TEXT,
+    article_order INT,
+    FOREIGN KEY (legal_basis_id) REFERENCES legal_basis(id) ON DELETE CASCADE
+);

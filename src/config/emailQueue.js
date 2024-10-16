@@ -2,7 +2,6 @@ import Queue from 'bull'
 import { redisConfig } from './redis.config.js'
 
 // Email queue
-console.log(redisConfig)
 const emailQueue = new Queue('emailQueue', {
   redis: redisConfig,
   defaultJobOptions: {

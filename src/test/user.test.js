@@ -86,6 +86,28 @@ describe('User API tests', () => {
       analystUserId = response.body.user.id
       expect(response.body.user.id).toBeDefined()
     })
+    test('Should return validation errors for invalid user data', async () => {
+      const response = await api
+        .post('/api/user/register')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send({
+          name: 'Name',
+          gmail: 'Invalid email format',
+          roleId: 'Invalid roleId format and value'
+        })
+        .expect(400)
+        .expect('Content-Type', /application\/json/)
+
+      expect(response.body.message).toBe('Validation failed')
+      expect(response.body.errors).toEqual(
+        expect.arrayContaining([
+          { field: 'gmail', message: 'The email must be valid' },
+          { field: 'gmail', message: 'The email must end with @isaambiental.com' },
+          { field: 'roleId', message: 'The roleId must be a valid number' },
+          { field: 'roleId', message: 'The roleId must be either 1 (Admin) or 2 (Analyst)' }
+        ])
+      )
+    })
 
     test('Should return 400 when required fields are missing during registration', async () => {
       const response = await api

@@ -3,13 +3,14 @@ import { S3_BUCKET_NAME } from '../config/variables.config.js'
 import client from '../config/s3.config.js'
 import { PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
-// Class to handle uploading files
+import { v4 as uuidv4 } from 'uuid'
+// Class  to handle uploading files
 class FileService {
   // Upload file
   static async uploadFile (file) {
     try {
-      const timestamp = Date.now()
-      const uniqueFileName = `${timestamp}_${file.originalname}`
+      const brand = uuidv4()
+      const uniqueFileName = `${brand}_${file.originalname}`
       const command = new PutObjectCommand({
         Bucket: S3_BUCKET_NAME,
         Key: uniqueFileName,
