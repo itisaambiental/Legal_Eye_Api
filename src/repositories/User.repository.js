@@ -270,7 +270,8 @@ class UserRepository {
 
   static async getVerificationCode (gmail, code) {
     const query = `
-      SELECT * FROM verification_codes
+      SELECT id, gmail, code, expires_at AS expiresAt
+      FROM verification_codes
       WHERE gmail = ? AND code = ?
     `
     const values = [gmail, code]

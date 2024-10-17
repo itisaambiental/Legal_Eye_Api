@@ -1,6 +1,6 @@
 // controllers/LegalBasis.controller.js
 
-import LegalBasisService from '../services/LegalBasis.service.js'
+import LegalBasisService from '../services/legalBasis/LegalBasis.service.js'
 import ErrorUtils from '../utils/Error.js'
 
 // Controller to create a new Legal Basis

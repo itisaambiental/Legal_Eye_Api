@@ -111,6 +111,17 @@ class LegalBasisRepository {
       throw new ErrorUtils(500, 'Error retrieving all legal basis records')
     }
   }
+
+  static async exists (legalName) {
+    const query = 'SELECT * FROM legal_basis WHERE legal_name = ?'
+    try {
+      const [rows] = await pool.query(query, [legalName])
+      return rows.length > 0
+    } catch (error) {
+      console.error('Error checking legal basis by name:', error)
+      throw new ErrorUtils(500, 'Error checking legal basis by name')
+    }
+  }
 }
 
 export default LegalBasisRepository

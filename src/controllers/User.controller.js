@@ -1,5 +1,5 @@
 // controllers/User.controller.js
-import UserService from '../services/User.service.js'
+import UserService from '../services/users/User.service.js'
 import ErrorUtils from '../utils/Error.js'
 import jsonwebtoken from 'jsonwebtoken'
 import { JWT_SECRET } from '../config/variables.config.js'

@@ -1,5 +1,5 @@
 import emailQueue from '../config/emailQueue.js'
-import EmailService from '../services/Email.service.js'
+import EmailService from '../services/email/Email.service.js'
 
 // Email Worker
 emailQueue.process(async (job, done) => {

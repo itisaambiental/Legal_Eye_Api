@@ -1,4 +1,4 @@
-import UserService from '../services/User.service.js'
+import UserService from '../services/users/User.service.js'
 import UserRepository from '../repositories/User.repository.js'
 import {
   ADMIN_GMAIL,
@@ -23,10 +23,10 @@ export const initializeAdmin = async () => {
         roleId: ADMIN_ROLE
       }
 
-      const profilePicturePath = path.join(__dirname, '../resources/foto.jpg')
+      const profilePicturePath = path.join(__dirname, '../resources/admin.png')
       const profilePicture = {
-        originalname: 'foto.jpg',
-        mimetype: 'image/jpeg',
+        originalname: 'admin.png',
+        mimetype: 'image/png',
         buffer: fs.readFileSync(profilePicturePath)
       }
 
