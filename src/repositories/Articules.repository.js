@@ -1,5 +1,5 @@
 import { pool } from '../config/db.config.js'
-import ErrorUtils from '../utils/Error'
+import ErrorUtils from '../utils/Error.js'
 /**
  * Repository class for handling database operations related to Articules.
  */
