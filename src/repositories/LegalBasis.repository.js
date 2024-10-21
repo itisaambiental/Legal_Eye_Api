@@ -112,6 +112,7 @@ class LegalBasisRepository {
     }
   }
 
+  // Method to check if a legal basis exists in the database
   static async exists (legalName) {
     const query = 'SELECT * FROM legal_basis WHERE legal_name = ?'
     try {

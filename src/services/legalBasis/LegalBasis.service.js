@@ -7,7 +7,9 @@ import generateAbbreviation from '../../utils/generateAbbreviation.js'
 import DocumentService from '../files/DocumentService.js'
 import ArticleExtractorFactory from '../articleExtraction/ArticleExtractorFactory.js'
 
+// Class to handle Legal Basis
 class LegalBasisService {
+  // Create a Legal Basis
   static async create ({ legalName, classification, jurisdiction, state, municipality, lastReform, document }) {
     try {
       const parsedData = legalBasisSchema.parse({ legalName, classification, jurisdiction, state, municipality, lastReform, document })
@@ -23,8 +25,8 @@ class LegalBasisService {
         if (success) {
           const extractor = ArticleExtractorFactory.getExtractor(classification, data)
           if (extractor) {
-            extractedArticles = extractor.extractArticles()
-            if (!extractedArticles || extractedArticles.length === 0) {
+            extractedArticles = await extractor.extractArticles()
+            if (!extractedArticles || Object.keys(extractedArticles).length === 0) {
               throw new ErrorUtils(500, 'Articules Processing Error')
             }
           } else {
@@ -33,7 +35,6 @@ class LegalBasisService {
         } else {
           throw new ErrorUtils(500, 'Document Processing Error', error)
         }
-
         const uploadResponse = await FileService.uploadFile(document)
         if (uploadResponse.response.$metadata.httpStatusCode === 200) {
           documentKey = uploadResponse.uniqueFileName
@@ -41,6 +42,8 @@ class LegalBasisService {
           throw new ErrorUtils(500, 'File Upload Error', 'Failed to upload document')
         }
       }
+
+      console.log('Articulos listos para su procesamiento', extractedArticles)
 
       const abbreviation = generateAbbreviation(legalName)
       const lastReformDate = new Date(lastReform)

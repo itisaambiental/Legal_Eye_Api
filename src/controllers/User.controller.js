@@ -65,8 +65,6 @@ export const registerUser = async (req, res) => {
   const { name, gmail, roleId } = req.body
   const profilePicture = req.file
   const { userId } = req
-
-  console.log(name, gmail, roleId)
   if (!name || !gmail || !roleId) {
     return res.status(400).json({
       message: 'Missing required fields: name, gmail, roleId'
