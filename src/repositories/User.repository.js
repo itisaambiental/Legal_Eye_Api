@@ -3,9 +3,22 @@ import Role from '../models/Roles.model.js'
 import User from '../models/User.model.js'
 import ErrorUtils from '../utils/Error.js'
 
-// Class that handles CRUD operations for the User entity in the database
-class UserRepository {
-  // Creates a new user in the database and returns the generated ID
+/**
+ * Repository class for handling database operations related to Users.
+ * Provides CRUD functionality for the 'users' and 'roles' tables.
+ */
+
+class UserRepository { /**
+   * Creates a new user in the database and returns the generated ID.
+   * @param {Object} userData - User data to be inserted.
+   * @param {string} userData.name - User's name.
+   * @param {string} userData.password - User's hashed password.
+   * @param {string} userData.gmail - User's email address.
+   * @param {number} userData.roleId - ID of the user's role.
+   * @param {string} userData.profilePicture - URL of the user's profile picture.
+   * @returns {Promise<number>} - The ID of the created user.
+   * @throws {ErrorUtils} - If an error occurs during user creation.
+   */
   static async create (userData) {
     const { name, password, gmail, roleId, profilePicture } = userData
     const query = `
@@ -21,7 +34,13 @@ class UserRepository {
     }
   }
 
-  // Updates the users password in the database
+  /**
+   * Updates the user's password in the database.
+   * @param {string} gmail - User's email address.
+   * @param {string} hashedPassword - The new hashed password.
+   * @returns {Promise<boolean>} - True if the password was updated, otherwise false.
+   * @throws {ErrorUtils} - If an error occurs during the update.
+   */
   static async updateUserPassword (gmail, hashedPassword) {
     const query = `
     UPDATE users
@@ -39,7 +58,18 @@ class UserRepository {
     }
   }
 
-  // Updates an existing user in the database by their ID
+  /**
+   * Updates an existing user in the database by their ID.
+   * @param {number} id - User's ID.
+   * @param {Object} userData - User data to be updated.
+   * @param {string} [userData.name] - New name for the user.
+   * @param {string} [userData.password] - New hashed password for the user.
+   * @param {string} [userData.gmail] - New Gmail address for the user.
+   * @param {number} [userData.roleId] - New role ID for the user.
+   * @param {string} [userData.profilePicture] - New profile picture URL.
+   * @returns {Promise<Object|null>} - Updated user data without the password or null if not found.
+   * @throws {ErrorUtils} - If an error occurs during the update.
+   */
   static async update (id, userData) {
     const { name, password, gmail, roleId, profilePicture } = userData
 
@@ -71,7 +101,13 @@ class UserRepository {
     }
   }
 
-  // Update the user's profile picture in the database
+  /**
+   * Updates the user's profile picture in the database.
+   * @param {number} id - User's ID.
+   * @param {string} profilePicture - New profile picture URL.
+   * @returns {Promise<boolean>} - True if the profile picture was updated, otherwise false.
+   * @throws {ErrorUtils} - If an error occurs during the update.
+   */
   static async updateProfilePicture (id, profilePicture) {
     const query = `
     UPDATE users
@@ -91,7 +127,12 @@ class UserRepository {
     }
   }
 
-  // Deletes a user from the database by their ID
+  /**
+   * Deletes a user from the database by their ID.
+   * @param {number} id - User's ID to delete.
+   * @returns {Promise<boolean>} - True if the user was deleted, otherwise false.
+   * @throws {ErrorUtils} - If an error occurs during the deletion.
+   */
   static async delete (id) {
     const query = `
         DELETE FROM users WHERE id = ?
@@ -108,7 +149,12 @@ class UserRepository {
     }
   }
 
-  // Delete users in the database
+  /**
+   * Deletes multiple users from the database using an array of IDs.
+   * @param {Array<number>} userIds - Array of user IDs to delete.
+   * @returns {Promise<boolean>} - True if users were deleted, otherwise false.
+   * @throws {ErrorUtils} - If an error occurs during the deletion.
+   */
   static async deleteBatch (userIds) {
     const query = `
       DELETE FROM users WHERE id IN (?)
@@ -128,16 +174,18 @@ class UserRepository {
     }
   }
 
-  // Retrieves a user from the database by their ID
+  /**
+   * Finds a user in the database by their ID.
+   * @param {number} id - User's ID to find.
+   * @returns {Promise<User|[]>} - The found user or a empty array if not found.
+   * @throws {ErrorUtils} - If an error occurs during retrieval.
+   */
   static async findById (id) {
     const query = `
       SELECT * FROM users WHERE id = ?
     `
     try {
       const [rows] = await pool.query(query, [id])
-      if (rows.length === 0) {
-        return null
-      }
       const user = rows[0]
       return new User(user.id, user.name, user.password, user.gmail, user.role_id, user.profile_picture)
     } catch (error) {
@@ -146,7 +194,12 @@ class UserRepository {
     }
   }
 
-  // Retrieves users from the database using an array of Ids
+  /**
+   * Finds users in the database using an array of IDs.
+   * @param {Array<number>} userIds - Array of user IDs to find.
+   * @returns {Promise<Array<number>>} - Array of found user IDs.
+   * @throws {ErrorUtils} - If an error occurs during retrieval.
+   */
   static async findByIds (userIds) {
     const query = `
       SELECT id FROM users WHERE id IN (?)
@@ -161,11 +214,16 @@ class UserRepository {
     }
   }
 
-  // Retrieves users from the database by their role ID
+  /**
+   * Retrieves users from the database by their role ID.
+   * @param {number} roleId - The role ID to filter users by.
+   * @returns {Promise<Array<User>>} - Array of users with the specified role ID.
+   * @throws {ErrorUtils} - If an error occurs during retrieval.
+   */
   static async findByRole (roleId) {
     const query = `
-    SELECT * FROM users WHERE role_id = ?
-  `
+      SELECT * FROM users WHERE role_id = ?
+    `
     try {
       const [rows] = await pool.query(query, [roleId])
       if (rows.length === 0) {
@@ -179,11 +237,16 @@ class UserRepository {
     }
   }
 
-  // Check if a user exists in the database by its ID
+  /**
+   * Checks if a user exists in the database by their ID.
+   * @param {number} id - User's ID to check.
+   * @returns {Promise<boolean>} - True if the user exists, otherwise false.
+   * @throws {ErrorUtils} - If an error occurs during the check.
+   */
   static async userExists (id) {
     const query = `
-    SELECT 1 FROM users WHERE id = ?
-  `
+      SELECT 1 FROM users WHERE id = ?
+    `
     try {
       const [rows] = await pool.query(query, [id])
       return rows.length > 0
@@ -193,7 +256,12 @@ class UserRepository {
     }
   }
 
-  // Finds a user in the database by their gmail
+  /**
+   * Finds a user in the database by their Gmail.
+   * @param {string} gmail - User's Gmail to find.
+   * @returns {Promise<User|null>} - The found user or null if not found.
+   * @throws {ErrorUtils} - If an error occurs during retrieval.
+   */
   static async findByGmail (gmail) {
     const query = 'SELECT * FROM users WHERE gmail = ?'
     try {
@@ -205,14 +273,24 @@ class UserRepository {
     }
   }
 
-  // Finds a user in the database by their gmail excluding UserId
+  /**
+   * Finds a user in the database by their Gmail, excluding a specific user ID.
+   * @param {string} gmail - User's Gmail to find.
+   * @param {number} excludeUserId - User ID to exclude from the search.
+   * @returns {Promise<User|null>} - The found user or null if not found.
+   * @throws {ErrorUtils} - If an error occurs during retrieval.
+   */
   static async findByGmailExcludingUserId (gmail, excludeUserId) {
     const query = 'SELECT * FROM users WHERE gmail = ? AND id != ?'
-    const [result] = await pool.query(query, [gmail, excludeUserId])
-    return result[0]
+    const [rows] = await pool.query(query, [gmail, excludeUserId])
+    return rows.length > 0 ? rows[0] : []
   }
 
-  // Retrieves all users from the database
+  /**
+   * Retrieves all users from the database.
+   * @returns {Promise<Array<User>>} - Array of all users.
+   * @throws {ErrorUtils} - If an error occurs during retrieval.
+   */
   static async findAll () {
     const query = `
       SELECT * FROM users
@@ -226,7 +304,12 @@ class UserRepository {
     }
   }
 
-  // Retrieves all roles from the database
+  /**
+   * Retrieves all roles from the database.
+   * @returns {Promise<Array<Role>>} - Array of all roles.
+   * @throws {ErrorUtils} - If an error occurs during retrieval.
+   */
+
   static async findAllRoles () {
     const query = `
         SELECT * FROM roles
@@ -240,7 +323,13 @@ class UserRepository {
     }
   }
 
-  // Used for testing
+  /**
+   * Deletes all users from the database except one specified by Gmail.
+   * Its used only for testing.
+   * @param {string} gmail - Gmail of the user to exclude from deletion.
+   * @returns {Promise<number>} - Number of affected rows.
+   * @throws {ErrorUtils} - If an error occurs during deletion.
+   */
   static async deleteAllExceptByGmail (gmail) {
     const query = `
       DELETE FROM users WHERE gmail != ?
@@ -253,6 +342,15 @@ class UserRepository {
       throw new ErrorUtils(500, 'Error deleting users from the database')
     }
   }
+  /**
+   * Saves a verification code to the database.
+   * @param {Object} data - Verification code data.
+   * @param {string} data.gmail - Gmail associated with the code.
+   * @param {string} data.code - The verification code.
+   * @param {Date} data.expiresAt - Expiration date of the code.
+   * @returns {Promise<void>}
+   * @throws {ErrorUtils} - If an error occurs during insertion.
+   */
 
   static async saveVerificationCode ({ gmail, code, expiresAt }) {
     const query = `
@@ -268,6 +366,13 @@ class UserRepository {
     }
   }
 
+  /**
+   * Retrieves a verification code from the database.
+   * @param {string} gmail - Gmail associated with the code.
+   * @param {string} code - The verification code.
+   * @returns {Promise<Object|null>} - The verification code object or null if not found.
+   * @throws {ErrorUtils} - If an error occurs during retrieval.
+   */
   static async getVerificationCode (gmail, code) {
     const query = `
       SELECT id, gmail, code, expires_at AS expiresAt

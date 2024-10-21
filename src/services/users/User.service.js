@@ -14,9 +14,21 @@ import generateVerificationCode from '../../utils/generateCode.js'
 import { addMinutes } from 'date-fns'
 import EmailService from '../email/Email.service.js'
 
-// Class to handle user
+/**
+ * Service class for handling User operations.
+ * Provides methods for user registration, login, retrieval, update, and deletion.
+ */
 class UserService {
-  // User register
+  /**
+   * Registers a new user and sends a welcome email.
+   * @param {Object} userData - Data for the new user.
+   * @param {string} userData.name - User's name.
+   * @param {string} userData.gmail - User's Gmail.
+   * @param {number} userData.roleId - User's role ID.
+   * @param {Object} profilePicture - User's profile picture file (optional).
+   * @returns {Promise<Object>} - Registered user data.
+   * @throws {ErrorUtils} - If validation fails or user already exists.
+   */
   static async registerUser (userData, profilePicture) {
     try {
       const parsedUser = userSchema.parse(userData)
@@ -77,7 +89,15 @@ class UserService {
     }
   }
 
-  // User login
+  /**
+   * Logs in a user by verifying credentials.
+   * @param {Object} loginData - User's login data.
+   * @param {string} loginData.gmail - User's Gmail.
+   * @param {string} loginData.password - User's password.
+   * @returns {Promise<Object>} - Object containing JWT token.
+   * @throws {ErrorUtils} - If validation fails or credentials are invalid.
+   */
+
   static async loginUser (loginData) {
     try {
       const parsedLoginData = loginSchema.parse(loginData)
@@ -116,7 +136,12 @@ class UserService {
     }
   }
 
-  // Microsoft login
+  /**
+   * Logs in a user using Microsoft OAuth.
+   * @param {string} accessToken - Microsoft access token.
+   * @returns {Promise<Object>} - Object containing JWT token.
+   * @throws {ErrorUtils} - If login fails or user does not exist.
+   */
   static async microsoftLogin (accessToken) {
     try {
       const userEmail = await getUserData(accessToken)
@@ -149,7 +174,11 @@ class UserService {
     }
   }
 
-  // Retrieve all users
+  /**
+   * Retrieves all users from the database.
+   * @returns {Promise<Array<Object>>} - Array of user objects.
+   * @throws {ErrorUtils} - If retrieval fails.
+   */
   static async getAllUsers () {
     try {
       const users = await UserRepository.findAll()
@@ -176,7 +205,11 @@ class UserService {
     }
   }
 
-  // Retrieve all roles
+  /**
+   * Retrieves all roles from the database.
+   * @returns {Promise<Array<Object>>} - Array of role objects.
+   * @throws {ErrorUtils} - If retrieval fails.
+   */
   static async getAllRoles () {
     try {
       const roles = await UserRepository.findAllRoles()
@@ -189,7 +222,12 @@ class UserService {
     }
   }
 
-  // Retrieve a user by ID
+  /**
+   * Retrieves a user by their ID.
+   * @param {number} id - User's ID.
+   * @returns {Promise<Object>} - User object without password.
+   * @throws {ErrorUtils} - If user not found or retrieval fails.
+   */
   static async getUserById (id) {
     try {
       const userExists = await UserRepository.userExists(id)
@@ -218,7 +256,12 @@ class UserService {
     }
   }
 
-  // Retrieve users by role ID
+  /**
+   * Retrieves users by their role ID.
+   * @param {number} roleId - Role ID to filter users by.
+   * @returns {Promise<Array<Object>>} - Array of user objects.
+   * @throws {ErrorUtils} - If retrieval fails.
+   */
   static async getUsersByRole (roleId) {
     try {
       const users = await UserRepository.findByRole(roleId)
@@ -250,7 +293,14 @@ class UserService {
     }
   }
 
-  // Update a user's information by ID
+  /**
+   * Updates a user's information by ID.
+   * @param {number} userId - User's ID.
+   * @param {Object} updates - Fields to update.
+   * @param {number} currentUserId - ID of the currently logged-in user.
+   * @returns {Promise<Object>} - Updated user data and a new token if applicable.
+   * @throws {ErrorUtils} - If update fails or user not found.
+   */
   static async updateUser (userId, updates, currentUserId) {
     try {
       const validFields = ['name', 'roleId', 'gmail', 'profilePicture']
@@ -329,7 +379,13 @@ class UserService {
     }
   }
 
-  // Function to update a user's profile picture
+  /**
+   * Updates a user's profile picture.
+   * @param {number} userId - User's ID.
+   * @param {Object} profilePicture - New profile picture file.
+   * @returns {Promise<string>} - URL of the updated profile picture.
+   * @throws {ErrorUtils} - If update fails.
+   */
   static async updateUserPicture (userId, profilePicture) {
     try {
       const uploadResponse = await FileService.uploadFile(profilePicture)
@@ -356,7 +412,12 @@ class UserService {
     }
   }
 
-  // Delete a user by ID
+  /**
+   * Deletes a user by their ID.
+   * @param {number} id - User's ID.
+   * @returns {Promise<boolean>} - True if user was deleted.
+   * @throws {ErrorUtils} - If user not found or deletion fails.
+   */
   static async deleteUser (id) {
     try {
       const userDeleted = await UserRepository.delete(id)
@@ -374,7 +435,12 @@ class UserService {
     }
   }
 
-  // Delete using an array of Ids
+  /**
+   * Deletes multiple users by their IDs.
+   * @param {Array<number>} userIds - Array of user IDs to delete.
+   * @returns {Promise<Object>} - Success message if users were deleted.
+   * @throws {ErrorUtils} - If users not found or deletion fails.
+   */
   static async deleteUsersBatch (userIds) {
     try {
       const existingUsers = await UserRepository.findByIds(userIds)
@@ -395,7 +461,13 @@ class UserService {
     }
   }
 
-  // Check if user is authorized
+  /**
+   * Checks if a user is authorized as an admin.
+   * @param {number} userId - User's ID.
+   * @returns {Promise<boolean>} - True if the user is authorized.
+   * @throws {ErrorUtils} - If check fails.
+   */
+
   static async isAuthorized (userId) {
     try {
       const user = await UserRepository.findById(userId)
@@ -411,7 +483,13 @@ class UserService {
     }
   }
 
-  // Check if user can access another user
+  /**
+   * Checks if a user can access another user's data.
+   * @param {number} requestingUserId - ID of the requesting user.
+   * @param {number} targetUserId - ID of the target user.
+   * @returns {Promise<boolean>} - True if the user can access the target user's data.
+   * @throws {ErrorUtils} - If check fails.
+   */
   static async canAccessUser (requestingUserId, targetUserId) {
     try {
       const requestingUser = await UserRepository.findById(requestingUserId)
@@ -433,7 +511,12 @@ class UserService {
     }
   }
 
-  // Method to request password reset
+  /**
+   * Requests a password reset by generating a verification code.
+   * @param {string} gmail - User's Gmail.
+   * @returns {Promise<void>}
+   * @throws {ErrorUtils} - If code generation or email sending fails.
+   */
   static async requestPasswordReset (gmail) {
     try {
       const verificationCode = generateVerificationCode()
@@ -450,7 +533,13 @@ class UserService {
     }
   }
 
-  // Verifies if the provided code for a given email is valid and not expired, then generates a new password
+  /**
+   * Verifies the password reset code and generates a new password.
+   * @param {string} gmail - User's Gmail.
+   * @param {string} code - Verification code.
+   * @returns {Promise<boolean>} - True if verification is successful.
+   * @throws {ErrorUtils} - If verification or password update fails.
+   */
   static async verifyPasswordResetCode (gmail, code) {
     try {
       const verification = await UserRepository.getVerificationCode(gmail, code)

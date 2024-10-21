@@ -1,7 +1,15 @@
+/**
+ * Initializes and exports the email queue using Bull.
+ * Configures the queue with Redis settings and default job options.
+ */
+
 import Queue from 'bull'
 import { redisConfig } from './redis.config.js'
 
-// Email queue
+/**
+ * The email queue for processing email sending jobs.
+ * @type {Queue}
+ */
 const emailQueue = new Queue('emailQueue', {
   redis: redisConfig,
   defaultJobOptions: {

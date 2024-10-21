@@ -1,18 +1,31 @@
+/**
+ * Middleware for extracting and verifying the JWT token from the request.
+ * Adds the user ID to the request object if the token is valid.
+ * @module UserExtractor
+ */
+
 import jwt from 'jsonwebtoken'
 import { JWT_SECRET } from '../config/variables.config.js'
 
+/**
+ * Extracts and verifies the JWT token from the 'Authorization' header.
+ * If valid, sets the user ID in the request object; otherwise, returns a 401 error.
+ * @param {Object} req - Express request object.
+ * @param {Object} res - Express response object.
+ * @param {Function} next - Next middleware function.
+ */
 const UserExtractor = (req, res, next) => {
-  const authorizacion = req.get('authorization')
-
+  const authorization = req.get('authorization')
   let token = ''
-  if (authorizacion && authorizacion.toLowerCase().startsWith('bearer')) {
-    token = authorizacion.substring(7)
+
+  if (authorization && authorization.toLowerCase().startsWith('bearer')) {
+    token = authorization.substring(7)
   }
 
   let decodedToken
   try {
     decodedToken = jwt.verify(token, JWT_SECRET)
-  } catch (e) {
+  } catch (error) {
     return res.status(401).send({ error: 'token missing or invalid' })
   }
 
@@ -21,7 +34,6 @@ const UserExtractor = (req, res, next) => {
   }
 
   const { id: userId } = decodedToken.userForToken
-
   req.userId = userId
 
   next()

@@ -1,7 +1,16 @@
-// Export Environment Variables
+/**
+ * Loads environment variables from a .env file into process.env.
+ * Exports the required environment variables for use throughout the application.
+ */
+
 import dotenv from 'dotenv'
 dotenv.config()
 
+/**
+ * Destructures and exports environment variables from process.env.
+ * These variables are used for application configuration.
+ * @type {Object}
+ */
 export const {
   PORT,
   JWT_SECRET,
