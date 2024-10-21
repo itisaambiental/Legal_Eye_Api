@@ -433,6 +433,7 @@ class UserService {
     }
   }
 
+  // Method to request password reset
   static async requestPasswordReset (gmail) {
     try {
       const verificationCode = generateVerificationCode()

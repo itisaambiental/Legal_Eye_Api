@@ -25,7 +25,7 @@ class LegalBasisService {
         if (success) {
           const extractor = ArticleExtractorFactory.getExtractor(classification, data)
           if (extractor) {
-            extractedArticles = await extractor.extractArticles()
+            extractedArticles = extractor.extractArticles()
             if (!extractedArticles || Object.keys(extractedArticles).length === 0) {
               throw new ErrorUtils(500, 'Articules Processing Error')
             }

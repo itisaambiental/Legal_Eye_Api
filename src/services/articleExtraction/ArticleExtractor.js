@@ -1,18 +1,34 @@
 // services/articleExtraction/ArticleExtractor.js
-// Abstract class to define common methods
+
+/**
+ * Abstract base class for article extractors.
+ * Defines the interface and common methods for extracting and formatting articles from text.
+ */
 class ArticleExtractor {
+  /**
+   * Constructs an instance of ArticleExtractor.
+   * @param {string} text - The text from which to extract articles.
+   */
   constructor (text) {
     this.text = text
   }
 
-  // Method to extract articles from text that all classes that inherit this class must have.
+  /**
+   * Abstract method to extract articles from the text.
+   * Must be implemented by subclasses.
+   * @throws {Error} If not implemented in a subclass.
+   */
   extractArticles () {
     throw new Error('Method "extractArticles" must be implemented')
   }
 
-  // Method for formatting text articles that all classes that inherit this class should have.
+  /**
+   * Formats the extracted articles into a standardized structure.
+   * @param {Array} articles - The list of articles to format.
+   * @returns {Array} - The list of formatted articles.
+   */
   formatArticles (articles) {
-    return articles.map((article, index) => ({
+    return articles.map((article) => ({
       title: article.title,
       article: article.article,
       order: article.order
