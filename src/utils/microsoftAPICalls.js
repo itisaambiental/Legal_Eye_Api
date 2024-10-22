@@ -1,8 +1,15 @@
+// getUserData.js
+
 import axios from 'axios'
 import { MICROSOFT_GRAPH_API } from '../config/variables.config.js'
 import ErrorUtils from './Error.js'
 
-// Function to call Microsoft Graph API and get user email
+/**
+ * Calls the Microsoft Graph API to retrieve user email.
+ * @param {string} accessToken - The Microsoft access token.
+ * @returns {Promise<string>} - The user's email address.
+ * @throws {ErrorUtils} - If the token is invalid or the API call fails.
+ */
 export async function getUserData (accessToken) {
   try {
     const graphUrl = `${MICROSOFT_GRAPH_API}/me`

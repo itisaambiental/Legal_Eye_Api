@@ -1,3 +1,11 @@
+// generateAbbreviation.js
+
+/**
+ * Generates an abbreviation from a given name.
+ * Filters out excluded words and extracts initials from remaining words.
+ * @param {string} name - The full name to generate an abbreviation from.
+ * @returns {string} - The generated abbreviation in uppercase.
+ */
 export default function generateAbbreviation (name) {
   const excludedWords = ['de', 'para', 'la', 'el', 'los', 'las', 'y']
 

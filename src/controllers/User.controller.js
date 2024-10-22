@@ -14,6 +14,7 @@ import { JWT_SECRET } from '../config/variables.config.js'
  * @function loginUser
  * @param {Object} req - Request object, expects { gmail, password } in body.
  * @param {Object} res - Response object.
+ * @throws {ErrorUtils} - Throws an instance of ErrorUtils error if the process fails.
  */
 export const loginUser = async (req, res) => {
   const { gmail, password } = req.body
@@ -48,6 +49,7 @@ export const loginUser = async (req, res) => {
  * @function loginUserMicrosoftAuth
  * @param {Object} req - Request object, expects { accessToken } in body.
  * @param {Object} res - Response object.
+ * @throws {ErrorUtils} - Throws an instance of ErrorUtils error if the process fails.
  */
 export const loginUserMicrosoftAuth = async (req, res) => {
   const { accessToken } = req.body
@@ -82,6 +84,7 @@ export const loginUserMicrosoftAuth = async (req, res) => {
  * @function registerUser
  * @param {Object} req - Request object, expects { name, gmail, roleId } in body and file for profile picture.
  * @param {Object} res - Response object.
+ * @throws {ErrorUtils} - Throws an instance of ErrorUtils error if the process fails.
  */
 export const registerUser = async (req, res) => {
   const { name, gmail, roleId } = req.body
@@ -120,6 +123,7 @@ export const registerUser = async (req, res) => {
  * @function getAllUsers
  * @param {Object} req - Request object, includes userId.
  * @param {Object} res - Response object.
+ * @throws {ErrorUtils} - Throws an instance of ErrorUtils error if the process fails.
  */
 export const getAllUsers = async (req, res) => {
   const { userId } = req
@@ -150,6 +154,7 @@ export const getAllUsers = async (req, res) => {
  * @function getAllRoles
  * @param {Object} req - Request object, includes userId.
  * @param {Object} res - Response object.
+ * @throws {ErrorUtils} - Throws an instance of ErrorUtils error if the process fails.
  */
 export const getAllRoles = async (req, res) => {
   const { userId } = req
@@ -180,6 +185,7 @@ export const getAllRoles = async (req, res) => {
  * @function getUserById
  * @param {Object} req - Request object, expects { id } in params.
  * @param {Object} res - Response object.
+ * @throws {ErrorUtils} - Throws an instance of ErrorUtils error if the process fails.
  */
 export const getUserById = async (req, res) => {
   const { id } = req.params
@@ -211,6 +217,7 @@ export const getUserById = async (req, res) => {
  * @function getUsersByRole
  * @param {Object} req - Request object, expects { roleId } in params.
  * @param {Object} res - Response object.
+ * @throws {ErrorUtils} - Throws an instance of ErrorUtils error if the process fails.
  */
 export const getUsersByRole = async (req, res) => {
   const { roleId } = req.params
@@ -242,6 +249,7 @@ export const getUsersByRole = async (req, res) => {
  * @function updateUser
  * @param {Object} req - Request object, expects { id } in params and update fields in body.
  * @param {Object} res - Response object.
+ * @throws {ErrorUtils} - Throws an instance of ErrorUtils error if the process fails.
  */
 export const updateUser = async (req, res) => {
   const { id } = req.params
@@ -287,6 +295,7 @@ export const updateUser = async (req, res) => {
  * @function updateUserPicture
  * @param {Object} req - Request object, expects { id } in params and file for profile picture.
  * @param {Object} res - Response object.
+ * @throws {ErrorUtils} - Throws an instance of ErrorUtils error if the process fails.
  */
 export const updateUserPicture = async (req, res) => {
   const { id } = req.params
@@ -325,6 +334,7 @@ export const updateUserPicture = async (req, res) => {
  * @function deleteUser
  * @param {Object} req - Request object, expects { id } in params.
  * @param {Object} res - Response object.
+ * @throws {ErrorUtils} - Throws an instance of ErrorUtils error if the process fails.
  */
 export const deleteUser = async (req, res) => {
   const { id } = req.params
@@ -362,6 +372,7 @@ export const deleteUser = async (req, res) => {
  * @function deleteUsersBatch
  * @param {Object} req - Request object, expects { userIds } in body.
  * @param {Object} res - Response object.
+ * @throws {ErrorUtils} - Throws an instance of ErrorUtils error if the process fails.
  */
 export const deleteUsersBatch = async (req, res) => {
   const { userIds } = req.body
@@ -403,6 +414,8 @@ export const deleteUsersBatch = async (req, res) => {
  * @function resetPassword
  * @param {Object} req - Request object, expects { gmail } in body.
  * @param {Object} res - Response object.
+ * @returns {void}
+ * @throws {ErrorUtils} - Throws an instance of ErrorUtils error if the process fails.
  */
 export const resetPassword = async (req, res) => {
   const { gmail } = req.body
@@ -427,6 +440,7 @@ export const resetPassword = async (req, res) => {
  * @function verifyCode
  * @param {Object} req - Request object, expects { gmail, code } in body.
  * @param {Object} res - Response object.
+ * @throws {ErrorUtils} - Throws an instance of ErrorUtils error if the process fails.
  */
 export const verifyCode = async (req, res) => {
   const { gmail, code } = req.body
