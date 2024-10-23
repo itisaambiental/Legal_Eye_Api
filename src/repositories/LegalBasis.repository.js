@@ -114,42 +114,15 @@ class LegalBasisRepository {
   }
 
   /**
-   * Retrieves a legal basis record by its ID.
-   * @param {number} id - The ID of the legal basis to retrieve.
-   * @returns {Promise<LegalBasis|null>} - The legal basis record or null if not found.
-   * @throws {ErrorUtils} - If an error occurs during retrieval.
-   */
-  static async findById (id) {
-    const query = 'SELECT * FROM legal_basis WHERE id = ?'
-    try {
-      const [rows] = await pool.query(query, [id])
-      if (rows.length === 0) return null
-
-      const legalBasis = rows[0]
-      return new LegalBasis(
-        legalBasis.id,
-        legalBasis.legal_name,
-        legalBasis.abbreviation,
-        legalBasis.classification,
-        legalBasis.jurisdiction,
-        legalBasis.state,
-        legalBasis.municipality,
-        legalBasis.last_reform,
-        legalBasis.url
-      )
-    } catch (error) {
-      console.error('Error retrieving legal basis by ID:', error.message)
-      throw new ErrorUtils(500, 'Error retrieving legal basis by ID')
-    }
-  }
-
-  /**
    * Retrieves all legal basis records from the database.
    * @returns {Promise<Array<LegalBasis>>} - A list of all legal basis records.
    * @throws {ErrorUtils} - If an error occurs during retrieval.
    */
   static async findAll () {
-    const query = 'SELECT * FROM legal_basis'
+    const query = `
+      SELECT id, legal_name, abbreviation, classification, jurisdiction, state, municipality, last_reform, url
+      FROM legal_basis
+    `
     try {
       const [rows] = await pool.query(query)
       return rows.map((legalBasis) =>
@@ -185,6 +158,126 @@ class LegalBasisRepository {
     } catch (error) {
       console.error('Error checking legal basis by name:', error.message)
       throw new ErrorUtils(500, 'Error checking legal basis by name')
+    }
+  }
+
+  /**
+   * Retrieves a legal basis record by its ID.
+   * @param {number} id - The ID of the legal basis to retrieve.
+   * @returns {Promise<LegalBasis|null>} - The legal basis record or null if not found.
+   * @throws {ErrorUtils} - If an error occurs during retrieval.
+   */
+  static async findById (id) {
+    const query = 'SELECT * FROM legal_basis WHERE id = ?'
+    try {
+      const [rows] = await pool.query(query, [id])
+      if (rows.length === 0) return null
+
+      const legalBasis = rows[0]
+      return new LegalBasis(
+        legalBasis.id,
+        legalBasis.legal_name,
+        legalBasis.abbreviation,
+        legalBasis.classification,
+        legalBasis.jurisdiction,
+        legalBasis.state,
+        legalBasis.municipality,
+        legalBasis.last_reform,
+        legalBasis.url
+      )
+    } catch (error) {
+      console.error('Error retrieving legal basis by ID:', error.message)
+      throw new ErrorUtils(500, 'Error retrieving legal basis by ID')
+    }
+  }
+
+  /**
+   * Retrieves a legal basis record by its name.
+   * @param {string} legalName - The name of the legal basis to retrieve.
+   * @returns {Promise<LegalBasis|null>} - The legal basis record or null if not found.
+   * @throws {ErrorUtils} - If an error occurs during retrieval.
+   */
+  static async findByName (legalName) {
+    const query = 'SELECT * FROM legal_basis WHERE legal_name = ?'
+    try {
+      const [rows] = await pool.query(query, [legalName])
+      if (rows.length === 0) return null
+
+      const legalBasis = rows[0]
+      return new LegalBasis(
+        legalBasis.id,
+        legalBasis.legal_name,
+        legalBasis.abbreviation,
+        legalBasis.classification,
+        legalBasis.jurisdiction,
+        legalBasis.state,
+        legalBasis.municipality,
+        legalBasis.last_reform,
+        legalBasis.url
+      )
+    } catch (error) {
+      console.error('Error retrieving legal basis by name:', error.message)
+      throw new ErrorUtils(500, 'Error retrieving legal basis by name')
+    }
+  }
+
+  /**
+   * Retrieves a legal basis record by its abbreviation.
+   * @param {string} abbreviation - The abbreviation of the legal basis to retrieve.
+   * @returns {Promise<LegalBasis|null>} - The legal basis record or null if not found.
+   * @throws {ErrorUtils} - If an error occurs during retrieval.
+   */
+  static async findByAbbreviation (abbreviation) {
+    const query = 'SELECT * FROM legal_basis WHERE abbreviation = ?'
+    try {
+      const [rows] = await pool.query(query, [abbreviation])
+      if (rows.length === 0) return null
+
+      const legalBasis = rows[0]
+      return new LegalBasis(
+        legalBasis.id,
+        legalBasis.legal_name,
+        legalBasis.abbreviation,
+        legalBasis.classification,
+        legalBasis.jurisdiction,
+        legalBasis.state,
+        legalBasis.municipality,
+        legalBasis.last_reform,
+        legalBasis.url
+      )
+    } catch (error) {
+      console.error('Error retrieving legal basis by abbreviation:', error.message)
+      throw new ErrorUtils(500, 'Error retrieving legal basis by abbreviation')
+    }
+  }
+
+  /**
+ * Retrieves all legal basis records by their classification.
+ * @param {string} classification - The classification of the legal basis to retrieve.
+ * @returns {Promise<Array<LegalBasis>>} - A list of legal basis records.
+ * @throws {ErrorUtils} - If an error occurs during retrieval.
+ */
+  static async findByClassification (classification) {
+    const query = 'SELECT * FROM legal_basis WHERE classification = ?'
+    try {
+      const [rows] = await pool.query(query, [classification])
+
+      if (rows.length === 0) return []
+
+      return rows.map(legalBasis => new LegalBasis(
+        legalBasis.id,
+        legalBasis.legal_name,
+        legalBasis.abbreviation,
+        legalBasis.classification,
+        legalBasis.jurisdiction,
+        legalBasis.state,
+        legalBasis.municipality,
+        legalBasis.last_reform,
+        legalBasis.url
+      ))
+    } catch (error) {
+      console.error('Error retrieving legal basis by classification:', error.message)
+      throw new ErrorUtils(500, 'Error retrieving legal basis by classification')
     }
   }
 }

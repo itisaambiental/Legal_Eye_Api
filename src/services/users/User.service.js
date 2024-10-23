@@ -85,7 +85,10 @@ class UserService {
         throw new ErrorUtils(400, 'Validation failed', validationErrors)
       }
 
-      throw error
+      if (error instanceof ErrorUtils) {
+        throw error
+      }
+      throw new ErrorUtils(500, 'Unexpected error during user registration')
     }
   }
 

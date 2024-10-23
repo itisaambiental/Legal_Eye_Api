@@ -1,7 +1,9 @@
 import { pool } from '../config/db.config.js'
 import ErrorUtils from '../utils/Error.js'
+import Article from '../models/Article.model.js'
+
 /**
- * Repository class for handling database operations related to Articules.
+ * Repository class for handling database operations related to Articles.
  */
 class ArticlesRepository {
   /**
@@ -11,12 +13,12 @@ class ArticlesRepository {
    * @param {string} articles[].title - The title of the article.
    * @param {string} articles[].article - The content of the article.
    * @param {number} articles[].order - The order of the article.
-   * @returns {Promise<void>}
+   * @returns {Promise<boolean>} - Returns true if insertion is successful, false otherwise.
    * @throws {ErrorUtils} - If an error occurs during insertion.
    */
   static async insertArticles (legalBasisId, articles) {
     if (articles.length === 0) {
-      return
+      return false
     }
 
     const query = `
@@ -32,10 +34,41 @@ class ArticlesRepository {
 
     try {
       await pool.query(query, [values])
+      return true
     } catch (error) {
       console.error('Error inserting articles:', error.message)
       throw new ErrorUtils(500, 'Error inserting articles into the database')
     }
   }
+
+  /**
+   * Fetches articles associated with a specific legal basis, ordered by 'article_order'.
+   * Returns a list of Article instances.
+   * @param {number} legalBasisId - The ID of the legal basis.
+   * @returns {Promise<Array<Article>>} - The list of ordered Article instances.
+   * @throws {ErrorUtils} - If an error occurs during retrieval.
+   */
+  static async getArticlesByLegalBasisId (legalBasisId) {
+    try {
+      const [orderedArticles] = await pool.query(`
+        SELECT id, legal_basis_id, article_name, description, article_order
+        FROM article 
+        WHERE legal_basis_id = ? 
+        ORDER BY article_order
+      `, [legalBasisId])
+
+      return orderedArticles.map(article => new Article(
+        article.id,
+        article.legal_basis_id,
+        article.article_name,
+        article.description,
+        article.article_order
+      ))
+    } catch (error) {
+      console.error('Error fetching articles:', error.message)
+      throw new ErrorUtils(500, 'Error fetching articles from the database')
+    }
+  }
 }
+
 export default ArticlesRepository
