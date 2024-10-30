@@ -98,7 +98,43 @@ CREATE TABLE article (
     id INT AUTO_INCREMENT PRIMARY KEY,
     legal_basis_id INT NOT NULL,
     article_name VARCHAR(255) NOT NULL,
-    description TEXT,
+    description LONGTEXT,
     article_order INT,
     FOREIGN KEY (legal_basis_id) REFERENCES legal_basis(id) ON DELETE CASCADE
+);
+
+-- Table: subjects
+-- This table stores subjects such as 'Environmental', 'Security', etc.
+-- Columns:
+-- - id: Unique identifier for each subject, auto-incremented.
+-- - subject_name: Name of the subject.
+CREATE TABLE subjects (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    subject_name VARCHAR(255) NOT NULL
+);
+
+-- Table: aspects
+-- This table stores aspects linked to specific subjects.
+-- Columns:
+-- - id: Unique identifier for each aspect, auto-incremented.
+-- - subject_id: Foreign key referencing the 'subjects' table.
+-- - aspect_name: Name of the aspect.
+CREATE TABLE aspects (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    subject_id INT NOT NULL,
+    aspect_name VARCHAR(255) NOT NULL,
+    FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE CASCADE
+);
+
+-- Table: legal_basis_subject
+-- This table establishes a many-to-many relationship between 'legal_basis' and 'subjects'.
+-- Columns:
+-- - legal_basis_id: Foreign key referencing the 'legal_basis' table.
+-- - subject_id: Foreign key referencing the 'subjects' table.
+CREATE TABLE legal_basis_subject (
+    legal_basis_id INT NOT NULL,
+    subject_id INT NOT NULL,
+    PRIMARY KEY (legal_basis_id, subject_id),
+    FOREIGN KEY (legal_basis_id) REFERENCES legal_basis(id) ON DELETE CASCADE,
+    FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE CASCADE
 );

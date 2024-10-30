@@ -50,8 +50,11 @@ class UserRepository { /**
     const values = [hashedPassword, gmail]
 
     try {
-      const [result] = await pool.query(query, values)
-      return result.affectedRows > 0
+      const [rows] = await pool.query(query, values)
+      if (rows.affectedRows === 0) {
+        return false
+      }
+      return true
     } catch (error) {
       console.error('Error updating user password:', error)
       throw new ErrorUtils(500, 'Error updating user password')
@@ -177,7 +180,7 @@ class UserRepository { /**
   /**
    * Finds a user in the database by their ID.
    * @param {number} id - User's ID to find.
-   * @returns {Promise<User|[]>} - The found user or a empty array if not found.
+   * @returns {Promise<User|null>} - The found user or a empty array if not found.
    * @throws {ErrorUtils} - If an error occurs during retrieval.
    */
   static async findById (id) {
@@ -186,6 +189,7 @@ class UserRepository { /**
     `
     try {
       const [rows] = await pool.query(query, [id])
+      if (rows.length === 0) return null
       const user = rows[0]
       return new User(user.id, user.name, user.password, user.gmail, user.role_id, user.profile_picture)
     } catch (error) {
@@ -217,7 +221,7 @@ class UserRepository { /**
   /**
    * Retrieves users from the database by their role ID.
    * @param {number} roleId - The role ID to filter users by.
-   * @returns {Promise<Array<User>>} - Array of users with the specified role ID.
+   * @returns {Promise<Array<User|null>>} - Array of users with the specified role ID.
    * @throws {ErrorUtils} - If an error occurs during retrieval.
    */
   static async findByRole (roleId) {
@@ -226,10 +230,7 @@ class UserRepository { /**
     `
     try {
       const [rows] = await pool.query(query, [roleId])
-      if (rows.length === 0) {
-        return []
-      }
-
+      if (rows.length === 0) return null
       return rows.map(user => new User(user.id, user.name, user.password, user.gmail, user.role_id, user.profile_picture))
     } catch (error) {
       console.error('Error retrieving users by role:', error)
@@ -266,7 +267,9 @@ class UserRepository { /**
     const query = 'SELECT * FROM users WHERE gmail = ?'
     try {
       const [rows] = await pool.query(query, [gmail])
-      return rows.length > 0 ? rows[0] : null
+      if (rows.length === 0) return null
+      const user = rows[0]
+      return new User(user.id, user.name, user.password, user.gmail, user.role_id, user.profile_picture)
     } catch (error) {
       console.error('Error finding user by gmail:', error)
       throw new ErrorUtils(500, 'Error finding user by gmail')
@@ -274,21 +277,29 @@ class UserRepository { /**
   }
 
   /**
-   * Finds a user in the database by their Gmail, excluding a specific user ID.
-   * @param {string} gmail - User's Gmail to find.
-   * @param {number} excludeUserId - User ID to exclude from the search.
-   * @returns {Promise<User|null>} - The found user or null if not found.
-   * @throws {ErrorUtils} - If an error occurs during retrieval.
-   */
+ * Finds a user in the database by their Gmail, excluding a specific user ID.
+ * @param {string} gmail - User's Gmail to find.
+ * @param {number} excludeUserId - User ID to exclude from the search.
+ * @returns {Promise<User|null>} - The found user or null if not found.
+ * @throws {ErrorUtils} - If an error occurs during retrieval.
+ */
   static async findByGmailExcludingUserId (gmail, excludeUserId) {
     const query = 'SELECT * FROM users WHERE gmail = ? AND id != ?'
-    const [rows] = await pool.query(query, [gmail, excludeUserId])
-    return rows.length > 0 ? rows[0] : []
+
+    try {
+      const [rows] = await pool.query(query, [gmail, excludeUserId])
+      if (rows.length === 0) return null
+      const user = rows[0]
+      return new User(user.id, user.name, user.password, user.gmail, user.role_id, user.profile_picture)
+    } catch (error) {
+      console.error('Error finding user by Gmail excluding user ID:', error.message)
+      throw new ErrorUtils(500, 'Error finding user by Gmail excluding user ID')
+    }
   }
 
   /**
    * Retrieves all users from the database.
-   * @returns {Promise<Array<User>>} - Array of all users.
+   * @returns {Promise<Array<User|null>>} - Array of all users.
    * @throws {ErrorUtils} - If an error occurs during retrieval.
    */
   static async findAll () {
@@ -297,6 +308,7 @@ class UserRepository { /**
     `
     try {
       const [rows] = await pool.query(query)
+      if (rows.length === 0) return null
       return rows.map(user => new User(user.id, user.name, user.password, user.gmail, user.role_id, user.profile_picture))
     } catch (error) {
       console.error('Error retrieving all users:', error)
@@ -306,7 +318,7 @@ class UserRepository { /**
 
   /**
    * Retrieves all roles from the database.
-   * @returns {Promise<Array<Role>>} - Array of all roles.
+   * @returns {Promise<Array<Role|null>>} - Array of all roles.
    * @throws {ErrorUtils} - If an error occurs during retrieval.
    */
 
@@ -316,6 +328,7 @@ class UserRepository { /**
       `
     try {
       const [rows] = await pool.query(query)
+      if (rows.length === 0) return null
       return rows.map(role => new Role(role.id, role.name))
     } catch (error) {
       console.error('Error retrieving all roles:', error)

@@ -11,7 +11,9 @@ import {
   getLegalBasisById,
   getLegalBasisByName,
   getLegalBasisByAbbreviation,
-  getLegalBasisByClassification
+  getLegalBasisByClassification,
+  getLegalBasisByJurisdiction,
+  getLegalBasisByStateAndMunicipality
 } from '../controllers/LegalBasis.controller.js'
 import { upload } from '../config/multer.config.js'
 
@@ -47,7 +49,7 @@ router.get('/fundamentos', UserExtractor, getAllLegalBasis)
  * @description Retrieves a specific legal basis by its ID.
  * @middleware UserExtractor
  */
-router.get('/fundamento/id/:id', UserExtractor, getLegalBasisById)
+router.get('/fundamento/:id', UserExtractor, getLegalBasisById)
 
 /**
  * Route to retrieve a legal basis by its name.
@@ -78,6 +80,27 @@ router.get('/fundamento/abbreviation/:abbreviation', UserExtractor, getLegalBasi
  * @middleware UserExtractor
  */
 router.get('/fundamento/classification/:classification', UserExtractor, getLegalBasisByClassification)
+
+/**
+ * Route to retrieve legal basis entries filtered by jurisdiction.
+ * @method GET
+ * @path /fundamento/jurisdiction/:jurisdiction
+ * @description Retrieves legal basis entries by jurisdiction.
+ * @param {string} jurisdiction - The jurisdiction to filter by.
+ * @middleware UserExtractor
+ */
+router.get('/fundamento/jurisdiction/:jurisdiction', UserExtractor, getLegalBasisByJurisdiction)
+
+/**
+ * Route to retrieve legal basis entries filtered by state and municipality.
+ * @method GET
+ * @path /fundamento/filter
+ * @description Retrieves legal basis entries by state and optionally by municipality.
+ * @query {string} state - The state to filter by.
+ * @query {string} [municipality] - The municipality to filter by (optional).
+ * @middleware UserExtractor
+ */
+router.get('/fundamento/state-municipality', UserExtractor, getLegalBasisByStateAndMunicipality)
 
 router.patch('/fundamento/:id', UserExtractor)
 router.delete('/fundamento/:id', UserExtractor)

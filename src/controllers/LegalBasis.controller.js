@@ -169,3 +169,53 @@ export const getLegalBasisByClassification = async (req, res) => {
     return res.status(500).json({ message: 'Failed to retrieve legal basis by classification' })
   }
 }
+
+/**
+ * Retrieves legal basis entries by jurisdiction.
+ * @function getLegalBasisByJurisdiction
+ * @param {Object} req - Request object, expects { jurisdiction } as a route parameter.
+ * @param {Object} res - Response object.
+ * @returns {Object} - A list of filtered legal basis entries.
+ * @throws {ErrorUtils} - Throws an instance of ErrorUtils if the process fails.
+ */
+export const getLegalBasisByJurisdiction = async (req, res) => {
+  const { jurisdiction } = req.params
+
+  try {
+    const legalBasis = await LegalBasisService.getByJurisdiction(jurisdiction)
+    return res.status(200).json(legalBasis)
+  } catch (error) {
+    if (error instanceof ErrorUtils) {
+      return res.status(error.status).json({
+        message: error.message,
+        ...(error.errors && { errors: error.errors })
+      })
+    }
+    return res.status(500).json({ message: 'Internal Server Error' })
+  }
+}
+
+/**
+ * Retrieves legal basis entries by state and municipality.
+ * @function getLegalBasisByStateAndMunicipality
+ * @param {Object} req - Request object, expects { state, municipality } in query parameters.
+ * @param {Object} res - Response object.
+ * @returns {Object} - A list of filtered legal basis entries.
+ * @throws {ErrorUtils} - Throws an instance of ErrorUtils if the process fails.
+ */
+export const getLegalBasisByStateAndMunicipality = async (req, res) => {
+  const { state, municipality } = req.query
+
+  try {
+    const legalBasis = await LegalBasisService.getByStateAndMunicipality({ state, municipality })
+    return res.status(200).json(legalBasis)
+  } catch (error) {
+    if (error instanceof ErrorUtils) {
+      return res.status(error.status).json({
+        message: error.message,
+        ...(error.errors && { errors: error.errors })
+      })
+    }
+    return res.status(500).json({ message: 'Internal Server Error' })
+  }
+}

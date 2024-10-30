@@ -18,7 +18,7 @@ class ArticleExtractor {
    * Must be implemented by subclasses.
    * @throws {Error} If not implemented in a subclass.
    */
-  extractArticles () {
+  async extractArticles () {
     throw new Error('Method "extractArticles" must be implemented')
   }
 

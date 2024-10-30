@@ -47,17 +47,17 @@ class LegalBasisRepository {
   }
 
   /**
-   * Updates a legal basis record by its ID.
-   * @param {number} id - The ID of the legal basis to update.
-   * @param {Object} data - The data to update.
-   * @param {string} [data.legalName] - The new legal name.
-   * @param {string} [data.abbreviation] - The new abbreviation.
-   * @param {string} [data.classification] - The new classification.
-   * @param {string} [data.jurisdiction] - The new jurisdiction.
-   * @param {string} [data.url] - The new URL.
-   * @returns {Promise<boolean>} - True if the record was updated, false otherwise.
-   * @throws {ErrorUtils} - If an error occurs during the update.
-   */
+ * Updates a legal basis record by its ID and returns the updated values.
+ * @param {number} id - The ID of the legal basis to update.
+ * @param {Object} data - The data to update.
+ * @param {string} [data.legalName] - The new legal name.
+ * @param {string} [data.abbreviation] - The new abbreviation.
+ * @param {string} [data.classification] - The new classification.
+ * @param {string} [data.jurisdiction] - The new jurisdiction.
+ * @param {string} [data.url] - The new URL.
+ * @returns {Promise<LegalBasis|null>} - The updated legal basis record or null if not found.
+ * @throws {ErrorUtils} - If an error occurs during the update.
+ */
   static async update (id, data) {
     const { legalName, abbreviation, classification, jurisdiction, url } = data
     const query = `
@@ -71,8 +71,12 @@ class LegalBasisRepository {
       WHERE id = ?
     `
     try {
-      const [result] = await pool.query(query, [legalName, abbreviation, classification, jurisdiction, url, id])
-      return result.affectedRows > 0
+      const [rows] = await pool.query(query, [legalName, abbreviation, classification, jurisdiction, url, id])
+      if (rows.affectedRows === 0) {
+        return null
+      }
+      const newLegalBasis = await this.findById(id)
+      return newLegalBasis
     } catch (error) {
       console.error('Error updating legal basis:', error.message)
       throw new ErrorUtils(500, 'Error updating legal basis in the database')
@@ -88,8 +92,11 @@ class LegalBasisRepository {
   static async delete (id) {
     const query = 'DELETE FROM legal_basis WHERE id = ?'
     try {
-      const [result] = await pool.query(query, [id])
-      return result.affectedRows > 0
+      const [rows] = await pool.query(query, [id])
+      if (rows.affectedRows === 0) {
+        return false
+      }
+      return true
     } catch (error) {
       console.error('Error deleting legal basis:', error.message)
       throw new ErrorUtils(500, 'Error deleting legal basis from the database')
@@ -105,8 +112,11 @@ class LegalBasisRepository {
   static async deleteBatch (ids) {
     const query = 'DELETE FROM legal_basis WHERE id IN (?)'
     try {
-      const [result] = await pool.query(query, [ids])
-      return result.affectedRows > 0
+      const [rows] = await pool.query(query, [ids])
+      if (rows.affectedRows === 0) {
+        return false
+      }
+      return true
     } catch (error) {
       console.error('Error deleting legal basis records:', error.message)
       throw new ErrorUtils(500, 'Error deleting legal basis records from the database')
@@ -115,7 +125,7 @@ class LegalBasisRepository {
 
   /**
    * Retrieves all legal basis records from the database.
-   * @returns {Promise<Array<LegalBasis>>} - A list of all legal basis records.
+   * @returns {Promise<Array<LegalBasis|null>} - A list of all legal basis records.
    * @throws {ErrorUtils} - If an error occurs during retrieval.
    */
   static async findAll () {
@@ -125,6 +135,7 @@ class LegalBasisRepository {
     `
     try {
       const [rows] = await pool.query(query)
+      if (rows.length === 0) return null
       return rows.map((legalBasis) =>
         new LegalBasis(
           legalBasis.id,
@@ -254,7 +265,7 @@ class LegalBasisRepository {
   /**
  * Retrieves all legal basis records by their classification.
  * @param {string} classification - The classification of the legal basis to retrieve.
- * @returns {Promise<Array<LegalBasis>>} - A list of legal basis records.
+ * @returns {Promise<Array<LegalBasis|null>} - A list of legal basis records.
  * @throws {ErrorUtils} - If an error occurs during retrieval.
  */
   static async findByClassification (classification) {
@@ -262,7 +273,7 @@ class LegalBasisRepository {
     try {
       const [rows] = await pool.query(query, [classification])
 
-      if (rows.length === 0) return []
+      if (rows.length === 0) return null
 
       return rows.map(legalBasis => new LegalBasis(
         legalBasis.id,
@@ -278,6 +289,74 @@ class LegalBasisRepository {
     } catch (error) {
       console.error('Error retrieving legal basis by classification:', error.message)
       throw new ErrorUtils(500, 'Error retrieving legal basis by classification')
+    }
+  }
+
+  /**
+ * Retrieves legal basis records filtered by jurisdiction.
+ * @param {string} jurisdiction - The jurisdiction to filter by.
+ * @returns {Promise<Array<LegalBasis|null>} - A list of legal basis records.
+ * @throws {ErrorUtils} - If an error occurs during retrieval.
+ */
+  static async findByJurisdiction (jurisdiction) {
+    const query = 'SELECT * FROM legal_basis WHERE jurisdiction = ?'
+    try {
+      const [rows] = await pool.query(query, [jurisdiction])
+
+      if (rows.length === 0) return null
+
+      return rows.map(legalBasis => new LegalBasis(
+        legalBasis.id,
+        legalBasis.legal_name,
+        legalBasis.abbreviation,
+        legalBasis.classification,
+        legalBasis.jurisdiction,
+        legalBasis.state,
+        legalBasis.municipality,
+        legalBasis.last_reform,
+        legalBasis.url
+      ))
+    } catch (error) {
+      console.error('Error retrieving legal basis by jurisdiction:', error.message)
+      throw new ErrorUtils(500, 'Error retrieving legal basis by jurisdiction')
+    }
+  }
+
+  /**
+ * Retrieves legal basis records filtered by state and optionally by municipality.
+ * @param {string} state - The state to filter by.
+ * @param {string} [municipality] - The municipality to filter by (optional).
+ * @returns {Promise<Array<LegalBasis|null>} - A list of legal basis records.
+ * @throws {ErrorUtils} - If an error occurs during retrieval.
+ */
+  static async findByStateAndMunicipality (state, municipality = null) {
+    let query = 'SELECT * FROM legal_basis WHERE state = ?'
+    const values = [state]
+
+    if (municipality) {
+      query += ' AND municipality = ?'
+      values.push(municipality)
+    }
+
+    try {
+      const [rows] = await pool.query(query, values)
+
+      if (rows.length === 0) return null
+
+      return rows.map(legalBasis => new LegalBasis(
+        legalBasis.id,
+        legalBasis.legal_name,
+        legalBasis.abbreviation,
+        legalBasis.classification,
+        legalBasis.jurisdiction,
+        legalBasis.state,
+        legalBasis.municipality,
+        legalBasis.last_reform,
+        legalBasis.url
+      ))
+    } catch (error) {
+      console.error('Error retrieving legal basis by state and municipality:', error.message)
+      throw new ErrorUtils(500, 'Error retrieving legal basis by state and municipality')
     }
   }
 }

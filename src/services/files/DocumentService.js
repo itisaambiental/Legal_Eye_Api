@@ -1,4 +1,4 @@
-import { PdfReader } from 'pdfreader'
+import pdf from 'pdf-parse-new'
 import { createWorker } from 'tesseract.js'
 import ErrorUtils from '../../utils/Error.js'
 
@@ -85,26 +85,24 @@ class DocumentService {
   }
 
   /**
-   * Extracts text content from a PDF buffer using PdfReader.
-   * @param {Buffer} buffer - The PDF file buffer.
-   * @returns {Promise<string>} - The extracted text content.
-   * @throws {ErrorUtils} If an error occurs during PDF parsing.
-   */
-  static extractTextFromPDF (buffer) {
-    return new Promise((resolve, reject) => {
-      let extractedText = ''
-      new PdfReader().parseBuffer(buffer, (error, item) => {
-        if (error) {
-          console.error(`PDF Reading Error: ${error.message}`)
-          reject(new ErrorUtils(500, 'PDF Reading Error', 'Failed to read PDF document'))
-        } else if (!item) {
-          // End of file reached
-          resolve(extractedText)
-        } else if (item.text) {
-          extractedText += `${item.text} `
-        }
+ * Extracts text content from a PDF buffer using pdf-parse-new.
+ * @param {Buffer} buffer - The PDF file buffer.
+ * @returns {Promise<string>} - The extracted text content.
+ * @throws {ErrorUtils} If an error occurs during PDF parsing.
+ */
+  static async extractTextFromPDF (buffer) {
+    const options = {
+      verbosityLevel: 0
+    }
+
+    return pdf(buffer, options)
+      .then((data) => {
+        return data.text
       })
-    })
+      .catch((error) => {
+        console.error(`PDF Reading Error: ${error.message}`)
+        throw new ErrorUtils(500, 'PDF Reading Error', 'Failed to read PDF document')
+      })
   }
 
   /**

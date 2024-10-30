@@ -185,7 +185,9 @@ class UserService {
   static async getAllUsers () {
     try {
       const users = await UserRepository.findAll()
-
+      if (!users) {
+        return []
+      }
       const usersWithProfilePicture = await Promise.all(users.map(async (user) => {
         let profilePictureUrl = null
         if (user.profile_picture) {
@@ -216,6 +218,9 @@ class UserService {
   static async getAllRoles () {
     try {
       const roles = await UserRepository.findAllRoles()
+      if (!roles) {
+        return []
+      }
       return roles
     } catch (error) {
       if (error instanceof ErrorUtils) {
@@ -233,14 +238,10 @@ class UserService {
    */
   static async getUserById (id) {
     try {
-      const userExists = await UserRepository.userExists(id)
-
-      if (!userExists) {
+      const user = await UserRepository.findById(id)
+      if (!user) {
         throw new ErrorUtils(404, 'User not found')
       }
-
-      const user = await UserRepository.findById(id)
-
       let profilePictureUrl = null
       if (user.profile_picture) {
         profilePictureUrl = await FileService.getFile(user.profile_picture)
@@ -268,11 +269,9 @@ class UserService {
   static async getUsersByRole (roleId) {
     try {
       const users = await UserRepository.findByRole(roleId)
-
-      if (users.length === 0) {
+      if (!users) {
         return []
       }
-
       const usersWithProfilePictures = await Promise.all(users.map(async (user) => {
         let profilePictureUrl = null
         if (user.profile_picture) {
