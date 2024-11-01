@@ -1,4 +1,4 @@
-import SubjectsService from '../services/Subjects.service.js'
+import SubjectsService from '../services/subjects/Subjects.service.js'
 import ErrorUtils from '../utils/Error.js'
 
 /**
@@ -11,17 +11,18 @@ import ErrorUtils from '../utils/Error.js'
  */
 export const createSubject = async (req, res) => {
   const { subjectName } = req.body
-
   if (!subjectName) {
     return res.status(400).json({ message: 'Missing required field: subjectName' })
   }
-
   try {
     const subject = await SubjectsService.create({ subjectName })
     return res.status(201).json(subject)
   } catch (error) {
     if (error instanceof ErrorUtils) {
-      return res.status(error.status).json({ message: error.message })
+      return res.status(error.status).json({
+        message: error.message,
+        ...(error.errors && { errors: error.errors })
+      })
     }
     return res.status(500).json({ message: 'Failed to create subject' })
   }
@@ -40,6 +41,12 @@ export const getSubjects = async (req, res) => {
     const subjects = await SubjectsService.getAll()
     return res.status(200).json(subjects)
   } catch (error) {
+    if (error instanceof ErrorUtils) {
+      return res.status(error.status).json({
+        message: error.message,
+        ...(error.errors && { errors: error.errors })
+      })
+    }
     return res.status(500).json({ message: 'Failed to fetch subjects' })
   }
 }
@@ -54,14 +61,16 @@ export const getSubjects = async (req, res) => {
  */
 export const getSubjectById = async (req, res) => {
   const { id } = req.params
-
   try {
     const subject = await SubjectsService.getById(id)
-    if (!subject) {
-      return res.status(404).json({ message: 'Subject not found' })
-    }
     return res.status(200).json(subject)
   } catch (error) {
+    if (error instanceof ErrorUtils) {
+      return res.status(error.status).json({
+        message: error.message,
+        ...(error.errors && { errors: error.errors })
+      })
+    }
     return res.status(500).json({ message: 'Failed to fetch subject' })
   }
 }
@@ -77,14 +86,18 @@ export const getSubjectById = async (req, res) => {
 export const updateSubject = async (req, res) => {
   const { id } = req.params
   const { subjectName } = req.body
-
   try {
-    const updated = await SubjectsService.updateById(id, subjectName)
-    if (!updated) {
-      return res.status(404).json({ message: 'Subject not found' })
-    }
-    return res.status(200).json({ message: 'Subject updated successfully' })
+    const updatedSubject = await SubjectsService.updateById(id, subjectName)
+    return res.status(200).json({
+      updatedSubject
+    })
   } catch (error) {
+    if (error instanceof ErrorUtils) {
+      return res.status(error.status).json({
+        message: error.message,
+        ...(error.errors && { errors: error.errors })
+      })
+    }
     return res.status(500).json({ message: 'Failed to update subject' })
   }
 }
@@ -99,14 +112,16 @@ export const updateSubject = async (req, res) => {
  */
 export const deleteSubject = async (req, res) => {
   const { id } = req.params
-
   try {
-    const deleted = await SubjectsService.deleteById(id)
-    if (!deleted) {
-      return res.status(404).json({ message: 'Subject not found' })
-    }
-    return res.status(200).json({ message: 'Subject deleted successfully' })
+    await SubjectsService.deleteById(id)
+    return res.sendStatus(204)
   } catch (error) {
+    if (error instanceof ErrorUtils) {
+      return res.status(error.status).json({
+        message: error.message,
+        ...(error.errors && { errors: error.errors })
+      })
+    }
     return res.status(500).json({ message: 'Failed to delete subject' })
   }
 }

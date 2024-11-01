@@ -9,7 +9,7 @@ class SubjectsRepository {
   /**
    * Inserts a new subject into the database.
    * @param {string} subjectName - The name of the subject to insert.
-   * @returns {Promise<Subject>} - Returns the created Subject instance.
+   * @returns {Promise<id>} - Returns the id of the created Subject.
    * @throws {ErrorUtils} - If an error occurs during insertion.
    */
   static async createSubject (subjectName) {
@@ -20,7 +20,7 @@ class SubjectsRepository {
 
     try {
       const [result] = await pool.query(query, [subjectName])
-      return new Subject(result.insertId, subjectName)
+      return result.insertId
     } catch (error) {
       console.error('Error creating subject:', error.message)
       throw new ErrorUtils(500, 'Error inserting subject into the database')
@@ -29,17 +29,17 @@ class SubjectsRepository {
 
   /**
    * Fetches all subjects from the database.
-   * @returns {Promise<Array<Subject>>} - Returns a list of Subject instances.
+   * @returns {Promise<Array<Subject|null>>} - Returns a list of Subject instances.
    * @throws {ErrorUtils} - If an error occurs during retrieval.
    */
-  static async getAllSubjects () {
+  static async findAll () {
     try {
-      const [subjects] = await pool.query(`
+      const [rows] = await pool.query(`
         SELECT id, subject_name
         FROM subjects
       `)
-
-      return subjects.map(subject => new Subject(
+      if (rows.length === 0) return null
+      return rows.map(subject => new Subject(
         subject.id,
         subject.subject_name
       ))
@@ -55,7 +55,7 @@ class SubjectsRepository {
    * @returns {Promise<Subject|null>} - Returns the Subject instance or null if not found.
    * @throws {ErrorUtils} - If an error occurs during retrieval.
    */
-  static async getSubjectById (id) {
+  static async findById (id) {
     try {
       const [rows] = await pool.query(`
         SELECT id, subject_name
@@ -79,7 +79,7 @@ class SubjectsRepository {
    * @returns {Promise<Subject|null>} - Returns the Subject instance or null if not found.
    * @throws {ErrorUtils} - If an error occurs during retrieval.
    */
-  static async getSubjectByName (subjectName) {
+  static async findByName (subjectName) {
     try {
       const [rows] = await pool.query(`
         SELECT id, subject_name
@@ -104,7 +104,7 @@ class SubjectsRepository {
    * @returns {Promise<boolean>} - Returns true if the update is successful, false otherwise.
    * @throws {ErrorUtils} - If an error occurs during update.
    */
-  static async updateSubjectById (id, subjectName) {
+  static async updateById (id, subjectName) {
     const query = `
       UPDATE subjects
       SET subject_name = IFNULL(?, subject_name)
@@ -129,7 +129,7 @@ class SubjectsRepository {
    * @returns {Promise<boolean>} - Returns true if the deletion is successful, false otherwise.
    * @throws {ErrorUtils} - If an error occurs during deletion.
    */
-  static async deleteSubjectById (id) {
+  static async deleteById (id) {
     try {
       const [rows] = await pool.query(`
         DELETE FROM subjects

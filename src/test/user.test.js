@@ -158,15 +158,15 @@ describe('User API tests', () => {
       expect(response.body.error).toBe('token missing or invalid')
     })
 
-    test('Should return 404 when user is not found', async () => {
+    test('Should return an empty array when user is not found', async () => {
       const invalidUserId = '-1'
       const response = await api
         .get(`/api/user/${invalidUserId}`)
         .set('Authorization', `Bearer ${tokenAdmin}`)
-        .expect(404)
+        .expect(200)
         .expect('Content-Type', /application\/json/)
 
-      expect(response.body.message).toBe('User not found')
+      expect(response.body).toEqual({ user: [] })
     })
 
     test('Should fetch analyst user details with admin user token', async () => {

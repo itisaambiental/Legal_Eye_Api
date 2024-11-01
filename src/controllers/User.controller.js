@@ -96,16 +96,13 @@ export const registerUser = async (req, res) => {
       message: 'Missing required fields: name, gmail, roleId'
     })
   }
-
   try {
     const isAuthorized = await UserService.isAuthorized(userId)
-
     if (!isAuthorized) {
       res.status(403).json({ message: 'Unauthorized' })
       throw new Error('Unauthorized')
     }
     const user = await UserService.registerUser(req.body, profilePicture)
-
     return res.status(201).json({ user })
   } catch (error) {
     if (error instanceof ErrorUtils) {
@@ -127,16 +124,13 @@ export const registerUser = async (req, res) => {
  */
 export const getAllUsers = async (req, res) => {
   const { userId } = req
-
   try {
     const isAuthorized = await UserService.isAuthorized(userId)
-
     if (!isAuthorized) {
       res.status(403).json({ message: 'Unauthorized' })
       throw new Error('Unauthorized')
     }
     const users = await UserService.getAllUsers()
-
     return res.status(200).json({ users })
   } catch (error) {
     if (error instanceof ErrorUtils) {
@@ -158,16 +152,13 @@ export const getAllUsers = async (req, res) => {
  */
 export const getAllRoles = async (req, res) => {
   const { userId } = req
-
   try {
     const isAuthorized = await UserService.isAuthorized(userId)
-
     if (!isAuthorized) {
       res.status(403).json({ message: 'Unauthorized' })
       throw new Error('Unauthorized')
     }
     const roles = await UserService.getAllRoles()
-
     return res.status(200).json({ roles })
   } catch (error) {
     if (error instanceof ErrorUtils) {
@@ -190,16 +181,13 @@ export const getAllRoles = async (req, res) => {
 export const getUserById = async (req, res) => {
   const { id } = req.params
   const { userId } = req
-
   try {
     const isAuthorized = await UserService.canAccessUser(userId, id)
-
     if (!isAuthorized) {
       res.status(403).json({ message: 'Unauthorized' })
       throw new Error('Unauthorized')
     }
     const user = await UserService.getUserById(id)
-
     return res.status(200).json({ user })
   } catch (error) {
     if (error instanceof ErrorUtils) {
@@ -222,16 +210,13 @@ export const getUserById = async (req, res) => {
 export const getUsersByRole = async (req, res) => {
   const { roleId } = req.params
   const { userId } = req
-
   try {
     const isAuthorized = await UserService.isAuthorized(userId)
-
     if (!isAuthorized) {
       res.status(403).json({ message: 'Unauthorized' })
       throw new Error('Unauthorized')
     }
     const users = await UserService.getUsersByRole(roleId)
-
     return res.status(200).json({ users })
   } catch (error) {
     if (error instanceof ErrorUtils) {
@@ -339,16 +324,8 @@ export const updateUserPicture = async (req, res) => {
 export const deleteUser = async (req, res) => {
   const { id } = req.params
   const { userId } = req
-
-  if (!id) {
-    return res.status(400).json({
-      message: 'Missing required fields: Id'
-    })
-  }
-
   try {
     const isAuthorized = await UserService.isAuthorized(userId)
-
     if (!isAuthorized) {
       res.status(403).json({ message: 'Unauthorized' })
       throw new Error('Unauthorized')

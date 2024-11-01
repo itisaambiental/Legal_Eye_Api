@@ -172,7 +172,6 @@ class UserService {
       if (error instanceof ErrorUtils) {
         throw error
       }
-
       throw new ErrorUtils(500, 'Failed to login with Microsoft')
     }
   }
@@ -240,7 +239,7 @@ class UserService {
     try {
       const user = await UserRepository.findById(id)
       if (!user) {
-        throw new ErrorUtils(404, 'User not found')
+        return []
       }
       let profilePictureUrl = null
       if (user.profile_picture) {
@@ -486,6 +485,28 @@ class UserService {
   }
 
   /**
+   * Checks if a user is exists.
+   * @param {number} userId - User's ID.
+   * @returns {Promise<boolean>} - True if the exists.
+   * @throws {ErrorUtils} - If check fails.
+   */
+
+  static async userExists (userId) {
+    try {
+      const user = await UserRepository.findById(userId)
+      if (!user) {
+        return false
+      }
+      return true
+    } catch (error) {
+      if (error instanceof ErrorUtils) {
+        throw error
+      }
+      throw new ErrorUtils(500, 'Failed to check authorization')
+    }
+  }
+
+  /**
    * Checks if a user can access another user's data.
    * @param {number} requestingUserId - ID of the requesting user.
    * @param {number} targetUserId - ID of the target user.
@@ -531,6 +552,9 @@ class UserService {
 
       await emailQueue.add(emailData)
     } catch (error) {
+      if (error instanceof ErrorUtils) {
+        throw error
+      }
       throw new ErrorUtils(500, 'Failed to send verification code')
     }
   }
@@ -572,6 +596,9 @@ class UserService {
 
       return true
     } catch (error) {
+      if (error instanceof ErrorUtils) {
+        throw error
+      }
       throw new ErrorUtils(500, 'Failed verifying verification code')
     }
   }

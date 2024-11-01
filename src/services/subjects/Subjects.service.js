@@ -1,5 +1,5 @@
 import SubjectsRepository from '../../repositories/Subject.repository.js'
-import ErrorUtils from '../utils/Error.js'
+import ErrorUtils from '../../utils/Error.js'
 
 /**
  * Service class for handling Subject operations.
@@ -14,28 +14,39 @@ class SubjectsService {
    */
   static async create ({ subjectName }) {
     try {
-      const subjectExists = await SubjectsRepository.getSubjectByName(subjectName)
+      const subjectExists = await SubjectsRepository.findByName(subjectName)
       if (subjectExists) {
         throw new ErrorUtils(400, 'Subject already exists')
       }
-
-      const subject = await SubjectsRepository.createSubject(subjectName)
-      return subject
+      const subjectId = await SubjectsRepository.createSubject(subjectName)
+      return {
+        id: subjectId,
+        subject_name: subjectName
+      }
     } catch (error) {
+      if (error instanceof ErrorUtils) {
+        throw error
+      }
       throw new ErrorUtils(500, 'Failed to create subject')
     }
   }
 
   /**
    * Fetches all subjects.
-   * @returns {Promise<Array>} - List of all subjects.
+   * @returns {Promise<Array<Object>>} - List of all subjects.
    * @throws {ErrorUtils} - If an error occurs during retrieval.
    */
   static async getAll () {
     try {
-      const subjects = await SubjectsRepository.getAllSubjects()
+      const subjects = await SubjectsRepository.findAll()
+      if (!subjects) {
+        return []
+      }
       return subjects
     } catch (error) {
+      if (error instanceof ErrorUtils) {
+        throw error
+      }
       throw new ErrorUtils(500, 'Failed to fetch subjects')
     }
   }
@@ -43,29 +54,53 @@ class SubjectsService {
   /**
    * Fetches a subject by ID.
    * @param {number} id - The ID of the subject to retrieve.
-   * @returns {Promise<Object|null>} - The subject data or null if not found.
+   * @returns {Promise<Object>} - The subject data or null if not found.
    * @throws {ErrorUtils} - If an error occurs during retrieval.
    */
   static async getById (id) {
     try {
-      const subject = await SubjectsRepository.getSubjectById(id)
+      const subject = await SubjectsRepository.findById(id)
+      if (!subject) {
+        return []
+      }
       return subject
     } catch (error) {
+      if (error instanceof ErrorUtils) {
+        throw error
+      }
       throw new ErrorUtils(500, 'Failed to fetch subject')
     }
   }
 
-  /**
-   * Updates a subject by ID.
-   * @param {number} id - The ID of the subject to update.
-   * @param {string|null} subjectName - The new name of the subject or null to keep current name.
-   * @returns {Promise<boolean>} - Returns true if update is successful.
-   * @throws {ErrorUtils} - If an error occurs during update.
-   */
   static async updateById (id, subjectName) {
     try {
-      return await SubjectsRepository.updateSubjectById(id, subjectName)
+      const currentSubject = await SubjectsRepository.findById(id)
+      if (!currentSubject) {
+        throw new ErrorUtils(404, 'Subject not found')
+      }
+      if (currentSubject.subject_name === subjectName) {
+        return {
+          id,
+          subjectName
+        }
+      }
+
+      const subjectExists = await SubjectsRepository.findByName(subjectName)
+      if (subjectExists) {
+        throw new ErrorUtils(400, 'Subject already exists')
+      }
+      const updatedSubject = await SubjectsRepository.updateById(id, subjectName)
+      if (!updatedSubject) {
+        throw new ErrorUtils(404, 'Subject not found')
+      }
+      return {
+        id,
+        subjectName
+      }
     } catch (error) {
+      if (error instanceof ErrorUtils) {
+        throw error
+      }
       throw new ErrorUtils(500, 'Failed to update subject')
     }
   }
@@ -78,8 +113,16 @@ class SubjectsService {
    */
   static async deleteById (id) {
     try {
-      return await SubjectsRepository.deleteSubjectById(id)
+      const subjectDeleted = await SubjectsRepository.deleteById(id)
+      if (!subjectDeleted) {
+        throw new ErrorUtils(404, 'Subject not found')
+      }
+
+      return subjectDeleted
     } catch (error) {
+      if (error instanceof ErrorUtils) {
+        throw error
+      }
       throw new ErrorUtils(500, 'Failed to delete subject')
     }
   }

@@ -85,8 +85,6 @@ class LegalBasisService {
         legalBase
       }
     } catch (error) {
-      console.error('Error creating a new legal basis:', error.message)
-
       if (error instanceof z.ZodError) {
         const validationErrors = error.errors.map((e) => ({
           field: e.path[0],
@@ -135,7 +133,9 @@ class LegalBasisService {
 
       return legalBasesWithDetails
     } catch (error) {
-      console.error('Error retrieving all legal basis:', error.message)
+      if (error instanceof ErrorUtils) {
+        throw error
+      }
       throw new ErrorUtils(500, 'Failed to retrieve legal basis records')
     }
   }
@@ -169,8 +169,6 @@ class LegalBasisService {
         url: documentUrl
       }
     } catch (error) {
-      console.error('Error retrieving legal basis by ID:', error.message)
-
       if (error instanceof ErrorUtils) {
         throw error
       }
@@ -207,7 +205,6 @@ class LegalBasisService {
         url: documentUrl
       }
     } catch (error) {
-      console.error('Error retrieving legal basis by name:', error.message)
       if (error instanceof ErrorUtils) {
         throw error
       }
@@ -247,8 +244,6 @@ class LegalBasisService {
         url: documentUrl
       }
     } catch (error) {
-      console.error('Error retrieving legal basis by abbreviation:', error.message)
-
       if (error instanceof ErrorUtils) {
         throw error
       }
@@ -291,8 +286,6 @@ class LegalBasisService {
 
       return legalBasesWithDetails
     } catch (error) {
-      console.error('Error retrieving legal basis by classification:', error.message)
-
       if (error instanceof ErrorUtils) {
         throw error
       }
@@ -336,8 +329,6 @@ class LegalBasisService {
 
       return legalBasesWithDetails
     } catch (error) {
-      console.error('Error retrieving legal basis by jurisdiction:', error.message)
-
       if (error instanceof ErrorUtils) {
         throw error
       }
@@ -384,8 +375,6 @@ class LegalBasisService {
 
       return legalBasesWithDetails
     } catch (error) {
-      console.error('Error retrieving legal basis by state and municipality:', error.message)
-
       if (error instanceof ErrorUtils) {
         throw error
       }

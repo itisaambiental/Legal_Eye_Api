@@ -26,81 +26,81 @@ const router = Router()
 /**
  * Route to create a new legal basis.
  * @method POST
- * @path /fundamentos
+ * @path /legalBases
  * @description Allows an authorized user to create a new legal basis record.
  * @middlewares upload.single('document'), UserExtractor
  */
-router.post('/fundamentos', upload.single('document'), UserExtractor, createLegalBasis)
+router.post('/legalBases', upload.single('document'), UserExtractor, createLegalBasis)
 
 /**
  * Route to retrieve all legal basis records.
  * @method GET
- * @path /fundamentos
+ * @path /legalBases
  * @description Retrieves all legal basis records.
  * @middleware UserExtractor
  */
-router.get('/fundamentos', UserExtractor, getAllLegalBasis)
+router.get('/legalBases', UserExtractor, getAllLegalBasis)
 
 /**
  * Route to retrieve a legal basis by its ID.
  * @method GET
- * @path /fundamento/id/:id
+ * @path /legalBasis/:id
  * @param {string} id - The ID of the legal basis to retrieve.
  * @description Retrieves a specific legal basis by its ID.
  * @middleware UserExtractor
  */
-router.get('/fundamento/:id', UserExtractor, getLegalBasisById)
+router.get('/legalBasis/:id', UserExtractor, getLegalBasisById)
 
 /**
  * Route to retrieve a legal basis by its name.
  * @method GET
- * @path /fundamento/name/:name
+ * @path /legalBasis/name/:name
  * @param {string} name - The name of the legal basis to retrieve.
  * @description Retrieves a specific legal basis by its name.
  * @middleware UserExtractor
  */
-router.get('/fundamento/name/:name', UserExtractor, getLegalBasisByName)
+router.get('/legalBasis/name/:name', UserExtractor, getLegalBasisByName)
 
 /**
  * Route to retrieve a legal basis by its abbreviation.
  * @method GET
- * @path /fundamento/abbreviation/:abbreviation
+ * @path /legalBasis/abbreviation/:abbreviation
  * @param {string} abbreviation - The abbreviation of the legal basis to retrieve.
  * @description Retrieves a specific legal basis by its abbreviation.
  * @middleware UserExtractor
  */
-router.get('/fundamento/abbreviation/:abbreviation', UserExtractor, getLegalBasisByAbbreviation)
+router.get('/legalBasis/abbreviation/:abbreviation', UserExtractor, getLegalBasisByAbbreviation)
 
 /**
  * Route to retrieve a legal basis by its classification.
  * @method GET
- * @path /fundamento/classification/:classification
+ * @path /legalBasis/classification/:classification
  * @param {string} classification - The classification of the legal basis to retrieve.
  * @description Retrieves a list of legal basis records by their classification.
  * @middleware UserExtractor
  */
-router.get('/fundamento/classification/:classification', UserExtractor, getLegalBasisByClassification)
+router.get('/legalBasis/classification/:classification', UserExtractor, getLegalBasisByClassification)
 
 /**
  * Route to retrieve legal basis entries filtered by jurisdiction.
  * @method GET
- * @path /fundamento/jurisdiction/:jurisdiction
+ * @path /legalBasis/jurisdiction/:jurisdiction
  * @description Retrieves legal basis entries by jurisdiction.
  * @param {string} jurisdiction - The jurisdiction to filter by.
  * @middleware UserExtractor
  */
-router.get('/fundamento/jurisdiction/:jurisdiction', UserExtractor, getLegalBasisByJurisdiction)
+router.get('/legalBasis/jurisdiction/:jurisdiction', UserExtractor, getLegalBasisByJurisdiction)
 
 /**
  * Route to retrieve legal basis entries filtered by state and municipality.
  * @method GET
- * @path /fundamento/filter
+ * @path /legalBasis/state-municipality
  * @description Retrieves legal basis entries by state and optionally by municipality.
  * @query {string} state - The state to filter by.
  * @query {string} [municipality] - The municipality to filter by (optional).
  * @middleware UserExtractor
  */
-router.get('/fundamento/state-municipality', UserExtractor, getLegalBasisByStateAndMunicipality)
+router.get('/legalBasis/state-municipality', UserExtractor, getLegalBasisByStateAndMunicipality)
 
 router.patch('/fundamento/:id', UserExtractor)
 router.delete('/fundamento/:id', UserExtractor)
