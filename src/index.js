@@ -11,17 +11,22 @@ import { initializeAdmin } from './config/init.config.js'
 const serverPort = PORT || 3000
 
 /**
+ * Variable to hold the server instance, initialized only if not in test environment.
+ */
+let server
+
+/**
  * Initialize the admin user if not in test environment.
  */
 if (process.env.NODE_ENV !== 'test') {
   initializeAdmin()
-}
 
-/**
- * Start the server and listen on the specified port.
- */
-const server = app.listen(serverPort, () => {
-  console.log('Server running on port', serverPort)
-})
+  /**
+   * Start the server and listen on the specified port.
+   */
+  server = app.listen(serverPort, () => {
+    console.log('Server running on port', serverPort)
+  })
+}
 
 export { app, server }

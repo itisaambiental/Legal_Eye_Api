@@ -17,11 +17,24 @@ import emailQueue from '../config/emailQueue.js'
 export const api = supertest(app)
 
 /**
+ * Initializes the server only once for all test files.
+ * Uses a random port in test environment to avoid port conflicts.
+ */
+let serverInstance
+beforeAll(async () => {
+  if (!server || !server.listening) {
+    serverInstance = app.listen(0)
+  }
+})
+
+/**
  * Cleans up resources after all tests have completed.
  * Closes the database pool, email queue, and server.
  */
 afterAll(async () => {
   await pool.end()
   await emailQueue.close()
-  server.close()
+  if (serverInstance) {
+    serverInstance.close()
+  }
 }, 10000)

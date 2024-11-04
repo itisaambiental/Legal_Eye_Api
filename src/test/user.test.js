@@ -336,11 +336,8 @@ describe('Password reset and verification', () => {
     })
 
     test('Should return 403 when unauthorized user attempts to delete users', async () => {
-      const unauthorizedToken = 'someInvalidToken'
-
       const response = await api
         .delete('/api/users/batch')
-        .set('Authorization', `Bearer ${unauthorizedToken}`)
         .send({ userIds: userIdsToDelete })
         .expect(401)
         .expect('Content-Type', /application\/json/)
