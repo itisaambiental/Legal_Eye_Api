@@ -48,6 +48,31 @@ CREATE TABLE verification_codes (
     expires_at TIMESTAMP NOT NULL
 );
 
+-- Table: subjects
+-- This table stores the main subjects or categories that legal documents can belong to.
+-- Columns:
+-- - id: Unique identifier for each subject, auto-incremented.
+-- - subject_name: Name of the subject, such as 'Environmental', 'Security', etc.
+CREATE TABLE subjects (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    subject_name VARCHAR(255) NOT NULL
+);
+
+-- Table: aspects
+-- Stores specific aspects linked to subjects. Each subject can have multiple aspects.
+-- Columns:
+-- - id: Unique identifier for each aspect, auto-incremented.
+-- - subject_id: Foreign key referencing the 'subjects' table.
+-- - aspect_name: Name of the aspect related to the subject.
+CREATE TABLE aspects (
+    id INT AUTO_INCREMENT,
+    subject_id INT NOT NULL,
+    aspect_name VARCHAR(255) NOT NULL,
+    PRIMARY KEY (id),
+    UNIQUE KEY (subject_id, id),  -- Unique composite index needed for foreign key constraint
+    FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE CASCADE
+);
+
 -- Table: legal_basis
 -- This table stores legal documents and their classifications.
 -- Columns:
@@ -60,6 +85,7 @@ CREATE TABLE verification_codes (
 -- - municipality: Municipality associated with the legal document, if applicable.
 -- - url: URL of the legal document.
 -- - last_reform: Date of the last reform to the legal document.
+-- - subject_id: Id of the associated subject.
 CREATE TABLE legal_basis (
     id INT AUTO_INCREMENT PRIMARY KEY,
     legal_name VARCHAR(255) NOT NULL,
@@ -83,7 +109,9 @@ CREATE TABLE legal_basis (
     state VARCHAR(255),
     municipality VARCHAR(255),
     url VARCHAR(255),
-    last_reform DATE
+    last_reform DATE,
+    subject_id INT NOT NULL, 
+    FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE RESTRICT
 );
 
 -- Table: article
@@ -103,38 +131,20 @@ CREATE TABLE article (
     FOREIGN KEY (legal_basis_id) REFERENCES legal_basis(id) ON DELETE CASCADE
 );
 
--- Table: subjects
--- This table stores subjects such as 'Environmental', 'Security', etc.
--- Columns:
--- - id: Unique identifier for each subject, auto-incremented.
--- - subject_name: Name of the subject.
-CREATE TABLE subjects (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    subject_name VARCHAR(255) NOT NULL
-);
-
--- Table: aspects
--- This table stores aspects linked to specific subjects.
--- Columns:
--- - id: Unique identifier for each aspect, auto-incremented.
--- - subject_id: Foreign key referencing the 'subjects' table.
--- - aspect_name: Name of the aspect.
-CREATE TABLE aspects (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    subject_id INT NOT NULL,
-    aspect_name VARCHAR(255) NOT NULL,
-    FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE CASCADE
-);
-
--- Table: legal_basis_subject
--- This table establishes a many-to-many relationship between 'legal_basis' and 'subjects'.
+-- Table: legal_basis_subject_aspect
+-- This table establishes a many-to-many relationship between 'legal_basis', 'subjects', and 'aspects'.
 -- Columns:
 -- - legal_basis_id: Foreign key referencing the 'legal_basis' table.
 -- - subject_id: Foreign key referencing the 'subjects' table.
-CREATE TABLE legal_basis_subject (
+-- - aspect_id: Foreign key referencing the 'aspects' table.
+CREATE TABLE legal_basis_subject_aspect (
     legal_basis_id INT NOT NULL,
     subject_id INT NOT NULL,
-    PRIMARY KEY (legal_basis_id, subject_id),
+    aspect_id INT NOT NULL,
+    PRIMARY KEY (legal_basis_id, subject_id, aspect_id),
     FOREIGN KEY (legal_basis_id) REFERENCES legal_basis(id) ON DELETE CASCADE,
-    FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE CASCADE
+    FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE CASCADE,
+    FOREIGN KEY (aspect_id) REFERENCES aspects(id) ON DELETE CASCADE,
+    CONSTRAINT fk_subject_aspect FOREIGN KEY (subject_id, aspect_id)
+        REFERENCES aspects(subject_id, id) ON DELETE CASCADE
 );

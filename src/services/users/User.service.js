@@ -121,7 +121,7 @@ class UserService {
         id: user.id,
         gmail: user.gmail,
         username: user.name,
-        userType: user.role_id
+        userType: user.roleId
       }
 
       const token = jwt.sign(
@@ -158,7 +158,7 @@ class UserService {
         id: user.id,
         gmail: user.gmail,
         username: user.name,
-        userType: user.role_id
+        userType: user.roleId
       }
 
       const token = jwt.sign(

@@ -7,6 +7,7 @@ import cors from 'cors'
 import UserRoutes from './routes/User.routes.js'
 import LegalBasisRoutes from './routes/LegalBasis.routes.js'
 import SubjectsRoutes from './routes/Subjects.routes.js'
+import AspectsRoutes from './routes/Aspects.routes.js'
 /**
  * Configure the Express application.
  * @type {Express}
@@ -25,6 +26,7 @@ app.use(express.json()) // Parse incoming JSON requests
 app.use('/api', UserRoutes)
 app.use('/api', LegalBasisRoutes)
 app.use('/api', SubjectsRoutes)
+app.use('/api', AspectsRoutes)
 /**
  * Handle 404 Not Found errors.
  */

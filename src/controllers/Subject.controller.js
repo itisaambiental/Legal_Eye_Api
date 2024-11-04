@@ -1,5 +1,6 @@
 import SubjectsService from '../services/subjects/Subjects.service.js'
 import ErrorUtils from '../utils/Error.js'
+import UserService from '../services/users/User.service.js'
 
 /**
  * Creates a new subject.
@@ -10,13 +11,19 @@ import ErrorUtils from '../utils/Error.js'
  * @throws {ErrorUtils} - If the process fails.
  */
 export const createSubject = async (req, res) => {
+  const { userId } = req
   const { subjectName } = req.body
   if (!subjectName) {
     return res.status(400).json({ message: 'Missing required field: subjectName' })
   }
   try {
+    const isAuthorized = await UserService.userExists(userId)
+    if (!isAuthorized) {
+      res.status(403).json({ message: 'Unauthorized' })
+      throw new Error('Unauthorized')
+    }
     const subject = await SubjectsService.create({ subjectName })
-    return res.status(201).json(subject)
+    return res.status(201).json({ subject })
   } catch (error) {
     if (error instanceof ErrorUtils) {
       return res.status(error.status).json({
@@ -27,7 +34,6 @@ export const createSubject = async (req, res) => {
     return res.status(500).json({ message: 'Failed to create subject' })
   }
 }
-
 /**
  * Retrieves all subjects.
  * @function getSubjects
@@ -37,9 +43,14 @@ export const createSubject = async (req, res) => {
  * @throws {ErrorUtils} - If the process fails.
  */
 export const getSubjects = async (req, res) => {
+  const { userId } = req
   try {
+    const isAuthorized = await UserService.userExists(userId)
+    if (!isAuthorized) {
+      return res.status(403).json({ message: 'Unauthorized' })
+    }
     const subjects = await SubjectsService.getAll()
-    return res.status(200).json(subjects)
+    return res.status(200).json({ subjects })
   } catch (error) {
     if (error instanceof ErrorUtils) {
       return res.status(error.status).json({
@@ -60,10 +71,15 @@ export const getSubjects = async (req, res) => {
  * @throws {ErrorUtils} - If the process fails.
  */
 export const getSubjectById = async (req, res) => {
+  const { userId } = req
   const { id } = req.params
   try {
+    const isAuthorized = await UserService.userExists(userId)
+    if (!isAuthorized) {
+      return res.status(403).json({ message: 'Unauthorized' })
+    }
     const subject = await SubjectsService.getById(id)
-    return res.status(200).json(subject)
+    return res.status(200).json({ subject })
   } catch (error) {
     if (error instanceof ErrorUtils) {
       return res.status(error.status).json({
@@ -84,13 +100,16 @@ export const getSubjectById = async (req, res) => {
  * @throws {ErrorUtils} - If the process fails.
  */
 export const updateSubject = async (req, res) => {
+  const { userId } = req
   const { id } = req.params
   const { subjectName } = req.body
   try {
+    const isAuthorized = await UserService.userExists(userId)
+    if (!isAuthorized) {
+      return res.status(403).json({ message: 'Unauthorized' })
+    }
     const updatedSubject = await SubjectsService.updateById(id, subjectName)
-    return res.status(200).json({
-      updatedSubject
-    })
+    return res.status(200).json({ updatedSubject })
   } catch (error) {
     if (error instanceof ErrorUtils) {
       return res.status(error.status).json({
@@ -111,8 +130,13 @@ export const updateSubject = async (req, res) => {
  * @throws {ErrorUtils} - If the process fails.
  */
 export const deleteSubject = async (req, res) => {
+  const { userId } = req
   const { id } = req.params
   try {
+    const isAuthorized = await UserService.userExists(userId)
+    if (!isAuthorized) {
+      return res.status(403).json({ message: 'Unauthorized' })
+    }
     await SubjectsService.deleteById(id)
     return res.sendStatus(204)
   } catch (error) {

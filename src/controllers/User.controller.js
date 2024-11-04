@@ -29,8 +29,6 @@ export const loginUser = async (req, res) => {
     const { token } = await UserService.loginUser(req.body)
 
     return res.status(200).json({
-      status: 'ok',
-      message: 'Logged in successfully',
       token
     })
   } catch (error) {
@@ -64,8 +62,6 @@ export const loginUserMicrosoftAuth = async (req, res) => {
     const { token } = await UserService.microsoftLogin(accessToken)
 
     return res.status(200).json({
-      status: 'ok',
-      message: 'Logged in successfully',
       token
     })
   } catch (error) {

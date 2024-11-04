@@ -58,7 +58,7 @@ export const createLegalBasis = async (req, res) => {
 export const getAllLegalBasis = async (req, res) => {
   try {
     const legalBasis = await LegalBasisService.getAll()
-    return res.status(200).json(legalBasis)
+    return res.status(200).json({ legalBasis })
   } catch (error) {
     if (error instanceof ErrorUtils) {
       return res.status(error.status).json({
@@ -83,7 +83,7 @@ export const getLegalBasisById = async (req, res) => {
 
   try {
     const legalBasis = await LegalBasisService.getById(id)
-    return res.status(200).json(legalBasis)
+    return res.status(200).json({ legalBasis })
   } catch (error) {
     if (error instanceof ErrorUtils) {
       return res.status(error.status).json({
@@ -108,7 +108,7 @@ export const getLegalBasisByName = async (req, res) => {
 
   try {
     const legalBasis = await LegalBasisService.getByName(name)
-    return res.status(200).json(legalBasis)
+    return res.status(200).json({ legalBasis })
   } catch (error) {
     if (error instanceof ErrorUtils) {
       return res.status(error.status).json({
@@ -133,7 +133,7 @@ export const getLegalBasisByAbbreviation = async (req, res) => {
 
   try {
     const legalBasis = await LegalBasisService.getByAbbreviation(abbreviation)
-    return res.status(200).json(legalBasis)
+    return res.status(200).json({ legalBasis })
   } catch (error) {
     if (error instanceof ErrorUtils) {
       return res.status(error.status).json({
@@ -158,7 +158,7 @@ export const getLegalBasisByClassification = async (req, res) => {
 
   try {
     const legalBasis = await LegalBasisService.getByClassification(classification)
-    return res.status(200).json(legalBasis)
+    return res.status(200).json({ legalBasis })
   } catch (error) {
     if (error instanceof ErrorUtils) {
       return res.status(error.status).json({
@@ -183,7 +183,7 @@ export const getLegalBasisByJurisdiction = async (req, res) => {
 
   try {
     const legalBasis = await LegalBasisService.getByJurisdiction(jurisdiction)
-    return res.status(200).json(legalBasis)
+    return res.status(200).json({ legalBasis })
   } catch (error) {
     if (error instanceof ErrorUtils) {
       return res.status(error.status).json({
@@ -208,7 +208,7 @@ export const getLegalBasisByStateAndMunicipality = async (req, res) => {
 
   try {
     const legalBasis = await LegalBasisService.getByStateAndMunicipality({ state, municipality })
-    return res.status(200).json(legalBasis)
+    return res.status(200).json({ legalBasis })
   } catch (error) {
     if (error instanceof ErrorUtils) {
       return res.status(error.status).json({
