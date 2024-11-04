@@ -106,19 +106,18 @@ class DocumentService {
   }
 
   /**
-   * Extracts text content from an image buffer using Tesseract.js.
-   * @param {Buffer} buffer - The image file buffer.
-   * @returns {Promise<string>} - The extracted text content.
-   * @throws {ErrorUtils} If an error occurs during image processing.
-   */
+ * Extracts text content from an image buffer using Tesseract.js.
+ * @param {Buffer} buffer - The image file buffer.
+ * @returns {Promise<string>} - The extracted text content.
+ * @throws {ErrorUtils} If an error occurs during image processing.
+ */
   static async extractTextFromImage (buffer) {
-    try {
-      const { data } = await this.worker.recognize(buffer)
-      return data.text
-    } catch (error) {
-      console.error('Image Processing Error:', error.message)
-      throw new ErrorUtils(500, 'Image Processing Error', 'Error extracting text from image')
-    }
+    return this.worker.recognize(buffer)
+      .then(({ data }) => data.text)
+      .catch((error) => {
+        console.error('Image Processing Error:', error.message)
+        throw new ErrorUtils(500, 'Image Processing Error', 'Error extracting text from image')
+      })
   }
 }
 

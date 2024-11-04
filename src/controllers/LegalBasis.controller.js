@@ -23,7 +23,6 @@ export const createLegalBasis = async (req, res) => {
       message: 'Missing required fields: legalName, classification, jurisdiction'
     })
   }
-
   try {
     const legalBasis = await LegalBasisService.create({
       legalName,
@@ -34,7 +33,6 @@ export const createLegalBasis = async (req, res) => {
       lastReform,
       document
     })
-
     return res.status(201).json(legalBasis)
   } catch (error) {
     if (error instanceof ErrorUtils) {
@@ -80,7 +78,6 @@ export const getAllLegalBasis = async (req, res) => {
  */
 export const getLegalBasisById = async (req, res) => {
   const { id } = req.params
-
   try {
     const legalBasis = await LegalBasisService.getById(id)
     return res.status(200).json({ legalBasis })
@@ -105,7 +102,6 @@ export const getLegalBasisById = async (req, res) => {
  */
 export const getLegalBasisByName = async (req, res) => {
   const { name } = req.params
-
   try {
     const legalBasis = await LegalBasisService.getByName(name)
     return res.status(200).json({ legalBasis })
@@ -130,7 +126,6 @@ export const getLegalBasisByName = async (req, res) => {
  */
 export const getLegalBasisByAbbreviation = async (req, res) => {
   const { abbreviation } = req.params
-
   try {
     const legalBasis = await LegalBasisService.getByAbbreviation(abbreviation)
     return res.status(200).json({ legalBasis })
@@ -155,7 +150,6 @@ export const getLegalBasisByAbbreviation = async (req, res) => {
  */
 export const getLegalBasisByClassification = async (req, res) => {
   const { classification } = req.params
-
   try {
     const legalBasis = await LegalBasisService.getByClassification(classification)
     return res.status(200).json({ legalBasis })
@@ -180,7 +174,6 @@ export const getLegalBasisByClassification = async (req, res) => {
  */
 export const getLegalBasisByJurisdiction = async (req, res) => {
   const { jurisdiction } = req.params
-
   try {
     const legalBasis = await LegalBasisService.getByJurisdiction(jurisdiction)
     return res.status(200).json({ legalBasis })
@@ -205,7 +198,6 @@ export const getLegalBasisByJurisdiction = async (req, res) => {
  */
 export const getLegalBasisByStateAndMunicipality = async (req, res) => {
   const { state, municipality } = req.query
-
   try {
     const legalBasis = await LegalBasisService.getByStateAndMunicipality({ state, municipality })
     return res.status(200).json({ legalBasis })

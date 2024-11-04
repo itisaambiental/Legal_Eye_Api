@@ -24,9 +24,9 @@ app.use(express.json()) // Parse incoming JSON requests
  * Route setup.
  */
 app.use('/api', UserRoutes)
-app.use('/api', LegalBasisRoutes)
 app.use('/api', SubjectsRoutes)
 app.use('/api', AspectsRoutes)
+app.use('/api', LegalBasisRoutes)
 /**
  * Handle 404 Not Found errors.
  */
