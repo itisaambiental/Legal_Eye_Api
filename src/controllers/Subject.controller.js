@@ -103,6 +103,9 @@ export const updateSubject = async (req, res) => {
   const { userId } = req
   const { id } = req.params
   const { subjectName } = req.body
+  if (!subjectName) {
+    return res.status(400).json({ message: 'Missing required field: subjectName' })
+  }
   try {
     const isAuthorized = await UserService.userExists(userId)
     if (!isAuthorized) {

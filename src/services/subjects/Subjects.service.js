@@ -72,6 +72,13 @@ class SubjectsService {
     }
   }
 
+  /**
+   * Updates a subject by ID.
+   * @param {number} id - The ID of the subject to update.
+   * @param {string} subjectName - The new name of the subject.
+   * @returns {Promise<Object>} - Returns the updated subject data, including `id` and `subjectName`.
+   * @throws {ErrorUtils} - Throws an error if the subject is not found, the name already exists, or an unexpected error occurs.
+   */
   static async updateById (id, subjectName) {
     try {
       const currentSubject = await SubjectsRepository.findById(id)
@@ -84,7 +91,6 @@ class SubjectsService {
           subjectName
         }
       }
-
       const subjectExists = await SubjectsRepository.findByName(subjectName)
       if (subjectExists) {
         throw new ErrorUtils(400, 'Subject already exists')
