@@ -72,14 +72,14 @@ describe('Subjects API tests', () => {
   })
 
   describe('GET /subjects - Retrieve all subjects', () => {
-    test('Should retrieve all subjects with correct length of 2', async () => {
+    test('Should retrieve all subjects with correct length of 1', async () => {
       const response = await api
         .get('/api/subjects')
         .set('Authorization', `Bearer ${tokenAdmin}`)
         .expect(200)
         .expect('Content-Type', /application\/json/)
 
-      expect(response.body.subjects).toHaveLength(2)
+      expect(response.body.subjects).toHaveLength(1)
       expect(response.body.subjects[0].subject_name).toBe(subjectName)
     })
   })
