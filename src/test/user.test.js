@@ -9,7 +9,6 @@ let analystUserId
 
 beforeAll(async () => {
   await UserRepository.deleteAllExceptByGmail(ADMIN_GMAIL)
-
   const response = await api
     .post('/api/user/login')
     .send({

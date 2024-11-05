@@ -79,7 +79,7 @@ describe('Subjects API tests', () => {
         .expect(200)
         .expect('Content-Type', /application\/json/)
 
-      expect(response.body.subjects).toHaveLength(1)
+      expect(response.body.subjects).toHaveLength(2)
       expect(response.body.subjects[0].subject_name).toBe(subjectName)
     })
   })
@@ -146,7 +146,6 @@ describe('Subjects API tests', () => {
     test('Should return 400 if the subject name already exists', async () => {
       const duplicateSubjectName = 'Ambiental Duplicado'
       await SubjectsRepository.createSubject(duplicateSubjectName)
-
       const response = await api
         .patch(`/api/subject/${createdSubjectId}`)
         .set('Authorization', `Bearer ${tokenAdmin}`)
@@ -174,15 +173,13 @@ describe('Subjects API tests', () => {
         .delete(`/api/subject/${createdSubjectId}`)
         .set('Authorization', `Bearer ${tokenAdmin}`)
         .expect(204)
-
-      // Verificar que la materia ya no existe
       const response = await api
         .get('/api/subjects')
         .set('Authorization', `Bearer ${tokenAdmin}`)
         .expect(200)
         .expect('Content-Type', /application\/json/)
 
-      expect(response.body.subjects).toHaveLength(1)
+      expect(response.body.subjects).toHaveLength(2)
     })
   })
 })

@@ -52,25 +52,26 @@ class AspectsRepository {
   }
 
   /**
-     * Fetches an aspect by its name from the database.
-     * @param {string} aspectName - The name of the aspect to retrieve.
-     * @returns {Promise<Aspect|null>} - Returns the Aspect instance or null if not found.
-     * @throws {ErrorUtils} - If an error occurs during retrieval.
-     */
-  static async findByName (aspectName) {
+ * Fetches an aspect by its name and subject ID from the database.
+ * @param {string} aspectName - The name of the aspect to retrieve.
+ * @param {number} subjectId - The ID of the subject to filter by.
+ * @returns {Promise<Aspect|null>} - Returns the Aspect instance or null if not found.
+ * @throws {ErrorUtils} - If an error occurs during retrieval.
+ */
+  static async findByNameAndSubjectId (aspectName, subjectId) {
     const query = `
-      SELECT aspects.id, aspects.subject_id, aspects.aspect_name, subjects.subject_name
-      FROM aspects
-      JOIN subjects ON aspects.subject_id = subjects.id
-      WHERE aspects.aspect_name = ?
-    `
+    SELECT aspects.id, aspects.subject_id, aspects.aspect_name, subjects.subject_name
+    FROM aspects
+    JOIN subjects ON aspects.subject_id = subjects.id
+    WHERE aspects.aspect_name = ? AND aspects.subject_id = ?
+  `
     try {
-      const [rows] = await pool.query(query, [aspectName])
+      const [rows] = await pool.query(query, [aspectName, subjectId])
       if (rows.length === 0) return null
       const row = rows[0]
       return new Aspect(row.id, row.aspect_name, row.subject_id, row.subject_name)
     } catch (error) {
-      console.error('Error fetching aspect by name:', error.message)
+      console.error('Error fetching aspect by name and subject ID:', error.message)
       throw new ErrorUtils(500, 'Error fetching aspect from the database')
     }
   }

@@ -147,10 +147,10 @@ class SubjectsRepository {
   }
 
   /**
- * Deletes all subjects from the database.
- * @returns {Promise<void>}
- * @throws {ErrorUtils} - If an error occurs during deletion.
- */
+   * Deletes all subjects from the database.
+   * @returns {Promise<void>}
+   * @throws {ErrorUtils} - If an error occurs during deletion.
+   */
   static async deleteAll () {
     try {
       await pool.query('DELETE FROM subjects')

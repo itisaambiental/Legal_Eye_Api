@@ -20,8 +20,8 @@ class AspectsService {
       if (!subjectExists) {
         throw new ErrorUtils(404, 'Subject not found')
       }
-      const aspectExists = await AspectsRepository.findByName(aspectName)
-      if (aspectExists && aspectExists.subject_id === subjectId) {
+      const aspectExists = await AspectsRepository.findByNameAndSubjectId(aspectName, subjectId)
+      if (aspectExists) {
         throw new ErrorUtils(400, 'Aspect already exists')
       }
       const aspectId = await AspectsRepository.createSubject(subjectId, aspectName)
