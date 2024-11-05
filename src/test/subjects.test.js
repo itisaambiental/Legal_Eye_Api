@@ -72,7 +72,7 @@ describe('Subjects API tests', () => {
   })
 
   describe('GET /subjects - Retrieve all subjects', () => {
-    test('Should retrieve all subjects with correct length of 1', async () => {
+    test('Should retrieve all subjects with correct length of 2', async () => {
       const response = await api
         .get('/api/subjects')
         .set('Authorization', `Bearer ${tokenAdmin}`)
