@@ -132,6 +132,29 @@ class SubjectsService {
       throw new ErrorUtils(500, 'Failed to delete subject')
     }
   }
+
+  /**
+ * Deletes multiple subjects by their IDs.
+ * @param {Array<number>} subjectIds - Array of subject IDs to delete.
+ * @returns {Promise<Object>} - Success message if subjects were deleted.
+ * @throws {ErrorUtils} - If subjects not found or deletion fails.
+ */
+  static async deleteSubjectsBatch (subjectIds) {
+    try {
+      const existingSubjects = await SubjectsRepository.findByIds(subjectIds)
+      if (existingSubjects.length !== subjectIds.length) {
+        const notFoundIds = subjectIds.filter(id => !existingSubjects.some(subject => subject.id === id))
+        throw new ErrorUtils(404, `Subjects not found for IDs: ${notFoundIds.join(', ')}`)
+      }
+      await SubjectsRepository.deleteBatch(subjectIds)
+      return { success: true }
+    } catch (error) {
+      if (error instanceof ErrorUtils) {
+        throw error
+      }
+      throw new ErrorUtils(500, 'Failed to delete subjects')
+    }
+  }
 }
 
 export default SubjectsService

@@ -11,7 +11,8 @@ import {
   getSubjects,
   getSubjectById,
   updateSubject,
-  deleteSubject
+  deleteSubject,
+  deleteSubjectsBatch
 } from '../controllers/Subject.controller.js'
 import UserExtractor from '../middleware/access_token.js'
 
@@ -65,5 +66,14 @@ router.patch('/subject/:id', UserExtractor, updateSubject)
  * @middleware UserExtractor
  */
 router.delete('/subject/:id', UserExtractor, deleteSubject)
+
+/**
+ * Route to delete multiple subjects using an array of IDs.
+ * @method DELETE
+ * @path /subjects/batch
+ * @description Deletes multiple subjects from the system.
+ * @middleware UserExtractor
+ */
+router.delete('/subjects/batch', UserExtractor, deleteSubjectsBatch)
 
 export default router

@@ -69,7 +69,7 @@ CREATE TABLE aspects (
     subject_id INT NOT NULL,
     aspect_name VARCHAR(255) NOT NULL,
     PRIMARY KEY (id),
-    UNIQUE KEY (subject_id, id),  -- Unique composite index needed for foreign key constraint
+    UNIQUE KEY (subject_id, id), 
     FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE CASCADE
 );
 

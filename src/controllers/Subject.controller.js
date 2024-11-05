@@ -152,3 +152,41 @@ export const deleteSubject = async (req, res) => {
     return res.status(500).json({ message: 'Failed to delete subject' })
   }
 }
+
+/**
+ * Delete multiple subjects using an array of IDs.
+ * @function deleteSubjectsBatch
+ * @param {Object} req - Request object, expects { subjectIds } in body.
+ * @param {Object} res - Response object.
+ * @throws {ErrorUtils} - Throws an instance of ErrorUtils error if the process fails.
+ */
+export const deleteSubjectsBatch = async (req, res) => {
+  const { subjectIds } = req.body
+  const { userId } = req
+  if (!subjectIds || !Array.isArray(subjectIds) || subjectIds.length === 0) {
+    return res.status(400).json({
+      message: 'Missing required fields: subjectIds'
+    })
+  }
+  try {
+    const isAuthorized = await UserService.userExists(userId)
+    if (!isAuthorized) {
+      res.status(403).json({ message: 'Unauthorized' })
+      throw new Error('Unauthorized')
+    }
+    const result = await SubjectsService.deleteSubjectsBatch(subjectIds)
+    if (result.success) {
+      return res.sendStatus(204)
+    } else {
+      return res.status(404).json({ message: result.message })
+    }
+  } catch (error) {
+    if (error instanceof ErrorUtils) {
+      return res.status(error.status).json({
+        message: error.message,
+        ...(error.errors && { errors: error.errors })
+      })
+    }
+    return res.status(500).json({ message: 'Internal Server Error' })
+  }
+}

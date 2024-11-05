@@ -17,7 +17,6 @@ class SubjectsRepository {
       INSERT INTO subjects (subject_name)
       VALUES (?)
     `
-
     try {
       const [result] = await pool.query(query, [subjectName])
       return result.insertId
@@ -70,6 +69,25 @@ class SubjectsRepository {
     } catch (error) {
       console.error('Error fetching subject by ID:', error.message)
       throw new ErrorUtils(500, 'Error fetching subject from the database')
+    }
+  }
+
+  /**
+   * Finds subjects in the database using an array of IDs.
+   * @param {Array<number>} subjectIds - Array of subject IDs to find.
+   * @returns {Promise<Array<number>>} - Array of found subject IDs.
+   * @throws {ErrorUtils} - If an error occurs during retrieval.
+   */
+  static async findByIds (subjectIds) {
+    const query = `
+    SELECT id FROM subjects WHERE id IN (?)
+  `
+    try {
+      const [rows] = await pool.query(query, [subjectIds])
+      return rows.map(row => row.id)
+    } catch (error) {
+      console.error('Error finding subjects by IDs:', error.message)
+      throw new ErrorUtils(500, 'Error finding subjects by IDs from the database')
     }
   }
 
@@ -143,6 +161,28 @@ class SubjectsRepository {
     } catch (error) {
       console.error('Error deleting subject:', error.message)
       throw new ErrorUtils(500, 'Error deleting subject from the database')
+    }
+  }
+
+  /**
+ * Deletes multiple subjects from the database using an array of IDs.
+ * @param {Array<number>} subjectIds - Array of subject IDs to delete.
+ * @returns {Promise<boolean>} - True if subjects were deleted, otherwise false.
+ * @throws {ErrorUtils} - If an error occurs during the deletion.
+ */
+  static async deleteBatch (subjectIds) {
+    const query = `
+    DELETE FROM subjects WHERE id IN (?)
+  `
+    try {
+      const [result] = await pool.query(query, [subjectIds])
+      if (result.affectedRows === 0) {
+        return false
+      }
+      return true
+    } catch (error) {
+      console.error('Error deleting subjects:', error.message)
+      throw new ErrorUtils(500, 'Error deleting subjects from the database')
     }
   }
 
