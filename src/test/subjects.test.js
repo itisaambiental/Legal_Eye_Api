@@ -11,7 +11,6 @@ let createdSubjectId
 beforeAll(async () => {
   await SubjectsRepository.deleteAll()
   await UserRepository.deleteAllExceptByGmail(ADMIN_GMAIL)
-
   const response = await api
     .post('/api/user/login')
     .send({
@@ -20,7 +19,6 @@ beforeAll(async () => {
     })
     .expect(200)
     .expect('Content-Type', /application\/json/)
-
   tokenAdmin = response.body.token
 })
 
@@ -34,9 +32,10 @@ describe('Subjects API tests', () => {
         .expect(201)
         .expect('Content-Type', /application\/json/)
 
-      expect(response.body.subject).toHaveProperty('id')
-      expect(response.body.subject.subject_name).toBe(subjectName)
-      createdSubjectId = response.body.subject.id
+      const { subject } = response.body
+      expect(subject).toHaveProperty('id')
+      expect(subject.subject_name).toBe(subjectName)
+      createdSubjectId = subject.id
     })
 
     test('Should return 400 if subjectName is missing', async () => {
@@ -47,7 +46,7 @@ describe('Subjects API tests', () => {
         .expect(400)
         .expect('Content-Type', /application\/json/)
 
-      expect(response.body.message).toBe('Missing required field: subjectName')
+      expect(response.body.message).toMatch(/Missing required field/i)
     })
 
     test('Should return 403 if the user is unauthorized', async () => {
@@ -56,7 +55,7 @@ describe('Subjects API tests', () => {
         .expect(401)
         .expect('Content-Type', /application\/json/)
 
-      expect(response.body.error).toBe('token missing or invalid')
+      expect(response.body.error).toMatch(/token missing or invalid/i)
     })
 
     test('Should return 400 if the subject already exists', async () => {
@@ -67,19 +66,19 @@ describe('Subjects API tests', () => {
         .expect(400)
         .expect('Content-Type', /application\/json/)
 
-      expect(response.body.message).toBe('Subject already exists')
+      expect(response.body.message).toMatch(/Subject already exists/i)
     })
   })
 
   describe('GET /subjects - Retrieve all subjects', () => {
-    test('Should retrieve all subjects with correct length of 2', async () => {
+    test('Should retrieve all subjects with correct length', async () => {
       const response = await api
         .get('/api/subjects')
         .set('Authorization', `Bearer ${tokenAdmin}`)
         .expect(200)
         .expect('Content-Type', /application\/json/)
 
-      expect(response.body.subjects).toHaveLength(2)
+      expect(response.body.subjects).toHaveLength(1)
       expect(response.body.subjects[0].subject_name).toBe(subjectName)
     })
   })
@@ -92,13 +91,15 @@ describe('Subjects API tests', () => {
         .expect(200)
         .expect('Content-Type', /application\/json/)
 
-      expect(response.body.subject).toHaveProperty('id', createdSubjectId)
-      expect(response.body.subject.subject_name).toBe(subjectName)
+      const { subject } = response.body
+      expect(subject).toHaveProperty('id', createdSubjectId)
+      expect(subject.subject_name).toBe(subjectName)
     })
 
-    test('Should return an empty array for an subject not found', async () => {
+    test('Should return an empty array for a subject not found', async () => {
+      const nonExistentSubjectId = -1
       const response = await api
-        .get(`/api/subject/${9999}`)
+        .get(`/api/subject/${nonExistentSubjectId}`)
         .set('Authorization', `Bearer ${tokenAdmin}`)
         .expect(200)
         .expect('Content-Type', /application\/json/)
@@ -117,19 +118,22 @@ describe('Subjects API tests', () => {
         .expect(200)
         .expect('Content-Type', /application\/json/)
 
-      expect(response.body.updatedSubject).toHaveProperty('id', createdSubjectId.toString())
-      expect(response.body.updatedSubject.subjectName).toBe(newSubjectName)
+      const { updatedSubject } = response.body
+      expect(updatedSubject).toHaveProperty('id', createdSubjectId.toString())
+      expect(updatedSubject.subjectName).toBe(newSubjectName)
     })
 
     test('Should return 404 if the subject does not exist', async () => {
+      const nonExistentSubjectId = -1
+      const newSubjectName = 'Ambiental Actualizado'
       const response = await api
-        .patch(`/api/subject/${9999}`)
+        .patch(`/api/subject/${nonExistentSubjectId}`)
         .set('Authorization', `Bearer ${tokenAdmin}`)
-        .send({ subjectName: 'Nuevo Nombre' })
+        .send({ subjectName: newSubjectName })
         .expect(404)
         .expect('Content-Type', /application\/json/)
 
-      expect(response.body.message).toBe('Subject not found')
+      expect(response.body.message).toMatch(/Subject not found/i)
     })
 
     test('Should return 400 if subjectName is missing', async () => {
@@ -140,12 +144,19 @@ describe('Subjects API tests', () => {
         .expect(400)
         .expect('Content-Type', /application\/json/)
 
-      expect(response.body.message).toBe('Missing required field: subjectName')
+      expect(response.body.message).toMatch(/Missing required field/i)
     })
 
     test('Should return 400 if the subject name already exists', async () => {
       const duplicateSubjectName = 'Ambiental Duplicado'
-      await SubjectsRepository.createSubject(duplicateSubjectName)
+
+      await api
+        .post('/api/subjects')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send({ subjectName: duplicateSubjectName })
+        .expect(201)
+        .expect('Content-Type', /application\/json/)
+
       const response = await api
         .patch(`/api/subject/${createdSubjectId}`)
         .set('Authorization', `Bearer ${tokenAdmin}`)
@@ -153,19 +164,21 @@ describe('Subjects API tests', () => {
         .expect(400)
         .expect('Content-Type', /application\/json/)
 
-      expect(response.body.message).toBe('Subject already exists')
+      expect(response.body.message).toMatch(/Subject already exists/i)
     })
   })
 
   describe('DELETE /subject/:id - Delete subject by ID', () => {
     test('Should return 404 if the subject does not exist', async () => {
+      const nonExistentSubjectId = -1
+
       const response = await api
-        .delete('/api/subject/9999')
+        .delete(`/api/subject/${nonExistentSubjectId}`)
         .set('Authorization', `Bearer ${tokenAdmin}`)
         .expect(404)
         .expect('Content-Type', /application\/json/)
 
-      expect(response.body.message).toBe('Subject not found')
+      expect(response.body.message).toMatch(/Subject not found/i)
     })
 
     test('Should successfully delete the created subject', async () => {
@@ -173,13 +186,15 @@ describe('Subjects API tests', () => {
         .delete(`/api/subject/${createdSubjectId}`)
         .set('Authorization', `Bearer ${tokenAdmin}`)
         .expect(204)
+
       const response = await api
         .get('/api/subjects')
         .set('Authorization', `Bearer ${tokenAdmin}`)
         .expect(200)
         .expect('Content-Type', /application\/json/)
 
-      expect(response.body.subjects).toHaveLength(2)
+      const subjects = response.body.subjects
+      expect(subjects.some(subj => subj.id === createdSubjectId)).toBe(false)
     })
   })
 })

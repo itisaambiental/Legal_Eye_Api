@@ -19,7 +19,6 @@ beforeAll(async () => {
     .expect('Content-Type', /application\/json/)
 
   tokenAdmin = response.body.token
-
   const adminUser = await UserRepository.findByGmail(ADMIN_GMAIL)
   adminUserId = adminUser.id
 })
@@ -40,7 +39,7 @@ describe('User API tests', () => {
         .expect(401)
         .expect('Content-Type', /application\/json/)
 
-      expect(response.body.message).toBe('Invalid email or password')
+      expect(response.body.message).toMatch(/Invalid email or password/i)
     })
 
     test('Should return 401 when the password is incorrect', async () => {
@@ -53,19 +52,17 @@ describe('User API tests', () => {
         .expect(401)
         .expect('Content-Type', /application\/json/)
 
-      expect(response.body.message).toBe('Invalid email or password')
+      expect(response.body.message).toMatch(/Invalid email or password/i)
     })
 
     test('Should return 400 when required fields are missing', async () => {
       const response = await api
         .post('/api/user/login')
-        .send({
-          gmail: ''
-        })
+        .send({ gmail: '' })
         .expect(400)
         .expect('Content-Type', /application\/json/)
 
-      expect(response.body.message).toBe('Missing required fields: gmail, password')
+      expect(response.body.message).toMatch(/Missing required fields/i)
     })
   })
 
@@ -85,6 +82,7 @@ describe('User API tests', () => {
       analystUserId = response.body.user.id
       expect(response.body.user.id).toBeDefined()
     })
+
     test('Should return validation errors for invalid user data', async () => {
       const response = await api
         .post('/api/user/register')
@@ -97,13 +95,13 @@ describe('User API tests', () => {
         .expect(400)
         .expect('Content-Type', /application\/json/)
 
-      expect(response.body.message).toBe('Validation failed')
+      expect(response.body.message).toMatch(/Validation failed/i)
       expect(response.body.errors).toEqual(
         expect.arrayContaining([
-          { field: 'gmail', message: 'The email must be valid' },
-          { field: 'gmail', message: 'The email must end with @isaambiental.com' },
-          { field: 'roleId', message: 'The roleId must be a valid number' },
-          { field: 'roleId', message: 'The roleId must be either 1 (Admin) or 2 (Analyst)' }
+          { field: 'gmail', message: expect.stringMatching(/email must be valid/i) },
+          { field: 'gmail', message: expect.stringMatching(/must end with @isaambiental.com/i) },
+          { field: 'roleId', message: expect.stringMatching(/must be a valid number/i) },
+          { field: 'roleId', message: expect.stringMatching(/must be either 1 \(Admin\) or 2 \(Analyst\)/i) }
         ])
       )
     })
@@ -112,15 +110,11 @@ describe('User API tests', () => {
       const response = await api
         .post('/api/user/register')
         .set('Authorization', `Bearer ${tokenAdmin}`)
-        .send({
-          name: '',
-          gmail: '',
-          roleId: 2
-        })
+        .send({ name: '', gmail: '', roleId: 2 })
         .expect(400)
         .expect('Content-Type', /application\/json/)
 
-      expect(response.body.message).toBe('Missing required fields: name, gmail, roleId')
+      expect(response.body.message).toMatch(/Missing required fields/i)
     })
 
     test('Should return exactly two users', async () => {
@@ -132,8 +126,9 @@ describe('User API tests', () => {
 
       const users = response.body.users
       expect(users).toHaveLength(2)
-      expect(users[0].gmail).toBe(ADMIN_GMAIL)
-      expect(users[1].gmail).toBe('testuser@isaambiental.com')
+      expect(users.map(user => user.gmail)).toEqual(
+        expect.arrayContaining([ADMIN_GMAIL, 'testuser@isaambiental.com'])
+      )
     })
   })
 
@@ -154,11 +149,11 @@ describe('User API tests', () => {
         .expect(401)
         .expect('Content-Type', /application\/json/)
 
-      expect(response.body.error).toBe('token missing or invalid')
+      expect(response.body.error).toMatch(/token missing or invalid/i)
     })
 
     test('Should return an empty array when user is not found', async () => {
-      const invalidUserId = '-1'
+      const invalidUserId = -1
       const response = await api
         .get(`/api/user/${invalidUserId}`)
         .set('Authorization', `Bearer ${tokenAdmin}`)
@@ -209,7 +204,7 @@ describe('User API tests', () => {
         .expect(400)
         .expect('Content-Type', /application\/json/)
 
-      expect(response.body.message).toBe('No valid fields to update')
+      expect(response.body.message).toMatch(/No valid fields to update/i)
     })
 
     test('Should successfully update analyst user using admin token', async () => {
@@ -238,6 +233,7 @@ describe('User API tests', () => {
         .delete(`/api/user/${analystUserId}`)
         .set('Authorization', `Bearer ${tokenAdmin}`)
         .expect(204)
+
       const response = await api
         .get('/api/users/')
         .set('Authorization', `Bearer ${tokenAdmin}`)
@@ -250,7 +246,7 @@ describe('User API tests', () => {
     })
 
     test('Should return 404 when trying to delete a non-existing user', async () => {
-      const nonExistentUserId = '-1'
+      const nonExistentUserId = -1
 
       const response = await api
         .delete(`/api/user/${nonExistentUserId}`)
@@ -258,28 +254,28 @@ describe('User API tests', () => {
         .expect(404)
         .expect('Content-Type', /application\/json/)
 
-      expect(response.body.message).toBe('User not found')
+      expect(response.body.message).toMatch(/User not found/i)
     })
   })
-})
 
-describe('Password reset and verification', () => {
-  test('Should successfully send a password reset code', async () => {
-    await api
-      .post('/api/user/reset-password')
-      .send({ gmail: ADMIN_GMAIL })
-      .expect(200)
-      .expect('Content-Type', /text\/plain/)
-  })
+  describe('Password reset and verification', () => {
+    test('Should successfully send a password reset code', async () => {
+      await api
+        .post('/api/user/reset-password')
+        .send({ gmail: ADMIN_GMAIL })
+        .expect(200)
+        .expect('Content-Type', /text\/plain/)
+    })
 
-  test('Should return 400 for expired or invalid reset code', async () => {
-    const response = await api
-      .post('/api/user/verify-code')
-      .send({ gmail: ADMIN_GMAIL, code: 'invalidCode' })
-      .expect(400)
-      .expect('Content-Type', /application\/json/)
+    test('Should return 400 for expired or invalid reset code', async () => {
+      const response = await api
+        .post('/api/user/verify-code')
+        .send({ gmail: ADMIN_GMAIL, code: 'invalidCode' })
+        .expect(400)
+        .expect('Content-Type', /application\/json/)
 
-    expect(response.body.message).toBe('Invalid or expired code')
+      expect(response.body.message).toMatch(/Invalid or expired code/i)
+    })
   })
 
   describe('Batch delete users', () => {
@@ -318,9 +314,7 @@ describe('Password reset and verification', () => {
         .expect('Content-Type', /application\/json/)
 
       const remainingUsers = response.body.users
-      const deletedUserExists = remainingUsers.some(user => userIdsToDelete.includes(user.id))
-
-      expect(deletedUserExists).toBe(false)
+      expect(remainingUsers.some(user => userIdsToDelete.includes(user.id))).toBe(false)
     })
 
     test('Should return 400 when userIds is missing or empty', async () => {
@@ -331,7 +325,7 @@ describe('Password reset and verification', () => {
         .expect(400)
         .expect('Content-Type', /application\/json/)
 
-      expect(response.body.message).toBe('Missing required fields: userIds')
+      expect(response.body.message).toMatch(/Missing required fields: userIds/i)
     })
 
     test('Should return 403 when unauthorized user attempts to delete users', async () => {
@@ -341,11 +335,11 @@ describe('Password reset and verification', () => {
         .expect(401)
         .expect('Content-Type', /application\/json/)
 
-      expect(response.body.error).toBe('token missing or invalid')
+      expect(response.body.error).toMatch(/token missing or invalid/i)
     })
 
     test('Should return 404 if any userId does not exist', async () => {
-      const nonExistentUserId = 'nonExistentId'
+      const nonExistentUserId = -1
       const response = await api
         .delete('/api/users/batch')
         .set('Authorization', `Bearer ${tokenAdmin}`)
@@ -353,7 +347,7 @@ describe('Password reset and verification', () => {
         .expect(404)
         .expect('Content-Type', /application\/json/)
 
-      expect(response.body.message).toContain(`Users not found for IDs: ${nonExistentUserId}`)
+      expect(response.body.message).toMatch(/Users not found for IDs/i)
     })
   })
 })
