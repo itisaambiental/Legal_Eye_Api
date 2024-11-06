@@ -1,5 +1,5 @@
 import ArticleExtractor from './ArticleExtractor.js'
-import llamaAPI from '../../config/llamaAI.config.js'
+import llamaAPI from '../../config/llamaAPI.config.js'
 import openai from '../../config/openapi.config.js'
 /**
  * Class extending ArticleExtractor to extract and correct articles from legal texts.
