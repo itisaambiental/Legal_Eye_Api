@@ -119,7 +119,7 @@ describe('Subjects API tests', () => {
         .expect('Content-Type', /application\/json/)
 
       const { updatedSubject } = response.body
-      expect(updatedSubject).toHaveProperty('id', createdSubjectId.toString())
+      expect(updatedSubject).toHaveProperty('id', createdSubjectId)
       expect(updatedSubject.subjectName).toBe(newSubjectName)
     })
 

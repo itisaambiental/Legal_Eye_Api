@@ -27,7 +27,7 @@ class AspectsService {
       const aspectId = await AspectsRepository.createSubject(subjectId, aspectName)
       return {
         id: aspectId,
-        subject_id: subjectId,
+        subject_id: Number(subjectId),
         aspect_name: aspectName,
         subject_name: subjectExists.subject_name
       }
@@ -102,16 +102,16 @@ class AspectsService {
           subject_name: currentAspect.subject_name
         }
       }
-      const aspectExists = await AspectsRepository.findByName(aspectName)
-      if (aspectExists && aspectExists.subject_id === currentAspect.subject_id) {
-        throw new ErrorUtils(400, 'Aspect already exists')
+      const aspectExists = await AspectsRepository.findByNameAndSubjectId(aspectName, currentAspect.subject_id)
+      if (aspectExists) {
+        throw new ErrorUtils(400, 'Aspect already exists for this subject')
       }
       const updated = await AspectsRepository.updateById(id, aspectName)
       if (!updated) {
         throw new ErrorUtils(404, 'Aspect not found')
       }
       return {
-        id,
+        id: Number(id),
         aspect_name: aspectName,
         subject_id: currentAspect.subject_id,
         subject_name: currentAspect.subject_name

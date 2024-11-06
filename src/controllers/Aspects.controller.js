@@ -110,6 +110,9 @@ export const updateAspect = async (req, res) => {
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
+    if (!aspectName) {
+      return res.status(400).json({ message: 'Missing required field: aspectName' })
+    }
     const updatedAspect = await AspectsService.updateById(id, aspectName)
     return res.status(200).json({ updatedAspect })
   } catch (error) {

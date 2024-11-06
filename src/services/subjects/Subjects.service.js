@@ -100,7 +100,7 @@ class SubjectsService {
         throw new ErrorUtils(404, 'Subject not found')
       }
       return {
-        id,
+        id: Number(id),
         subjectName
       }
     } catch (error) {

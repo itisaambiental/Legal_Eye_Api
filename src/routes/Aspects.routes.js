@@ -46,7 +46,7 @@ router.get('/subjects/:subjectId/aspects', UserExtractor, getAspectsBySubject)
  * @description Retrieves a specific aspect by its ID.
  * @middleware UserExtractor
  */
-router.get('/aspects/:id', UserExtractor, getAspectById)
+router.get('/aspect/:id', UserExtractor, getAspectById)
 
 /**
  * Route to update an aspect by its ID for a specific subject.
@@ -55,7 +55,7 @@ router.get('/aspects/:id', UserExtractor, getAspectById)
  * @description Updates an aspect's information by its ID.
  * @middleware UserExtractor
  */
-router.patch('/aspects/:id', UserExtractor, updateAspect)
+router.patch('/aspect/:id', UserExtractor, updateAspect)
 
 /**
  * Route to delete an aspect by its ID.
@@ -64,6 +64,6 @@ router.patch('/aspects/:id', UserExtractor, updateAspect)
  * @description Deletes an aspect by its ID.
  * @middleware UserExtractor
  */
-router.delete('/aspects/:id', UserExtractor, deleteAspect)
+router.delete('/aspect/:id', UserExtractor, deleteAspect)
 
 export default router

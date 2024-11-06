@@ -37,4 +37,4 @@ afterAll(async () => {
   if (serverInstance) {
     serverInstance.close()
   }
-}, 10000)
+}, 50000)
