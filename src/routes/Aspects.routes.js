@@ -11,7 +11,8 @@ import {
   getAspectsBySubject,
   getAspectById,
   updateAspect,
-  deleteAspect
+  deleteAspect,
+  deleteAspectsBatch
 } from '../controllers/Aspects.controller.js'
 import UserExtractor from '../middleware/access_token.js'
 
@@ -65,5 +66,14 @@ router.patch('/aspect/:id', UserExtractor, updateAspect)
  * @middleware UserExtractor
  */
 router.delete('/aspect/:id', UserExtractor, deleteAspect)
+
+/**
+ * Route to delete multiple aspects using an array of IDs.
+ * @method DELETE
+ * @path /aspects/batch
+ * @description Deletes multiple aspects from the system.
+ * @middleware UserExtractor
+ */
+router.delete('/aspects/batch', UserExtractor, deleteAspectsBatch)
 
 export default router

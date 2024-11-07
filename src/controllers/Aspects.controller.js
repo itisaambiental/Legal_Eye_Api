@@ -154,3 +154,40 @@ export const deleteAspect = async (req, res) => {
     return res.status(500).json({ message: 'Failed to delete aspect' })
   }
 }
+
+/**
+ * Delete multiple aspects using an array of IDs.
+ * @function deleteAspectsBatch
+ * @param {Object} req - Request object, expects { aspectIds } in body.
+ * @param {Object} res - Response object.
+ * @throws {ErrorUtils} - Throws an instance of ErrorUtils error if the process fails.
+ */
+export const deleteAspectsBatch = async (req, res) => {
+  const { aspectIds } = req.body
+  const { userId } = req
+  if (!aspectIds || !Array.isArray(aspectIds) || aspectIds.length === 0) {
+    return res.status(400).json({
+      message: 'Missing required fields: aspectIds'
+    })
+  }
+  try {
+    const isAuthorized = await UserService.userExists(userId)
+    if (!isAuthorized) {
+      return res.status(403).json({ message: 'Unauthorized' })
+    }
+    const result = await AspectsService.deleteAspectsBatch(aspectIds)
+    if (result.success) {
+      return res.sendStatus(204)
+    } else {
+      return res.status(404).json({ message: result.message })
+    }
+  } catch (error) {
+    if (error instanceof ErrorUtils) {
+      return res.status(error.status).json({
+        message: error.message,
+        ...(error.errors && { errors: error.errors })
+      })
+    }
+    return res.status(500).json({ message: 'Internal Server Error' })
+  }
+}

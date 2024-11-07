@@ -6,8 +6,9 @@ import { ADMIN_PASSWORD_TEST, ADMIN_GMAIL } from '../config/variables.config.js'
 
 const subjectName = 'Ambiental'
 let tokenAdmin
+const subjectNames = ['Matemáticas', 'Física', 'Química']
 let createdSubjectId
-
+const createdSubjectIds = []
 beforeAll(async () => {
   await SubjectsRepository.deleteAll()
   await UserRepository.deleteAllExceptByGmail(ADMIN_GMAIL)
@@ -195,6 +196,68 @@ describe('Subjects API tests', () => {
 
       const subjects = response.body.subjects
       expect(subjects.some(subj => subj.id === createdSubjectId)).toBe(false)
+    })
+  })
+  describe('Subjects API - DELETE /subjects/batch', () => {
+    test('Should successfully delete multiple subjects', async () => {
+      for (const name of subjectNames) {
+        const subjectResponse = await api
+          .post('/api/subjects')
+          .set('Authorization', `Bearer ${tokenAdmin}`)
+          .send({ subjectName: name })
+          .expect(201)
+          .expect('Content-Type', /application\/json/)
+
+        createdSubjectIds.push(subjectResponse.body.subject.id)
+      }
+
+      await api
+        .delete('/api/subjects/batch')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send({ subjectIds: createdSubjectIds })
+        .expect(204)
+
+      const response = await api
+        .get('/api/subjects')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .expect(200)
+        .expect('Content-Type', /application\/json/)
+
+      const remainingSubjects = response.body.subjects
+      expect(remainingSubjects.some(subject => createdSubjectIds.includes(subject.id))).toBe(false)
+    })
+
+    test('Should return 400 when subjectIds is missing or empty', async () => {
+      const response = await api
+        .delete('/api/subjects/batch')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send({ subjectIds: [] })
+        .expect(400)
+        .expect('Content-Type', /application\/json/)
+
+      expect(response.body.message).toMatch(/Missing required fields: subjectIds/i)
+    })
+
+    test('Should return 401 when unauthorized user attempts to delete subjects', async () => {
+      const response = await api
+        .delete('/api/subjects/batch')
+        .send({ subjectIds: createdSubjectIds })
+        .expect(401)
+        .expect('Content-Type', /application\/json/)
+
+      expect(response.body.error).toMatch(/token missing or invalid/i)
+    })
+
+    test('Should return 404 if any subjectId does not exist', async () => {
+      const nonExistentSubjectId = -1
+      const response = await api
+        .delete('/api/subjects/batch')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send({ subjectIds: [nonExistentSubjectId, ...createdSubjectIds] })
+        .expect(404)
+        .expect('Content-Type', /application\/json/)
+
+      expect(response.body.message).toMatch(/Subjects not found for IDs/i)
     })
   })
 })

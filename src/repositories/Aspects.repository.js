@@ -52,6 +52,25 @@ class AspectsRepository {
   }
 
   /**
+ * Finds aspects in the database using an array of IDs.
+ * @param {Array<number>} aspectIds - Array of aspect IDs to find.
+ * @returns {Promise<Array<number>>} - Array of found aspect IDs.
+ * @throws {ErrorUtils} - If an error occurs during retrieval.
+ */
+  static async findByIds (aspectIds) {
+    const query = `
+    SELECT id FROM aspects WHERE id IN (?)
+  `
+    try {
+      const [rows] = await pool.query(query, [aspectIds])
+      return rows.map(row => row.id)
+    } catch (error) {
+      console.error('Error finding aspects by IDs:', error.message)
+      throw new ErrorUtils(500, 'Error finding aspects by IDs from the database')
+    }
+  }
+
+  /**
  * Fetches an aspect by its name and subject ID from the database.
  * @param {string} aspectName - The name of the aspect to retrieve.
  * @param {number} subjectId - The ID of the subject to filter by.
@@ -149,6 +168,28 @@ class AspectsRepository {
     } catch (error) {
       console.error('Error deleting aspect:', error.message)
       throw new ErrorUtils(500, 'Error deleting aspect from the database')
+    }
+  }
+
+  /**
+ * Deletes multiple aspects from the database using an array of IDs.
+ * @param {Array<number>} aspectIds - Array of aspect IDs to delete.
+ * @returns {Promise<boolean>} - True if aspects were deleted, otherwise false.
+ * @throws {ErrorUtils} - If an error occurs during the deletion.
+ */
+  static async deleteBatch (aspectIds) {
+    const query = `
+    DELETE FROM aspects WHERE id IN (?)
+  `
+    try {
+      const [result] = await pool.query(query, [aspectIds])
+      if (result.affectedRows === 0) {
+        return false
+      }
+      return true
+    } catch (error) {
+      console.error('Error deleting aspects:', error.message)
+      throw new ErrorUtils(500, 'Error deleting aspects from the database')
     }
   }
 }

@@ -95,8 +95,7 @@ export const registerUser = async (req, res) => {
   try {
     const isAuthorized = await UserService.isAuthorized(userId)
     if (!isAuthorized) {
-      res.status(403).json({ message: 'Unauthorized' })
-      throw new Error('Unauthorized')
+      return res.status(403).json({ message: 'Unauthorized' })
     }
     const user = await UserService.registerUser(req.body, profilePicture)
     return res.status(201).json({ user })
@@ -123,8 +122,7 @@ export const getAllUsers = async (req, res) => {
   try {
     const isAuthorized = await UserService.isAuthorized(userId)
     if (!isAuthorized) {
-      res.status(403).json({ message: 'Unauthorized' })
-      throw new Error('Unauthorized')
+      return res.status(403).json({ message: 'Unauthorized' })
     }
     const users = await UserService.getAllUsers()
     return res.status(200).json({ users })
@@ -151,8 +149,7 @@ export const getAllRoles = async (req, res) => {
   try {
     const isAuthorized = await UserService.isAuthorized(userId)
     if (!isAuthorized) {
-      res.status(403).json({ message: 'Unauthorized' })
-      throw new Error('Unauthorized')
+      return res.status(403).json({ message: 'Unauthorized' })
     }
     const roles = await UserService.getAllRoles()
     return res.status(200).json({ roles })
@@ -180,8 +177,7 @@ export const getUserById = async (req, res) => {
   try {
     const isAuthorized = await UserService.canAccessUser(userId, id)
     if (!isAuthorized) {
-      res.status(403).json({ message: 'Unauthorized' })
-      throw new Error('Unauthorized')
+      return res.status(403).json({ message: 'Unauthorized' })
     }
     const user = await UserService.getUserById(id)
     return res.status(200).json({ user })
@@ -209,8 +205,7 @@ export const getUsersByRole = async (req, res) => {
   try {
     const isAuthorized = await UserService.isAuthorized(userId)
     if (!isAuthorized) {
-      res.status(403).json({ message: 'Unauthorized' })
-      throw new Error('Unauthorized')
+      return res.status(403).json({ message: 'Unauthorized' })
     }
     const users = await UserService.getUsersByRole(roleId)
     return res.status(200).json({ users })
@@ -251,8 +246,7 @@ export const updateUser = async (req, res) => {
     const isAuthorized = await UserService.isAuthorized(userId)
 
     if (!isAuthorized) {
-      res.status(403).json({ message: 'Unauthorized' })
-      throw new Error('Unauthorized')
+      return res.status(403).json({ message: 'Unauthorized' })
     }
     const { updatedUser, token } = await UserService.updateUser(id, updates, userId)
 
@@ -291,8 +285,7 @@ export const updateUserPicture = async (req, res) => {
     const isAuthorized = await UserService.canAccessUser(userId, id)
 
     if (!isAuthorized) {
-      res.status(403).json({ message: 'Unauthorized' })
-      throw new Error('Unauthorized')
+      return res.status(403).json({ message: 'Unauthorized' })
     }
     const profilePictureUrl = await UserService.updateUserPicture(id, profilePicture)
 
@@ -323,8 +316,7 @@ export const deleteUser = async (req, res) => {
   try {
     const isAuthorized = await UserService.isAuthorized(userId)
     if (!isAuthorized) {
-      res.status(403).json({ message: 'Unauthorized' })
-      throw new Error('Unauthorized')
+      return res.status(403).json({ message: 'Unauthorized' })
     }
     await UserService.deleteUser(id)
 
@@ -359,10 +351,8 @@ export const deleteUsersBatch = async (req, res) => {
 
   try {
     const isAuthorized = await UserService.isAuthorized(userId)
-
     if (!isAuthorized) {
-      res.status(403).json({ message: 'Unauthorized' })
-      throw new Error('Unauthorized')
+      return res.status(403).json({ message: 'Unauthorized' })
     }
     const result = await UserService.deleteUsersBatch(userIds)
 

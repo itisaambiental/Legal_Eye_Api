@@ -9,7 +9,7 @@ const aspectName = 'Organizacional'
 let tokenAdmin
 let createdSubjectId
 let createdAspectId
-
+const createdAspectIds = []
 beforeAll(async () => {
   await SubjectsRepository.deleteAll()
   await UserRepository.deleteAllExceptByGmail(ADMIN_GMAIL)
@@ -269,6 +269,68 @@ describe('Aspects API tests', () => {
         .expect('Content-Type', /application\/json/)
 
       expect(response.body.message).toMatch(/Aspect not found/i)
+    })
+  })
+
+  describe('Aspects API - DELETE /aspects/batch', () => {
+    test('Should successfully delete multiple aspects', async () => {
+      const aspectNames = ['Organizacional', 'Tecnico', 'Ambiental']
+      for (const name of aspectNames) {
+        const aspectResponse = await api
+          .post(`/api/subjects/${createdSubjectId}/aspects`)
+          .set('Authorization', `Bearer ${tokenAdmin}`)
+          .send({ aspectName: name })
+          .expect(201)
+          .expect('Content-Type', /application\/json/)
+
+        createdAspectIds.push(aspectResponse.body.aspect.id)
+      }
+      await api
+        .delete('/api/aspects/batch')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send({ aspectIds: createdAspectIds })
+        .expect(204)
+      const response = await api
+        .get(`/api/subjects/${createdSubjectId}/aspects`)
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .expect(200)
+        .expect('Content-Type', /application\/json/)
+
+      const remainingAspects = response.body.aspects
+      expect(remainingAspects.some(aspect => createdAspectIds.includes(aspect.id))).toBe(false)
+    })
+
+    test('Should return 400 when aspectIds is missing or empty', async () => {
+      const response = await api
+        .delete('/api/aspects/batch')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send({ aspectIds: [] })
+        .expect(400)
+        .expect('Content-Type', /application\/json/)
+
+      expect(response.body.message).toMatch(/Missing required fields: aspectIds/i)
+    })
+
+    test('Should return 401 when unauthorized user attempts to delete aspects', async () => {
+      const response = await api
+        .delete('/api/aspects/batch')
+        .send({ aspectIds: createdAspectIds })
+        .expect(401)
+        .expect('Content-Type', /application\/json/)
+
+      expect(response.body.error).toMatch(/token missing or invalid/i)
+    })
+
+    test('Should return 404 if any aspectId does not exist', async () => {
+      const nonExistentAspectId = -1
+      const response = await api
+        .delete('/api/aspects/batch')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send({ aspectIds: [nonExistentAspectId, ...createdAspectIds] })
+        .expect(404)
+        .expect('Content-Type', /application\/json/)
+
+      expect(response.body.message).toMatch(/Aspects not found for IDs/i)
     })
   })
 })

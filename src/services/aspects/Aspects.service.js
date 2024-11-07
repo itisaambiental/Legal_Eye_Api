@@ -104,7 +104,7 @@ class AspectsService {
       }
       const aspectExists = await AspectsRepository.findByNameAndSubjectId(aspectName, currentAspect.subject_id)
       if (aspectExists) {
-        throw new ErrorUtils(400, 'Aspect already exists for this subject')
+        throw new ErrorUtils(400, 'Aspect already exists')
       }
       const updated = await AspectsRepository.updateById(id, aspectName)
       if (!updated) {
@@ -142,6 +142,29 @@ class AspectsService {
         throw error
       }
       throw new ErrorUtils(500, 'Failed to delete aspect')
+    }
+  }
+
+  /**
+   * Deletes multiple aspects by their IDs.
+   * @param {Array<number>} aspectIds - Array of aspect IDs to delete.
+   * @returns {Promise<Object>} - Success message if aspects were deleted.
+   * @throws {ErrorUtils} - If aspects not found or deletion fails.
+   */
+  static async deleteAspectsBatch (aspectIds) {
+    try {
+      const existingAspects = await AspectsRepository.findByIds(aspectIds)
+      if (existingAspects.length !== aspectIds.length) {
+        const notFoundIds = aspectIds.filter(id => !existingAspects.some(aspect => aspect.id === id))
+        throw new ErrorUtils(404, `Aspects not found for IDs: ${notFoundIds.join(', ')}`)
+      }
+      await AspectsRepository.deleteBatch(aspectIds)
+      return { success: true }
+    } catch (error) {
+      if (error instanceof ErrorUtils) {
+        throw error
+      }
+      throw new ErrorUtils(500, 'Failed to delete aspects')
     }
   }
 }

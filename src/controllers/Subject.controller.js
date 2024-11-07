@@ -19,8 +19,7 @@ export const createSubject = async (req, res) => {
   try {
     const isAuthorized = await UserService.userExists(userId)
     if (!isAuthorized) {
-      res.status(403).json({ message: 'Unauthorized' })
-      throw new Error('Unauthorized')
+      return res.status(403).json({ message: 'Unauthorized' })
     }
     const subject = await SubjectsService.create({ subjectName })
     return res.status(201).json({ subject })
@@ -171,8 +170,7 @@ export const deleteSubjectsBatch = async (req, res) => {
   try {
     const isAuthorized = await UserService.userExists(userId)
     if (!isAuthorized) {
-      res.status(403).json({ message: 'Unauthorized' })
-      throw new Error('Unauthorized')
+      return res.status(403).json({ message: 'Unauthorized' })
     }
     const result = await SubjectsService.deleteSubjectsBatch(subjectIds)
     if (result.success) {
