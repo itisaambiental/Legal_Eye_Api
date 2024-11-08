@@ -2,7 +2,7 @@
 
 import transporter from '../../config/email.config.js'
 import ErrorUtils from '../../utils/Error.js'
-import { GMAIL_USER } from '../../config/variables.config.js'
+import { EMAIL_USER } from '../../config/variables.config.js'
 
 /**
  * Service class for handling email operations.
@@ -21,7 +21,7 @@ class EmailService {
   static async sendEmail ({ to, subject, text }) {
     try {
       const mailOptions = {
-        from: GMAIL_USER,
+        from: EMAIL_USER,
         to,
         subject,
         text
@@ -30,6 +30,7 @@ class EmailService {
       const info = await transporter.sendMail(mailOptions)
       return info
     } catch (error) {
+      console.error(error)
       throw new ErrorUtils(500, 'Error sending email')
     }
   }
