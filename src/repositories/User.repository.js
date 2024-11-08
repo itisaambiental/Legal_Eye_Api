@@ -8,7 +8,8 @@ import ErrorUtils from '../utils/Error.js'
  * Provides CRUD functionality for the 'users' and 'roles' tables.
  */
 
-class UserRepository { /**
+class UserRepository {
+  /**
    * Creates a new user in the database and returns the generated ID.
    * @param {Object} userData - User data to be inserted.
    * @param {string} userData.name - User's name.
