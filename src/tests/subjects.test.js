@@ -59,12 +59,12 @@ describe('Subjects API tests', () => {
       expect(response.body.error).toMatch(/token missing or invalid/i)
     })
 
-    test('Should return 400 if the subject already exists', async () => {
+    test('Should return 409 if the subject already exists', async () => {
       const response = await api
         .post('/api/subjects')
         .set('Authorization', `Bearer ${tokenAdmin}`)
         .send({ subjectName })
-        .expect(400)
+        .expect(409)
         .expect('Content-Type', /application\/json/)
 
       expect(response.body.message).toMatch(/Subject already exists/i)
@@ -148,7 +148,7 @@ describe('Subjects API tests', () => {
       expect(response.body.message).toMatch(/Missing required field/i)
     })
 
-    test('Should return 400 if the subject name already exists', async () => {
+    test('Should return 409 if the subject name already exists', async () => {
       const duplicateSubjectName = 'Ambiental Duplicado'
 
       await api
@@ -162,7 +162,7 @@ describe('Subjects API tests', () => {
         .patch(`/api/subject/${createdSubjectId}`)
         .set('Authorization', `Bearer ${tokenAdmin}`)
         .send({ subjectName: duplicateSubjectName })
-        .expect(400)
+        .expect(409)
         .expect('Content-Type', /application\/json/)
 
       expect(response.body.message).toMatch(/Subject already exists/i)

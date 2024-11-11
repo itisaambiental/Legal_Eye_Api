@@ -35,7 +35,7 @@ class UserService {
 
       const existingUser = await UserRepository.findByGmail(parsedUser.gmail)
       if (existingUser) {
-        throw new ErrorUtils(400, 'Gmail already exists')
+        throw new ErrorUtils(409, 'Gmail already exists')
       }
 
       const password = generatePassword()
@@ -304,6 +304,14 @@ class UserService {
    */
   static async updateUser (userId, updates, currentUserId) {
     try {
+      const parsedUpdates = userSchema.partial().safeParse(updates)
+      if (!parsedUpdates.success) {
+        const validationErrors = parsedUpdates.error.errors.map(e => ({
+          field: e.path[0],
+          message: e.message
+        }))
+        throw new ErrorUtils(400, 'Validation failed', validationErrors)
+      }
       const validFields = ['name', 'roleId', 'gmail', 'profilePicture']
       const fieldsToUpdate = {}
 
@@ -320,7 +328,7 @@ class UserService {
       if (fieldsToUpdate.gmail) {
         const existingUser = await UserRepository.findByGmailExcludingUserId(fieldsToUpdate.gmail, userId)
         if (existingUser) {
-          throw new ErrorUtils(400, 'Gmail already exists')
+          throw new ErrorUtils(409, 'Gmail already exists')
         }
       }
 

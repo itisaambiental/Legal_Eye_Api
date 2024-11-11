@@ -12,13 +12,16 @@ const userSchema = z.object({
    * User's name.
    * Must be a non-empty string.
    */
-  name: z.string().min(1, 'The name is required'),
+  name: z.string()
+    .min(1, 'The name is required')
+    .max(255, 'The name cannot exceed 255 characters'),
 
   /**
    * User's Gmail address.
    * Must be a valid email format and end with '@isaambiental.com'.
    */
   gmail: z.string()
+    .max(255, 'The email cannot exceed 255 characters')
     .email('The email must be valid')
     .refine((email) => email.endsWith('@isaambiental.com'), {
       message: 'The email must end with @isaambiental.com'

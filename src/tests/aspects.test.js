@@ -51,12 +51,12 @@ describe('Aspects API tests', () => {
       createdAspectId = aspect.id
     })
 
-    test('Should return 400 if the aspect already exists for the subject', async () => {
+    test('Should return 409 if the aspect already exists for the subject', async () => {
       const response = await api
         .post(`/api/subjects/${createdSubjectId}/aspects`)
         .set('Authorization', `Bearer ${tokenAdmin}`)
         .send({ aspectName })
-        .expect(400)
+        .expect(409)
         .expect('Content-Type', /application\/json/)
 
       expect(response.body.message).toMatch(/Aspect already exists/i)
@@ -186,7 +186,7 @@ describe('Aspects API tests', () => {
       expect(updatedAspect).toHaveProperty('subject_name', subjectName)
     })
 
-    test('Should return 400 if the new aspect name already exists for the subject', async () => {
+    test('Should return 409 if the new aspect name already exists for the subject', async () => {
       await api
         .post(`/api/subjects/${createdSubjectId}/aspects`)
         .set('Authorization', `Bearer ${tokenAdmin}`)
@@ -197,7 +197,7 @@ describe('Aspects API tests', () => {
         .patch(`/api/aspect/${createdAspectId}`)
         .set('Authorization', `Bearer ${tokenAdmin}`)
         .send({ aspectName: 'Duplicado' })
-        .expect(400)
+        .expect(409)
         .expect('Content-Type', /application\/json/)
 
       expect(response.body.message).toMatch(/Aspect already exists/i)

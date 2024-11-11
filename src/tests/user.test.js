@@ -67,20 +67,32 @@ describe('User API tests', () => {
   })
 
   describe('User registration and fetching tests', () => {
+    const userData = {
+      gmail: 'testuser@isaambiental.com',
+      name: 'Alfredo Duplicate',
+      roleId: '2'
+    }
     test('Should successfully register a new user', async () => {
       const response = await api
         .post('/api/user/register')
         .set('Authorization', `Bearer ${tokenAdmin}`)
-        .send({
-          gmail: 'testuser@isaambiental.com',
-          name: 'Alfredo',
-          roleId: '2'
-        })
+        .send(userData)
         .expect(201)
         .expect('Content-Type', /application\/json/)
 
       analystUserId = response.body.user.id
       expect(response.body.user.id).toBeDefined()
+    })
+
+    test('Should return error if Gmail already exists', async () => {
+      const response = await api
+        .post('/api/user/register')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send(userData)
+        .expect(409)
+        .expect('Content-Type', /application\/json/)
+
+      expect(response.body.message).toMatch(/Gmail already exists/i)
     })
 
     test('Should return validation errors for invalid user data', async () => {
@@ -192,6 +204,42 @@ describe('User API tests', () => {
         .expect('Content-Type', /application\/json/)
 
       expect(response.body.user.name).toBe('Admin Updated')
+    })
+
+    test('Should return validation errors for invalid user data when updating user', async () => {
+      const response = await api
+        .patch(`/api/user/${analystUserId}`)
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send({
+          name: 'Name',
+          gmail: 'Invalid email format',
+          roleId: 'Invalid roleId format and value'
+        })
+        .expect(400)
+        .expect('Content-Type', /application\/json/)
+
+      expect(response.body.message).toMatch(/Validation failed/i)
+      expect(response.body.errors).toEqual(
+        expect.arrayContaining([
+          { field: 'gmail', message: expect.stringMatching(/email must be valid/i) },
+          { field: 'gmail', message: expect.stringMatching(/must end with @isaambiental.com/i) },
+          { field: 'roleId', message: expect.stringMatching(/must be a valid number/i) },
+          { field: 'roleId', message: expect.stringMatching(/must be either 1 \(Admin\) or 2 \(Analyst\)/i) }
+        ])
+      )
+    })
+
+    test('Should return error if Gmail already exists', async () => {
+      const updatedData = { gmail: ADMIN_GMAIL }
+
+      const response = await api
+        .patch(`/api/user/${analystUserId}`)
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send(updatedData)
+        .expect(409)
+        .expect('Content-Type', /application\/json/)
+
+      expect(response.body.message).toMatch(/Gmail already exists/i)
     })
 
     test('Should fail to update user with invalid fields', async () => {

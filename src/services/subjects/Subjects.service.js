@@ -14,9 +14,15 @@ class SubjectsService {
    */
   static async create ({ subjectName }) {
     try {
+      if (typeof subjectName !== 'string') {
+        throw new ErrorUtils(400, 'The subject name must be a string.')
+      }
+      if (subjectName.length > 255) {
+        throw new ErrorUtils(400, 'The subject name cannot exceed 255 characters.')
+      }
       const subjectExists = await SubjectsRepository.findByName(subjectName)
       if (subjectExists) {
-        throw new ErrorUtils(400, 'Subject already exists')
+        throw new ErrorUtils(409, 'Subject already exists')
       }
       const subjectId = await SubjectsRepository.createSubject(subjectName)
       return {
@@ -81,6 +87,12 @@ class SubjectsService {
    */
   static async updateById (id, subjectName) {
     try {
+      if (typeof subjectName !== 'string') {
+        throw new ErrorUtils(400, 'The subject name must be a string.')
+      }
+      if (subjectName.length > 255) {
+        throw new ErrorUtils(400, 'The subject name cannot exceed 255 characters.')
+      }
       const currentSubject = await SubjectsRepository.findById(id)
       if (!currentSubject) {
         throw new ErrorUtils(404, 'Subject not found')
@@ -93,7 +105,7 @@ class SubjectsService {
       }
       const subjectExists = await SubjectsRepository.findByName(subjectName)
       if (subjectExists) {
-        throw new ErrorUtils(400, 'Subject already exists')
+        throw new ErrorUtils(409, 'Subject already exists')
       }
       const updatedSubject = await SubjectsRepository.updateById(id, subjectName)
       if (!updatedSubject) {

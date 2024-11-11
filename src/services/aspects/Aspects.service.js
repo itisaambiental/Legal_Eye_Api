@@ -20,9 +20,15 @@ class AspectsService {
       if (!subjectExists) {
         throw new ErrorUtils(404, 'Subject not found')
       }
+      if (typeof aspectName !== 'string') {
+        throw new ErrorUtils(400, 'The aspect name must be a string.')
+      }
+      if (aspectName.length > 255) {
+        throw new ErrorUtils(400, 'The aspect name cannot exceed 255 characters.')
+      }
       const aspectExists = await AspectsRepository.findByNameAndSubjectId(aspectName, subjectId)
       if (aspectExists) {
-        throw new ErrorUtils(400, 'Aspect already exists')
+        throw new ErrorUtils(409, 'Aspect already exists')
       }
       const aspectId = await AspectsRepository.createSubject(subjectId, aspectName)
       return {
@@ -94,6 +100,12 @@ class AspectsService {
       if (!currentAspect) {
         throw new ErrorUtils(404, 'Aspect not found')
       }
+      if (typeof aspectName !== 'string') {
+        throw new ErrorUtils(400, 'The aspect name must be a string.')
+      }
+      if (aspectName.length > 255) {
+        throw new ErrorUtils(400, 'The aspect name cannot exceed 255 characters.')
+      }
       if (currentAspect.aspect_name === aspectName) {
         return {
           id,
@@ -104,7 +116,7 @@ class AspectsService {
       }
       const aspectExists = await AspectsRepository.findByNameAndSubjectId(aspectName, currentAspect.subject_id)
       if (aspectExists) {
-        throw new ErrorUtils(400, 'Aspect already exists')
+        throw new ErrorUtils(409, 'Aspect already exists')
       }
       const updated = await AspectsRepository.updateById(id, aspectName)
       if (!updated) {
