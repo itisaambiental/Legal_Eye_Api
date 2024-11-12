@@ -1,6 +1,6 @@
 import LegalBasisService from '../services/legalBasis/LegalBasis.service.js'
 import ErrorUtils from '../utils/Error.js'
-
+import legalBasis from '../queues/legalBasisQueue.js'
 /**
  * Controller for legal basis operations.
  * @module LegalBasisController
@@ -11,21 +11,23 @@ import ErrorUtils from '../utils/Error.js'
  * @function createLegalBasis
  * @param {Object} req - Request object, expects { legalName, classification, jurisdiction, state, municipality, lastReform } in body, and 'document' as a file.
  * @param {Object} res - Response object.
- * @returns {Object} - The created legal basis data.
- * @throws {ErrorUtils} - Throws an instance of ErrorUtils if the process fails.
+ * @returns {Object} - The task ID for the created legal basis data.
  */
 export const createLegalBasis = async (req, res) => {
-  const { legalName, classification, jurisdiction, state, municipality, lastReform } = req.body
+  const { legalName, subject, aspects, classification, jurisdiction, state, municipality, lastReform } = req.body
   const document = req.file
 
-  if (!legalName || !classification || !jurisdiction) {
+  if (!legalName || !subject || !aspects || !classification || !jurisdiction || !lastReform || !document) {
     return res.status(400).json({
-      message: 'Missing required fields: legalName, classification, jurisdiction'
+      message: 'Missing required fields: legalName, classification, jurisdiction, lastReform, document'
     })
   }
+
   try {
-    const legalBasis = await LegalBasisService.create({
+    const job = await legalBasis.add({
       legalName,
+      subject,
+      aspects,
       classification,
       jurisdiction,
       state,
@@ -33,15 +35,9 @@ export const createLegalBasis = async (req, res) => {
       lastReform,
       document
     })
-    return res.status(201).json(legalBasis)
+    return res.status(201).json({ taskId: job.id })
   } catch (error) {
-    if (error instanceof ErrorUtils) {
-      return res.status(error.status).json({
-        message: error.message,
-        ...(error.errors && { errors: error.errors })
-      })
-    }
-    return res.status(500).json({ message: 'Failed to create legal basis' })
+    return res.status(500).json({ message: 'Error initializing legal basis creation' })
   }
 }
 

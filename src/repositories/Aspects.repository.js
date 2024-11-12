@@ -192,6 +192,62 @@ class AspectsRepository {
       throw new ErrorUtils(500, 'Error deleting aspects from the database')
     }
   }
+
+  /**
+ * Checks if an aspect is associated with any legal basis.
+ * @param {number} aspectId - The ID of the aspect to check.
+ * @returns {Promise<boolean>} - Returns an object with the count of legal basis associations.
+ * @throws {Error} - If an error occurs while querying the database.
+ */
+  static async checkAspectLegalBasisAssociations (aspectId) {
+    try {
+      const [rows] = await pool.query(`
+        SELECT 
+            COUNT(DISTINCT lbsa.legal_basis_id) AS legalBasisAssociationCount
+        FROM legal_basis_subject_aspect lbsa
+        WHERE lbsa.aspect_id = ?
+      `, [aspectId])
+
+      const { legalBasisAssociationCount } = rows[0]
+
+      return {
+        isAspectAssociatedToLegalBasis: legalBasisAssociationCount > 0
+      }
+    } catch (error) {
+      console.error('Error checking aspect associations with legal basis:', error.message)
+      throw new ErrorUtils(500, 'Error checking aspect associations with legal basis')
+    }
+  }
+
+  /**
+ * Checks if any of the aspects in the given array are associated with any legal basis.
+ * @param {Array<number>} aspectIds - Array of aspect IDs to check.
+ * @returns {Promise<Array<Object>>} - Returns an array of objects with aspect ID, name, and their association status.
+ * @throws {Error} - If an error occurs while querying the database.
+ */
+  static async checkAspectsLegalBasisAssociationsBatch (aspectIds) {
+    try {
+      const [rows] = await pool.query(`
+      SELECT 
+          a.id AS aspectId,
+          a.aspect_name AS aspectName,
+          COUNT(DISTINCT lbsa.legal_basis_id) AS legalBasisAssociationCount
+      FROM aspects a
+      LEFT JOIN legal_basis_subject_aspect lbsa ON lbsa.aspect_id = a.id
+      WHERE a.id IN (?) 
+      GROUP BY a.id
+    `, [aspectIds])
+
+      return rows.map(row => ({
+        id: row.aspectId,
+        name: row.aspectName,
+        isAspectAssociatedToLegalBasis: row.legalBasisAssociationCount > 0
+      }))
+    } catch (error) {
+      console.error('Error checking batch associations for aspects:', error.message)
+      throw new ErrorUtils(500, 'Error checking batch associations for aspects')
+    }
+  }
 }
 
 export default AspectsRepository

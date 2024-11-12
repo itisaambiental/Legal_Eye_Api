@@ -144,6 +144,10 @@ class AspectsService {
    */
   static async deleteById (id) {
     try {
+      const { isAspectAssociatedToLegalBasis } = await AspectsRepository.checkAspectLegalBasisAssociations(id)
+      if (isAspectAssociatedToLegalBasis) {
+        throw new ErrorUtils(409, 'The aspect is associated with one or more legal bases')
+      }
       const aspectDeleted = await AspectsRepository.deleteById(id)
       if (!aspectDeleted) {
         throw new ErrorUtils(404, 'Aspect not found')
@@ -158,17 +162,27 @@ class AspectsService {
   }
 
   /**
-   * Deletes multiple aspects by their IDs.
-   * @param {Array<number>} aspectIds - Array of aspect IDs to delete.
-   * @returns {Promise<Object>} - Success message if aspects were deleted.
-   * @throws {ErrorUtils} - If aspects not found or deletion fails.
-   */
+ * Deletes multiple aspects by their IDs.
+ * @param {Array<number>} aspectIds - Array of aspect IDs to delete.
+ * @returns {Promise<Object>} - Success message if aspects were deleted.
+ * @throws {ErrorUtils} - If aspects not found, have associations preventing deletion, or deletion fails.
+ */
   static async deleteAspectsBatch (aspectIds) {
     try {
       const existingAspects = await AspectsRepository.findByIds(aspectIds)
       if (existingAspects.length !== aspectIds.length) {
         const notFoundIds = aspectIds.filter(id => !existingAspects.some(aspect => aspect.id === id))
-        throw new ErrorUtils(404, `Aspects not found for IDs: ${notFoundIds.join(', ')}`)
+        throw new ErrorUtils(404, 'Aspects not found for IDs', { notFoundIds })
+      }
+      const associations = await AspectsRepository.checkAspectsLegalBasisAssociationsBatch(aspectIds)
+      const aspectsWithLegalBasisAssociations = associations.filter(aspect => aspect.isAspectAssociatedToLegalBasis)
+      if (aspectsWithLegalBasisAssociations.length > 0) {
+        throw new ErrorUtils(409, 'Aspects are associated with legal bases', {
+          associatedAspects: aspectsWithLegalBasisAssociations.map(aspect => ({
+            id: aspect.id,
+            name: aspect.name
+          }))
+        })
       }
       await AspectsRepository.deleteBatch(aspectIds)
       return { success: true }

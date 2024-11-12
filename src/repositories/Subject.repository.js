@@ -73,18 +73,18 @@ class SubjectsRepository {
   }
 
   /**
-   * Finds subjects in the database using an array of IDs.
-   * @param {Array<number>} subjectIds - Array of subject IDs to find.
-   * @returns {Promise<Array<number>>} - Array of found subject IDs.
-   * @throws {ErrorUtils} - If an error occurs during retrieval.
-   */
+ * Finds subjects in the database using an array of IDs.
+ * @param {Array<number>} subjectIds - Array of subject IDs to find.
+ * @returns {Promise<Array<Object>>} - Array of objects with found subject IDs and names.
+ * @throws {ErrorUtils} - If an error occurs during retrieval.
+ */
   static async findByIds (subjectIds) {
     const query = `
-    SELECT id FROM subjects WHERE id IN (?)
+    SELECT id, subject_name FROM subjects WHERE id IN (?)
   `
     try {
       const [rows] = await pool.query(query, [subjectIds])
-      return rows.map(row => row.id)
+      return rows.map(row => ({ id: row.id, name: row.name }))
     } catch (error) {
       console.error('Error finding subjects by IDs:', error.message)
       throw new ErrorUtils(500, 'Error finding subjects by IDs from the database')
@@ -197,6 +197,69 @@ class SubjectsRepository {
     } catch (error) {
       console.error('Error deleting all subjects:', error.message)
       throw new ErrorUtils(500, 'Error deleting all subjects from the database')
+    }
+  }
+
+  /**
+ * Checks if a subject or any of its aspects is associated with any legal basis.
+ * @param {number} subjectId - The ID of the subject to check.
+ * @returns {Promise<Object<boolean>>} - Returns an object with two boolean values:
+ *      - isAssociatedToLegalBasis: true if the subject is associated with one or more legal bases.
+ *      - isSubjectAspectAssociatedToLegalBasis: true if any aspect of the subject is associated with legal bases.
+ * @throws {Error} - If an error occurs while querying the database.
+ */
+  static async checkSubjectLegalBasisAssociations (subjectId) {
+    try {
+      const [rows] = await pool.query(`
+      SELECT 
+          COUNT(DISTINCT lb.id) AS legalBasisCount, 
+          COUNT(DISTINCT lbsa.aspect_id) AS aspectAssociationCount
+      FROM subjects s
+      LEFT JOIN legal_basis lb ON s.id = lb.subject_id
+      LEFT JOIN legal_basis_subject_aspect lbsa ON lb.id = lbsa.legal_basis_id AND s.id = lbsa.subject_id
+      WHERE s.id = ?
+    `, [subjectId])
+      const { legalBasisCount, aspectAssociationCount } = rows[0]
+      return {
+        isAssociatedToLegalBasis: legalBasisCount > 0,
+        isSubjectAspectAssociatedToLegalBasis: aspectAssociationCount > 0
+      }
+    } catch (error) {
+      console.error('Error checking subject associations:', error.message)
+      throw new ErrorUtils(500, 'Error checking subject associations')
+    }
+  }
+
+  /**
+ * Checks if any of the subjects in the given array are associated with any legal basis or aspects.
+ * @param {Array<number>} subjectIds - Array of subject IDs to check.
+ * @returns {Promise<Array<Object>>} - Returns an array of objects with subject ID, name, and their association status.
+ * @throws {Error} - If an error occurs while querying the database.
+ */
+  static async checkSubjectsLegalBasisAssociationsBatch (subjectIds) {
+    try {
+      const [rows] = await pool.query(`
+      SELECT 
+          s.id AS subjectId,
+          s.subject_name AS subjectName,
+          COUNT(DISTINCT lb.id) AS legalBasisCount, 
+          COUNT(DISTINCT lbsa.aspect_id) AS aspectAssociationCount
+      FROM subjects s
+      LEFT JOIN legal_basis lb ON s.id = lb.subject_id
+      LEFT JOIN legal_basis_subject_aspect lbsa ON lb.id = lbsa.legal_basis_id AND s.id = lbsa.subject_id
+      WHERE s.id IN (?) 
+      GROUP BY s.id
+    `, [subjectIds])
+
+      return rows.map(row => ({
+        id: row.subjectId,
+        name: row.subjectName,
+        isAssociatedToLegalBasis: row.legalBasisCount > 0,
+        isSubjectAspectAssociatedToLegalBasis: row.aspectAssociationCount > 0
+      }))
+    } catch (error) {
+      console.error('Error checking batch associations:', error.message)
+      throw new Error('Error checking batch associations')
     }
   }
 }

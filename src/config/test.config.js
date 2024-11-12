@@ -8,7 +8,7 @@
 import supertest from 'supertest'
 import { server, app } from '../index.js'
 import { pool } from '../config/db.config.js'
-import emailQueue from '../config/emailQueue.js'
+import emailQueue from '../queues/emailQueue.js'
 
 /**
  * The API object for making HTTP requests in tests.

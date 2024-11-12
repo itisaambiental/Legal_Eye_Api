@@ -142,9 +142,7 @@ CREATE TABLE legal_basis_subject_aspect (
     subject_id INT NOT NULL,
     aspect_id INT NOT NULL,
     PRIMARY KEY (legal_basis_id, subject_id, aspect_id),
-    FOREIGN KEY (legal_basis_id) REFERENCES legal_basis(id) ON DELETE CASCADE,
-    FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE CASCADE,
-    FOREIGN KEY (aspect_id) REFERENCES aspects(id) ON DELETE CASCADE,
-    CONSTRAINT fk_subject_aspect FOREIGN KEY (subject_id, aspect_id)
-        REFERENCES aspects(subject_id, id) ON DELETE CASCADE
+    FOREIGN KEY (legal_basis_id) REFERENCES legal_basis(id) ON DELETE CASCADE, 
+    FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE RESTRICT,  
+    FOREIGN KEY (aspect_id) REFERENCES aspects(id) ON DELETE RESTRICT
 );

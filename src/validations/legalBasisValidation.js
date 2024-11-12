@@ -1,5 +1,3 @@
-// legalBasisValidation.js
-
 import { z } from 'zod'
 
 /**
@@ -13,7 +11,8 @@ const legalBasisSchema = z
      * The name of the legal basis.
      * Must be a non-empty string.
      */
-    legalName: z.string().min(1, 'The legal name is required'),
+    legalName: z.string().min(1, 'The legal name is required')
+      .max(255, 'The legal name cannot exceed 255 characters'),
 
     /**
      * The classification of the legal basis.
@@ -69,7 +68,6 @@ const legalBasisSchema = z
     /**
      * The document associated with the legal basis.
      * Must have a valid mimetype (pdf, png, jpg, jpeg).
-     * Optional field.
      */
     document: z
       .object({
@@ -78,7 +76,6 @@ const legalBasisSchema = z
           { message: 'Invalid document type. Allowed types are: pdf, png, jpg, jpeg' }
         )
       })
-      .optional()
   })
   .refine((data) => {
     /**

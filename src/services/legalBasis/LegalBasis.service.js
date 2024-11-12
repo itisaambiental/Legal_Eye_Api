@@ -30,35 +30,30 @@ class LegalBasisService {
       const parsedData = legalBasisSchema.parse({ legalName, classification, jurisdiction, state, municipality, lastReform, document })
       const legalBasisExists = await LegalBasisRepository.exists(parsedData.legalName)
       if (legalBasisExists) {
-        throw new ErrorUtils(400, 'LegalBasis already exists')
+        throw new ErrorUtils(409, 'LegalBasis already exists')
       }
-
       let documentKey = null
       let extractedArticles = []
-
-      if (document) {
-        const { error, success, data } = await DocumentService.process({ document })
-        if (!success) {
-          throw new ErrorUtils(500, 'Document Processing Error', error)
-        }
-
-        const extractor = ArticleExtractorFactory.getExtractor(parsedData.classification, data)
-        if (!extractor) {
-          throw new ErrorUtils(400, 'Invalid Classification', 'No extractor found for the provided classification')
-        }
-
-        extractedArticles = await extractor.extractArticles()
-        if (!extractedArticles || extractedArticles.length === 0) {
-          throw new ErrorUtils(500, 'Article Processing Error', 'No articles were extracted from the document')
-        }
-
-        const uploadResponse = await FileService.uploadFile(document)
-        if (uploadResponse.response.$metadata.httpStatusCode !== 200) {
-          throw new ErrorUtils(500, 'File Upload Error', 'Failed to upload document')
-        }
-
-        documentKey = uploadResponse.uniqueFileName
+      const { error, success, data } = await DocumentService.process({ document })
+      if (!success) {
+        throw new ErrorUtils(500, 'Document Processing Error', error)
       }
+      const extractor = ArticleExtractorFactory.getExtractor(parsedData.classification, data)
+      if (!extractor) {
+        throw new ErrorUtils(400, 'Invalid Classification', 'No extractor found for the provided classification')
+      }
+
+      extractedArticles = await extractor.extractArticles()
+      if (!extractedArticles || extractedArticles.length === 0) {
+        throw new ErrorUtils(500, 'Article Processing Error', 'No articles were extracted from the document')
+      }
+
+      const uploadResponse = await FileService.uploadFile(document)
+      if (uploadResponse.response.$metadata.httpStatusCode !== 200) {
+        throw new ErrorUtils(500, 'File Upload Error', 'Failed to upload document')
+      }
+
+      documentKey = uploadResponse.uniqueFileName
 
       const abbreviation = generateAbbreviation(parsedData.legalName)
       const lastReformDate = new Date(parsedData.lastReform)
@@ -78,9 +73,7 @@ class LegalBasisService {
       if (!articlesInserted) {
         throw new ErrorUtils(500, 'Failed to insert articles')
       }
-
       const legalBase = await this.getById(legalBasisId)
-
       return {
         legalBase
       }

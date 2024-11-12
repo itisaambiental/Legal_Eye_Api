@@ -4,7 +4,7 @@
  */
 
 import Queue from 'bull'
-import { redisConfig } from './redis.config.js'
+import { redisConfig } from '../config/redis.config.js'
 
 /**
  * The email queue for processing email sending jobs.

@@ -131,11 +131,17 @@ class SubjectsService {
    */
   static async deleteById (id) {
     try {
+      const { isAssociatedToLegalBasis, isSubjectAspectAssociatedToLegalBasis } = await SubjectsRepository.checkSubjectLegalBasisAssociations(id)
+      if (isAssociatedToLegalBasis) {
+        throw new ErrorUtils(409, 'The subject is associated with one or more legal bases')
+      }
+      if (isSubjectAspectAssociatedToLegalBasis) {
+        throw new ErrorUtils(409, 'Some aspects of the subject are associated with legal bases')
+      }
       const subjectDeleted = await SubjectsRepository.deleteById(id)
       if (!subjectDeleted) {
         throw new ErrorUtils(404, 'Subject not found')
       }
-
       return subjectDeleted
     } catch (error) {
       if (error instanceof ErrorUtils) {
@@ -149,14 +155,33 @@ class SubjectsService {
  * Deletes multiple subjects by their IDs.
  * @param {Array<number>} subjectIds - Array of subject IDs to delete.
  * @returns {Promise<Object>} - Success message if subjects were deleted.
- * @throws {ErrorUtils} - If subjects not found or deletion fails.
+ * @throws {ErrorUtils} - If subjects not found, have associations preventing deletion, or deletion fails.
  */
   static async deleteSubjectsBatch (subjectIds) {
     try {
       const existingSubjects = await SubjectsRepository.findByIds(subjectIds)
       if (existingSubjects.length !== subjectIds.length) {
         const notFoundIds = subjectIds.filter(id => !existingSubjects.some(subject => subject.id === id))
-        throw new ErrorUtils(404, `Subjects not found for IDs: ${notFoundIds.join(', ')}`)
+        throw new ErrorUtils(404, 'Subjects not found for IDs', { notFoundIds })
+      }
+      const associations = await SubjectsRepository.checkSubjectsLegalBasisAssociationsBatch(subjectIds)
+      const subjectsWithLegalBasisAssociations = associations.filter(subject => subject.isAssociatedToLegalBasis)
+      const subjectsWithAspectAssociations = associations.filter(subject => subject.isSubjectAspectAssociatedToLegalBasis)
+      if (subjectsWithLegalBasisAssociations.length > 0) {
+        throw new ErrorUtils(409, 'Subjects are associated with legal bases', {
+          associatedSubjects: subjectsWithLegalBasisAssociations.map(subject => ({
+            id: subject.id,
+            name: subject.name
+          }))
+        })
+      }
+      if (subjectsWithAspectAssociations.length > 0) {
+        throw new ErrorUtils(409, 'Subjects have aspects associated with legal bases', {
+          associatedSubjects: subjectsWithAspectAssociations.map(subject => ({
+            id: subject.id,
+            name: subject.name
+          }))
+        })
       }
       await SubjectsRepository.deleteBatch(subjectIds)
       return { success: true }

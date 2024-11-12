@@ -456,7 +456,7 @@ class UserService {
 
       if (existingUsers.length !== userIds.length) {
         const notFoundIds = userIds.filter(id => !existingUsers.includes(id))
-        throw new ErrorUtils(404, `Users not found for IDs: ${notFoundIds.join(', ')}`)
+        throw new ErrorUtils(404, 'Users not found for IDs', { notFoundIds })
       }
 
       await UserRepository.deleteBatch(userIds)
