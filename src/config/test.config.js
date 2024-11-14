@@ -9,7 +9,7 @@ import supertest from 'supertest'
 import { server, app } from '../index.js'
 import { pool } from '../config/db.config.js'
 import emailQueue from '../queues/emailQueue.js'
-
+import legalBasisQueue from '../queues/articlesQueue.js'
 /**
  * The API object for making HTTP requests in tests.
  * @type {supertest.SuperTest<supertest.Test>}
@@ -34,6 +34,7 @@ beforeAll(async () => {
 afterAll(async () => {
   await pool.end()
   await emailQueue.close()
+  await legalBasisQueue.close()
   if (serverInstance) {
     serverInstance.close()
   }

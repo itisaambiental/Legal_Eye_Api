@@ -102,7 +102,4 @@ router.get('/legalBasis/jurisdiction/:jurisdiction', UserExtractor, getLegalBasi
  */
 router.get('/legalBasis/state-municipality', UserExtractor, getLegalBasisByStateAndMunicipality)
 
-// router.patch('/fundamento/:id', UserExtractor)
-// router.delete('/fundamento/:id', UserExtractor)
-
 export default router

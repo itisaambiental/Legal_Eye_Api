@@ -1,6 +1,5 @@
 import LegalBasisService from '../services/legalBasis/LegalBasis.service.js'
 import ErrorUtils from '../utils/Error.js'
-import legalBasis from '../queues/legalBasisQueue.js'
 /**
  * Controller for legal basis operations.
  * @module LegalBasisController
@@ -11,23 +10,33 @@ import legalBasis from '../queues/legalBasisQueue.js'
  * @function createLegalBasis
  * @param {Object} req - Request object, expects { legalName, classification, jurisdiction, state, municipality, lastReform } in body, and 'document' as a file.
  * @param {Object} res - Response object.
- * @returns {Object} - The task ID for the created legal basis data.
+ * @returns {Object} - The jobId and the created legalBasis data.
  */
 export const createLegalBasis = async (req, res) => {
-  const { legalName, subject, aspects, classification, jurisdiction, state, municipality, lastReform } = req.body
+  const { legalName, abbreviation, subjectId, aspectsIds, classification, jurisdiction, state, municipality, lastReform } = req.body
   const document = req.file
 
-  if (!legalName || !subject || !aspects || !classification || !jurisdiction || !lastReform || !document) {
+  if (
+    !legalName ||
+    !abbreviation ||
+    !subjectId ||
+    !aspectsIds ||
+    !classification ||
+    !jurisdiction ||
+    !lastReform ||
+    !document
+  ) {
     return res.status(400).json({
-      message: 'Missing required fields: legalName, classification, jurisdiction, lastReform, document'
+      message: 'Missing required fields: legalName, abbreviation, subjectId, aspectIds (non-empty array), classification, jurisdiction, lastReform, document'
     })
   }
 
   try {
-    const job = await legalBasis.add({
+    const { jobId, legalBasis } = await LegalBasisService.create({
       legalName,
-      subject,
-      aspects,
+      abbreviation,
+      subjectId,
+      aspectsIds,
       classification,
       jurisdiction,
       state,
@@ -35,8 +44,14 @@ export const createLegalBasis = async (req, res) => {
       lastReform,
       document
     })
-    return res.status(201).json({ taskId: job.id })
+    return res.status(201).json({ jobId, legalBasis })
   } catch (error) {
+    if (error instanceof ErrorUtils) {
+      return res.status(error.status).json({
+        message: error.message,
+        ...(error.errors && { errors: error.errors })
+      })
+    }
     return res.status(500).json({ message: 'Error initializing legal basis creation' })
   }
 }

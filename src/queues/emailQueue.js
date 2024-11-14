@@ -15,7 +15,8 @@ const emailQueue = new Queue('emailQueue', {
   defaultJobOptions: {
     attempts: 3,
     backoff: 10000,
-    removeOnComplete: true
+    removeOnComplete: 10,
+    removeOnFail: 5
   }
 })
 

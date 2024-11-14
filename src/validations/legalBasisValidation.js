@@ -15,6 +15,38 @@ const legalBasisSchema = z
       .max(255, 'The legal name cannot exceed 255 characters'),
 
     /**
+   * The abbreviation of the legal basis.
+   * Must be a non-empty string with a maximum length of 255 characters.
+   */
+    abbreviation: z.string().min(1, 'The abbreviation is required')
+      .max(255, 'The abbreviation cannot exceed 255 characters'),
+
+    /**
+     * The subject associated with the legal basis.
+     * Must be a string that can be converted to a valid number.
+     */
+    subjectId: z.string()
+      .refine((val) => !isNaN(Number(val)), 'The subject must be a valid number')
+      .transform((val) => Number(val)),
+
+    /**
+      * The aspects associated with the legal basis.
+      * Must be an array of valid numbers represented as strings.
+      */
+    aspectsIds: z
+      .string()
+      .refine((val) => {
+        try {
+          const parsedArray = JSON.parse(val)
+          return Array.isArray(parsedArray) && parsedArray.every(item => !isNaN(Number(item)))
+        } catch {
+          return false
+        }
+      }, 'Each aspect must be a valid array of numbers')
+      .transform((val) => JSON.parse(val))
+      .refine((val) => val.length > 0, 'Aspects must contain at least one number'),
+
+    /**
      * The classification of the legal basis.
      * Must be one of the predefined categories.
      */
@@ -62,7 +94,7 @@ const legalBasisSchema = z
      */
     lastReform: z.string().refine(
       (val) => !isNaN(Date.parse(val)),
-      { message: 'The lastReform must be a valid date' }
+      { message: 'The lastReform must be a valid date in YYYY-MM-DD format' }
     ),
 
     /**

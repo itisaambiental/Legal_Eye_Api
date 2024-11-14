@@ -8,9 +8,11 @@ class ArticleExtractor {
   /**
    * Constructs an instance of ArticleExtractor.
    * @param {string} text - The text from which to extract articles.
+   * @param {Object} job - The Bull job object used for progress tracking.
    */
-  constructor (text) {
+  constructor (text, job) {
     this.text = text
+    this.job = job
   }
 
   /**
@@ -20,6 +22,16 @@ class ArticleExtractor {
    */
   async extractArticles () {
     throw new Error('Method "extractArticles" must be implemented')
+  }
+
+  /**
+   * Updates the progress of the job.
+   * @param {number} current - The current number of processed articles.
+   * @param {number} total - The total number of articles to process.
+   */
+  updateProgress (current, total) {
+    const progress = Math.floor((current / total) * 100)
+    this.job.progress(progress)
   }
 
   /**

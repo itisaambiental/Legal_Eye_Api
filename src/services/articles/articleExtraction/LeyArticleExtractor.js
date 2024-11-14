@@ -14,10 +14,14 @@ class LeyArticleExtractor extends ArticleExtractor {
   async extractArticles () {
     const text = this.cleanText(this.text)
     const articles = this._extractArticles(text)
+    const totalArticles = articles.length
     const formatArticles = []
+    let currentProgress = 0
     for (const article of articles) {
       const correctedArticle = await this.correctArticleWithFallback(article)
       formatArticles.push(correctedArticle)
+      currentProgress += 1
+      this.updateProgress(currentProgress, totalArticles)
     }
     return this.formatArticles(formatArticles)
   }

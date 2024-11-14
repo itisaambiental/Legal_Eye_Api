@@ -1,82 +1,72 @@
 import LegalBasisRepository from '../../repositories/LegalBasis.repository.js'
-import ArticlesRepository from '../../repositories/Articules.repository.js'
+import articlesQueue from '../../workers/articlesWorker.js'
 import legalBasisSchema from '../../validations/legalBasisValidation.js'
+import SubjectsRepository from '../../repositories/Subject.repository.js'
+import AspectsRepository from '../../repositories/Aspects.repository.js'
 import { z } from 'zod'
 import ErrorUtils from '../../utils/Error.js'
 import FileService from '../files/File.service.js'
-import generateAbbreviation from '../../utils/generateAbbreviation.js'
-import DocumentService from '../files/DocumentService.js'
-import ArticleExtractorFactory from '../articleExtraction/ArticleExtractorFactory.js'
-
 /**
  * Service class for handling Legal Basis operations.
  */
 class LegalBasisService {
   /**
-   * Creates a new Legal Basis entry and processes associated documents.
-   * @param {Object} params - Parameters for creating a legal basis.
-   * @param {string} params.legalName - The name of the legal basis.
-   * @param {string} params.classification - The classification of the legal basis.
-   * @param {string} params.jurisdiction - The jurisdiction of the legal basis.
-   * @param {string} [params.state] - The state associated with the legal basis.
-   * @param {string} [params.municipality] - The municipality associated with the legal basis.
-   * @param {string} params.lastReform - The date of the last reform.
-   * @param {Object} [params.document] - The document to process (optional).
-   * @returns {Promise<Object>} - The created legal basis data.
-   * @throws {ErrorUtils} - If an error occurs during creation.
-   */
-  static async create ({ legalName, classification, jurisdiction, state, municipality, lastReform, document }) {
+ * Creates a new Legal Basis entry by validating data and delegating heavy tasks to the worker.
+ * @param {Object} params - Parameters for creating a legal basis.
+ * @param {string} params.legalName - The name of the legal basis.
+ * @param {string} params.abbreviation - The abbreviation of the legal basis.
+ * @param {string} params.subject - The subject of the legal basis.
+ * @param {string} params.aspects - The aspects associated with the legal basis.
+ * @param {string} params.classification - The classification of the legal basis.
+ * @param {string} params.jurisdiction - The jurisdiction of the legal basis.
+ * @param {string} [params.state] - The state associated with the legal basis.
+ * @param {string} [params.municipality] - The municipality associated with the legal basis.
+ * @param {string} params.lastReform - The date of the last reform.
+ * @param {Object} params.document - The document to process.
+* @returns {Promise<Object>} - The JobId and the created legalBasis object.
+ * @throws {ErrorUtils} - If an error occurs during the creation validation.
+ */
+  static async create ({ legalName, abbreviation, subjectId, aspectsIds, classification, jurisdiction, state, municipality, lastReform, document }) {
     try {
-      const parsedData = legalBasisSchema.parse({ legalName, classification, jurisdiction, state, municipality, lastReform, document })
+      const parsedData = legalBasisSchema.parse({ legalName, abbreviation, subjectId, aspectsIds, classification, jurisdiction, state, municipality, lastReform, document })
       const legalBasisExists = await LegalBasisRepository.exists(parsedData.legalName)
       if (legalBasisExists) {
         throw new ErrorUtils(409, 'LegalBasis already exists')
       }
+      const subjectExists = await SubjectsRepository.findById(parsedData.subjectId)
+      if (!subjectExists) {
+        throw new ErrorUtils(400, 'Invalid subject ID')
+      }
+      const validAspectIds = await AspectsRepository.findByIds(parsedData.aspectsIds)
+      if (validAspectIds.length !== parsedData.aspectsIds.length) {
+        const invalidIds = parsedData.aspectsIds.filter(id => !validAspectIds.includes(id))
+        throw new ErrorUtils(400, 'Invalid aspect Ids', { invalidIds })
+      }
       let documentKey = null
-      let extractedArticles = []
-      const { error, success, data } = await DocumentService.process({ document })
-      if (!success) {
-        throw new ErrorUtils(500, 'Document Processing Error', error)
-      }
-      const extractor = ArticleExtractorFactory.getExtractor(parsedData.classification, data)
-      if (!extractor) {
-        throw new ErrorUtils(400, 'Invalid Classification', 'No extractor found for the provided classification')
-      }
-
-      extractedArticles = await extractor.extractArticles()
-      if (!extractedArticles || extractedArticles.length === 0) {
-        throw new ErrorUtils(500, 'Article Processing Error', 'No articles were extracted from the document')
-      }
-
       const uploadResponse = await FileService.uploadFile(document)
       if (uploadResponse.response.$metadata.httpStatusCode !== 200) {
-        throw new ErrorUtils(500, 'File Upload Error', 'Failed to upload document')
+        throw new ErrorUtils(500, 'File Upload Error')
       }
-
       documentKey = uploadResponse.uniqueFileName
-
-      const abbreviation = generateAbbreviation(parsedData.legalName)
       const lastReformDate = new Date(parsedData.lastReform)
-
-      const legalBasisId = await LegalBasisRepository.create({
+      const legalBasisData = {
         legalName: parsedData.legalName,
-        abbreviation,
+        abbreviation: parsedData.abbreviation,
+        subjectId: parsedData.subjectId,
+        aspectsIds: parsedData.aspectsIds,
         classification: parsedData.classification,
         jurisdiction: parsedData.jurisdiction,
         state: parsedData.state,
         municipality: parsedData.municipality,
         lastReform: lastReformDate,
         url: documentKey
+      }
+      const createdLegalBasis = await LegalBasisRepository.create(legalBasisData)
+      const job = await articlesQueue.add({
+        document: documentKey,
+        legalBasisId: createdLegalBasis.id
       })
-
-      const articlesInserted = await ArticlesRepository.insertArticles(legalBasisId, extractedArticles)
-      if (!articlesInserted) {
-        throw new ErrorUtils(500, 'Failed to insert articles')
-      }
-      const legalBase = await this.getById(legalBasisId)
-      return {
-        legalBase
-      }
+      return { jobId: job.id, legalBasis: createdLegalBasis }
     } catch (error) {
       if (error instanceof z.ZodError) {
         const validationErrors = error.errors.map((e) => ({
@@ -85,7 +75,6 @@ class LegalBasisService {
         }))
         throw new ErrorUtils(400, 'Validation failed', validationErrors)
       }
-
       if (error instanceof ErrorUtils) {
         throw error
       }
@@ -114,6 +103,8 @@ class LegalBasisService {
         return {
           id: legalBasis.id,
           legalName: legalBasis.legal_name,
+          subject: legalBasis.subject,
+          aspects: legalBasis.aspects,
           classification: legalBasis.classification,
           jurisdiction: legalBasis.jurisdiction,
           state: legalBasis.state,
@@ -153,6 +144,8 @@ class LegalBasisService {
       return {
         id: legalBase.id,
         legalName: legalBase.legal_name,
+        subject: legalBase.subject,
+        aspects: legalBase.aspects,
         classification: legalBase.classification,
         jurisdiction: legalBase.jurisdiction,
         state: legalBase.state,
@@ -189,6 +182,8 @@ class LegalBasisService {
       return {
         id: legalBase.id,
         legalName: legalBase.legal_name,
+        subject: legalBase.subject,
+        aspects: legalBase.aspects,
         classification: legalBase.classification,
         jurisdiction: legalBase.jurisdiction,
         state: legalBase.state,
@@ -209,33 +204,39 @@ class LegalBasisService {
    * Retrieves a legal basis entry by its abbreviation.
    * Fetches the document URL for the specified legal basis.
    * @param {string} abbreviation - The abbreviation of the legal basis to retrieve.
-   * @returns {Promise<Object>} - The legal basis entry, including document URL.
+   * @returns {Promise<Array<Object>>} - The legal basis entry, including document URL.
    * @throws {ErrorUtils} - If an error occurs during retrieval or if the legal basis is not found.
    */
   static async getByAbbreviation (abbreviation) {
     try {
-      const legalBase = await LegalBasisRepository.findByAbbreviation(abbreviation)
+      const legalBasis = await LegalBasisRepository.findByAbbreviation(abbreviation)
 
-      if (!legalBase) {
+      if (!legalBasis) {
         return []
       }
 
-      let documentUrl = null
-      if (legalBase.url) {
-        documentUrl = await FileService.getFile(legalBase.url)
-      }
+      const legalBasesWithDetails = await Promise.all(legalBasis.map(async (legalBasis) => {
+        let documentUrl = null
+        if (legalBasis.url) {
+          documentUrl = await FileService.getFile(legalBasis.url)
+        }
 
-      return {
-        id: legalBase.id,
-        legalName: legalBase.legal_name,
-        classification: legalBase.classification,
-        jurisdiction: legalBase.jurisdiction,
-        state: legalBase.state,
-        municipality: legalBase.municipality,
-        last_reform: legalBase.lastReform,
-        abbreviation: legalBase.abbreviation,
-        url: documentUrl
-      }
+        return {
+          id: legalBasis.id,
+          legalName: legalBasis.legal_name,
+          subject: legalBasis.subject,
+          aspects: legalBasis.aspects,
+          classification: legalBasis.classification,
+          jurisdiction: legalBasis.jurisdiction,
+          state: legalBasis.state,
+          municipality: legalBasis.municipality,
+          last_reform: legalBasis.lastReform,
+          abbreviation: legalBasis.abbreviation,
+          url: documentUrl
+        }
+      }))
+
+      return legalBasesWithDetails
     } catch (error) {
       if (error instanceof ErrorUtils) {
         throw error

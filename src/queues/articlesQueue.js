@@ -7,17 +7,17 @@ import Queue from 'bull'
 import { redisConfig } from '../config/redis.config.js'
 
 /**
- * The legalBasis queue for processing legalBasis sending jobs.
+ * The Article queue for processing articles sending jobs.
  * @type {Queue}
  */
-const legalBasis = new Queue('legalBasis', {
+const articlesQueue = new Queue('articlesQueue', {
   redis: redisConfig,
   defaultJobOptions: {
-    attempts: 2,
-    backoff: { type: 'exponential', delay: 5000 },
-    removeOnComplete: true,
-    removeOnFail: true
+    attempts: 3,
+    backoff: 10000,
+    removeOnComplete: 10,
+    removeOnFail: 5
   }
 })
 
-export default legalBasis
+export default articlesQueue
