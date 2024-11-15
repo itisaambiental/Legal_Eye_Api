@@ -56,7 +56,6 @@ class LegalBasisRepository {
         subjectId
       ])
       const legalBasisId = result.insertId
-
       if (aspectsIds && aspectsIds.length > 0) {
         const insertAspectsQuery = `
           INSERT INTO legal_basis_subject_aspect (legal_basis_id, subject_id, aspect_id) 

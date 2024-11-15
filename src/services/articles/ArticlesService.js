@@ -26,7 +26,6 @@ class ArticlesService {
       if (!insertionSuccess) {
         throw new ErrorUtils(500, 'Failed to insert articles into the database.')
       }
-
       return true
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -44,10 +43,10 @@ class ArticlesService {
   }
 
   /**
-   * Fetch the job from the queue and return the job state.
-   * @param {string} jobId - The job ID.
-   * @returns {Object} - The job state and relevant data.
-   */
+ * Fetch the job from the queue and return the job state.
+ * @param {string} jobId - The job ID.
+ * @returns {Object} - The job state and relevant data.
+ */
   static async getStatusArticlesJobs (jobId) {
     try {
       const job = await articlesQueue.getJob(jobId)
@@ -71,12 +70,10 @@ class ArticlesService {
           }
         }
         case 'completed': {
-          const legalBase = job.returnvalue?.legalBase || null
           return {
             status: 201,
             data: {
-              message: 'Job completed successfully',
-              legalBase
+              message: 'Job completed successfully'
             }
           }
         }

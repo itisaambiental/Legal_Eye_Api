@@ -13,7 +13,7 @@ import { redisConfig } from '../config/redis.config.js'
 const articlesQueue = new Queue('articlesQueue', {
   redis: redisConfig,
   defaultJobOptions: {
-    attempts: 3,
+    attempts: 1,
     backoff: 10000,
     removeOnComplete: 10,
     removeOnFail: 5

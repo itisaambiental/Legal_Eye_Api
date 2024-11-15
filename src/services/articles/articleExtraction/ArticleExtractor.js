@@ -7,10 +7,12 @@
 class ArticleExtractor {
   /**
    * Constructs an instance of ArticleExtractor.
+   * @param {string} name - The name of the document.
    * @param {string} text - The text from which to extract articles.
    * @param {Object} job - The Bull job object used for progress tracking.
    */
-  constructor (text, job) {
+  constructor (name, text, job) {
+    this.name = name
     this.text = text
     this.job = job
   }
@@ -25,12 +27,13 @@ class ArticleExtractor {
   }
 
   /**
-   * Updates the progress of the job.
-   * @param {number} current - The current number of processed articles.
-   * @param {number} total - The total number of articles to process.
-   */
+ * Updates the progress of the job.
+ * @param {number} current - The current number of processed articles.
+ * @param {number} total - The total number of articles to process.
+ */
   updateProgress (current, total) {
-    const progress = Math.floor((current / total) * 100)
+    let progress = Math.floor((current / total) * 100)
+    progress = Math.max(0, Math.min(progress, 100))
     this.job.progress(progress)
   }
 

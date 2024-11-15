@@ -35,12 +35,12 @@ class LegalBasisService {
       }
       const subjectExists = await SubjectsRepository.findById(parsedData.subjectId)
       if (!subjectExists) {
-        throw new ErrorUtils(400, 'Invalid subject ID')
+        throw new ErrorUtils(400, 'Subject Id not found')
       }
       const validAspectIds = await AspectsRepository.findByIds(parsedData.aspectsIds)
       if (validAspectIds.length !== parsedData.aspectsIds.length) {
-        const invalidIds = parsedData.aspectsIds.filter(id => !validAspectIds.includes(id))
-        throw new ErrorUtils(400, 'Invalid aspect Ids', { invalidIds })
+        const notFoundIds = parsedData.aspectsIds.filter(id => !validAspectIds.includes(id))
+        throw new ErrorUtils(400, 'Aspects Ids not found', { notFoundIds })
       }
       let documentKey = null
       const uploadResponse = await FileService.uploadFile(document)
@@ -62,11 +62,17 @@ class LegalBasisService {
         url: documentKey
       }
       const createdLegalBasis = await LegalBasisRepository.create(legalBasisData)
+      const documentUrl = await FileService.getFile(createdLegalBasis.url)
       const job = await articlesQueue.add({
-        document: documentKey,
         legalBasisId: createdLegalBasis.id
       })
-      return { jobId: job.id, legalBasis: createdLegalBasis }
+      return {
+        jobId: job.id,
+        legalBasis: {
+          ...createdLegalBasis,
+          url: documentUrl
+        }
+      }
     } catch (error) {
       if (error instanceof z.ZodError) {
         const validationErrors = error.errors.map((e) => ({

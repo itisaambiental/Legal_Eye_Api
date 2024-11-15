@@ -94,7 +94,6 @@ class DocumentService {
     const options = {
       verbosityLevel: 0
     }
-
     return pdf(buffer, options)
       .then((data) => {
         return data.text

@@ -1,6 +1,6 @@
 import ArticleExtractor from './ArticleExtractor.js'
-import llamaAPI from '../../config/llamaAPI.config.js'
-import openai from '../../config/openapi.config.js'
+// import llamaAPI from '../../../config/llamaAPI.config.js'
+import openai from '../../../config/openapi.config.js'
 /**
  * Class extending ArticleExtractor to extract articles from legal texts.
  * Processes the text, cleans inconsistent formats, and extracts articles,
@@ -18,7 +18,7 @@ class LeyArticleExtractor extends ArticleExtractor {
     const formatArticles = []
     let currentProgress = 0
     for (const article of articles) {
-      const correctedArticle = await this.correctArticleWithFallback(article)
+      const correctedArticle = await this.correctArticle(article)
       formatArticles.push(correctedArticle)
       currentProgress += 1
       this.updateProgress(currentProgress, totalArticles)
@@ -109,133 +109,76 @@ class LeyArticleExtractor extends ArticleExtractor {
   }
 
   /**
- * Corrects the article using multiple AI models as a fallback strategy.
- * If the first model fails, tries the second one.
+ * Corrects the article using multiple AI models.
  * @param {Object} article - The article object to correct.
  * @returns {Promise<Object>} - Corrected article object or original if both models fail.
  */
-  async correctArticleWithFallback (article) {
-    return this.correctArticleWithLlama(article)
-      .catch(() => {
-        return this.correctArticleWithOpenAI(article)
-      })
+  async correctArticle (article) {
+    return this.correctArticleOpenAI(article)
       .catch(() => {
         return article
       })
   }
 
   /**
-   * Calls Llama API to correct the article.
-   * @param {Object} article - The article object to correct.
-   * @returns {Promise<Object>} - Corrected article object.
-   */
-  async correctArticleWithLlama (article) {
-    const prompt = this.buildPrompt(article)
-    const apiRequestJson = {
-      model: 'llama3.1-405b',
-      messages: [
-        { role: 'system', content: prompt },
-        { role: 'user', content: JSON.stringify(article) }
-      ],
-      temperature: 0,
-      stream: false,
-      max_tokens: 3096
-    }
-
-    const response = await llamaAPI.run(apiRequestJson)
-    const generatedText = response.choices[0].message.content.trim()
-    return this.parseCorrectedArticle(generatedText, article)
-  }
-
-  /**
-   * Calls OpenAI to correct the article.
-   * @param {Object} article - The article object to correct.
-   * @returns {Promise<Object>} - Corrected article object.
-   */
-  async correctArticleWithOpenAI (article) {
-    const prompt = this.buildPrompt(article)
-    const response = await openai.chat.completions.create({
-      model: 'gpt-3.5-turbo',
-      messages: [
-        { role: 'system', content: prompt },
-        { role: 'user', content: JSON.stringify(article) }
-      ],
-      max_completion_tokens: 3096,
-      temperature: 0,
-      response_format: { type: 'text' }
-    })
-    const generatedText = response.choices[0].message.content.trim()
-    return this.parseCorrectedArticle(generatedText, article)
-  }
-
-  /**
- * Parses the corrected article from the model's response.
- * @param {string} generatedText - The response from the model.
- * @param {Object} originalArticle - The original article object.
- * @returns {Object} - Corrected article object or original if parsing fails.
+ * Calls OpenAI to correct the article.
+ * @param {Object} article - The article object to correct.
+ * @returns {Promise<Object>} - Corrected article object.
  */
-  parseCorrectedArticle (generatedText, originalArticle) {
-    const hasTitle = /"title":/.test(generatedText)
-    const hasArticle = /"article":/.test(generatedText)
-    const hasOrder = /"order":/.test(generatedText)
-
-    if (hasTitle && hasArticle && hasOrder) {
-      const titleMatch = generatedText.match(/"title":\s*"([^"]+)"/)
-      const articleMatch = generatedText.match(/"article":\s*"([^"]+)"/s)
-      const orderMatch = generatedText.match(/"order":\s*(\d+)/)
-
-      return {
-        title: titleMatch ? titleMatch[1] : originalArticle.title,
-        article: articleMatch ? articleMatch[1] : originalArticle.article,
-        order: orderMatch ? parseInt(orderMatch[1], 10) : originalArticle.order
+  async correctArticleOpenAI (article) {
+    const prompt = this.buildPrompt(this.name, article)
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o',
+      messages: [
+        { role: 'system', content: 'You are a virtual assistant specialized in reviewing, correcting and documenting Mexican legal articles that have been extracted from different laws, rules and regulations.' },
+        { role: 'user', content: prompt }
+      ],
+      temperature: 0,
+      response_format: {
+        type: 'json_schema',
+        json_schema: {
+          name: 'article_schema',
+          schema: {
+            type: 'object',
+            properties: {
+              title: { type: 'string', description: 'The title of the article' },
+              article: { type: 'string', description: 'The content of the article' },
+              order: { type: 'integer', description: 'The order number of the article' }
+            },
+            required: ['title', 'article', 'order'],
+            additionalProperties: false
+          }
+        }
       }
-    }
-    return originalArticle
+    })
+    const correctedArticle = JSON.parse(response.choices[0].message.content)
+    return correctedArticle
   }
 
   /**
-   * Builds the prompt for the AI models to process.
-   * @returns {string} - The constructed prompt.
-   */
-  buildPrompt () {
+ * Builds the prompt for the AI models to process.
+ * @param {string} documentName - The document name to include in the prompt.
+ * @param {Object} article - The article object to include in the prompt.
+ * @returns {string} - The constructed prompt.
+ */
+  buildPrompt (documentName, article) {
     return `
-    You are a legal content assistant focused on reviewing and formatting Mexican legal texts. Please process the following object and return it in valid JSON format:
-    { 
-      "title": "Title of the article, chapter, section, or transitory", 
-      "article": "Content of the article or section", 
-      "order": "Order number of the article, chapter, section, or transitory" 
+    Investigate the content of "${article.title}" in the Mexican legal document titled "${documentName}". Then, assist in formatting and correcting the following article:
+
+    {
+      "title": "${article.title}",
+      "article": "${article.article}",
+      "order": ${article.order}
     }
-    - Correct formatting errors like unnecessary spaces, incorrect line breaks, or misaligned indentations.
-    - Ensure text accuracy: if the title appears incomplete or contains errors, correct it, but only if the intended correction is clear from the context.
-    - Do not summarize or shorten the content of the article.
-    - Complete truncated words or sentences only when the missing content is obvious and does not alter the meaning.
-    - Handle tables and columns with special care, formatting them professionally to maintain their original structure and ensure readability.
-    - Do not modify the legal content, order, or meaning of the article. Maintain the integrity of the legal text.
-    - Do not introduce new information or make assumptions beyond what is clearly present in the original text.
-    - Respond only with the corrected JSON object, ensuring it meets the formatting and accuracy requirements described above.
-    - The articles will be in Spanish, and you must return the corrected object in the same language.
-    - Respond only in the requested JSON format. Do not include any additional text or explanations.
 
-    ### Example Input:
-{
-  "title": "artículo 1 ",
-  "article": " Las disposiciones de esta Ley... ",
-  "order": 1
-}
-
-### Example Response:
-[
-  {
-    "title": "Artículo 1",
-    "article": "Las disposiciones de esta Ley son de orden público, interés social y observancia general. Regula la participación de entidades en la gestión del agua en Puebla, promoviendo desarrollo sustentable y mitigación climática. Se aplicará supletoriamente la legislación federal y estatal en la materia.",
-    "order": 1
-  },
-  {
-    "title": "Artículo 2",
-    "article": "Se declara de interés público: I. Conservación de fuentes de agua; II. Políticas para desarrollo hídrico; III. Prestación de servicios; IV. Infraestructura hídrica; V. Captación y tratamiento de agua; VI. Control de contaminación; VII. Inspección de la Ley; VIII. Investigación en tecnología para manejo de agua.",
-    "order": 2
-  }
-    `
+    - Correct formatting issues such as unnecessary spaces, incorrect line breaks, or misaligned indentation.
+    - Ensure that all content ends with a coherent idea and a period.
+    - Complete truncated words or sentences when necessary, without altering their original meaning.
+    - Handle tables and columns carefully, preserving their original structure for readability and clarity.
+    - Do not introduce new information or make assumptions beyond what is explicitly present in the text.
+    - Articles are in Spanish; provide the corrected object in the same language.
+    - Pay special attention to article titles. Only complete them if necessary, and avoid altering their structure or changing their meaning to maintain consistency and order.
+  `
   }
 }
 
