@@ -242,17 +242,15 @@ describe('User API tests', () => {
       expect(response.body.message).toMatch(/Gmail already exists/i)
     })
 
-    test('Should fail to update user with invalid fields', async () => {
+    test('Should fail to update user with missing required fields', async () => {
       const invalidData = { invalidField: 'Invalid' }
-
       const response = await api
         .patch(`/api/user/${adminUserId}`)
         .set('Authorization', `Bearer ${tokenAdmin}`)
         .send(invalidData)
         .expect(400)
         .expect('Content-Type', /application\/json/)
-
-      expect(response.body.message).toMatch(/No valid fields to update/i)
+      expect(response.body.message).toMatch(/Missing required fields: id, name, gmail, roleId/i)
     })
 
     test('Should successfully update analyst user using admin token', async () => {

@@ -295,74 +295,51 @@ class UserService {
   }
 
   /**
-   * Updates a user's information by ID.
-   * @param {number} userId - User's ID.
-   * @param {Object} updates - Fields to update.
-   * @param {number} currentUserId - ID of the currently logged-in user.
-   * @returns {Promise<Object>} - Updated user data and a new token if applicable.
-   * @throws {ErrorUtils} - If update fails or user not found.
-   */
-  static async updateUser (userId, updates, currentUserId) {
+ * Updates a user's information by ID.
+ * @param {number} userId - User's ID.
+ * @param {Object} userData - Fields to update, expects { name, gmail, roleId, profilePicture }.
+ * @param {number} currentUserId - ID of the currently logged-in user.
+ * @returns {Promise<Object>} - Updated user data and a new token if applicable.
+ * @throws {ErrorUtils} - If update fails or user not found.
+ */
+  static async updateUser (userId, userData, currentUserId) {
     try {
-      const parsedUpdates = userSchema.partial().safeParse(updates)
-      if (!parsedUpdates.success) {
-        const validationErrors = parsedUpdates.error.errors.map(e => ({
-          field: e.path[0],
-          message: e.message
-        }))
-        throw new ErrorUtils(400, 'Validation failed', validationErrors)
-      }
-      const validFields = ['name', 'roleId', 'gmail', 'profilePicture']
-      const fieldsToUpdate = {}
-
-      for (const key in updates) {
-        if (validFields.includes(key)) {
-          fieldsToUpdate[key] = updates[key]
-        }
-      }
-
-      if (Object.keys(fieldsToUpdate).length === 0) {
-        throw new ErrorUtils(400, 'No valid fields to update')
-      }
-
-      if (fieldsToUpdate.gmail) {
-        const existingUser = await UserRepository.findByGmailExcludingUserId(fieldsToUpdate.gmail, userId)
+      const parsedUser = userSchema.partial().parse(userData)
+      if (parsedUser.gmail) {
+        const existingUser = await UserRepository.findByGmailExcludingUserId(parsedUser.gmail, userId)
         if (existingUser) {
           throw new ErrorUtils(409, 'Gmail already exists')
         }
       }
-
       const currentUser = await UserRepository.findById(userId)
       if (!currentUser) {
         throw new ErrorUtils(404, 'User not found')
       }
-
-      if (fieldsToUpdate.profilePicture == null) {
-        fieldsToUpdate.profilePicture = null
-      } else if (typeof fieldsToUpdate.profilePicture === 'string') {
-        fieldsToUpdate.profilePicture = currentUser.profile_picture
-      } else {
-        const uploadResponse = await FileService.uploadFile(fieldsToUpdate.profilePicture)
+      let profilePictureKey = currentUser.profile_picture
+      if (userData.profilePicture == null) {
+        profilePictureKey = null
+      } else if (typeof userData.profilePicture !== 'string') {
+        const uploadResponse = await FileService.uploadFile(userData.profilePicture)
         if (uploadResponse.response.$metadata.httpStatusCode === 200) {
-          fieldsToUpdate.profilePicture = uploadResponse.uniqueFileName
+          profilePictureKey = uploadResponse.uniqueFileName
         } else {
           throw new ErrorUtils(500, 'Failed to upload profile picture')
         }
       }
-
-      const updatedUser = await UserRepository.update(userId, fieldsToUpdate)
+      const updatedUserData = {
+        ...parsedUser,
+        profilePicture: profilePictureKey
+      }
+      const updatedUser = await UserRepository.update(userId, updatedUserData)
       if (!updatedUser) {
         throw new ErrorUtils(404, 'User not found')
       }
-
       let profilePictureUrl = null
       if (updatedUser.user.profile_picture) {
         profilePictureUrl = await FileService.getFile(updatedUser.user.profile_picture)
       }
-
       const { password, ...userWithoutPassword } = updatedUser.user
       let token = null
-
       if (Number(userId) === Number(currentUserId)) {
         const userForToken = {
           id: updatedUser.user.id,
@@ -372,7 +349,6 @@ class UserService {
         }
         token = jwt.sign({ userForToken }, JWT_SECRET, { expiresIn: JWT_EXPIRATION })
       }
-
       return {
         updatedUser: {
           ...userWithoutPassword,
@@ -381,6 +357,14 @@ class UserService {
         token
       }
     } catch (error) {
+      if (error instanceof z.ZodError) {
+        const validationErrors = error.errors.map((e) => ({
+          field: e.path[0],
+          message: e.message
+        }))
+        throw new ErrorUtils(400, 'Validation failed', validationErrors)
+      }
+
       if (error instanceof ErrorUtils) {
         throw error
       }

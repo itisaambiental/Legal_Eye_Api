@@ -13,7 +13,9 @@ import {
   getLegalBasisByAbbreviation,
   getLegalBasisByClassification,
   getLegalBasisByJurisdiction,
-  getLegalBasisByStateAndMunicipality
+  getLegalBasisByStateAndMunicipality,
+  getLegalBasisBySubject,
+  getLegalBasisBySubjectAndAspects
 } from '../controllers/LegalBasis.controller.js'
 import { upload } from '../config/multer.config.js'
 
@@ -101,5 +103,26 @@ router.get('/legalBasis/jurisdiction/:jurisdiction', UserExtractor, getLegalBasi
  * @middleware UserExtractor
  */
 router.get('/legalBasis/state-municipality', UserExtractor, getLegalBasisByStateAndMunicipality)
+
+/**
+ * Route to retrieve legal basis entries filtered by subject.
+ * @method GET
+ * @path /legalBasis/subject/:subjectId
+ * @description Retrieves legal basis entries by subject.
+ * @param {string} subjectId - The subject ID to filter by.
+ * @middleware UserExtractor
+ */
+router.get('/legalBasis/subject/:subjectId', UserExtractor, getLegalBasisBySubject)
+
+/**
+ * Route to retrieve legal basis entries filtered by subject and optionally by aspects.
+ * @method GET
+ * @path /legalBasis/subject-aspects
+ * @description Retrieves legal basis entries by subject and optionally by aspects.
+ * @query {string} subjectId - The subject ID to filter by.
+ * @query {string} [aspectIds] - Comma-separated list of aspect IDs to filter by (optional).
+ * @middleware UserExtractor
+ */
+router.get('/legalBasis/subject-aspects', UserExtractor, getLegalBasisBySubjectAndAspects)
 
 export default router

@@ -108,6 +108,7 @@ const legalBasisSchema = z
           { message: 'Invalid document type. Allowed types are: pdf, png, jpg, jpeg' }
         )
       })
+      .optional()
   })
   .refine((data) => {
     /**

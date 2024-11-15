@@ -639,6 +639,256 @@ class LegalBasisRepository {
       throw new ErrorUtils(500, 'Error retrieving legal basis by state and municipality')
     }
   }
+
+  /**
+ * Retrieves legal basis records filtered by a specific subject.
+ * @param {number} subjectId - The subject ID to filter by.
+ * @returns {Promise<Array<LegalBasis|null>>} - A list of legal basis records filtered by the subject.
+ * @throws {ErrorUtils} - If an error occurs during retrieval.
+ */
+  static async findBySubject (subjectId) {
+    const query = `
+    SELECT 
+      legal_basis.id, 
+      legal_basis.legal_name, 
+      legal_basis.abbreviation, 
+      legal_basis.classification, 
+      legal_basis.jurisdiction, 
+      legal_basis.state, 
+      legal_basis.municipality, 
+      legal_basis.last_reform, 
+      legal_basis.url, 
+      subjects.id AS subject_id, 
+      subjects.subject_name AS subject_name,
+      aspects.id AS aspect_id, 
+      aspects.aspect_name AS aspect_name
+    FROM legal_basis
+    JOIN subjects ON legal_basis.subject_id = subjects.id
+    LEFT JOIN legal_basis_subject_aspect ON legal_basis.id = legal_basis_subject_aspect.legal_basis_id
+    LEFT JOIN aspects ON legal_basis_subject_aspect.aspect_id = aspects.id
+    WHERE legal_basis.subject_id = ?
+  `
+    try {
+      const [rows] = await pool.query(query, [subjectId])
+      if (rows.length === 0) return null
+      const legalBasisMap = new Map()
+      rows.forEach(row => {
+        if (!legalBasisMap.has(row.id)) {
+          legalBasisMap.set(row.id, {
+            id: row.id,
+            legal_name: row.legal_name,
+            abbreviation: row.abbreviation,
+            classification: row.classification,
+            jurisdiction: row.jurisdiction,
+            state: row.state,
+            municipality: row.municipality,
+            lastReform: row.last_reform,
+            url: row.url,
+            subject: {
+              subject_id: row.subject_id,
+              subject_name: row.subject_name
+            },
+            aspects: []
+          })
+        }
+        if (row.aspect_id !== null) {
+          legalBasisMap.get(row.id).aspects.push({
+            aspect_id: row.aspect_id,
+            aspect_name: row.aspect_name
+          })
+        }
+      })
+
+      const legalBasisArray = Array.from(legalBasisMap.values())
+      return legalBasisArray.map(legalBasis => new LegalBasis(
+        legalBasis.id,
+        legalBasis.legal_name,
+        legalBasis.subject,
+        legalBasis.aspects,
+        legalBasis.abbreviation,
+        legalBasis.classification,
+        legalBasis.jurisdiction,
+        legalBasis.state,
+        legalBasis.municipality,
+        legalBasis.lastReform,
+        legalBasis.url
+      ))
+    } catch (error) {
+      console.error('Error retrieving legal basis by subject:', error.message)
+      throw new ErrorUtils(500, 'Error retrieving legal basis by subject')
+    }
+  }
+
+  /**
+ * Retrieves legal basis records filtered by subject (materia) and optionally by one or more aspects.
+ * @param {number} subjectId - The subject ID to filter by.
+ * @param {Array<number>} [aspectIds] - Optional array of aspect IDs to further filter by.
+ * @returns {Promise<Array<LegalBasis|null>>} - A list of legal basis records.
+ * @throws {ErrorUtils} - If an error occurs during retrieval.
+ */
+  static async findBySubjectAndAspects (subjectId, aspectIds = []) {
+    let query = `
+    SELECT 
+      legal_basis.id, 
+      legal_basis.legal_name, 
+      legal_basis.abbreviation, 
+      legal_basis.classification, 
+      legal_basis.jurisdiction, 
+      legal_basis.state, 
+      legal_basis.municipality, 
+      legal_basis.last_reform, 
+      legal_basis.url, 
+      subjects.id AS subject_id, 
+      subjects.subject_name AS subject_name,
+      aspects.id AS aspect_id, 
+      aspects.aspect_name AS aspect_name
+    FROM legal_basis
+    JOIN subjects ON legal_basis.subject_id = subjects.id
+    LEFT JOIN legal_basis_subject_aspect ON legal_basis.id = legal_basis_subject_aspect.legal_basis_id
+    LEFT JOIN aspects ON legal_basis_subject_aspect.aspect_id = aspects.id
+    WHERE legal_basis.subject_id = ?
+  `
+
+    const values = [subjectId]
+
+    if (aspectIds.length > 0) {
+      const placeholders = aspectIds.map(() => '?').join(', ')
+      query += ` AND aspects.id IN (${placeholders})`
+      values.push(...aspectIds)
+    }
+
+    try {
+      const [rows] = await pool.query(query, values)
+
+      if (rows.length === 0) return null
+
+      const legalBasisMap = new Map()
+      rows.forEach(row => {
+        if (!legalBasisMap.has(row.id)) {
+          legalBasisMap.set(row.id, {
+            id: row.id,
+            legal_name: row.legal_name,
+            abbreviation: row.abbreviation,
+            classification: row.classification,
+            jurisdiction: row.jurisdiction,
+            state: row.state,
+            municipality: row.municipality,
+            lastReform: row.last_reform,
+            url: row.url,
+            subject: {
+              subject_id: row.subject_id,
+              subject_name: row.subject_name
+            },
+            aspects: []
+          })
+        }
+        if (row.aspect_id !== null) {
+          legalBasisMap.get(row.id).aspects.push({
+            aspect_id: row.aspect_id,
+            aspect_name: row.aspect_name
+          })
+        }
+      })
+
+      const legalBasisArray = Array.from(legalBasisMap.values())
+      return legalBasisArray.map(legalBasis => new LegalBasis(
+        legalBasis.id,
+        legalBasis.legal_name,
+        legalBasis.subject,
+        legalBasis.aspects,
+        legalBasis.abbreviation,
+        legalBasis.classification,
+        legalBasis.jurisdiction,
+        legalBasis.state,
+        legalBasis.municipality,
+        legalBasis.lastReform,
+        legalBasis.url
+      ))
+    } catch (error) {
+      console.error('Error retrieving legal basis by subject and aspects:', error.message)
+      throw new ErrorUtils(500, 'Error retrieving legal basis by subject and aspects')
+    }
+  }
+
+  /**
+ * Updates a legal basis record in the database
+ * @param {number} legalBasisId - The ID of the legal basis to update.
+ * @param {Object} data - The data to update for the legal basis.
+ * @param {string} [data.legalName] - The new name of the legal basis.
+ * @param {string} [data.abbreviation] - The new abbreviation of the legal basis.
+ * @param {number} [data.subjectId] - The new ID of the subject associated with the legal basis.
+ * @param {Array<number>} [data.aspectsIds] - The new IDs of the aspects to associate with the legal basis.
+ * @param {string} [data.classification] - The new classification of the legal basis.
+ * @param {string} [data.jurisdiction] - The new jurisdiction of the legal basis.
+ * @param {string} [data.state] - The new state associated with the legal basis.
+ * @param {string} [data.municipality] - The new municipality associated with the legal basis.
+ * @param {Date} [data.lastReform] - The new date of the last reform.
+ * @param {string} [data.url] - The new URL of the legal basis document.
+ * @returns {Promise<LegalBasis>} - The updated LegalBasis.
+ * @throws {ErrorUtils} - If an error occurs during update.
+ */
+  static async update (legalBasisId, data) {
+    const {
+      legalName,
+      abbreviation,
+      subjectId,
+      aspectsIds,
+      classification,
+      jurisdiction,
+      state,
+      municipality,
+      lastReform,
+      url
+    } = data
+
+    const updateLegalBasisQuery = `
+    UPDATE legal_basis
+    SET 
+      legal_name = IFNULL(?, legal_name),
+      abbreviation = IFNULL(?, abbreviation),
+      classification = IFNULL(?, classification),
+      jurisdiction = IFNULL(?, jurisdiction),
+      state = IFNULL(?, state),
+      municipality = IFNULL(?, municipality),
+      last_reform = IFNULL(?, last_reform),
+      url = IFNULL(?, url),
+      subject_id = IFNULL(?, subject_id)
+    WHERE id = ?
+  `
+
+    try {
+      await pool.query(updateLegalBasisQuery, [
+        legalName,
+        abbreviation,
+        classification,
+        jurisdiction,
+        state,
+        municipality,
+        lastReform,
+        url,
+        subjectId,
+        legalBasisId
+      ])
+      if (aspectsIds && aspectsIds.length > 0) {
+        const deleteAspectsQuery = `
+        DELETE FROM legal_basis_subject_aspect
+        WHERE legal_basis_id = ?
+      `
+        await pool.query(deleteAspectsQuery, [legalBasisId])
+        const insertAspectsQuery = `
+        INSERT INTO legal_basis_subject_aspect (legal_basis_id, subject_id, aspect_id) 
+        VALUES ${aspectsIds.map(() => '(?, ?, ?)').join(', ')}
+      `
+        const values = aspectsIds.flatMap(aspectId => [legalBasisId, subjectId || null, aspectId])
+        await pool.query(insertAspectsQuery, values)
+      }
+      const updatedLegalBasis = await this.findById(legalBasisId)
+      return updatedLegalBasis
+    } catch (error) {
+      console.error('Error updating legal basis:', error.message)
+      throw new ErrorUtils(500, 'Error updating legal basis in the database')
+    }
+  }
 }
 
 export default LegalBasisRepository

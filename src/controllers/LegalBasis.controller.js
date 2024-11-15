@@ -23,11 +23,10 @@ export const createLegalBasis = async (req, res) => {
     !aspectsIds ||
     !classification ||
     !jurisdiction ||
-    !lastReform ||
-    !document
+    !lastReform
   ) {
     return res.status(400).json({
-      message: 'Missing required fields: legalName, abbreviation, subjectId, aspectIds (non-empty array), classification, jurisdiction, lastReform, document'
+      message: 'Missing required fields: legalName, abbreviation, subjectId, aspectIds (non-empty array), classification, jurisdiction, lastReform'
     })
   }
 
@@ -211,6 +210,62 @@ export const getLegalBasisByStateAndMunicipality = async (req, res) => {
   const { state, municipality } = req.query
   try {
     const legalBasis = await LegalBasisService.getByStateAndMunicipality({ state, municipality })
+    return res.status(200).json({ legalBasis })
+  } catch (error) {
+    if (error instanceof ErrorUtils) {
+      return res.status(error.status).json({
+        message: error.message,
+        ...(error.errors && { errors: error.errors })
+      })
+    }
+    return res.status(500).json({ message: 'Internal Server Error' })
+  }
+}
+
+/**
+ * Retrieves legal basis entries filtered by subject.
+ * @function getLegalBasisBySubject
+ * @param {Object} req - Request object, expects { subjectId } in query parameters.
+ * @param {Object} res - Response object.
+ * @returns {Object} - A list of filtered legal basis entries by subject.
+ * @throws {ErrorUtils} - Throws an instance of ErrorUtils if the process fails.
+ */
+export const getLegalBasisBySubject = async (req, res) => {
+  const { subjectId } = req.params
+  if (!subjectId) {
+    return res.status(400).json({ message: 'subjectId is required' })
+  }
+
+  try {
+    const legalBasis = await LegalBasisService.getBySubject(parseInt(subjectId, 10))
+    return res.status(200).json({ legalBasis })
+  } catch (error) {
+    if (error instanceof ErrorUtils) {
+      return res.status(error.status).json({
+        message: error.message,
+        ...(error.errors && { errors: error.errors })
+      })
+    }
+    return res.status(500).json({ message: 'Internal Server Error' })
+  }
+}
+/**
+ * Retrieves legal basis entries filtered by subject and optionally by aspects.
+ * @function getLegalBasisBySubjectAndAspects
+ * @param {Object} req - Request object, expects { subjectId, aspectIds } in query parameters.
+ * @param {Object} res - Response object.
+ * @returns {Object} - A list of filtered legal basis entries by subject and aspects.
+ * @throws {ErrorUtils} - Throws an instance of ErrorUtils if the process fails.
+ */
+export const getLegalBasisBySubjectAndAspects = async (req, res) => {
+  const { subjectId, aspectIds } = req.query
+  if (!subjectId) {
+    return res.status(400).json({ message: 'subjectId is required' })
+  }
+
+  try {
+    const aspectIdsArray = aspectIds ? aspectIds.split(',').map(id => parseInt(id, 10)) : []
+    const legalBasis = await LegalBasisService.getBySubjectAndAspects(parseInt(subjectId, 10), aspectIdsArray)
     return res.status(200).json({ legalBasis })
   } catch (error) {
     if (error instanceof ErrorUtils) {

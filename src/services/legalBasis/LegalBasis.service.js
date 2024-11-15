@@ -10,8 +10,8 @@ import FileService from '../files/File.service.js'
  * Service class for handling Legal Basis operations.
  */
 class LegalBasisService {
-  /**
- * Creates a new Legal Basis entry by validating data and delegating heavy tasks to the worker.
+/**
+ * Creates a new Legal Basis entry
  * @param {Object} params - Parameters for creating a legal basis.
  * @param {string} params.legalName - The name of the legal basis.
  * @param {string} params.abbreviation - The abbreviation of the legal basis.
@@ -22,8 +22,8 @@ class LegalBasisService {
  * @param {string} [params.state] - The state associated with the legal basis.
  * @param {string} [params.municipality] - The municipality associated with the legal basis.
  * @param {string} params.lastReform - The date of the last reform.
- * @param {Object} params.document - The document to process.
-* @returns {Promise<Object>} - The JobId and the created legalBasis object.
+ * @param {Object} [params.document] - The document to process (optional).
+ * @returns {Promise<Object>} - The JobId and the created legalBasis object.
  * @throws {ErrorUtils} - If an error occurs during the creation validation.
  */
   static async create ({ legalName, abbreviation, subjectId, aspectsIds, classification, jurisdiction, state, municipality, lastReform, document }) {
@@ -42,12 +42,18 @@ class LegalBasisService {
         const notFoundIds = parsedData.aspectsIds.filter(id => !validAspectIds.includes(id))
         throw new ErrorUtils(400, 'Aspects Ids not found', { notFoundIds })
       }
+
       let documentKey = null
-      const uploadResponse = await FileService.uploadFile(document)
-      if (uploadResponse.response.$metadata.httpStatusCode !== 200) {
-        throw new ErrorUtils(500, 'File Upload Error')
+      let jobId = null
+
+      if (document) {
+        const uploadResponse = await FileService.uploadFile(document)
+        if (uploadResponse.response.$metadata.httpStatusCode !== 200) {
+          throw new ErrorUtils(500, 'File Upload Error')
+        }
+        documentKey = uploadResponse.uniqueFileName
       }
-      documentKey = uploadResponse.uniqueFileName
+
       const lastReformDate = new Date(parsedData.lastReform)
       const legalBasisData = {
         legalName: parsedData.legalName,
@@ -62,12 +68,16 @@ class LegalBasisService {
         url: documentKey
       }
       const createdLegalBasis = await LegalBasisRepository.create(legalBasisData)
-      const documentUrl = await FileService.getFile(createdLegalBasis.url)
-      const job = await articlesQueue.add({
-        legalBasisId: createdLegalBasis.id
-      })
+      let documentUrl = null
+      if (documentKey) {
+        documentUrl = await FileService.getFile(createdLegalBasis.url)
+        const job = await articlesQueue.add({
+          legalBasisId: createdLegalBasis.id
+        })
+        jobId = job.id
+      }
       return {
-        jobId: job.id,
+        jobId,
         legalBasis: {
           ...createdLegalBasis,
           url: documentUrl
@@ -379,6 +389,197 @@ class LegalBasisService {
         throw error
       }
       throw new ErrorUtils(500, 'Failed to retrieve legal basis records by state and municipality')
+    }
+  }
+
+  /**
+ * Retrieves legal basis entries filtered by a specific subject.
+ * Fetches the document URL for each legal basis.
+ * @param {number} subjectId - The subject ID to filter by.
+ * @returns {Promise<Array<Object>>} - A list of legal basis entries, including document URLs.
+ * @throws {ErrorUtils} - If an error occurs during retrieval or validation.
+ */
+  static async getBySubject (subjectId) {
+    try {
+      const legalBasis = await LegalBasisRepository.findBySubject(subjectId)
+      if (!legalBasis) {
+        return []
+      }
+
+      const legalBasesWithDetails = await Promise.all(legalBasis.map(async (legalBasis) => {
+        let documentUrl = null
+        if (legalBasis.url) {
+          documentUrl = await FileService.getFile(legalBasis.url)
+        }
+
+        return {
+          id: legalBasis.id,
+          legalName: legalBasis.legal_name,
+          classification: legalBasis.classification,
+          jurisdiction: legalBasis.jurisdiction,
+          state: legalBasis.state,
+          municipality: legalBasis.municipality,
+          last_reform: legalBasis.lastReform,
+          abbreviation: legalBasis.abbreviation,
+          url: documentUrl,
+          subject: legalBasis.subject,
+          aspects: legalBasis.aspects
+        }
+      }))
+
+      return legalBasesWithDetails
+    } catch (error) {
+      if (error instanceof ErrorUtils) {
+        throw error
+      }
+      throw new ErrorUtils(500, 'Failed to retrieve legal basis records by subject')
+    }
+  }
+
+  /**
+ * Retrieves legal basis entries filtered by a specific subject and optionally by aspects.
+ * Fetches the document URL for each legal basis.
+ * @param {number} subjectId - The subject ID to filter by.
+ * @param {Array<number>} [aspectIds] - Optional array of aspect IDs to further filter by.
+ * @returns {Promise<Array<Object>>} - A list of legal basis entries, including document URLs.
+ * @throws {ErrorUtils} - If an error occurs during retrieval or validation.
+ */
+  static async getBySubjectAndAspects (subjectId, aspectIds = []) {
+    try {
+      const legalBasis = await LegalBasisRepository.findBySubjectAndAspects(subjectId, aspectIds)
+      if (!legalBasis) {
+        return []
+      }
+
+      const legalBasesWithDetails = await Promise.all(legalBasis.map(async (legalBasis) => {
+        let documentUrl = null
+        if (legalBasis.url) {
+          documentUrl = await FileService.getFile(legalBasis.url)
+        }
+
+        return {
+          id: legalBasis.id,
+          legalName: legalBasis.legal_name,
+          classification: legalBasis.classification,
+          jurisdiction: legalBasis.jurisdiction,
+          state: legalBasis.state,
+          municipality: legalBasis.municipality,
+          last_reform: legalBasis.lastReform,
+          abbreviation: legalBasis.abbreviation,
+          url: documentUrl,
+          subject: legalBasis.subject,
+          aspects: legalBasis.aspects
+        }
+      }))
+
+      return legalBasesWithDetails
+    } catch (error) {
+      if (error instanceof ErrorUtils) {
+        throw error
+      }
+      throw new ErrorUtils(500, 'Failed to retrieve legal basis records by subject and aspects')
+    }
+  }
+
+  /**
+ * Updates an existing Legal Basis entry
+ * @param {number} legalBasisId - The ID of the legal basis to update.
+ * @param {Object} data - Parameters for updating the legal basis.
+ * @param {string} [data.legalName] - The new name of the legal basis.
+ * @param {string} [data.abbreviation] - The new abbreviation of the legal basis.
+ * @param {number} [data.subjectId] - The new ID of the subject associated with the legal basis.
+ * @param {Array<number>} [data.aspectsIds] - The new IDs of the aspects to associate with the legal basis.
+ * @param {string} [data.classification] - The new classification of the legal basis.
+ * @param {string} [data.jurisdiction] - The new jurisdiction of the legal basis.
+ * @param {string} [data.state] - The new state associated with the legal basis.
+ * @param {string} [data.municipality] - The new municipality associated with the legal basis.
+ * @param {string} [data.lastReform] - The new date of the last reform.
+ * @param {Object} [data.document] - The new document to process (optional).
+ * @returns {Promise<Object>} - The updated LegalBasis object.
+ * @throws {ErrorUtils} - If an error occurs during the update validation or processing.
+ */
+  static async update (legalBasisId, data) {
+    try {
+      const {
+        legalName,
+        abbreviation,
+        subjectId,
+        aspectsIds,
+        classification,
+        jurisdiction,
+        state,
+        municipality,
+        lastReform,
+        document
+      } = data
+      const existingLegalBasis = await LegalBasisRepository.findById(legalBasisId)
+      if (!existingLegalBasis) {
+        throw new ErrorUtils(404, 'LegalBasis not found')
+      }
+      if (legalName && legalName !== existingLegalBasis.legal_name) {
+        const legalBasisExists = await LegalBasisRepository.exists(legalName)
+        if (legalBasisExists) {
+          throw new ErrorUtils(409, 'LegalBasis already exists')
+        }
+      }
+      const subjectExists = await SubjectsRepository.findById(subjectId)
+      if (!subjectExists) {
+        throw new ErrorUtils(400, 'Subject Id not found')
+      }
+      const validAspectIds = await AspectsRepository.findByIds(aspectsIds)
+      if (validAspectIds.length !== aspectsIds.length) {
+        const notFoundIds = aspectsIds.filter(id => !validAspectIds.includes(id))
+        throw new ErrorUtils(400, 'Aspects Ids not found', { notFoundIds })
+      }
+      let documentKey = existingLegalBasis.url
+      let jobId = null
+      if (document) {
+        const uploadResponse = await FileService.uploadFile(document)
+        if (uploadResponse.response.$metadata.httpStatusCode !== 200) {
+          throw new ErrorUtils(500, 'File Upload Error')
+        }
+        documentKey = uploadResponse.uniqueFileName
+      }
+
+      const lastReformDate = new Date(lastReform)
+
+      const updatedLegalBasisData = {
+        legalName,
+        abbreviation,
+        subjectId,
+        aspectsIds,
+        classification,
+        jurisdiction,
+        state,
+        municipality,
+        lastReform: lastReformDate,
+        url: documentKey,
+      }
+      const updatedLegalBasis = await LegalBasisRepository.update(legalBasisId, updatedLegalBasisData)
+
+      let documentUrl = null
+      if (documentKey) {
+        documentUrl = await FileService.getFile(documentKey)
+        if (document) {
+          const job = await articlesQueue.add({
+            legalBasisId: updatedLegalBasis.id
+          })
+          jobId = job.id
+        }
+      }
+
+      return {
+        jobId,
+        legalBasis: {
+          ...updatedLegalBasis,
+          url: documentUrl
+        }
+      }
+    } catch (error) {
+      if (error instanceof ErrorUtils) {
+        throw error
+      }
+      throw new ErrorUtils(500, 'Unexpected error during legal basis update')
     }
   }
 }
