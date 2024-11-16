@@ -1,7 +1,7 @@
 import ErrorUtils from '../../utils/Error.js'
 import { S3_BUCKET_NAME } from '../../config/variables.config.js'
 import client from '../../config/s3.config.js'
-import { PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3'
+import { PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import { v4 as uuidv4 } from 'uuid'
 
@@ -35,7 +35,7 @@ class FileService {
       return { response, uniqueFileName }
     } catch (error) {
       console.error('Error uploading file:', error.message)
-      throw new ErrorUtils(500, 'Error uploading file', 'Failed to upload file to S3')
+      throw new ErrorUtils(500, 'Error uploading file')
     }
   }
 
@@ -53,12 +53,33 @@ class FileService {
         Key: fileKey
       }
       const command = new GetObjectCommand(getObjectParams)
-      const urlExpiration = 432000 // URL expires in 5 days (in seconds)
+      const urlExpiration = 432000
       const presignedUrl = await getSignedUrl(client, command, { expiresIn: urlExpiration })
       return presignedUrl
     } catch (error) {
       console.error('Error generating presigned URL:', error.message)
-      throw new ErrorUtils(500, 'Error generating presigned URL', 'Failed to generate presigned URL')
+      throw new ErrorUtils(500, 'Error generating presigned URL')
+    }
+  }
+
+  /**
+ * Deletes a file from the specified S3 bucket.
+ * @param {string} fileKey - The key of the file in the S3 bucket to delete.
+ * @returns {Promise<Object>} - An object containing the response from S3.
+ * @throws {ErrorUtils} - If an error occurs while deleting the file.
+ */
+  static async deleteFile (fileKey) {
+    try {
+      const deleteParams = {
+        Bucket: S3_BUCKET_NAME,
+        Key: fileKey
+      }
+      const command = new DeleteObjectCommand(deleteParams)
+      const response = await client.send(command)
+      return { response }
+    } catch (error) {
+      console.error('Error deleting file:', error.message)
+      throw new ErrorUtils(500, 'Error deleting file')
     }
   }
 }

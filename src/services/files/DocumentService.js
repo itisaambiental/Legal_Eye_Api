@@ -21,7 +21,7 @@ class DocumentService {
         this.worker = await createWorker('eng+spa')
       } catch (error) {
         console.error('Worker Initialization Error:', error.message)
-        throw new ErrorUtils(500, 'Worker Initialization Error', 'Failed to initialize the OCR worker')
+        throw new ErrorUtils(500, 'Failed to initialize the OCR worker')
       }
     }
   }
@@ -37,7 +37,7 @@ class DocumentService {
         await this.worker.terminate()
       } catch (error) {
         console.error('Worker Termination Error:', error.message)
-        throw new ErrorUtils(500, 'Worker Termination Error', 'Failed to terminate the OCR worker')
+        throw new ErrorUtils(500, 'Failed to terminate the OCR worker')
       } finally {
         this.worker = null
       }
@@ -77,7 +77,6 @@ class DocumentService {
         return { success: false, error: 'Failed to extract text from the document' }
       }
     } catch (error) {
-      console.error('Document Processing Error:', error.message)
       return { success: false, error: error.message || 'Failed to process the document' }
     } finally {
       await this.terminateWorker()
@@ -100,7 +99,7 @@ class DocumentService {
       })
       .catch((error) => {
         console.error(`PDF Reading Error: ${error.message}`)
-        throw new ErrorUtils(500, 'PDF Reading Error', 'Failed to read PDF document')
+        throw new ErrorUtils(500, 'PDF Reading Error')
       })
   }
 
@@ -115,7 +114,7 @@ class DocumentService {
       .then(({ data }) => data.text)
       .catch((error) => {
         console.error('Image Processing Error:', error.message)
-        throw new ErrorUtils(500, 'Image Processing Error', 'Error extracting text from image')
+        throw new ErrorUtils(500, 'Image Processing Error')
       })
   }
 }

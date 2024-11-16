@@ -22,4 +22,5 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-src/assets/*.csv
+eng.traineddata
+spa.traineddata

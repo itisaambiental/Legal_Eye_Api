@@ -31,8 +31,10 @@ class UserService {
    */
   static async registerUser (userData, profilePicture) {
     try {
-      const parsedUser = userSchema.parse(userData)
-
+      const parsedUser = userSchema.parse({
+        ...userData,
+        profilePicture
+      })
       const existingUser = await UserRepository.findByGmail(parsedUser.gmail)
       if (existingUser) {
         throw new ErrorUtils(409, 'Gmail already exists')
@@ -297,14 +299,18 @@ class UserService {
   /**
  * Updates a user's information by ID.
  * @param {number} userId - User's ID.
- * @param {Object} userData - Fields to update, expects { name, gmail, roleId, profilePicture }.
+ * @param {Object} userData - Fields to update, expects { name, gmail, roleId, profilePicture, removePicture }.
+ * @param {File|undefined} profilePicture - New profile picture file (optional).
  * @param {number} currentUserId - ID of the currently logged-in user.
  * @returns {Promise<Object>} - Updated user data and a new token if applicable.
- * @throws {ErrorUtils} - If update fails or user not found.
+ * @throws {ErrorUtils} - If update fails, user not found, or validation errors occur.
  */
-  static async updateUser (userId, userData, currentUserId) {
+  static async updateUser (userId, userData, profilePicture, currentUserId) {
     try {
-      const parsedUser = userSchema.partial().parse(userData)
+      const parsedUser = userSchema.partial().parse({
+        ...userData,
+        profilePicture
+      })
       if (parsedUser.gmail) {
         const existingUser = await UserRepository.findByGmailExcludingUserId(parsedUser.gmail, userId)
         if (existingUser) {
@@ -316,15 +322,21 @@ class UserService {
         throw new ErrorUtils(404, 'User not found')
       }
       let profilePictureKey = currentUser.profile_picture
-      if (userData.profilePicture == null) {
-        profilePictureKey = null
-      } else if (typeof userData.profilePicture !== 'string') {
-        const uploadResponse = await FileService.uploadFile(userData.profilePicture)
+      if (profilePicture && !parsedUser.removePicture) {
+        const uploadResponse = await FileService.uploadFile(profilePicture)
         if (uploadResponse.response.$metadata.httpStatusCode === 200) {
+          if (currentUser.profile_picture) {
+            await FileService.deleteFile(currentUser.profile_picture)
+          }
           profilePictureKey = uploadResponse.uniqueFileName
         } else {
           throw new ErrorUtils(500, 'Failed to upload profile picture')
         }
+      } else if (profilePicture === undefined && parsedUser.removePicture) {
+        if (currentUser.profile_picture) {
+          await FileService.deleteFile(currentUser.profile_picture)
+        }
+        profilePictureKey = null
       }
       const updatedUserData = {
         ...parsedUser,
@@ -382,19 +394,15 @@ class UserService {
   static async updateUserPicture (userId, profilePicture) {
     try {
       const uploadResponse = await FileService.uploadFile(profilePicture)
-
       if (uploadResponse.response.$metadata.httpStatusCode !== 200) {
         throw new ErrorUtils(500, 'Failed to upload profile picture')
       }
       const profilePictureKey = uploadResponse.uniqueFileName
       const savePicture = await UserRepository.updateProfilePicture(userId, profilePictureKey)
-
       if (!savePicture) {
         throw new ErrorUtils(404, 'User not found')
       }
-
       const profilePictureUrl = await FileService.getFile(profilePictureKey)
-
       return profilePictureUrl
     } catch (error) {
       if (error instanceof ErrorUtils) {
@@ -413,12 +421,17 @@ class UserService {
    */
   static async deleteUser (id) {
     try {
+      const user = await UserRepository.findById(id)
+      if (!user) {
+        throw new ErrorUtils(404, 'User not found')
+      }
+      if (user.profile_picture) {
+        await FileService.deleteFile(user.profile_picture)
+      }
       const userDeleted = await UserRepository.delete(id)
-
       if (!userDeleted) {
         throw new ErrorUtils(404, 'User not found')
       }
-
       return userDeleted
     } catch (error) {
       if (error instanceof ErrorUtils) {
@@ -429,22 +442,25 @@ class UserService {
   }
 
   /**
-   * Deletes multiple users by their IDs.
-   * @param {Array<number>} userIds - Array of user IDs to delete.
-   * @returns {Promise<Object>} - Success message if users were deleted.
-   * @throws {ErrorUtils} - If users not found or deletion fails.
-   */
+ * Deletes multiple users by their IDs.
+ * @param {Array<number>} userIds - Array of user IDs to delete.
+ * @returns {Promise<Object>} - Success message if users were deleted.
+ * @throws {ErrorUtils} - If users not found or deletion fails.
+ */
   static async deleteUsersBatch (userIds) {
     try {
       const existingUsers = await UserRepository.findByIds(userIds)
-
       if (existingUsers.length !== userIds.length) {
-        const notFoundIds = userIds.filter(id => !existingUsers.includes(id))
+        const foundIds = existingUsers.map(user => user.id)
+        const notFoundIds = userIds.filter(id => !foundIds.includes(id))
         throw new ErrorUtils(404, 'Users not found for IDs', { notFoundIds })
       }
-
+      for (const user of existingUsers) {
+        if (user.profile_picture) {
+          await FileService.deleteFile(user.profile_picture)
+        }
+      }
       await UserRepository.deleteBatch(userIds)
-
       return { success: true }
     } catch (error) {
       if (error instanceof ErrorUtils) {

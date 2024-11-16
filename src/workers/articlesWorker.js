@@ -35,23 +35,18 @@ articlesQueue.process(100, async (job, done) => {
       console.error('Document Processing Error', error)
       return done(new ErrorUtils(500, 'Document Processing Error', error))
     }
-
     const extractor = ArticleExtractorFactory.getExtractor(legalBase.classification, legalBase.legal_name, data, job)
     if (!extractor) {
       return done(new ErrorUtils(400, 'Invalid Classification'))
     }
-
     const extractedArticles = await extractor.extractArticles()
-    console.log('Articulos extraidos', extractedArticles)
     if (!extractedArticles || extractedArticles.length === 0) {
       return done(new ErrorUtils(500, 'Article Processing Error'))
     }
-
     const articlesInserted = await ArticlesService.insertArticles(legalBase.id, extractedArticles)
     if (!articlesInserted) {
       return done(new ErrorUtils(500, 'Failed to insert articles'))
     }
-
     done(null)
   } catch (error) {
     console.error('Error processing Articles', error)

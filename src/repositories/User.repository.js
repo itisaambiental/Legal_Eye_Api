@@ -200,19 +200,20 @@ class UserRepository {
   }
 
   /**
-   * Finds users in the database using an array of IDs.
-   * @param {Array<number>} userIds - Array of user IDs to find.
-   * @returns {Promise<Array<number>>} - Array of found user IDs.
-   * @throws {ErrorUtils} - If an error occurs during retrieval.
-   */
+ * Finds users in the database using an array of IDs.
+ * Constructs and returns instances of User.
+ * @param {Array<number>} userIds - Array of user IDs to find.
+ * @returns {Promise<Array<User>>} - Array of User instances with relevant data.
+ * @throws {ErrorUtils} - If an error occurs during retrieval.
+ */
   static async findByIds (userIds) {
     const query = `
-      SELECT id FROM users WHERE id IN (?)
-    `
+    SELECT * FROM users WHERE id IN (?)
+  `
 
     try {
       const [rows] = await pool.query(query, [userIds])
-      return rows.map(row => row.id)
+      return rows.map(user => new User(user.id, user.name, user.password, user.gmail, user.role_id, user.profile_picture))
     } catch (error) {
       console.error('Error finding users by IDs:', error)
       throw new ErrorUtils(500, 'Error finding users by IDs')

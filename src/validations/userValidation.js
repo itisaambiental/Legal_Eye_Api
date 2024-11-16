@@ -37,6 +37,38 @@ const userSchema = z.object({
     .refine(value => !isNaN(value), { message: 'The roleId must be a valid number' })
     .refine(value => value === 1 || value === 2, {
       message: 'The roleId must be either 1 (Admin) or 2 (Analyst)'
+    }),
+
+  /**
+ * Validation schema for user's profile picture.
+ * Ensures that the profile picture, if provided, has a valid MIME type.
+ * This field is optional.
+ */
+  profilePicture: z.object({
+  /**
+   * MIME type of the profile picture.
+   * Must be one of the allowed types: 'image/png', 'image/jpeg', 'image/webp'.
+   * Throws a validation error if the mimetype is not one of the allowed values.
+   */
+    mimetype: z.string().refine(
+      (mime) => ['image/png', 'image/jpeg', 'image/webp'].includes(mime),
+      { message: 'Invalid profile picture type. Allowed types are: png, jpeg, webp' }
+    )
+  }).optional(),
+
+  /**
+   * Validation for the 'removePicture' field.
+   * Transforms a string input to a boolean.
+   * - If the input is the string 'true', it is converted to true.
+   * - Otherwise, it is converted to false.
+   * Ensures that 'removePicture' is a boolean value after transformation.
+   * This field is optional.
+   */
+  removePicture: z.string()
+    .optional()
+    .transform(value => value === 'true')
+    .refine(value => typeof value === 'boolean', {
+      message: 'removePicture must be a boolean value'
     })
 })
 

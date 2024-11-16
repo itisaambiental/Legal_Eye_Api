@@ -223,31 +223,26 @@ export const getUsersByRole = async (req, res) => {
 /**
  * Update user information by ID.
  * @function updateUser
- * @param {Object} req - Request object, expects { id } in params and { name, gmail, roleId } in body and file for profile picture.
+ * @param {Object} req - Request object, expects { id } in params and { name, gmail, roleId, removePicture } in body and an optional file for profile picture.
  * @param {Object} res - Response object.
  * @throws {ErrorUtils} - Throws an instance of ErrorUtils error if the process fails.
  */
 export const updateUser = async (req, res) => {
-  const { name, gmail, roleId } = req.body
+  const { name, gmail, roleId, removePicture } = req.body
   const profilePicture = req.file
   const { id } = req.params
   const { userId } = req
-
-  if (!id || (!name && !gmail && !roleId)) {
+  if (!id || (!name && !gmail && !roleId && !removePicture)) {
     return res.status(400).json({
-      message: 'Missing required fields: id, name, gmail, roleId'
+      message: 'Missing required fields: id, name, gmail, roleId, removePicture'
     })
   }
-
   try {
     const isAuthorized = await UserService.isAuthorized(userId)
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-
-    const updates = { name, gmail, roleId, profilePicture }
-    const { updatedUser, token } = await UserService.updateUser(id, updates, userId)
-
+    const { updatedUser, token } = await UserService.updateUser(id, req.body, profilePicture, userId)
     return res.status(200).json({
       updatedUser,
       token

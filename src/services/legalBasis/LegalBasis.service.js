@@ -553,7 +553,7 @@ class LegalBasisService {
         state,
         municipality,
         lastReform: lastReformDate,
-        url: documentKey,
+        url: documentKey
       }
       const updatedLegalBasis = await LegalBasisRepository.update(legalBasisId, updatedLegalBasisData)
 
