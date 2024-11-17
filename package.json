@@ -12,6 +12,10 @@
     "test:rest": "NODE_ENV=test jest --verbose --silent tests --testPathIgnorePatterns='tests/subjects.test.js|tests/aspects.test.js'",
     "test:watch": "npm run test -- --watch"
   },
+  "engines": {
+    "node": "22.x", 
+    "npm": "10.x"   
+  },
   "keywords": [],
   "author": "Alfredo Castellano",
   "license": "ISC",
