@@ -1,5 +1,6 @@
 import LegalBasisService from '../services/legalBasis/LegalBasis.service.js'
 import ErrorUtils from '../utils/Error.js'
+import UserService from '../services/users/User.service.js'
 /**
  * Controller for legal basis operations.
  * @module LegalBasisController
@@ -8,41 +9,34 @@ import ErrorUtils from '../utils/Error.js'
 /**
  * Creates a new legal basis record.
  * @function createLegalBasis
- * @param {Object} req - Request object, expects { legalName, classification, jurisdiction, state, municipality, lastReform } in body, and 'document' as a file.
+ * @param {Object} req - Request object, expects { legalName, classification, jurisdiction, state, municipality, lastReform, extractArticles } in body, and 'document' as a file.
  * @param {Object} res - Response object.
  * @returns {Object} - The jobId and the created legalBasis data.
  */
 export const createLegalBasis = async (req, res) => {
-  const { legalName, abbreviation, subjectId, aspectsIds, classification, jurisdiction, state, municipality, lastReform } = req.body
+  const { userId } = req
+  const { body } = req
   const document = req.file
-
   if (
-    !legalName ||
-    !abbreviation ||
-    !subjectId ||
-    !aspectsIds ||
-    !classification ||
-    !jurisdiction ||
-    !lastReform
+    !body.legalName ||
+    !body.abbreviation ||
+    !body.subjectId ||
+    !body.aspectsIds ||
+    !body.classification ||
+    !body.jurisdiction ||
+    !body.lastReform ||
+    !body.extractArticles
   ) {
     return res.status(400).json({
-      message: 'Missing required fields: legalName, abbreviation, subjectId, aspectIds (non-empty array), classification, jurisdiction, lastReform'
+      message: 'Missing required fields: legalName, abbreviation, subjectId, aspectIds (non-empty array), classification, jurisdiction, lastReform, extractArticles'
     })
   }
-
+  const isAuthorized = await UserService.userExists(userId)
+  if (!isAuthorized) {
+    return res.status(403).json({ message: 'Unauthorized' })
+  }
   try {
-    const { jobId, legalBasis } = await LegalBasisService.create({
-      legalName,
-      abbreviation,
-      subjectId,
-      aspectsIds,
-      classification,
-      jurisdiction,
-      state,
-      municipality,
-      lastReform,
-      document
-    })
+    const { jobId, legalBasis } = await LegalBasisService.create(body, document)
     return res.status(201).json({ jobId, legalBasis })
   } catch (error) {
     if (error instanceof ErrorUtils) {
@@ -65,6 +59,11 @@ export const createLegalBasis = async (req, res) => {
  */
 export const getAllLegalBasis = async (req, res) => {
   try {
+    const { userId } = req
+    const isAuthorized = await UserService.userExists(userId)
+    if (!isAuthorized) {
+      return res.status(403).json({ message: 'Unauthorized' })
+    }
     const legalBasis = await LegalBasisService.getAll()
     return res.status(200).json({ legalBasis })
   } catch (error) {
@@ -87,8 +86,13 @@ export const getAllLegalBasis = async (req, res) => {
  * @throws {ErrorUtils} - Throws an instance of ErrorUtils if retrieval fails.
  */
 export const getLegalBasisById = async (req, res) => {
+  const { userId } = req
   const { id } = req.params
   try {
+    const isAuthorized = await UserService.userExists(userId)
+    if (!isAuthorized) {
+      return res.status(403).json({ message: 'Unauthorized' })
+    }
     const legalBasis = await LegalBasisService.getById(id)
     return res.status(200).json({ legalBasis })
   } catch (error) {
@@ -111,8 +115,13 @@ export const getLegalBasisById = async (req, res) => {
  * @throws {ErrorUtils} - Throws an instance of ErrorUtils if retrieval fails.
  */
 export const getLegalBasisByName = async (req, res) => {
+  const { userId } = req
   const { name } = req.params
   try {
+    const isAuthorized = await UserService.userExists(userId)
+    if (!isAuthorized) {
+      return res.status(403).json({ message: 'Unauthorized' })
+    }
     const legalBasis = await LegalBasisService.getByName(name)
     return res.status(200).json({ legalBasis })
   } catch (error) {
@@ -135,8 +144,13 @@ export const getLegalBasisByName = async (req, res) => {
  * @throws {ErrorUtils} - Throws an instance of ErrorUtils if retrieval fails.
  */
 export const getLegalBasisByAbbreviation = async (req, res) => {
+  const { userId } = req
   const { abbreviation } = req.params
   try {
+    const isAuthorized = await UserService.userExists(userId)
+    if (!isAuthorized) {
+      return res.status(403).json({ message: 'Unauthorized' })
+    }
     const legalBasis = await LegalBasisService.getByAbbreviation(abbreviation)
     return res.status(200).json({ legalBasis })
   } catch (error) {
@@ -159,8 +173,13 @@ export const getLegalBasisByAbbreviation = async (req, res) => {
  * @throws {ErrorUtils} - Throws an instance of ErrorUtils if retrieval fails.
  */
 export const getLegalBasisByClassification = async (req, res) => {
+  const { userId } = req
   const { classification } = req.params
   try {
+    const isAuthorized = await UserService.userExists(userId)
+    if (!isAuthorized) {
+      return res.status(403).json({ message: 'Unauthorized' })
+    }
     const legalBasis = await LegalBasisService.getByClassification(classification)
     return res.status(200).json({ legalBasis })
   } catch (error) {
@@ -183,8 +202,13 @@ export const getLegalBasisByClassification = async (req, res) => {
  * @throws {ErrorUtils} - Throws an instance of ErrorUtils if the process fails.
  */
 export const getLegalBasisByJurisdiction = async (req, res) => {
+  const { userId } = req
   const { jurisdiction } = req.params
   try {
+    const isAuthorized = await UserService.userExists(userId)
+    if (!isAuthorized) {
+      return res.status(403).json({ message: 'Unauthorized' })
+    }
     const legalBasis = await LegalBasisService.getByJurisdiction(jurisdiction)
     return res.status(200).json({ legalBasis })
   } catch (error) {
@@ -207,8 +231,13 @@ export const getLegalBasisByJurisdiction = async (req, res) => {
  * @throws {ErrorUtils} - Throws an instance of ErrorUtils if the process fails.
  */
 export const getLegalBasisByStateAndMunicipality = async (req, res) => {
+  const { userId } = req
   const { state, municipality } = req.query
   try {
+    const isAuthorized = await UserService.userExists(userId)
+    if (!isAuthorized) {
+      return res.status(403).json({ message: 'Unauthorized' })
+    }
     const legalBasis = await LegalBasisService.getByStateAndMunicipality({ state, municipality })
     return res.status(200).json({ legalBasis })
   } catch (error) {
@@ -231,12 +260,16 @@ export const getLegalBasisByStateAndMunicipality = async (req, res) => {
  * @throws {ErrorUtils} - Throws an instance of ErrorUtils if the process fails.
  */
 export const getLegalBasisBySubject = async (req, res) => {
+  const { userId } = req
   const { subjectId } = req.params
   if (!subjectId) {
     return res.status(400).json({ message: 'subjectId is required' })
   }
-
   try {
+    const isAuthorized = await UserService.userExists(userId)
+    if (!isAuthorized) {
+      return res.status(403).json({ message: 'Unauthorized' })
+    }
     const legalBasis = await LegalBasisService.getBySubject(parseInt(subjectId, 10))
     return res.status(200).json({ legalBasis })
   } catch (error) {
@@ -258,15 +291,70 @@ export const getLegalBasisBySubject = async (req, res) => {
  * @throws {ErrorUtils} - Throws an instance of ErrorUtils if the process fails.
  */
 export const getLegalBasisBySubjectAndAspects = async (req, res) => {
+  const { userId } = req
   const { subjectId, aspectIds } = req.query
   if (!subjectId) {
     return res.status(400).json({ message: 'subjectId is required' })
   }
-
   try {
+    const isAuthorized = await UserService.userExists(userId)
+    if (!isAuthorized) {
+      return res.status(403).json({ message: 'Unauthorized' })
+    }
     const aspectIdsArray = aspectIds ? aspectIds.split(',').map(id => parseInt(id, 10)) : []
     const legalBasis = await LegalBasisService.getBySubjectAndAspects(parseInt(subjectId, 10), aspectIdsArray)
     return res.status(200).json({ legalBasis })
+  } catch (error) {
+    if (error instanceof ErrorUtils) {
+      return res.status(error.status).json({
+        message: error.message,
+        ...(error.errors && { errors: error.errors })
+      })
+    }
+    return res.status(500).json({ message: 'Internal Server Error' })
+  }
+}
+
+/**
+ * Updates a legal basis record.
+ * @function updateLegalBasis
+ * @param {Object} req - Request object, expects { id } in params and { legalName, abbreviation, subjectId, aspectsIds, classification, jurisdiction, state, municipality, lastReform, extractArticles, removeDocument } in body and an optional 'document' file.
+ * @param {Object} res - Response object.
+ * @throws {ErrorUtils} - Throws an instance of ErrorUtils error if the process fails.
+ */
+export const updateLegalBasis = async (req, res) => {
+  const { userId } = req
+  const { body } = req
+  const document = req.file
+  const { id } = req.params
+  if (
+    !id ||
+    (
+      !body.legalName &&
+      !body.abbreviation &&
+      !body.subjectId &&
+      !body.aspectsIds &&
+      !body.classification &&
+      !body.jurisdiction &&
+      !body.lastReform &&
+      !body.extractArticles &&
+      !body.removeDocument
+    )
+  ) {
+    return res.status(400).json({
+      message: 'Missing required fields: id, legalName, abbreviation, subjectId, aspectsIds, classification, jurisdiction, lastReform, extractArticles, removeDocument'
+    })
+  }
+  try {
+    const isAuthorized = await UserService.userExists(userId)
+    if (!isAuthorized) {
+      return res.status(403).json({ message: 'Unauthorized' })
+    }
+    const { legalBasis, jobId } = await LegalBasisService.update(id, body, document)
+    return res.status(200).json({
+      legalBasis,
+      jobId
+    })
   } catch (error) {
     if (error instanceof ErrorUtils) {
       return res.status(error.status).json({

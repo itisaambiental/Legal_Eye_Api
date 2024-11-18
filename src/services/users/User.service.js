@@ -307,19 +307,20 @@ class UserService {
  */
   static async updateUser (userId, userData, profilePicture, currentUserId) {
     try {
-      const parsedUser = userSchema.partial().parse({
+      const parsedUser = userSchema.parse({
         ...userData,
         profilePicture
       })
-      if (parsedUser.gmail) {
-        const existingUser = await UserRepository.findByGmailExcludingUserId(parsedUser.gmail, userId)
-        if (existingUser) {
-          throw new ErrorUtils(409, 'Gmail already exists')
-        }
+      const existingUser = await UserRepository.findByGmailExcludingUserId(parsedUser.gmail, userId)
+      if (existingUser) {
+        throw new ErrorUtils(409, 'Gmail already exists')
       }
       const currentUser = await UserRepository.findById(userId)
       if (!currentUser) {
         throw new ErrorUtils(404, 'User not found')
+      }
+      if (parsedUser.removePicture && profilePicture) {
+        throw new ErrorUtils(400, 'Cannot provide a profile picture if removePicture is true')
       }
       let profilePictureKey = currentUser.profile_picture
       if (profilePicture && !parsedUser.removePicture) {

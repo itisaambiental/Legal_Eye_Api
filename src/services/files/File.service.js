@@ -63,6 +63,36 @@ class FileService {
   }
 
   /**
+ * Fetches the content of a file from the S3 bucket.
+ * @param {string} fileKey - The key of the file in the S3 bucket.
+ * @returns {Promise<Object>} - An object containing the buffer and mimetype of the file.
+ * @throws {ErrorUtils} - If an error occurs while retrieving the file content.
+ */
+  static async getFileContent (fileKey) {
+    try {
+      const getObjectParams = {
+        Bucket: S3_BUCKET_NAME,
+        Key: fileKey
+      }
+      const command = new GetObjectCommand(getObjectParams)
+      const { Body, ContentType } = await client.send(command)
+      const streamToBuffer = async (stream) => {
+        return new Promise((resolve, reject) => {
+          const chunks = []
+          stream.on('data', (chunk) => chunks.push(chunk))
+          stream.on('end', () => resolve(Buffer.concat(chunks)))
+          stream.on('error', reject)
+        })
+      }
+      const buffer = await streamToBuffer(Body)
+      return { buffer, mimetype: ContentType }
+    } catch (error) {
+      console.error('Error fetching file content:', error.message)
+      throw new ErrorUtils(500, 'Error fetching file content')
+    }
+  }
+
+  /**
  * Deletes a file from the specified S3 bucket.
  * @param {string} fileKey - The key of the file in the S3 bucket to delete.
  * @returns {Promise<Object>} - An object containing the response from S3.

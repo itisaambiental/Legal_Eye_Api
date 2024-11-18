@@ -20,7 +20,6 @@ class ArticlesRepository {
     if (articles.length === 0) {
       return false
     }
-
     const query = `
       INSERT INTO article (legal_basis_id, article_name, description, article_order)
       VALUES ?
@@ -31,7 +30,6 @@ class ArticlesRepository {
       article.article,
       article.order
     ])
-
     try {
       await pool.query(query, [values])
       return true
@@ -45,19 +43,19 @@ class ArticlesRepository {
    * Fetches articles associated with a specific legal basis, ordered by 'article_order'.
    * Returns a list of Article instances.
    * @param {number} legalBasisId - The ID of the legal basis.
-   * @returns {Promise<Array<Article>>} - The list of ordered Article instances.
+   * @returns {Promise<Array<Article|null>>} - The list of ordered Article instances.
    * @throws {ErrorUtils} - If an error occurs during retrieval.
    */
   static async getArticlesByLegalBasisId (legalBasisId) {
     try {
-      const [orderedArticles] = await pool.query(`
+      const [rows] = await pool.query(`
         SELECT id, legal_basis_id, article_name, description, article_order
         FROM article 
         WHERE legal_basis_id = ? 
         ORDER BY article_order
       `, [legalBasisId])
-
-      return orderedArticles.map(article => new Article(
+      if (rows.length === 0) return null
+      return rows.map(article => new Article(
         article.id,
         article.legal_basis_id,
         article.article_name,
@@ -67,6 +65,48 @@ class ArticlesRepository {
     } catch (error) {
       console.error('Error fetching articles:', error.message)
       throw new ErrorUtils(500, 'Error fetching articles from the database')
+    }
+  }
+
+  /**
+ * Updates multiple articles associated with a legal basis in the database.
+ * Replaces all existing articles with new ones.
+ * @param {number} legalBasisId - The ID of the legal basis.
+ * @param {Array<Object>} articles - The list of articles to insert.
+ * @param {string} articles[].title - The title of the article.
+ * @param {string} articles[].article - The content of the article.
+ * @param {number} articles[].order - The order of the article.
+ * @returns {Promise<boolean>} - Returns true if the update is successful, false otherwise.
+ * @throws {ErrorUtils} - If an error occurs during the update.
+ */
+  static async updateArticles (legalBasisId, articles) {
+    if (articles.length === 0) {
+      return false
+    }
+    const deleteQuery = 'DELETE FROM article WHERE legal_basis_id = ?'
+    const insertQuery = `
+    INSERT INTO article (legal_basis_id, article_name, description, article_order)
+    VALUES ?
+  `
+    const values = articles.map(article => [
+      legalBasisId,
+      article.title,
+      article.article,
+      article.order
+    ])
+    const connection = await pool.getConnection()
+    try {
+      await connection.beginTransaction()
+      await connection.query(deleteQuery, [legalBasisId])
+      await connection.query(insertQuery, [values])
+      await connection.commit()
+      return true
+    } catch (error) {
+      await connection.rollback()
+      console.error('Error updating articles:', error.message)
+      throw new ErrorUtils(500, 'Error updating articles in the database')
+    } finally {
+      connection.release()
     }
   }
 }

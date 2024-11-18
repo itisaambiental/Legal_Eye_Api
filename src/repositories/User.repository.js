@@ -76,7 +76,6 @@ class UserRepository {
    */
   static async update (id, userData) {
     const { name, password, gmail, roleId, profilePicture } = userData
-
     const query = `
       UPDATE users 
       SET 
@@ -87,17 +86,13 @@ class UserRepository {
         profile_picture = ?
       WHERE id = ?
     `
-
     try {
-      const profilePictureValue = profilePicture ?? null
-      const [result] = await pool.query(query, [name, password, gmail, roleId, profilePictureValue, id])
+      const [result] = await pool.query(query, [name, password, gmail, roleId, profilePicture, id])
       if (result.affectedRows === 0) {
         return null
       }
-
       const updatedUser = await this.findById(id)
       const { password: userPassword, ...userWithoutPassword } = updatedUser
-
       return { user: userWithoutPassword }
     } catch (error) {
       console.error('Error updating user:', error)

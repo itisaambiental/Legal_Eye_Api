@@ -811,6 +811,28 @@ class LegalBasisRepository {
   }
 
   /**
+ * Finds a legal basis by legalName, excluding the given legalBasisId.
+ * @param {string} legalName - The legal name to check for uniqueness.
+ * @param {number} legalBasisId - The legal Basis ID to exclude from the check.
+ * @returns {Promise<boolean>} - True if a legal basis with the same legal name (excluding the given ID) exists, false otherwise.
+ */
+  static async existsByLegalNameExcludingId (legalName, legalBasisId) {
+    const query = `
+    SELECT 1 
+    FROM legal_basis 
+    WHERE legal_name = ? AND id != ?
+    LIMIT 1
+  `
+    try {
+      const [rows] = await pool.query(query, [legalName, legalBasisId])
+      return rows.length > 0
+    } catch (error) {
+      console.error('Error checking if legal basis exists:', error.message)
+      throw new ErrorUtils(500, 'Error checking if legal basis exists')
+    }
+  }
+
+  /**
  * Updates a legal basis record in the database
  * @param {number} legalBasisId - The ID of the legal basis to update.
  * @param {Object} data - The data to update for the legal basis.
@@ -840,7 +862,6 @@ class LegalBasisRepository {
       lastReform,
       url
     } = data
-
     const updateLegalBasisQuery = `
     UPDATE legal_basis
     SET 
@@ -851,13 +872,14 @@ class LegalBasisRepository {
       state = IFNULL(?, state),
       municipality = IFNULL(?, municipality),
       last_reform = IFNULL(?, last_reform),
-      url = IFNULL(?, url),
+      url = ?,
       subject_id = IFNULL(?, subject_id)
     WHERE id = ?
   `
-
+    const connection = await pool.getConnection()
     try {
-      await pool.query(updateLegalBasisQuery, [
+      await connection.beginTransaction()
+      await connection.query(updateLegalBasisQuery, [
         legalName,
         abbreviation,
         classification,
@@ -874,19 +896,23 @@ class LegalBasisRepository {
         DELETE FROM legal_basis_subject_aspect
         WHERE legal_basis_id = ?
       `
-        await pool.query(deleteAspectsQuery, [legalBasisId])
+        await connection.query(deleteAspectsQuery, [legalBasisId])
         const insertAspectsQuery = `
         INSERT INTO legal_basis_subject_aspect (legal_basis_id, subject_id, aspect_id) 
         VALUES ${aspectsIds.map(() => '(?, ?, ?)').join(', ')}
       `
         const values = aspectsIds.flatMap(aspectId => [legalBasisId, subjectId || null, aspectId])
-        await pool.query(insertAspectsQuery, values)
+        await connection.query(insertAspectsQuery, values)
       }
+      await connection.commit()
       const updatedLegalBasis = await this.findById(legalBasisId)
       return updatedLegalBasis
     } catch (error) {
+      await connection.rollback()
       console.error('Error updating legal basis:', error.message)
       throw new ErrorUtils(500, 'Error updating legal basis in the database')
+    } finally {
+      connection.release()
     }
   }
 }

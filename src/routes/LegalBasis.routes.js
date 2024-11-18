@@ -15,7 +15,8 @@ import {
   getLegalBasisByJurisdiction,
   getLegalBasisByStateAndMunicipality,
   getLegalBasisBySubject,
-  getLegalBasisBySubjectAndAspects
+  getLegalBasisBySubjectAndAspects,
+  updateLegalBasis
 } from '../controllers/LegalBasis.controller.js'
 import { upload } from '../config/multer.config.js'
 
@@ -32,7 +33,7 @@ const router = Router()
  * @description Allows an authorized user to create a new legal basis record.
  * @middlewares upload.single('document'), UserExtractor
  */
-router.post('/legalBases', upload.single('document'), UserExtractor, createLegalBasis)
+router.post('/legalBasis', upload.single('document'), UserExtractor, createLegalBasis)
 
 /**
  * Route to retrieve all legal basis records.
@@ -41,7 +42,7 @@ router.post('/legalBases', upload.single('document'), UserExtractor, createLegal
  * @description Retrieves all legal basis records.
  * @middleware UserExtractor
  */
-router.get('/legalBases', UserExtractor, getAllLegalBasis)
+router.get('/legalBasis', UserExtractor, getAllLegalBasis)
 
 /**
  * Route to retrieve a legal basis by its ID.
@@ -124,5 +125,15 @@ router.get('/legalBasis/subject/:subjectId', UserExtractor, getLegalBasisBySubje
  * @middleware UserExtractor
  */
 router.get('/legalBasis/subject-aspects', UserExtractor, getLegalBasisBySubjectAndAspects)
+
+/**
+ * Route to create a new legal basis.
+ * @method PATCH
+ * @path /legalBases/:id
+ * @description Allows an authorized user to update a legal basis record.
+ * @middlewares upload.single('document'), UserExtractor
+ * @param {number} id - The ID of the legal basis to update.
+ */
+router.patch('/legalBasis/:id', upload.single('document'), UserExtractor, updateLegalBasis)
 
 export default router

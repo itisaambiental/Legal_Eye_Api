@@ -64,12 +64,13 @@ const userSchema = z.object({
    * Ensures that 'removePicture' is a boolean value after transformation.
    * This field is optional.
    */
-  removePicture: z.string()
+  removePicture: z
+    .string()
     .optional()
-    .transform(value => value === 'true')
-    .refine(value => typeof value === 'boolean', {
-      message: 'removePicture must be a boolean value'
+    .refine(value => value === undefined || value === 'true' || value === 'false', {
+      message: 'removePicture must be either "true" or "false"'
     })
+    .transform(value => value === 'true' ? true : (value === 'false' ? false : undefined))
 })
 
 export default userSchema

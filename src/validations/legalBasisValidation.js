@@ -9,17 +9,19 @@ const legalBasisSchema = z
   .object({
     /**
      * The name of the legal basis.
-     * Must be a non-empty string.
+     * Must be a non-empty string with a maximum length of 255 characters.
      */
-    legalName: z.string().min(1, 'The legal name is required')
+    legalName: z.string()
+      .min(1, 'The legal name is required')
       .max(255, 'The legal name cannot exceed 255 characters'),
 
     /**
-   * The abbreviation of the legal basis.
-   * Must be a non-empty string with a maximum length of 255 characters.
-   */
-    abbreviation: z.string().min(1, 'The abbreviation is required')
-      .max(255, 'The abbreviation cannot exceed 255 characters'),
+     * The abbreviation of the legal basis.
+     * Must be a non-empty string with a maximum length of 255 characters.
+     */
+    abbreviation: z.string()
+      .min(1, 'The abbreviation is required')
+      .max(20, 'The abbreviation cannot exceed 20 characters'),
 
     /**
      * The subject associated with the legal basis.
@@ -30,11 +32,10 @@ const legalBasisSchema = z
       .transform((val) => Number(val)),
 
     /**
-      * The aspects associated with the legal basis.
-      * Must be an array of valid numbers represented as strings.
-      */
-    aspectsIds: z
-      .string()
+     * The aspects associated with the legal basis.
+     * Must be an array of valid numbers represented as strings.
+     */
+    aspectsIds: z.string()
       .refine((val) => {
         try {
           const parsedArray = JSON.parse(val)
@@ -77,25 +78,27 @@ const legalBasisSchema = z
     }),
 
     /**
-     * The state associated with the legal basis.
-     * Optional field, applicable only for 'Estatal' and 'Local' jurisdictions.
-     */
-    state: z.string().optional(),
+ * The state associated with the legal basis.
+ * Optional field, applicable only for 'Estatal' and 'Local' jurisdictions.
+ */
+    state: z.string().max(255, { message: 'The state cannot exceed 20 characters' }).optional(),
 
     /**
-     * The municipality associated with the legal basis.
-     * Optional field, applicable only for 'Local' jurisdiction.
-     */
-    municipality: z.string().optional(),
+ * The municipality associated with the legal basis.
+ * Optional field, applicable only for 'Local' jurisdiction.
+ */
+    municipality: z.string().max(255, { message: 'The municipality cannot exceed 20 characters' }).optional(),
 
     /**
      * The date of the last reform of the legal basis.
      * Must be a valid date string.
      */
-    lastReform: z.string().refine(
-      (val) => !isNaN(Date.parse(val)),
-      { message: 'The lastReform must be a valid date in YYYY-MM-DD format' }
-    ),
+    lastReform: z.string()
+      .refine(
+        (val) => !isNaN(Date.parse(val)),
+        { message: 'The lastReform must be a valid date in YYYY-MM-DD format' }
+      )
+      .transform((val) => new Date(val)),
 
     /**
      * The document associated with the legal basis.
@@ -108,9 +111,39 @@ const legalBasisSchema = z
           { message: 'Invalid document type. Allowed types are: pdf, png, jpg, jpeg' }
         )
       })
+      .optional(),
+
+    /**
+     * Validation for the 'removeDocument' field.
+     * Transforms a string input to a boolean.
+     * - If the input is the string 'true', it is converted to true.
+     * - Otherwise, it is converted to false.
+     * Ensures that 'removeDocument' is a boolean value after transformation.
+     * This field is optional.
+     */
+    removeDocument: z
+      .string()
       .optional()
+      .refine(value => value === undefined || value === 'true' || value === 'false', {
+        message: 'removeDocument must be either "true" or "false"'
+      })
+      .transform(value => value === 'true' ? true : (value === 'false' ? false : undefined)),
+
+    /**
+     * Validation for the 'extractArticles' field.
+     * Transforms a string input to a boolean.
+     * - If the input is the string 'true', it is converted to true.
+     * - Otherwise, it is converted to false.
+     * Ensures that 'extractArticles' is a boolean value after transformation.
+     * This field is optional.
+     */
+    extractArticles: z.string()
+      .refine(value => value === 'true' || value === 'false', {
+        message: 'extractArticles must be either "true" or "false"'
+      })
+      .transform(value => value === 'true')
   })
-  .refine((data) => {
+  .superRefine((data, context) => {
     /**
      * Validates fields based on the selected jurisdiction:
      * - 'Federal': No state or municipality should be provided.
@@ -118,18 +151,45 @@ const legalBasisSchema = z
      * - 'Local': Both state and municipality must be provided.
      */
     if (data.jurisdiction === 'Federal') {
-      return !data.state && !data.municipality
+      if (data.state) {
+        context.addIssue({
+          path: ['state'],
+          message: 'State should not be provided for Federal jurisdiction'
+        })
+      }
+      if (data.municipality) {
+        context.addIssue({
+          path: ['municipality'],
+          message: 'Municipality should not be provided for Federal jurisdiction'
+        })
+      }
+    } else if (data.jurisdiction === 'Estatal') {
+      if (!data.state) {
+        context.addIssue({
+          path: ['state'],
+          message: 'State must be provided for Estatal jurisdiction'
+        })
+      }
+      if (data.municipality) {
+        context.addIssue({
+          path: ['municipality'],
+          message: 'Municipality should not be provided for Estatal jurisdiction'
+        })
+      }
+    } else if (data.jurisdiction === 'Local') {
+      if (!data.state) {
+        context.addIssue({
+          path: ['state'],
+          message: 'State must be provided for Local jurisdiction'
+        })
+      }
+      if (!data.municipality) {
+        context.addIssue({
+          path: ['municipality'],
+          message: 'Municipality must be provided for Local jurisdiction'
+        })
+      }
     }
-    if (data.jurisdiction === 'Estatal') {
-      return data.state && !data.municipality
-    }
-    if (data.jurisdiction === 'Local') {
-      return data.state && data.municipality
-    }
-    return true
-  }, {
-    message: 'Invalid fields for the selected jurisdiction',
-    path: ['jurisdiction']
   })
 
 export default legalBasisSchema
