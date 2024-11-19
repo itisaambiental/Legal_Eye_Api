@@ -350,10 +350,10 @@ export const updateLegalBasis = async (req, res) => {
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-    const { legalBasis, jobId } = await LegalBasisService.update(id, body, document)
+    const { jobId, legalBasis } = await LegalBasisService.update(id, body, document)
     return res.status(200).json({
-      legalBasis,
-      jobId
+      jobId,
+      legalBasis
     })
   } catch (error) {
     if (error instanceof ErrorUtils) {

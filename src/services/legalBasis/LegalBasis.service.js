@@ -6,6 +6,8 @@ import AspectsRepository from '../../repositories/Aspects.repository.js'
 import { z } from 'zod'
 import ErrorUtils from '../../utils/Error.js'
 import FileService from '../files/File.service.js'
+import { format } from 'date-fns'
+import { es } from 'date-fns/locale'
 /**
  * Service class for handling Legal Basis operations.
  */
@@ -72,10 +74,15 @@ class LegalBasisService {
           jobId = job.id
         }
       }
+      let formattedLastReform = null
+      if (createdLegalBasis.lastReform) {
+        formattedLastReform = format(new Date(createdLegalBasis.lastReform), 'dd-MM-yyyy')
+      }
       return {
         jobId,
         legalBasis: {
           ...createdLegalBasis,
+          lastReform: formattedLastReform,
           url: documentUrl
         }
       }
@@ -110,7 +117,10 @@ class LegalBasisService {
         if (legalBasis.url) {
           documentUrl = await FileService.getFile(legalBasis.url)
         }
-
+        let formattedLastReform = null
+        if (legalBasis.lastReform) {
+          formattedLastReform = format(new Date(legalBasis.lastReform), 'dd-MM-yyyy', { locale: es })
+        }
         return {
           id: legalBasis.id,
           legalName: legalBasis.legal_name,
@@ -120,7 +130,7 @@ class LegalBasisService {
           jurisdiction: legalBasis.jurisdiction,
           state: legalBasis.state,
           municipality: legalBasis.municipality,
-          last_reform: legalBasis.lastReform,
+          last_reform: formattedLastReform,
           abbreviation: legalBasis.abbreviation,
           url: documentUrl
         }
@@ -151,6 +161,10 @@ class LegalBasisService {
       if (legalBase.url) {
         documentUrl = await FileService.getFile(legalBase.url)
       }
+      let formattedLastReform = null
+      if (legalBase.lastReform) {
+        formattedLastReform = format(new Date(legalBase.lastReform), 'dd-MM-yyyy', { locale: es })
+      }
       return {
         id: legalBase.id,
         legalName: legalBase.legal_name,
@@ -160,7 +174,7 @@ class LegalBasisService {
         jurisdiction: legalBase.jurisdiction,
         state: legalBase.state,
         municipality: legalBase.municipality,
-        last_reform: legalBase.lastReform,
+        last_reform: formattedLastReform,
         abbreviation: legalBase.abbreviation,
         url: documentUrl
       }
@@ -188,6 +202,10 @@ class LegalBasisService {
       if (legalBase.url) {
         documentUrl = await FileService.getFile(legalBase.url)
       }
+      let formattedLastReform = null
+      if (legalBase.lastReform) {
+        formattedLastReform = format(new Date(legalBase.lastReform), 'dd-MM-yyyy', { locale: es })
+      }
       return {
         id: legalBase.id,
         legalName: legalBase.legal_name,
@@ -197,7 +215,7 @@ class LegalBasisService {
         jurisdiction: legalBase.jurisdiction,
         state: legalBase.state,
         municipality: legalBase.municipality,
-        last_reform: legalBase.lastReform,
+        last_reform: formattedLastReform,
         abbreviation: legalBase.abbreviation,
         url: documentUrl
       }
@@ -226,7 +244,10 @@ class LegalBasisService {
         if (legalBasis.url) {
           documentUrl = await FileService.getFile(legalBasis.url)
         }
-
+        let formattedLastReform = null
+        if (legalBasis.lastReform) {
+          formattedLastReform = format(new Date(legalBasis.lastReform), 'dd-MM-yyyy', { locale: es })
+        }
         return {
           id: legalBasis.id,
           legalName: legalBasis.legal_name,
@@ -236,7 +257,7 @@ class LegalBasisService {
           jurisdiction: legalBasis.jurisdiction,
           state: legalBasis.state,
           municipality: legalBasis.municipality,
-          last_reform: legalBasis.lastReform,
+          last_reform: formattedLastReform,
           abbreviation: legalBasis.abbreviation,
           url: documentUrl
         }
@@ -267,6 +288,10 @@ class LegalBasisService {
         if (legalBasis.url) {
           documentUrl = await FileService.getFile(legalBasis.url)
         }
+        let formattedLastReform = null
+        if (legalBasis.lastReform) {
+          formattedLastReform = format(new Date(legalBasis.lastReform), 'dd-MM-yyyy', { locale: es })
+        }
         return {
           id: legalBasis.id,
           legalName: legalBasis.legal_name,
@@ -276,7 +301,7 @@ class LegalBasisService {
           jurisdiction: legalBasis.jurisdiction,
           state: legalBasis.state,
           municipality: legalBasis.municipality,
-          last_reform: legalBasis.lastReform,
+          last_reform: formattedLastReform,
           abbreviation: legalBasis.abbreviation,
           url: documentUrl
         }
@@ -308,6 +333,10 @@ class LegalBasisService {
         if (legalBasis.url) {
           documentUrl = await FileService.getFile(legalBasis.url)
         }
+        let formattedLastReform = null
+        if (legalBasis.lastReform) {
+          formattedLastReform = format(new Date(legalBasis.lastReform), 'dd-MM-yyyy', { locale: es })
+        }
         return {
           id: legalBasis.id,
           legalName: legalBasis.legal_name,
@@ -317,7 +346,7 @@ class LegalBasisService {
           jurisdiction: legalBasis.jurisdiction,
           state: legalBasis.state,
           municipality: legalBasis.municipality,
-          last_reform: legalBasis.lastReform,
+          last_reform: formattedLastReform,
           abbreviation: legalBasis.abbreviation,
           url: documentUrl
         }
@@ -353,6 +382,10 @@ class LegalBasisService {
         if (legalBasis.url) {
           documentUrl = await FileService.getFile(legalBasis.url)
         }
+        let formattedLastReform = null
+        if (legalBasis.lastReform) {
+          formattedLastReform = format(new Date(legalBasis.lastReform), 'dd-MM-yyyy', { locale: es })
+        }
         return {
           id: legalBasis.id,
           legalName: legalBasis.legal_name,
@@ -362,7 +395,7 @@ class LegalBasisService {
           jurisdiction: legalBasis.jurisdiction,
           state: legalBasis.state,
           municipality: legalBasis.municipality,
-          last_reform: legalBasis.lastReform,
+          last_reform: formattedLastReform,
           abbreviation: legalBasis.abbreviation,
           url: documentUrl
         }
@@ -394,6 +427,10 @@ class LegalBasisService {
         if (legalBasis.url) {
           documentUrl = await FileService.getFile(legalBasis.url)
         }
+        let formattedLastReform = null
+        if (legalBasis.lastReform) {
+          formattedLastReform = format(new Date(legalBasis.lastReform), 'dd-MM-yyyy', { locale: es })
+        }
         return {
           id: legalBasis.id,
           legalName: legalBasis.legal_name,
@@ -403,7 +440,7 @@ class LegalBasisService {
           jurisdiction: legalBasis.jurisdiction,
           state: legalBasis.state,
           municipality: legalBasis.municipality,
-          last_reform: legalBasis.lastReform,
+          last_reform: formattedLastReform,
           abbreviation: legalBasis.abbreviation,
           url: documentUrl
         }
@@ -435,6 +472,10 @@ class LegalBasisService {
         if (legalBasis.url) {
           documentUrl = await FileService.getFile(legalBasis.url)
         }
+        let formattedLastReform = null
+        if (legalBasis.lastReform) {
+          formattedLastReform = format(new Date(legalBasis.lastReform), 'dd-MM-yyyy', { locale: es })
+        }
         return {
           id: legalBasis.id,
           legalName: legalBasis.legal_name,
@@ -444,7 +485,7 @@ class LegalBasisService {
           jurisdiction: legalBasis.jurisdiction,
           state: legalBasis.state,
           municipality: legalBasis.municipality,
-          last_reform: legalBasis.lastReform,
+          last_reform: formattedLastReform,
           abbreviation: legalBasis.abbreviation,
           url: documentUrl
         }
@@ -475,7 +516,7 @@ class LegalBasisService {
  * @param {string} [data.extractArticles] - The flag to determine whether to extract articles from the document.
  * @param {string} [data.removeDocument] - The flag to determine whether the document should be deleted.
  * @param {Object} [document] - The new document to process (optional).
- * @returns {Promise<Object>} - The updated LegalBasis object.
+ * @returns {Promise<Object>} - The updated LegalBasis object and any related job information.
  * @throws {ErrorUtils} - If an error occurs during the update validation or processing.
  */
   static async update (legalBasisId, data, document) {
@@ -498,18 +539,19 @@ class LegalBasisService {
         const notFoundIds = parsedData.aspectsIds.filter(id => !validAspectIds.includes(id))
         throw new ErrorUtils(400, 'Invalid Aspects IDs', { notFoundIds })
       }
+      const existingJobs = await articlesQueue.getJobs(['waiting', 'paused', 'active', 'delayed'])
+      const jobsPending = existingJobs.some(job => Number(job.data.legalBasisId) === Number(legalBasisId))
       if (parsedData.removeDocument && document) {
         throw new ErrorUtils(400, 'Cannot provide a document if removeDocument is true')
       }
-      if (!document) {
-        parsedData.extractArticles = false
+      if (parsedData.removeDocument && jobsPending) {
+        throw new ErrorUtils(409, 'The document cannot be removed because there are pending jobs for this Legal Basis')
       }
-      if (document && parsedData.extractArticles) {
-        const existingJobs = await articlesQueue.getJobs(['waiting', 'paused', 'active', 'delayed'])
-        const jobsPending = existingJobs.some(job => Number(job.data.legalBasisId) === Number(legalBasisId))
-        if (jobsPending) {
-          throw new ErrorUtils(409, 'Articles cannot be extracted because there is already a process that does so.')
-        }
+      if (parsedData.extractArticles && !document) {
+        throw new ErrorUtils(400, 'A document must be provided if extractArticles is true')
+      }
+      if (document && parsedData.extractArticles && jobsPending) {
+        throw new ErrorUtils(409, 'Articles cannot be extracted because there is already a process that does so.')
       }
       let documentKey = existingLegalBasis.url
       if (document && !parsedData.removeDocument) {
@@ -544,16 +586,21 @@ class LegalBasisService {
           jobId = job.id
         }
       }
+      let formattedLastReform = null
+      if (updatedLegalBasis.lastReform) {
+        formattedLastReform = format(new Date(updatedLegalBasis.lastReform), 'dd-MM-yyyy')
+      }
       return {
         jobId,
         legalBasis: {
           ...updatedLegalBasis,
+          lastReform: formattedLastReform,
           url: documentUrl
         }
       }
     } catch (error) {
       if (error instanceof z.ZodError) {
-        const validationErrors = error.errors.map((e) => ({
+        const validationErrors = error.errors.map(e => ({
           field: e.path[0],
           message: e.message
         }))
