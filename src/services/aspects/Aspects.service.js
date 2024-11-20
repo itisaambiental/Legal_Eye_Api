@@ -139,7 +139,7 @@ class AspectsService {
   /**
    * Deletes an aspect by ID.
    * @param {number} id - The ID of the aspect to delete.
-   * @returns {Promise<boolean>} - Returns true if deletion is successful.
+   * @returns {Promise<Object>} - Success message if aspect was deleted.
    * @throws {ErrorUtils} - If an error occurs during deletion.
    */
   static async deleteById (id) {
@@ -152,7 +152,7 @@ class AspectsService {
       if (!aspectDeleted) {
         throw new ErrorUtils(404, 'Aspect not found')
       }
-      return aspectDeleted
+      return { success: true }
     } catch (error) {
       if (error instanceof ErrorUtils) {
         throw error

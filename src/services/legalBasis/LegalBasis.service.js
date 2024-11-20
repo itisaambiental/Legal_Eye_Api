@@ -540,17 +540,18 @@ class LegalBasisService {
         throw new ErrorUtils(400, 'Invalid Aspects IDs', { notFoundIds })
       }
       const existingJobs = await articlesQueue.getJobs(['waiting', 'paused', 'active', 'delayed'])
-      const jobsPending = existingJobs.some(job => Number(job.data.legalBasisId) === Number(legalBasisId))
+      const jobMap = new Map(existingJobs.map(job => [Number(job.data.legalBasisId), true]))
+      const hasPendingJobs = jobMap.has(Number(legalBasisId))
       if (parsedData.removeDocument && document) {
         throw new ErrorUtils(400, 'Cannot provide a document if removeDocument is true')
       }
-      if (parsedData.removeDocument && jobsPending) {
+      if (parsedData.removeDocument && hasPendingJobs) {
         throw new ErrorUtils(409, 'The document cannot be removed because there are pending jobs for this Legal Basis')
       }
       if (parsedData.extractArticles && !document) {
         throw new ErrorUtils(400, 'A document must be provided if extractArticles is true')
       }
-      if (document && parsedData.extractArticles && jobsPending) {
+      if (document && parsedData.extractArticles && hasPendingJobs) {
         throw new ErrorUtils(409, 'Articles cannot be extracted because there is already a process that does so.')
       }
       let documentKey = existingLegalBasis.url
@@ -575,6 +576,9 @@ class LegalBasisService {
         url: documentKey
       }
       const updatedLegalBasis = await LegalBasisRepository.update(legalBasisId, updatedLegalBasisData)
+      if (!updatedLegalBasis) {
+        throw new ErrorUtils(404, 'LegalBasis not found')
+      }
       let documentUrl = null
       let jobId = null
       if (documentKey) {
@@ -610,6 +614,41 @@ class LegalBasisService {
         throw error
       }
       throw new ErrorUtils(500, 'Unexpected error during legal basis update')
+    }
+  }
+
+  /**
+ * Deletes a Legal base by ID.
+ * @param {number} legalBasisId - The ID of the Legal base to delete.
+ * @returns {Promise<Object>} - Success message if Legal base was deleted.
+ * @throws {ErrorUtils} - If an error occurs during deletion.
+ */
+  static async delete (legalBasisId) {
+    try {
+      const legalBasis = await LegalBasisRepository.findById(legalBasisId)
+      if (!legalBasis) {
+        throw new ErrorUtils(404, 'LegalBasis not found')
+      }
+      const existingJobs = await articlesQueue.getJobs(['waiting', 'paused', 'active', 'delayed'])
+      const jobMap = new Map(existingJobs.map(job => [Number(job.data.legalBasisId), true]))
+      const hasPendingJobs = jobMap.has(Number(legalBasisId))
+      if (hasPendingJobs) {
+        throw new ErrorUtils(409, 'Cannot delete LegalBasis with pending jobs')
+      }
+      if (legalBasis.url) {
+        await FileService.deleteFile(legalBasis.url)
+      }
+      const deleted = await LegalBasisRepository.delete(legalBasisId)
+      if (!deleted) {
+        throw new ErrorUtils(404, 'LegalBasis not found')
+      }
+      return { success: true }
+    } catch (error) {
+      if (error instanceof ErrorUtils) {
+        throw error
+      }
+      console.error('Unexpected error deleting LegalBasis:', error.message)
+      throw new ErrorUtils(500, 'Unexpected error during LegalBasis deletion')
     }
   }
 }

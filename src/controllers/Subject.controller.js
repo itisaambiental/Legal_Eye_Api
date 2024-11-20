@@ -139,8 +139,12 @@ export const deleteSubject = async (req, res) => {
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-    await SubjectsService.deleteById(id)
-    return res.sendStatus(204)
+    const { success } = await SubjectsService.deleteById(id)
+    if (success) {
+      return res.sendStatus(204)
+    } else {
+      return res.status(500).json({ message: 'Internal Server Error' })
+    }
   } catch (error) {
     if (error instanceof ErrorUtils) {
       return res.status(error.status).json({
@@ -172,11 +176,11 @@ export const deleteSubjectsBatch = async (req, res) => {
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-    const result = await SubjectsService.deleteSubjectsBatch(subjectIds)
-    if (result.success) {
+    const { success } = await SubjectsService.deleteSubjectsBatch(subjectIds)
+    if (success) {
       return res.sendStatus(204)
     } else {
-      return res.status(404).json({ message: result.message })
+      return res.status(500).json({ message: 'Internal Server Error' })
     }
   } catch (error) {
     if (error instanceof ErrorUtils) {

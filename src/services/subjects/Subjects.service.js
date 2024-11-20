@@ -126,7 +126,7 @@ class SubjectsService {
   /**
    * Deletes a subject by ID.
    * @param {number} id - The ID of the subject to delete.
-   * @returns {Promise<boolean>} - Returns true if deletion is successful.
+   * @returns {Promise<Object>} - Success message if subject was deleted.
    * @throws {ErrorUtils} - If an error occurs during deletion.
    */
   static async deleteById (id) {
@@ -142,7 +142,7 @@ class SubjectsService {
       if (!subjectDeleted) {
         throw new ErrorUtils(404, 'Subject not found')
       }
-      return subjectDeleted
+      return { success: true }
     } catch (error) {
       if (error instanceof ErrorUtils) {
         throw error

@@ -142,8 +142,12 @@ export const deleteAspect = async (req, res) => {
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-    await AspectsService.deleteById(id)
-    return res.sendStatus(204)
+    const { success } = await AspectsService.deleteById(id)
+    if (success) {
+      return res.sendStatus(204)
+    } else {
+      return res.status(500).json({ message: 'Internal Server Error' })
+    }
   } catch (error) {
     if (error instanceof ErrorUtils) {
       return res.status(error.status).json({
@@ -175,11 +179,11 @@ export const deleteAspectsBatch = async (req, res) => {
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-    const result = await AspectsService.deleteAspectsBatch(aspectIds)
-    if (result.success) {
+    const { success } = await AspectsService.deleteAspectsBatch(aspectIds)
+    if (success) {
       return res.sendStatus(204)
     } else {
-      return res.status(404).json({ message: result.message })
+      return res.status(500).json({ message: 'Internal Server Error' })
     }
   } catch (error) {
     if (error instanceof ErrorUtils) {

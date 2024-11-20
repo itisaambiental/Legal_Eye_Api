@@ -846,7 +846,7 @@ class LegalBasisRepository {
  * @param {string} [data.municipality] - The new municipality associated with the legal basis.
  * @param {Date} [data.lastReform] - The new date of the last reform.
  * @param {string} [data.url] - The new URL of the legal basis document.
- * @returns {Promise<LegalBasis>} - The updated LegalBasis.
+ * @returns {Promise<LegalBasis|null>} - The updated LegalBasis.
  * @throws {ErrorUtils} - If an error occurs during update.
  */
   static async update (legalBasisId, data) {
@@ -876,10 +876,24 @@ class LegalBasisRepository {
       subject_id = IFNULL(?, subject_id)
     WHERE id = ?
   `
+    const checkAspectsQuery = `
+  SELECT COUNT(*) AS aspectCount
+  FROM legal_basis_subject_aspect
+  WHERE legal_basis_id = ?
+`
+
+    const deleteAspectsQuery = `
+  DELETE FROM legal_basis_subject_aspect
+  WHERE legal_basis_id = ?
+`
+    const insertAspectsQuery = (aspectsIds) => `
+INSERT INTO legal_basis_subject_aspect (legal_basis_id, subject_id, aspect_id) 
+VALUES ${aspectsIds.map(() => '(?, ?, ?)').join(', ')}
+`
     const connection = await pool.getConnection()
     try {
       await connection.beginTransaction()
-      await connection.query(updateLegalBasisQuery, [
+      const [updatedResult] = await connection.query(updateLegalBasisQuery, [
         legalName,
         abbreviation,
         classification,
@@ -891,19 +905,29 @@ class LegalBasisRepository {
         subjectId,
         legalBasisId
       ])
-      if (aspectsIds && aspectsIds.length > 0) {
-        const deleteAspectsQuery = `
-        DELETE FROM legal_basis_subject_aspect
-        WHERE legal_basis_id = ?
-      `
-        await connection.query(deleteAspectsQuery, [legalBasisId])
-        const insertAspectsQuery = `
-        INSERT INTO legal_basis_subject_aspect (legal_basis_id, subject_id, aspect_id) 
-        VALUES ${aspectsIds.map(() => '(?, ?, ?)').join(', ')}
-      `
-        const values = aspectsIds.flatMap(aspectId => [legalBasisId, subjectId || null, aspectId])
-        await connection.query(insertAspectsQuery, values)
+      if (updatedResult.affectedRows === 0) {
+        await connection.rollback()
+        return null
       }
+      if (aspectsIds && aspectsIds.length > 0) {
+        const [aspectCheckResult] = await connection.query(checkAspectsQuery, [legalBasisId])
+        const { aspectCount } = aspectCheckResult[0]
+        if (aspectCount > 0) {
+          const [deletedResult] = await connection.query(deleteAspectsQuery, [legalBasisId])
+          if (deletedResult.affectedRows === 0) {
+            await connection.rollback()
+            throw new ErrorUtils(500, 'Failed to delete existing aspects')
+          }
+        }
+        const values = aspectsIds.flatMap(aspectId => [legalBasisId, subjectId || null, aspectId])
+        const [insertedResult] = await connection.query(insertAspectsQuery(aspectsIds), values)
+
+        if (insertedResult.affectedRows !== aspectsIds.length) {
+          await connection.rollback()
+          throw new ErrorUtils(500, 'Failed to insert aspects.')
+        }
+      }
+
       await connection.commit()
       const updatedLegalBasis = await this.findById(legalBasisId)
       return updatedLegalBasis
@@ -911,6 +935,56 @@ class LegalBasisRepository {
       await connection.rollback()
       console.error('Error updating legal basis:', error.message)
       throw new ErrorUtils(500, 'Error updating legal basis in the database')
+    } finally {
+      connection.release()
+    }
+  }
+
+  /**
+ * Deletes a legal basis record.
+ * @param {number} legalBasisId - The ID of the legal basis to delete.
+ * @returns {Promise<boolean>} - Returns true if the deletion is successful, false otherwise.
+ * @throws {ErrorUtils} - If an error occurs during deletion.
+ */
+  static async delete (legalBasisId) {
+    const checkAspectsQuery = `
+    SELECT COUNT(*) AS aspectCount
+    FROM legal_basis_subject_aspect
+    WHERE legal_basis_id = ?
+  `
+
+    const deleteAspectsQuery = `
+    DELETE FROM legal_basis_subject_aspect
+    WHERE legal_basis_id = ?
+  `
+
+    const deleteLegalBasisQuery = `
+    DELETE FROM legal_basis
+    WHERE id = ?
+  `
+    const connection = await pool.getConnection()
+    try {
+      await connection.beginTransaction()
+      const [aspectCheckResult] = await connection.query(checkAspectsQuery, [legalBasisId])
+      const { aspectCount } = aspectCheckResult[0]
+      if (aspectCount > 0) {
+        const [deletedResult] = await connection.query(deleteAspectsQuery, [legalBasisId])
+        if (deletedResult.affectedRows === 0) {
+          await connection.rollback()
+          throw new ErrorUtils(500, 'Failed to delete existing aspects')
+        }
+      }
+      const [result] = await connection.query(deleteLegalBasisQuery, [legalBasisId])
+      if (result.affectedRows === 0) {
+        await connection.rollback()
+        return false
+      }
+      await connection.commit()
+      return true
+    } catch (error) {
+      await connection.rollback()
+      console.error('Error deleting legal basis:', error.message)
+      throw new ErrorUtils(500, 'Error deleting legal basis from the database')
     } finally {
       connection.release()
     }
