@@ -224,7 +224,7 @@ export const getUsersByRole = async (req, res) => {
 }
 
 /**
- * Update user information by ID.
+ * Update user information by IDD.
  * @function updateUser
  * @param {Object} req - Request object, expects { id } in params and { name, gmail, roleId, removePicture } in body and an optional file for profile picture.
  * @param {Object} res - Response object.
