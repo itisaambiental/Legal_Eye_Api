@@ -417,7 +417,7 @@ class UserService {
   /**
    * Deletes a user by their ID.
    * @param {number} id - User's ID.
-   * @returns {Promise<boolean>} - True if user was deleted.
+   * @returns {Promise<Object>} -  Success message if user was deleted.
    * @throws {ErrorUtils} - If user not found or deletion fails.
    */
   static async deleteUser (id) {
@@ -433,7 +433,7 @@ class UserService {
       if (!userDeleted) {
         throw new ErrorUtils(404, 'User not found')
       }
-      return userDeleted
+      return { success: true }
     } catch (error) {
       if (error instanceof ErrorUtils) {
         throw error

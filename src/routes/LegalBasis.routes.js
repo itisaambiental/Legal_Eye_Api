@@ -16,7 +16,8 @@ import {
   getLegalBasisByStateAndMunicipality,
   getLegalBasisBySubject,
   getLegalBasisBySubjectAndAspects,
-  updateLegalBasis
+  updateLegalBasis,
+  deleteLegalBasis
 } from '../controllers/LegalBasis.controller.js'
 import { upload } from '../config/multer.config.js'
 
@@ -135,5 +136,15 @@ router.get('/legalBasis/subject-aspects', UserExtractor, getLegalBasisBySubjectA
  * @param {number} id - The ID of the legal basis to update.
  */
 router.patch('/legalBasis/:id', upload.single('document'), UserExtractor, updateLegalBasis)
+
+/**
+ * Route to create a new legal basis.
+ * @method DELETE
+ * @path /legalBases/:id
+ * @description Allows an authorized user to delete a legal basis record.
+ * @middlewares UserExtractor
+ * @param {number} id - The ID of the legal basis to delete.
+ */
+router.patch('/legalBasis/:id', UserExtractor, deleteLegalBasis)
 
 export default router

@@ -80,13 +80,13 @@ export const loginUserMicrosoftAuth = async (req, res) => {
  * @function registerUser
  * @param {Object} req - Request object, expects { name, gmail, roleId } in body and file for profile picture.
  * @param {Object} res - Response object.
+ * @returns {Object} - The registered user data.
  * @throws {ErrorUtils} - Throws an instance of ErrorUtils error if the process fails.
  */
 export const registerUser = async (req, res) => {
+  const { userId } = req
   const { name, gmail, roleId } = req.body
   const profilePicture = req.file
-  const { userId } = req
-
   if (!name || !gmail || !roleId) {
     return res.status(400).json({
       message: 'Missing required fields: name, gmail, roleId'
@@ -97,7 +97,10 @@ export const registerUser = async (req, res) => {
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-    const user = await UserService.registerUser(req.body, profilePicture)
+    const user = await UserService.registerUser(
+      { name, gmail, roleId },
+      profilePicture
+    )
     return res.status(201).json({ user })
   } catch (error) {
     if (error instanceof ErrorUtils) {
@@ -228,13 +231,18 @@ export const getUsersByRole = async (req, res) => {
  * @throws {ErrorUtils} - Throws an instance of ErrorUtils error if the process fails.
  */
 export const updateUser = async (req, res) => {
+  const { id } = req.params
   const { name, gmail, roleId, removePicture } = req.body
   const profilePicture = req.file
-  const { id } = req.params
   const { userId } = req
-  if (!id || (!name && !gmail && !roleId && !removePicture)) {
+  if (!id) {
     return res.status(400).json({
-      message: 'Missing required fields: id, name, gmail, roleId, removePicture'
+      message: 'Missing required parameter: id'
+    })
+  }
+  if (!name && !gmail && !roleId && !removePicture) {
+    return res.status(400).json({
+      message: 'Missing required fields: name, gmail, roleId, removePicture'
     })
   }
   try {
@@ -242,12 +250,18 @@ export const updateUser = async (req, res) => {
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-    const { updatedUser, token } = await UserService.updateUser(id, req.body, profilePicture, userId)
+    const { updatedUser, token } = await UserService.updateUser(
+      id,
+      { name, gmail, roleId, removePicture },
+      profilePicture,
+      userId
+    )
     return res.status(200).json({
       updatedUser,
       token
     })
   } catch (error) {
+    console.error(error)
     if (error instanceof ErrorUtils) {
       return res.status(error.status).json({
         message: error.message,
@@ -311,9 +325,12 @@ export const deleteUser = async (req, res) => {
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-    await UserService.deleteUser(id)
-
-    return res.sendStatus(204)
+    const { success } = await UserService.deleteUser(id)
+    if (success) {
+      return res.sendStatus(204)
+    } else {
+      return res.status(500).json({ message: 'Internal Server Error' })
+    }
   } catch (error) {
     if (error instanceof ErrorUtils) {
       return res.status(error.status).json({
@@ -347,12 +364,12 @@ export const deleteUsersBatch = async (req, res) => {
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-    const result = await UserService.deleteUsersBatch(userIds)
+    const { success } = await UserService.deleteUsersBatch(userIds)
 
-    if (result.success) {
+    if (success) {
       return res.sendStatus(204)
     } else {
-      return res.status(404).json({ message: result.message })
+      return res.status(500).json({ message: 'Internal Server Error' })
     }
   } catch (error) {
     if (error instanceof ErrorUtils) {

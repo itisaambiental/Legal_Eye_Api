@@ -9,34 +9,29 @@ import UserService from '../services/users/User.service.js'
 /**
  * Creates a new legal basis record.
  * @function createLegalBasis
- * @param {Object} req - Request object, expects { legalName, classification, jurisdiction, state, municipality, lastReform, extractArticles } in body, and 'document' as a file.
+ * @param {Object} req - Request object, expects { legalName, abbreviation, subjectId, aspectsIds, classification, jurisdiction, state, municipality, lastReform, extractArticles } in body, and 'document' as a file.
  * @param {Object} res - Response object.
  * @returns {Object} - The jobId and the created legalBasis data.
+ * @throws {ErrorUtils} - Throws an instance of ErrorUtils error if the process fails.
  */
 export const createLegalBasis = async (req, res) => {
   const { userId } = req
-  const { body } = req
+  const { legalName, abbreviation, subjectId, aspectsIds, classification, jurisdiction, state, municipality, lastReform, extractArticles } = req.body
   const document = req.file
-  if (
-    !body.legalName ||
-    !body.abbreviation ||
-    !body.subjectId ||
-    !body.aspectsIds ||
-    !body.classification ||
-    !body.jurisdiction ||
-    !body.lastReform ||
-    !body.extractArticles
-  ) {
+  if (!legalName || !abbreviation || !subjectId || !aspectsIds || !classification || !jurisdiction || !lastReform || !extractArticles) {
     return res.status(400).json({
-      message: 'Missing required fields: legalName, abbreviation, subjectId, aspectIds (non-empty array), classification, jurisdiction, lastReform, extractArticles'
+      message: 'Missing required fields: legalName, abbreviation, subjectId, aspectsIds (non-empty array), classification, jurisdiction, lastReform, extractArticles'
     })
   }
-  const isAuthorized = await UserService.userExists(userId)
-  if (!isAuthorized) {
-    return res.status(403).json({ message: 'Unauthorized' })
-  }
   try {
-    const { jobId, legalBasis } = await LegalBasisService.create(body, document)
+    const isAuthorized = await UserService.userExists(userId)
+    if (!isAuthorized) {
+      return res.status(403).json({ message: 'Unauthorized' })
+    }
+    const { jobId, legalBasis } = await LegalBasisService.create(
+      { legalName, abbreviation, subjectId, aspectsIds, classification, jurisdiction, state, municipality, lastReform, extractArticles },
+      document
+    )
     return res.status(201).json({ jobId, legalBasis })
   } catch (error) {
     if (error instanceof ErrorUtils) {
@@ -323,26 +318,18 @@ export const getLegalBasisBySubjectAndAspects = async (req, res) => {
  * @throws {ErrorUtils} - Throws an instance of ErrorUtils error if the process fails.
  */
 export const updateLegalBasis = async (req, res) => {
-  const { userId } = req
-  const { body } = req
-  const document = req.file
   const { id } = req.params
-  if (
-    !id ||
-    (
-      !body.legalName &&
-      !body.abbreviation &&
-      !body.subjectId &&
-      !body.aspectsIds &&
-      !body.classification &&
-      !body.jurisdiction &&
-      !body.lastReform &&
-      !body.extractArticles &&
-      !body.removeDocument
-    )
-  ) {
+  const { userId } = req
+  const { legalName, abbreviation, subjectId, aspectsIds, classification, jurisdiction, state, municipality, lastReform, extractArticles, removeDocument } = req.body
+  const document = req.file
+  if (!id) {
     return res.status(400).json({
-      message: 'Missing required fields: id, legalName, abbreviation, subjectId, aspectsIds, classification, jurisdiction, lastReform, extractArticles, removeDocument'
+      message: 'Missing required parameter: id'
+    })
+  }
+  if (!legalName && !abbreviation && !subjectId && !aspectsIds && !classification && !jurisdiction && !state && !municipality && !lastReform && !extractArticles && !removeDocument && !document) {
+    return res.status(400).json({
+      message: 'Missing required fields: legalName, abbreviation, subjectId, aspectsIds, classification, jurisdiction, state, municipality, lastReform, extractArticles, removeDocument, or document'
     })
   }
   try {
@@ -350,7 +337,11 @@ export const updateLegalBasis = async (req, res) => {
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-    const { jobId, legalBasis } = await LegalBasisService.update(id, body, document)
+    const { jobId, legalBasis } = await LegalBasisService.update(
+      id,
+      { legalName, abbreviation, subjectId, aspectsIds, classification, jurisdiction, state, municipality, lastReform, extractArticles, removeDocument },
+      document
+    )
     return res.status(200).json({
       jobId,
       legalBasis
@@ -363,5 +354,33 @@ export const updateLegalBasis = async (req, res) => {
       })
     }
     return res.status(500).json({ message: 'Internal Server Error' })
+  }
+}
+/**
+ * Deletes a Legal Base by ID.
+ * @function deleteLegalBasis
+ * @param {Object} req - Request object, expects { id } in params.
+ * @param {Object} res - Response object.
+ * @returns {Object} - The result of the deletion operation.
+ * @throws {ErrorUtils} - If the process fails.
+ */
+export const deleteLegalBasis = async (req, res) => {
+  const { userId } = req
+  const { id } = req.params
+  try {
+    const isAuthorized = await UserService.userExists(userId)
+    if (!isAuthorized) {
+      return res.status(403).json({ message: 'Unauthorized' })
+    }
+    await LegalBasisService.getById(id)
+    return res.sendStatus(204)
+  } catch (error) {
+    if (error instanceof ErrorUtils) {
+      return res.status(error.status).json({
+        message: error.message,
+        ...(error.errors && { errors: error.errors })
+      })
+    }
+    return res.status(500).json({ message: 'Failed to delete legal basis by ID' })
   }
 }

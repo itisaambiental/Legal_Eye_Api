@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "NODE_ENV=development nodemon src/index.js",
     "start": "NODE_ENV=production node src/index.js",
-    "test": "npm run test:subjects --silent && npm run test:aspects --silent && npm run test:rest --silent",
+    "test": "npm run test:subjects --silent && npm run test:aspects --silent && npm run test:rest",
     "test:subjects": "NODE_ENV=test jest --verbose --silent tests/subjects.test.js",
     "test:aspects": "NODE_ENV=test jest --verbose --silent tests/aspects.test.js",
     "test:rest": "NODE_ENV=test jest --verbose --silent tests --testPathIgnorePatterns='tests/subjects.test.js|tests/aspects.test.js'",

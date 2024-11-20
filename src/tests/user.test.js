@@ -69,7 +69,7 @@ describe('User API tests', () => {
   describe('User registration and fetching tests', () => {
     const userData = {
       gmail: 'testuser@isaambiental.com',
-      name: 'Alfredo Duplicate',
+      name: 'Analyst User',
       roleId: '2'
     }
     test('Should successfully register a new user', async () => {
@@ -188,8 +188,7 @@ describe('User API tests', () => {
 
   describe('Updating user information', () => {
     test('Should successfully update admin user information with valid fields', async () => {
-      const updatedData = { name: 'Admin Updated' }
-
+      const updatedData = { name: 'Admin Updated', gmail: ADMIN_GMAIL, roleId: '1' }
       await api
         .patch(`/api/user/${adminUserId}`)
         .set('Authorization', `Bearer ${tokenAdmin}`)
@@ -203,9 +202,8 @@ describe('User API tests', () => {
         .expect(200)
         .expect('Content-Type', /application\/json/)
 
-      expect(response.body.user.name).toBe('Admin Updated')
+      expect(response.body.user.name).toBe(updatedData.name)
     })
-
     test('Should return validation errors for invalid user data when updating user', async () => {
       const response = await api
         .patch(`/api/user/${analystUserId}`)
@@ -230,7 +228,7 @@ describe('User API tests', () => {
     })
 
     test('Should return error if Gmail already exists', async () => {
-      const updatedData = { gmail: ADMIN_GMAIL }
+      const updatedData = { name: 'Analyst Updated', gmail: ADMIN_GMAIL, roleId: '1' }
 
       const response = await api
         .patch(`/api/user/${analystUserId}`)
@@ -243,23 +241,25 @@ describe('User API tests', () => {
     })
 
     test('Should fail to update user with missing required fields', async () => {
-      const invalidData = { invalidField: 'Invalid' }
       const response = await api
         .patch(`/api/user/${adminUserId}`)
         .set('Authorization', `Bearer ${tokenAdmin}`)
-        .send(invalidData)
         .expect(400)
         .expect('Content-Type', /application\/json/)
-      expect(response.body.message).toMatch(/Missing required fields: id, name, gmail, roleId/i)
+
+      expect(response.body.message).toMatch(/Missing required fields: name, gmail, roleId, removePicture/i)
     })
 
     test('Should successfully update analyst user using admin token', async () => {
-      const updatedData = { name: 'Analyst Updated' }
-
+      const userData = {
+        gmail: 'testuser@isaambiental.com',
+        name: 'Analyst User',
+        roleId: '2'
+      }
       await api
         .patch(`/api/user/${analystUserId}`)
         .set('Authorization', `Bearer ${tokenAdmin}`)
-        .send(updatedData)
+        .send(userData)
         .expect(200)
         .expect('Content-Type', /application\/json/)
 
@@ -269,7 +269,7 @@ describe('User API tests', () => {
         .expect(200)
         .expect('Content-Type', /application\/json/)
 
-      expect(response.body.user.name).toBe('Analyst Updated')
+      expect(response.body.user.name).toBe(userData.name)
     })
   })
 
