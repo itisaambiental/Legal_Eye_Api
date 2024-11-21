@@ -106,32 +106,26 @@ class UserService {
   static async loginUser (loginData) {
     try {
       const parsedLoginData = loginSchema.parse(loginData)
-
       const { gmail, password } = parsedLoginData
-
       const user = await UserRepository.findByGmail(gmail)
       if (!user) {
         throw new ErrorUtils(401, 'Invalid email or password')
       }
-
       const correctPassword = await bcrypt.compare(password, user.password)
       if (!correctPassword) {
         throw new ErrorUtils(401, 'Invalid email or password')
       }
-
       const userForToken = {
         id: user.id,
         gmail: user.gmail,
         username: user.name,
         userType: user.roleId
       }
-
       const token = jwt.sign(
         { userForToken },
         JWT_SECRET,
         { expiresIn: JWT_EXPIRATION }
       )
-
       return { token }
     } catch (error) {
       if (error instanceof z.ZodError) {

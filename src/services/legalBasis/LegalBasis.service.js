@@ -3,7 +3,7 @@ import articlesQueue from '../../workers/articlesWorker.js'
 import legalBasisSchema from '../../validations/legalBasisValidation.js'
 import SubjectsRepository from '../../repositories/Subject.repository.js'
 import AspectsRepository from '../../repositories/Aspects.repository.js'
-import ArticlesWorkerService from '../articles/worker/ArticlesWorkerService.js'
+import ArticlesWorkerService from '../articles/ArticlesWorkerService.js'
 import { z } from 'zod'
 import ErrorUtils from '../../utils/Error.js'
 import FileService from '../files/File.service.js'
@@ -50,6 +50,9 @@ class LegalBasisService {
       if (validAspectIds.length !== parsedData.aspectsIds.length) {
         const notFoundIds = parsedData.aspectsIds.filter(id => !validAspectIds.includes(id))
         throw new ErrorUtils(400, 'Invalid Aspects IDs', { notFoundIds })
+      }
+      if (parsedData.extractArticles && !document) {
+        throw new ErrorUtils(400, 'A document must be provided if extractArticles is true')
       }
       let documentKey = null
       if (document) {

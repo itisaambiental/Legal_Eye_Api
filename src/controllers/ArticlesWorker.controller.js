@@ -1,6 +1,6 @@
 import ErrorUtils from '../utils/Error.js'
 import UserService from '../services/users/User.service.js'
-import ArticlesWorkerService from '../services/articles/worker/ArticlesWorkerService.js'
+import ArticlesWorkerService from '../services/articles/ArticlesWorkerService.js'
 
 /**
  * Controller for Articles Jobs operations.
