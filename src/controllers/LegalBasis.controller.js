@@ -337,7 +337,7 @@ export const updateLegalBasis = async (req, res) => {
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-    const { jobId, legalBasis } = await LegalBasisService.update(
+    const { jobId, legalBasis } = await LegalBasisService.updateById(
       id,
       { legalName, abbreviation, subjectId, aspectsIds, classification, jurisdiction, state, municipality, lastReform, extractArticles, removeDocument },
       document
@@ -372,8 +372,50 @@ export const deleteLegalBasis = async (req, res) => {
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-    await LegalBasisService.getById(id)
-    return res.sendStatus(204)
+    const { success } = await LegalBasisService.deleteById(id)
+    if (success) {
+      return res.sendStatus(204)
+    } else {
+      return res.status(500).json({ message: 'Internal Server Error' })
+    }
+  } catch (error) {
+    if (error instanceof ErrorUtils) {
+      return res.status(error.status).json({
+        message: error.message,
+        ...(error.errors && { errors: error.errors })
+      })
+    }
+    return res.status(500).json({ message: 'Failed to delete legal basis by ID' })
+  }
+}
+
+/**
+ * Deletes a Legal Base by ID.
+ * @function deleteLegalBasisBatch
+ * @param {Object} req - Request object, expects { legalBasisIds } in body.
+ * @param {Object} res - Response object.
+ * @returns {Object} - The result of the deletion operation.
+ * @throws {ErrorUtils} - If the process fails.
+ */
+export const deleteLegalBasisBatch = async (req, res) => {
+  const { userId } = req
+  const { legalBasisIds } = req.body
+  if (!legalBasisIds || !Array.isArray(legalBasisIds) || legalBasisIds.length === 0) {
+    return res.status(400).json({
+      message: 'Missing required fields: legalBasisIds'
+    })
+  }
+  try {
+    const isAuthorized = await UserService.userExists(userId)
+    if (!isAuthorized) {
+      return res.status(403).json({ message: 'Unauthorized' })
+    }
+    const { success } = await LegalBasisService.deleteBatch(legalBasisIds)
+    if (success) {
+      return res.sendStatus(204)
+    } else {
+      return res.status(500).json({ message: 'Internal Server Error' })
+    }
   } catch (error) {
     if (error instanceof ErrorUtils) {
       return res.status(error.status).json({

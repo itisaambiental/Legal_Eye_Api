@@ -31,7 +31,10 @@ class ArticlesRepository {
       article.order
     ])
     try {
-      await pool.query(query, [values])
+      const [insertResult] = await pool.query(query, [values])
+      if (insertResult.affectedRows !== articles.length) {
+        return false
+      }
       return true
     } catch (error) {
       console.error('Error inserting articles:', error.message)
@@ -80,10 +83,17 @@ class ArticlesRepository {
  * @throws {ErrorUtils} - If an error occurs during the update.
  */
   static async updateArticles (legalBasisId, articles) {
-    if (articles.length === 0) {
-      return false
-    }
-    const deleteQuery = 'DELETE FROM article WHERE legal_basis_id = ?'
+    const checkArticlesQuery = `
+    SELECT COUNT(*) AS articleCount
+    FROM article
+    WHERE legal_basis_id = ?
+  `
+
+    const deleteQuery = `
+    DELETE FROM article 
+    WHERE legal_basis_id = ?
+  `
+
     const insertQuery = `
     INSERT INTO article (legal_basis_id, article_name, description, article_order)
     VALUES ?
@@ -97,8 +107,20 @@ class ArticlesRepository {
     const connection = await pool.getConnection()
     try {
       await connection.beginTransaction()
-      await connection.query(deleteQuery, [legalBasisId])
-      await connection.query(insertQuery, [values])
+      const [checkResult] = await connection.query(checkArticlesQuery, [legalBasisId])
+      const { articleCount } = checkResult[0]
+      if (articleCount > 0) {
+        const [deleteResult] = await connection.query(deleteQuery, [legalBasisId])
+        if (deleteResult.affectedRows === 0) {
+          await connection.rollback()
+          return false
+        }
+      }
+      const [insertResult] = await connection.query(insertQuery, [values])
+      if (insertResult.affectedRows !== values.length) {
+        await connection.rollback()
+        return false
+      }
       await connection.commit()
       return true
     } catch (error) {

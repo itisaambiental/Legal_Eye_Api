@@ -171,11 +171,13 @@ class AspectsService {
     try {
       const existingAspects = await AspectsRepository.findByIds(aspectIds)
       if (existingAspects.length !== aspectIds.length) {
-        const notFoundIds = aspectIds.filter(id => !existingAspects.some(aspect => aspect.id === id))
+        const notFoundIds = aspectIds.filter(
+          id => !existingAspects.some(aspect => aspect.id === id))
         throw new ErrorUtils(404, 'Aspects not found for IDs', { notFoundIds })
       }
       const associations = await AspectsRepository.checkAspectsLegalBasisAssociationsBatch(aspectIds)
-      const aspectsWithLegalBasisAssociations = associations.filter(aspect => aspect.isAspectAssociatedToLegalBasis)
+      const aspectsWithLegalBasisAssociations = associations.filter(
+        aspect => aspect.isAspectAssociatedToLegalBasis)
       if (aspectsWithLegalBasisAssociations.length > 0) {
         throw new ErrorUtils(409, 'Aspects are associated with legal bases', {
           associatedAspects: aspectsWithLegalBasisAssociations.map(aspect => ({
@@ -184,7 +186,10 @@ class AspectsService {
           }))
         })
       }
-      await AspectsRepository.deleteBatch(aspectIds)
+      const aspectsDeleted = await AspectsRepository.deleteBatch(aspectIds)
+      if (!aspectsDeleted) {
+        throw new ErrorUtils(404, 'Aspects not found')
+      }
       return { success: true }
     } catch (error) {
       if (error instanceof ErrorUtils) {

@@ -161,12 +161,15 @@ class SubjectsService {
     try {
       const existingSubjects = await SubjectsRepository.findByIds(subjectIds)
       if (existingSubjects.length !== subjectIds.length) {
-        const notFoundIds = subjectIds.filter(id => !existingSubjects.some(subject => subject.id === id))
+        const notFoundIds = subjectIds.filter(
+          id => !existingSubjects.some(subject => subject.id === id))
         throw new ErrorUtils(404, 'Subjects not found for IDs', { notFoundIds })
       }
       const associations = await SubjectsRepository.checkSubjectsLegalBasisAssociationsBatch(subjectIds)
-      const subjectsWithLegalBasisAssociations = associations.filter(subject => subject.isAssociatedToLegalBasis)
-      const subjectsWithAspectAssociations = associations.filter(subject => subject.isSubjectAspectAssociatedToLegalBasis)
+      const subjectsWithLegalBasisAssociations = associations.filter(
+        subject => subject.isAssociatedToLegalBasis)
+      const subjectsWithAspectAssociations = associations.filter(
+        subject => subject.isSubjectAspectAssociatedToLegalBasis)
       if (subjectsWithLegalBasisAssociations.length > 0) {
         throw new ErrorUtils(409, 'Subjects are associated with legal bases', {
           associatedSubjects: subjectsWithLegalBasisAssociations.map(subject => ({
@@ -183,7 +186,10 @@ class SubjectsService {
           }))
         })
       }
-      await SubjectsRepository.deleteBatch(subjectIds)
+      const subjectsDeleted = await SubjectsRepository.deleteBatch(subjectIds)
+      if (!subjectsDeleted) {
+        throw new ErrorUtils(404, 'Subjects not found')
+      }
       return { success: true }
     } catch (error) {
       if (error instanceof ErrorUtils) {

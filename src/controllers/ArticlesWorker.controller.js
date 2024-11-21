@@ -36,3 +36,33 @@ export const getStatusJob = async (req, res) => {
     return res.status(500).json({ message: 'Internal Server Error' })
   }
 }
+/**
+ * Checks if there are pending jobs for a given legalBasisId.
+ * @param {Object} req - Request object, expects legalBasisId in req.params and userId in req.
+ * @param {Object} res - Response object.
+ * @returns {Object} - Response with job status and progress or error details.
+ */
+export const checkPendingJobs = async (req, res) => {
+  const { userId } = req
+  const { legalBasisId } = req.params
+
+  if (!legalBasisId) {
+    return res.status(400).json({ message: 'legalBasisId is required' })
+  }
+  try {
+    const isAuthorized = await UserService.userExists(userId)
+    if (!isAuthorized) {
+      return res.status(403).json({ message: 'Unauthorized' })
+    }
+    const { hasPendingJobs, progress } = await ArticlesWorkerService.hasPendingJobs(legalBasisId)
+    return res.status(200).json({ hasPendingJobs, progress })
+  } catch (error) {
+    if (error instanceof ErrorUtils) {
+      return res.status(error.status).json({
+        message: error.message,
+        ...(error.errors && { errors: error.errors })
+      })
+    }
+    return res.status(500).json({ message: 'Internal Server Error' })
+  }
+}

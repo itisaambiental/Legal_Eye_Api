@@ -365,7 +365,6 @@ export const deleteUsersBatch = async (req, res) => {
       return res.status(403).json({ message: 'Unauthorized' })
     }
     const { success } = await UserService.deleteUsersBatch(userIds)
-
     if (success) {
       return res.sendStatus(204)
     } else {

@@ -85,6 +85,33 @@ class ArticlesWorkerService {
       ])
     }
   }
+
+  /**
+ * Checks if there are pending jobs in the articlesQueue for a given legalBasisId.
+ * If jobs exist, returns their progress; otherwise, returns null.
+ * @param {number} legalBasisId - The ID of the legal basis to check.
+ * @returns {Promise<{ hasPendingJobs: boolean, progress: number | null }>}
+ * An object containing:
+ * - `hasPendingJobs`: Boolean indicating if there are pending jobs for the given legalBasisId.
+ * - `progress`: The progress of the job if it exists, otherwise null.
+ * @throws {ErrorUtils} - If an error occurs while checking the articlesQueue.
+ */
+  static async hasPendingJobs (legalBasisId) {
+    try {
+      const existingJobs = await articlesQueue.getJobs(['waiting', 'paused', 'active', 'delayed'])
+      const jobMap = new Map(
+        existingJobs.map(job => [Number(job.data.legalBasisId), job])
+      )
+      const job = jobMap.get(Number(legalBasisId))
+      if (job) {
+        const progress = await job.getProgress()
+        return { hasPendingJobs: true, progress }
+      }
+      return { hasPendingJobs: false, progress: null }
+    } catch (error) {
+      throw new ErrorUtils(500, 'Failed to check pending jobs')
+    }
+  }
 }
 
 export default ArticlesWorkerService

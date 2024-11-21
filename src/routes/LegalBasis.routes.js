@@ -17,7 +17,8 @@ import {
   getLegalBasisBySubject,
   getLegalBasisBySubjectAndAspects,
   updateLegalBasis,
-  deleteLegalBasis
+  deleteLegalBasis,
+  deleteLegalBasisBatch
 } from '../controllers/LegalBasis.controller.js'
 import { upload } from '../config/multer.config.js'
 
@@ -147,13 +148,13 @@ router.patch('/legalBasis/:id', upload.single('document'), UserExtractor, update
  */
 router.delete('/legalBasis/:id', UserExtractor, deleteLegalBasis)
 
-// /**
-//  * Route to delete multiple Legal basis using an array of IDs.
-//  * @method DELETE
-//  * @path /legalBases/batch
-//  * @description Allows an authorized user to delete multiple legal basis record.
-//  * @middlewares UserExtractor
-//  */
-// router.delete('/legalBases/batch', UserExtractor, deleteLegalBasisBatch)
+/**
+ * Route to delete multiple Legal basis using an array of IDs.
+ * @method DELETE
+ * @path /legalBases/batch
+ * @description Allows an authorized user to delete multiple legal basis record.
+ * @middlewares UserExtractor
+ */
+router.delete('/legalBases/batch', UserExtractor, deleteLegalBasisBatch)
 
 export default router

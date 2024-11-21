@@ -168,11 +168,11 @@ class LegalBasisRepository {
 
   /**
    * Retrieves a legal basis record by its ID.
-   * @param {number} id - The ID of the legal basis to retrieve.
+   * @param {number} legalBasisId - The ID of the legal basis to retrieve.
    * @returns {Promise<LegalBasis|null>} - The legal basis record or null if not found.
    * @throws {ErrorUtils} - If an error occurs during retrieval.
    */
-  static async findById (id) {
+  static async findById (legalBasisId) {
     const query = `
       SELECT 
         legal_basis.id, 
@@ -196,7 +196,7 @@ class LegalBasisRepository {
     `
 
     try {
-      const [rows] = await pool.query(query, [id])
+      const [rows] = await pool.query(query, [legalBasisId])
       if (rows.length === 0) return null
       const legalBasis = rows[0]
       const subject = {
@@ -227,6 +227,85 @@ class LegalBasisRepository {
     } catch (error) {
       console.error('Error retrieving legal basis by ID:', error.message)
       throw new ErrorUtils(500, 'Error retrieving legal basis by ID')
+    }
+  }
+
+  /**
+ * Retrieves multiple legal basis records by their IDs.
+ * @param {Array<number>} legalBasisIds - An array of IDs of the legal bases to retrieve.
+ * @returns {Promise<Array<LegalBasis>>} - An array of legal basis records.
+ * @throws {ErrorUtils} - If an error occurs during retrieval.
+ */
+  static async findByIds (legalBasisIds) {
+    const query = `
+    SELECT 
+      legal_basis.id, 
+      legal_basis.legal_name, 
+      legal_basis.abbreviation, 
+      legal_basis.classification, 
+      legal_basis.jurisdiction, 
+      legal_basis.state, 
+      legal_basis.municipality, 
+      legal_basis.last_reform, 
+      legal_basis.url, 
+      subjects.id AS subject_id, 
+      subjects.subject_name AS subject_name,
+      aspects.id AS aspect_id, 
+      aspects.aspect_name AS aspect_name
+    FROM legal_basis
+    JOIN subjects ON legal_basis.subject_id = subjects.id
+    LEFT JOIN legal_basis_subject_aspect ON legal_basis.id = legal_basis_subject_aspect.legal_basis_id
+    LEFT JOIN aspects ON legal_basis_subject_aspect.aspect_id = aspects.id
+    WHERE legal_basis.id IN (?)
+  `
+    try {
+      const [rows] = await pool.query(query, [legalBasisIds])
+      if (rows.length === 0) return null
+      const legalBasisMap = new Map()
+      rows.forEach(row => {
+        if (!legalBasisMap.has(row.id)) {
+          legalBasisMap.set(row.id, {
+            id: row.id,
+            legal_name: row.legal_name,
+            abbreviation: row.abbreviation,
+            classification: row.classification,
+            jurisdiction: row.jurisdiction,
+            state: row.state,
+            municipality: row.municipality,
+            last_reform: row.last_reform,
+            url: row.url,
+            subject: {
+              subject_id: row.subject_id,
+              subject_name: row.subject_name
+            },
+            aspects: []
+          })
+        }
+        if (row.aspect_id) {
+          legalBasisMap.get(row.id).aspects.push({
+            aspect_id: row.aspect_id,
+            aspect_name: row.aspect_name
+          })
+        }
+      })
+      return Array.from(legalBasisMap.values()).map(legalBasis => {
+        return new LegalBasis(
+          legalBasis.id,
+          legalBasis.legal_name,
+          legalBasis.subject,
+          legalBasis.aspects,
+          legalBasis.abbreviation,
+          legalBasis.classification,
+          legalBasis.jurisdiction,
+          legalBasis.state,
+          legalBasis.municipality,
+          legalBasis.last_reform,
+          legalBasis.url
+        )
+      })
+    } catch (error) {
+      console.error('Error retrieving legal bases by IDs:', error.message)
+      throw new ErrorUtils(500, 'Error retrieving legal bases by IDs')
     }
   }
 
@@ -950,18 +1029,13 @@ VALUES ${aspectsIds.map(() => '(?, ?, ?)').join(', ')}
     const checkAspectsQuery = `
     SELECT COUNT(*) AS aspectCount
     FROM legal_basis_subject_aspect
-    WHERE legal_basis_id = ?
-  `
-
+    WHERE legal_basis_id = ? `
     const deleteAspectsQuery = `
     DELETE FROM legal_basis_subject_aspect
-    WHERE legal_basis_id = ?
-  `
-
+    WHERE legal_basis_id = ? `
     const deleteLegalBasisQuery = `
     DELETE FROM legal_basis
-    WHERE id = ?
-  `
+    WHERE id = ? `
     const connection = await pool.getConnection()
     try {
       await connection.beginTransaction()
@@ -985,6 +1059,55 @@ VALUES ${aspectsIds.map(() => '(?, ?, ?)').join(', ')}
       await connection.rollback()
       console.error('Error deleting legal basis:', error.message)
       throw new ErrorUtils(500, 'Error deleting legal basis from the database')
+    } finally {
+      connection.release()
+    }
+  }
+
+  /**
+ * Deletes multiple legal basis records.
+ * @param {Array<number>} legalBasisIds - An array of IDs of the legal bases to delete.
+ * @returns {Promise<boolean>} - Returns true if all deletions are successful, false otherwise.
+ * @throws {ErrorUtils} - If an error occurs during deletion.
+ */
+  static async deleteBatch (legalBasisIds) {
+    const checkAspectsQuery = `
+    SELECT legal_basis_id, COUNT(*) AS aspectCount
+    FROM legal_basis_subject_aspect
+    WHERE legal_basis_id IN (?)
+    GROUP BY legal_basis_id
+  `
+    const deleteAspectsQuery = `
+    DELETE FROM legal_basis_subject_aspect
+    WHERE legal_basis_id IN (?)
+  `
+    const deleteLegalBasisQuery = `
+    DELETE FROM legal_basis
+    WHERE id IN (?)
+  `
+    const connection = await pool.getConnection()
+    try {
+      await connection.beginTransaction()
+      const [aspectCheckResults] = await connection.query(checkAspectsQuery, [legalBasisIds])
+      const aspectIdsToDelete = aspectCheckResults.map(row => row.legal_basis_id)
+      if (aspectIdsToDelete.length > 0) {
+        const [deletedAspectsResult] = await connection.query(deleteAspectsQuery, [aspectIdsToDelete])
+        if (deletedAspectsResult.affectedRows !== aspectIdsToDelete.length) {
+          await connection.rollback()
+          throw new ErrorUtils(500, 'Failed to delete aspects for some legal basis IDs')
+        }
+      }
+      const [deletedBasisResult] = await connection.query(deleteLegalBasisQuery, [legalBasisIds])
+      if (deletedBasisResult.affectedRows !== legalBasisIds.length) {
+        await connection.rollback()
+        return false
+      }
+      await connection.commit()
+      return true
+    } catch (error) {
+      await connection.rollback()
+      console.error('Error deleting legal bases:', error.message)
+      throw new ErrorUtils(500, 'Error deleting legal basis records in batch')
     } finally {
       connection.release()
     }

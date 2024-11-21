@@ -41,14 +41,14 @@ articlesQueue.process(async (job, done) => {
     if (!extractedArticles || extractedArticles.length === 0) {
       return done(new ErrorUtils(500, 'Article Processing Error'))
     }
-    let articlesInserted
+    let articlesOperation
     const existingArticles = await ArticlesService.getArticlesByLegalBasisId(legalBasisId)
     if (existingArticles && existingArticles.length > 0) {
-      articlesInserted = await ArticlesService.replaceArticles(legalBase.id, extractedArticles)
+      articlesOperation = await ArticlesService.replaceArticles(legalBase.id, extractedArticles)
     } else {
-      articlesInserted = await ArticlesService.insertArticles(legalBase.id, extractedArticles)
+      articlesOperation = await ArticlesService.insertArticles(legalBase.id, extractedArticles)
     }
-    if (!articlesInserted) {
+    if (!articlesOperation) {
       return done(new ErrorUtils(500, 'Failed to insert articles'))
     }
     done(null)

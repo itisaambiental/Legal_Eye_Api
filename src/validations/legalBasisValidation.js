@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { isValid, parseISO } from 'date-fns'
 
 /**
  * Zod validation schema for a legal basis record.
@@ -81,13 +82,13 @@ const legalBasisSchema = z
  * The state associated with the legal basis.
  * Optional field, applicable only for 'Estatal' and 'Local' jurisdictions.
  */
-    state: z.string().max(255, { message: 'The state cannot exceed 20 characters' }).optional(),
+    state: z.string().max(255, { message: 'The state cannot exceed 255 characters' }).optional(),
 
     /**
  * The municipality associated with the legal basis.
  * Optional field, applicable only for 'Local' jurisdiction.
  */
-    municipality: z.string().max(255, { message: 'The municipality cannot exceed 20 characters' }).optional(),
+    municipality: z.string().max(255, { message: 'The municipality cannot exceed 255 characters' }).optional(),
 
     /**
      * The date of the last reform of the legal basis.
@@ -95,10 +96,10 @@ const legalBasisSchema = z
      */
     lastReform: z.string()
       .refine(
-        (val) => !isNaN(Date.parse(val)),
+        (val) => isValid(parseISO(val)),
         { message: 'The lastReform must be a valid date in YYYY-MM-DD format' }
       )
-      .transform((val) => new Date(val)),
+      .transform((val) => parseISO(val)),
 
     /**
      * The document associated with the legal basis.

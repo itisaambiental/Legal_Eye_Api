@@ -453,7 +453,8 @@ class UserService {
       const existingUsers = await UserRepository.findByIds(userIds)
       if (existingUsers.length !== userIds.length) {
         const foundIds = existingUsers.map(user => user.id)
-        const notFoundIds = userIds.filter(id => !foundIds.includes(id))
+        const notFoundIds = userIds.filter(
+          id => !foundIds.includes(id))
         throw new ErrorUtils(404, 'Users not found for IDs', { notFoundIds })
       }
       for (const user of existingUsers) {
@@ -461,7 +462,10 @@ class UserService {
           await FileService.deleteFile(user.profile_picture)
         }
       }
-      await UserRepository.deleteBatch(userIds)
+      const usersDeleted = await UserRepository.deleteBatch(userIds)
+      if (!usersDeleted) {
+        throw new ErrorUtils(404, 'Users not found')
+      }
       return { success: true }
     } catch (error) {
       if (error instanceof ErrorUtils) {
