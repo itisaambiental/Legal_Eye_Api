@@ -241,7 +241,7 @@ class UserService {
     try {
       const user = await UserRepository.findById(id)
       if (!user) {
-        return []
+        throw new ErrorUtils(404, 'User not found')
       }
       let profilePictureUrl = null
       if (user.profile_picture) {

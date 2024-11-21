@@ -53,6 +53,10 @@ class AspectsService {
    */
   static async getBySubjectId (subjectId) {
     try {
+      const subjectExists = await SubjectsRepository.findById(subjectId)
+      if (!subjectExists) {
+        throw new ErrorUtils(404, 'Subject not found')
+      }
       const aspects = await AspectsRepository.findBySubjectId(subjectId)
       if (!aspects) {
         return []
@@ -76,7 +80,7 @@ class AspectsService {
     try {
       const aspect = await AspectsRepository.findById(id)
       if (!aspect) {
-        return []
+        throw new ErrorUtils(404, 'Aspect not found')
       }
       return aspect
     } catch (error) {
@@ -144,6 +148,10 @@ class AspectsService {
    */
   static async deleteById (id) {
     try {
+      const aspect = await AspectsRepository.findById(id)
+      if (!aspect) {
+        throw new ErrorUtils(404, 'Aspect not found')
+      }
       const { isAspectAssociatedToLegalBasis } = await AspectsRepository.checkAspectLegalBasisAssociations(id)
       if (isAspectAssociatedToLegalBasis) {
         throw new ErrorUtils(409, 'The aspect is associated with one or more legal bases')

@@ -1,5 +1,6 @@
 import ErrorUtils from '../../../utils/Error.js'
 import articlesQueue from '../../../queues/articlesQueue.js'
+import LegalBasisRepository from '../../../repositories/LegalBasis.repository.js'
 /**
  * Service class for handling Article Jobs operations.
  */
@@ -98,17 +99,24 @@ class ArticlesWorkerService {
  */
   static async hasPendingJobs (legalBasisId) {
     try {
+      const legalBase = await LegalBasisRepository.findById(legalBasisId)
+      if (!legalBase) {
+        throw new ErrorUtils(404, 'Legal basis not found')
+      }
       const existingJobs = await articlesQueue.getJobs(['waiting', 'paused', 'active', 'delayed'])
       const jobMap = new Map(
         existingJobs.map(job => [Number(job.data.legalBasisId), job])
       )
       const job = jobMap.get(Number(legalBasisId))
       if (job) {
-        const progress = await job.getProgress()
+        const progress = await job.progress()
         return { hasPendingJobs: true, progress }
       }
       return { hasPendingJobs: false, progress: null }
     } catch (error) {
+      if (error instanceof ErrorUtils) {
+        throw error
+      }
       throw new ErrorUtils(500, 'Failed to check pending jobs')
     }
   }

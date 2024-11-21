@@ -67,7 +67,7 @@ class SubjectsService {
     try {
       const subject = await SubjectsRepository.findById(id)
       if (!subject) {
-        return []
+        throw new ErrorUtils(404, 'Subject not found')
       }
       return subject
     } catch (error) {

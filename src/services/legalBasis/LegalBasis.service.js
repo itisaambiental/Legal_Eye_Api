@@ -156,7 +156,7 @@ class LegalBasisService {
     try {
       const legalBase = await LegalBasisRepository.findById(id)
       if (!legalBase) {
-        return []
+        throw new ErrorUtils(404, 'LegalBasis not found')
       }
       let documentUrl = null
       if (legalBase.url) {

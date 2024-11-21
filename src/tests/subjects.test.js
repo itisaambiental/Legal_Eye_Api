@@ -6,7 +6,7 @@ import { ADMIN_PASSWORD_TEST, ADMIN_GMAIL } from '../config/variables.config.js'
 
 const subjectName = 'Ambiental'
 let tokenAdmin
-const subjectNames = ['Matemáticas', 'Física', 'Química']
+const subjectNames = ['Seguridad', 'Gases', 'Suelo']
 let createdSubjectId
 const createdSubjectIds = []
 beforeAll(async () => {
@@ -97,15 +97,15 @@ describe('Subjects API tests', () => {
       expect(subject.subject_name).toBe(subjectName)
     })
 
-    test('Should return an empty array for a subject not found', async () => {
+    test('Should return an error 404 for a subject not found', async () => {
       const nonExistentSubjectId = -1
       const response = await api
         .get(`/api/subject/${nonExistentSubjectId}`)
         .set('Authorization', `Bearer ${tokenAdmin}`)
-        .expect(200)
+        .expect(404)
         .expect('Content-Type', /application\/json/)
 
-      expect(response.body.subject).toEqual([])
+      expect(response.body.message).toMatch(/Subject not found/i)
     })
   })
 
