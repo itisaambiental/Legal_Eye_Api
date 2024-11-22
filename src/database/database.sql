@@ -125,7 +125,7 @@ CREATE TABLE legal_basis (
 CREATE TABLE article (
     id INT AUTO_INCREMENT PRIMARY KEY,
     legal_basis_id INT NOT NULL,
-    article_name VARCHAR(255) NOT NULL,
+    article_name LONGTEXT,
     description LONGTEXT,
     article_order INT,
     FOREIGN KEY (legal_basis_id) REFERENCES legal_basis(id) ON DELETE CASCADE

@@ -1,6 +1,7 @@
 import ArticleExtractor from './ArticleExtractor.js'
-// import llamaAPI from '../../../config/llamaAPI.config.js'
 import openai from '../../../config/openapi.config.js'
+import { articleResponseSchema } from '../../../validations/articlesValidationResponse.js'
+import { zodResponseFormat } from 'openai/helpers/zod'
 /**
  * Class extending ArticleExtractor to extract and correct articles from legal texts.
  * It processes the text, cleans inconsistent formats, and extracts articles,
@@ -27,13 +28,13 @@ class ReglamentoArticleExtractor extends ArticleExtractor {
   }
 
   /**
- * Cleans the input text by normalizing spaces, removing line breaks,
- * and standardizing keywords like "ARTÍCULO", "CAPÍTULO", "SECCIÓN",
- * and "TRANSITORIOS", even if they have interleaved spaces.
- * Matches only uppercase or capitalized keywords to avoid false positives.
- * @param {string} text - Text to clean.
- * @returns {string} - Cleaned text.
- */
+* Cleans the input text by normalizing spaces, removing line breaks,
+* and standardizing keywords like "ARTÍCULO", "CAPÍTULO", "SECCIÓN",
+* and "TRANSITORIOS", even if they have interleaved spaces.
+* Matches only uppercase or capitalized keywords to avoid false positives.
+* @param {string} text - Text to clean.
+* @returns {string} - Cleaned text.
+*/
   cleanText (text) {
     const multipleSpacesRegex = /\s+/g
     const lineBreaksRegex = /\n/g
@@ -55,15 +56,15 @@ class ReglamentoArticleExtractor extends ArticleExtractor {
   }
 
   /**
- * Extracts articles from the cleaned text using regular expressions.
- * @param {string} text - Cleaned text.
- * @returns {Array} - List of article objects.
- */
+* Extracts articles from the cleaned text using regular expressions.
+* @param {string} text - Cleaned text.
+* @returns {Array} - List of article objects.
+*/
   _extractArticles (text) {
     const articlePatternString = '((?:C[ÁA]P[IÍ]TULO)\\s+\\w+|' +
-    '(?:SECCI[ÓO]N|Secci[óo]n)\\s+\\d+|' +
-    '(?:ART[ÍI]CULO|Art[íi]culo)\\s+\\d+|' +
-    '(?:TRANSITORIOS|Transitorios))'
+  '(?:SECCI[ÓO]N|Secci[óo]n)\\s+\\d+|' +
+  '(?:ART[ÍI]CULO|Art[íi]culo)\\s+\\d+|' +
+  '(?:TRANSITORIOS|Transitorios))'
     const articlePattern = new RegExp(articlePatternString, 'g')
     const titleChapterRegex = /^(C[ÁA]P[IÍ]TULO)/
     const titleSectionRegex = /^(SECCI[ÓO]N|Secci[óo]n)/
@@ -94,12 +95,12 @@ class ReglamentoArticleExtractor extends ArticleExtractor {
   }
 
   /**
- * Creates an article object with title, content, and order.
- * @param {string} title - Title of the article.
- * @param {string} content - Content of the article.
- * @param {number} order - Order of the article.
- * @returns {Object} - Article object.
- */
+* Creates an article object with title, content, and order.
+* @param {string} title - Title of the article.
+* @param {string} content - Content of the article.
+* @param {number} order - Order of the article.
+* @returns {Object} - Article object.
+*/
   createArticleObject (title, content, order) {
     return {
       title,
@@ -109,53 +110,44 @@ class ReglamentoArticleExtractor extends ArticleExtractor {
   }
 
   /**
-* Corrects the article using multiple AI models.
+* Corrects the article using AI models.
 * @param {Object} article - The article object to correct.
 * @returns {Promise<Object>} - Corrected article object or original if correction fails.
 */
   async correctArticle (article) {
-    try {
-      const correctedArticle = await this.correctArticleOpenAI(article)
-      return correctedArticle
-    } catch (error) {
-      console.error('Error correcting article', error)
-      return article
-    }
-  }
-
-  /**
-* Calls OpenAI to correct the article.
-* @param {Object} article - The article object to correct.
-* @returns {Promise<Object>} - Corrected article object.
-*/
-  async correctArticleOpenAI (article) {
     const prompt = this.buildPrompt(this.name, article)
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4o',
+    const request = {
+      model: 'gpt-4o-mini',
       messages: [
         { role: 'system', content: 'You are a virtual assistant specialized in reviewing, correcting and documenting Mexican legal articles that have been extracted from different laws, rules and regulations.' },
         { role: 'user', content: prompt }
       ],
       temperature: 0,
-      response_format: {
-        type: 'json_schema',
-        json_schema: {
-          name: 'article_schema',
-          schema: {
-            type: 'object',
-            properties: {
-              title: { type: 'string', description: 'The title of the article' },
-              article: { type: 'string', description: 'The content of the article' },
-              order: { type: 'integer', description: 'The order number of the article' }
-            },
-            required: ['title', 'article', 'order'],
-            additionalProperties: false
+      response_format: zodResponseFormat(articleResponseSchema, 'articles_response')
+    }
+    const attemptRequest = async (retryCount = 0) => {
+      try {
+        const response = await openai.chat.completions.create(request)
+        const content = JSON.parse(response.choices[0].message.content)
+        if (content) {
+          return content
+        } else {
+          return article
+        }
+      } catch (error) {
+        if (error.status === 429 && error.code === 'rate_limit_exceeded') {
+          if (retryCount < 3) {
+            const backoffTime = Math.pow(2, retryCount) * 1000
+            await new Promise((resolve) => setTimeout(resolve, backoffTime))
+            return attemptRequest(retryCount + 1)
+          } else {
+            return article
           }
         }
+        return article
       }
-    })
-    const correctedArticle = JSON.parse(response.choices[0].message.content)
-    return correctedArticle
+    }
+    return attemptRequest()
   }
 
   /**
@@ -166,21 +158,21 @@ class ReglamentoArticleExtractor extends ArticleExtractor {
 */
   buildPrompt (documentName, article) {
     return `
-  Investigate the content of "${article.title}" in the Mexican legal document titled "${documentName}". Then, assist in formatting and correcting the following article:
+Research the content of "${article.title}" in the Mexican legal basis entitled "${documentName}". Then, help format and correct the following article:
 
-  {
-    "title": "${article.title}",
-    "article": "${article.article}",
-    "order": ${article.order}
-  }
+{
+  "title": "${article.title}",
+  "article": "${article.article}",
+  "order": ${article.order}
+}
 
-  - Correct formatting issues such as unnecessary spaces, incorrect line breaks, or misaligned indentation.
-  - Ensure that all content ends with a coherent idea and a period.
-  - Complete truncated words or sentences when necessary, without altering their original meaning.
-  - Handle tables and columns carefully, preserving their original structure for readability and clarity.
-  - Do not introduce new information or make assumptions beyond what is explicitly present in the text.
-  - Articles are in Spanish; provide the corrected object in the same language.
-  - Pay special attention to article titles. Only complete them if necessary, and avoid altering their structure or changing their meaning to maintain consistency and order.
+- Correct formatting issues such as unnecessary spaces, incorrect line breaks, or misaligned indentation.
+- With the information you obtained, verify that the Article, section or Chapter is complete and coherent. If not, complete it and improve it.
+- Ensure that all content ends with a coherent idea and a period.
+- Complete truncated words or sentences when necessary, without altering their original meaning.
+- Handle tables and columns carefully, preserving their original structure for readability and clarity.
+- Articles are in Spanish; provide the corrected object in the same language.
+- Pay special attention to article titles. Only complete them if necessary, and avoid altering their structure or changing their meaning to maintain consistency and order.
 `
   }
 }
