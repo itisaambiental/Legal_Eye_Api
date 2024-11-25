@@ -1,7 +1,7 @@
 /* eslint-disable no-undef */
-import { api } from '../config/test.config.js'
-import UserRepository from '../repositories/User.repository.js'
-import { ADMIN_PASSWORD_TEST, ADMIN_GMAIL } from '../config/variables.config.js'
+import { api } from '../../config/test.config.js'
+import UserRepository from '../../repositories/User.repository.js'
+import { ADMIN_PASSWORD_TEST, ADMIN_GMAIL } from '../../config/variables.config.js'
 
 let tokenAdmin
 let adminUserId

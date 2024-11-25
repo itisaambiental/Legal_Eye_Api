@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { isValid, parseISO } from 'date-fns'
+import { isValid, parse, parseISO, format } from 'date-fns'
 
 /**
  * Zod validation schema for a legal basis record.
@@ -96,10 +96,24 @@ const legalBasisSchema = z
      */
     lastReform: z.string()
       .refine(
-        (val) => isValid(parseISO(val)),
-        { message: 'The lastReform must be a valid date in YYYY-MM-DD format' }
+        (val) => {
+          if (isValid(parseISO(val))) return true
+          try {
+            const parsedDate = parse(val, 'dd-MM-yyyy', new Date())
+            return isValid(parsedDate)
+          } catch {
+            return false
+          }
+        },
+        { message: 'The lastReform must be a valid date in YYYY-MM-DD or DD-MM-YYYY format' }
       )
-      .transform((val) => parseISO(val)),
+      .transform((val) => {
+        if (!isValid(parseISO(val))) {
+          const parsedDate = parse(val, 'dd-MM-yyyy', new Date())
+          return format(parsedDate, 'yyyy-MM-dd')
+        }
+        return val
+      }),
 
     /**
      * The document associated with the legal basis.

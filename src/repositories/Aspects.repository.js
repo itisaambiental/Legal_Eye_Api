@@ -194,6 +194,20 @@ class AspectsRepository {
   }
 
   /**
+   * Deletes all aspects from the database.
+   * @returns {Promise<void>}
+   * @throws {ErrorUtils} - If an error occurs during deletion.
+   */
+  static async deleteAll () {
+    try {
+      await pool.query('DELETE FROM aspects')
+    } catch (error) {
+      console.error('Error deleting all aspects:', error.message)
+      throw new ErrorUtils(500, 'Error deleting all aspects from the database')
+    }
+  }
+
+  /**
  * Checks if an aspect is associated with any legal basis.
  * @param {number} aspectId - The ID of the aspect to check.
  * @returns {Promise<boolean>} - Returns an object with the count of legal basis associations.
