@@ -79,6 +79,9 @@ class SubjectsRepository {
  * @throws {ErrorUtils} - If an error occurs during retrieval.
  */
   static async findByIds (subjectIds) {
+    if (subjectIds.length === 0) {
+      return []
+    }
     const query = `
     SELECT id, subject_name FROM subjects WHERE id IN (?)
   `

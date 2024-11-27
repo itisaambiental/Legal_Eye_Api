@@ -44,12 +44,12 @@ class LegalBasisService {
       }
       const subjectExists = await SubjectsRepository.findById(parsedData.subjectId)
       if (!subjectExists) {
-        throw new ErrorUtils(400, 'Invalid Subject ID')
+        throw new ErrorUtils(404, 'Invalid Subject ID')
       }
       const validAspectIds = await AspectsRepository.findByIds(parsedData.aspectsIds)
       if (validAspectIds.length !== parsedData.aspectsIds.length) {
         const notFoundIds = parsedData.aspectsIds.filter(id => !validAspectIds.includes(id))
-        throw new ErrorUtils(400, 'Invalid Aspects IDs', { notFoundIds })
+        throw new ErrorUtils(404, 'Invalid Aspects IDs', { notFoundIds })
       }
       if (parsedData.extractArticles && !document) {
         throw new ErrorUtils(400, 'A document must be provided if extractArticles is true')
@@ -116,7 +116,7 @@ class LegalBasisService {
       if (!legalBasis) {
         return []
       }
-      const legalBasesWithDetails = await Promise.all(legalBasis.map(async (legalBasis) => {
+      const legalBases = await Promise.all(legalBasis.map(async (legalBasis) => {
         let documentUrl = null
         if (legalBasis.url) {
           documentUrl = await FileService.getFile(legalBasis.url)
@@ -140,7 +140,7 @@ class LegalBasisService {
         }
       }))
 
-      return legalBasesWithDetails
+      return legalBases
     } catch (error) {
       if (error instanceof ErrorUtils) {
         throw error
@@ -200,7 +200,7 @@ class LegalBasisService {
     try {
       const legalBase = await LegalBasisRepository.findByName(legalName)
       if (!legalBase) {
-        return []
+        throw new ErrorUtils(404, 'LegalBasis not found')
       }
       let documentUrl = null
       if (legalBase.url) {
@@ -243,7 +243,7 @@ class LegalBasisService {
       if (!legalBasis) {
         return []
       }
-      const legalBasesWithDetails = await Promise.all(legalBasis.map(async (legalBasis) => {
+      const legalBases = await Promise.all(legalBasis.map(async (legalBasis) => {
         let documentUrl = null
         if (legalBasis.url) {
           documentUrl = await FileService.getFile(legalBasis.url)
@@ -266,7 +266,7 @@ class LegalBasisService {
           url: documentUrl
         }
       }))
-      return legalBasesWithDetails
+      return legalBases
     } catch (error) {
       if (error instanceof ErrorUtils) {
         throw error
@@ -287,7 +287,7 @@ class LegalBasisService {
       if (!legalBasis) {
         return []
       }
-      const legalBasesWithDetails = await Promise.all(legalBasis.map(async (legalBasis) => {
+      const legalBases = await Promise.all(legalBasis.map(async (legalBasis) => {
         let documentUrl = null
         if (legalBasis.url) {
           documentUrl = await FileService.getFile(legalBasis.url)
@@ -311,7 +311,7 @@ class LegalBasisService {
         }
       }))
 
-      return legalBasesWithDetails
+      return legalBases
     } catch (error) {
       if (error instanceof ErrorUtils) {
         throw error
@@ -332,7 +332,7 @@ class LegalBasisService {
       if (!legalBasis) {
         return []
       }
-      const legalBasesWithDetails = await Promise.all(legalBasis.map(async (legalBasis) => {
+      const legalBases = await Promise.all(legalBasis.map(async (legalBasis) => {
         let documentUrl = null
         if (legalBasis.url) {
           documentUrl = await FileService.getFile(legalBasis.url)
@@ -355,7 +355,7 @@ class LegalBasisService {
           url: documentUrl
         }
       }))
-      return legalBasesWithDetails
+      return legalBases
     } catch (error) {
       if (error instanceof ErrorUtils) {
         throw error
@@ -422,6 +422,10 @@ class LegalBasisService {
  */
   static async getBySubject (subjectId) {
     try {
+      const subject = await SubjectsRepository.findById(subjectId)
+      if (!subject) {
+        throw new ErrorUtils(404, 'Subject not found')
+      }
       const legalBasis = await LegalBasisRepository.findBySubject(subjectId)
       if (!legalBasis) {
         return []
@@ -467,11 +471,21 @@ class LegalBasisService {
  */
   static async getBySubjectAndAspects (subjectId, aspectIds = []) {
     try {
+      const subject = await SubjectsRepository.findById(subjectId)
+      if (!subject) {
+        throw new ErrorUtils(404, 'Subject not found')
+      }
+      const existingAspects = await AspectsRepository.findByIds(aspectIds)
+      if (existingAspects.length !== aspectIds.length) {
+        const notFoundIds = aspectIds.filter(
+          id => !existingAspects.some(aspect => aspect.id === id))
+        throw new ErrorUtils(404, 'Aspects not found for IDs', { notFoundIds })
+      }
       const legalBasis = await LegalBasisRepository.findBySubjectAndAspects(subjectId, aspectIds)
       if (!legalBasis) {
         return []
       }
-      const legalBasesWithDetails = await Promise.all(legalBasis.map(async (legalBasis) => {
+      const legalBases = await Promise.all(legalBasis.map(async (legalBasis) => {
         let documentUrl = null
         if (legalBasis.url) {
           documentUrl = await FileService.getFile(legalBasis.url)
@@ -495,7 +509,7 @@ class LegalBasisService {
         }
       }))
 
-      return legalBasesWithDetails
+      return legalBases
     } catch (error) {
       if (error instanceof ErrorUtils) {
         throw error
@@ -536,12 +550,12 @@ class LegalBasisService {
       }
       const subjectExists = await SubjectsRepository.findById(parsedData.subjectId)
       if (!subjectExists) {
-        throw new ErrorUtils(400, 'Invalid Subject ID')
+        throw new ErrorUtils(404, 'Invalid Subject ID')
       }
       const validAspectIds = await AspectsRepository.findByIds(parsedData.aspectsIds)
       if (validAspectIds.length !== parsedData.aspectsIds.length) {
         const notFoundIds = parsedData.aspectsIds.filter(id => !validAspectIds.includes(id))
-        throw new ErrorUtils(400, 'Invalid Aspects IDs', { notFoundIds })
+        throw new ErrorUtils(404, 'Invalid Aspects IDs', { notFoundIds })
       }
       const { hasPendingJobs } = await ArticlesWorkerService.hasPendingJobs(legalBasisId)
       if (parsedData.removeDocument && document) {

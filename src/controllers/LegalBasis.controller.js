@@ -34,7 +34,6 @@ export const createLegalBasis = async (req, res) => {
     )
     return res.status(201).json({ jobId, legalBasis })
   } catch (error) {
-    console.error(error)
     if (error instanceof ErrorUtils) {
       return res.status(error.status).json({
         message: error.message,
@@ -258,15 +257,12 @@ export const getLegalBasisByStateAndMunicipality = async (req, res) => {
 export const getLegalBasisBySubject = async (req, res) => {
   const { userId } = req
   const { subjectId } = req.params
-  if (!subjectId) {
-    return res.status(400).json({ message: 'subjectId is required' })
-  }
   try {
     const isAuthorized = await UserService.userExists(userId)
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-    const legalBasis = await LegalBasisService.getBySubject(parseInt(subjectId, 10))
+    const legalBasis = await LegalBasisService.getBySubject(subjectId)
     return res.status(200).json({ legalBasis })
   } catch (error) {
     if (error instanceof ErrorUtils) {
@@ -288,17 +284,19 @@ export const getLegalBasisBySubject = async (req, res) => {
  */
 export const getLegalBasisBySubjectAndAspects = async (req, res) => {
   const { userId } = req
-  const { subjectId, aspectIds } = req.query
-  if (!subjectId) {
-    return res.status(400).json({ message: 'subjectId is required' })
-  }
+  let { subjectId, aspectIds } = req.query
   try {
     const isAuthorized = await UserService.userExists(userId)
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-    const aspectIdsArray = aspectIds ? aspectIds.split(',').map(id => parseInt(id, 10)) : []
-    const legalBasis = await LegalBasisService.getBySubjectAndAspects(parseInt(subjectId, 10), aspectIdsArray)
+    aspectIds = Array.isArray(aspectIds)
+      ? aspectIds.map(id => parseInt(id, 10))
+      : typeof aspectIds === 'string'
+        ? aspectIds.split(',').map(id => parseInt(id.trim(), 10))
+        : []
+    aspectIds = aspectIds.filter(id => !isNaN(id))
+    const legalBasis = await LegalBasisService.getBySubjectAndAspects(subjectId, aspectIds)
     return res.status(200).json({ legalBasis })
   } catch (error) {
     if (error instanceof ErrorUtils) {

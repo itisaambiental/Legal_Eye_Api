@@ -58,6 +58,9 @@ class AspectsRepository {
  * @throws {ErrorUtils} - If an error occurs during retrieval.
  */
   static async findByIds (aspectIds) {
+    if (aspectIds.length === 0) {
+      return []
+    }
     const query = `
     SELECT id FROM aspects WHERE id IN (?)
   `

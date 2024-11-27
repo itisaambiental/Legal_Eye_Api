@@ -374,7 +374,7 @@ describe('User API tests', () => {
       expect(response.body.message).toMatch(/Missing required fields: userIds/i)
     })
 
-    test('Should return 403 when unauthorized user attempts to delete users', async () => {
+    test('Should return 401 when unauthorized user attempts to delete users', async () => {
       const response = await api
         .delete('/api/users/batch')
         .send({ userIds: userIdsToDelete })

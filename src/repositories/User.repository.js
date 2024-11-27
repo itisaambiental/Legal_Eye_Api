@@ -202,6 +202,9 @@ class UserRepository {
  * @throws {ErrorUtils} - If an error occurs during retrieval.
  */
   static async findByIds (userIds) {
+    if (userIds.length === 0) {
+      return []
+    }
     const query = `
     SELECT * FROM users WHERE id IN (?)
   `

@@ -260,7 +260,6 @@ export const updateUser = async (req, res) => {
       token
     })
   } catch (error) {
-    console.error(error)
     if (error instanceof ErrorUtils) {
       return res.status(error.status).json({
         message: error.message,

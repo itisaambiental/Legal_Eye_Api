@@ -99,13 +99,13 @@ router.get('/legalBasis/jurisdiction/:jurisdiction', UserExtractor, getLegalBasi
 /**
  * Route to retrieve legal basis entries filtered by state and municipality.
  * @method GET
- * @path /legalBasis/state-municipality
+ * @path /legalBasis/state/municipality
  * @description Retrieves legal basis entries by state and optionally by municipality.
  * @query {string} state - The state to filter by.
  * @query {string} [municipality] - The municipality to filter by (optional).
  * @middleware UserExtractor
  */
-router.get('/legalBasis/state-municipality', UserExtractor, getLegalBasisByStateAndMunicipality)
+router.get('/legalBasis/state/municipality', UserExtractor, getLegalBasisByStateAndMunicipality)
 
 /**
  * Route to retrieve legal basis entries filtered by subject.
@@ -120,13 +120,13 @@ router.get('/legalBasis/subject/:subjectId', UserExtractor, getLegalBasisBySubje
 /**
  * Route to retrieve legal basis entries filtered by subject and optionally by aspects.
  * @method GET
- * @path /legalBasis/subject-aspects
+ * @path /legalBasis/subject/aspects
  * @description Retrieves legal basis entries by subject and optionally by aspects.
  * @query {string} subjectId - The subject ID to filter by.
  * @query {string} [aspectIds] - Comma-separated list of aspect IDs to filter by (optional).
  * @middleware UserExtractor
  */
-router.get('/legalBasis/subject-aspects', UserExtractor, getLegalBasisBySubjectAndAspects)
+router.get('/legalBasis/aspects/subject', UserExtractor, getLegalBasisBySubjectAndAspects)
 
 /**
  * Route to create a new legal basis.

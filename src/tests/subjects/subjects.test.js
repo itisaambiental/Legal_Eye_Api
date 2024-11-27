@@ -54,7 +54,7 @@ describe('Subjects API tests', () => {
       expect(response.body.message).toMatch(/Missing required field/i)
     })
 
-    test('Should return 403 if the user is unauthorized', async () => {
+    test('Should return 401 if the user is unauthorized', async () => {
       const response = await api
         .post('/api/subjects')
         .expect(401)

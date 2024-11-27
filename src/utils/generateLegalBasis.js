@@ -8,8 +8,8 @@
  */
 export default function generateLegalBasisData (overrides = {}) {
   const defaultData = {
-    legalName: '',
-    abbreviation: 'Default-Abbr',
+    legalName: 'LegalName',
+    abbreviation: 'abbreviation',
     classification: 'Reglamento',
     jurisdiction: 'Federal',
     lastReform: '01-01-2024',
@@ -18,9 +18,6 @@ export default function generateLegalBasisData (overrides = {}) {
   const data = {
     ...defaultData,
     ...overrides
-  }
-  if (!data.legalName || data.legalName.trim() === '') {
-    throw new Error('`legalName` is required and cannot be empty or null.')
   }
   if ('state' in overrides) data.state = overrides.state
   if ('municipality' in overrides) data.municipality = overrides.municipality

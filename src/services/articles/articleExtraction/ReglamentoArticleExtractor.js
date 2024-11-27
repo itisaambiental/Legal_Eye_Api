@@ -135,7 +135,7 @@ class ReglamentoArticleExtractor extends ArticleExtractor {
           return article
         }
       } catch (error) {
-        if (error.status === 429 && error.code === 'rate_limit_exceeded') {
+        if (error.status === 429) {
           if (retryCount < 3) {
             const backoffTime = Math.pow(2, retryCount) * 1000
             await new Promise((resolve) => setTimeout(resolve, backoffTime))

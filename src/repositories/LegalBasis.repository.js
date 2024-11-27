@@ -237,6 +237,9 @@ class LegalBasisRepository {
  * @throws {ErrorUtils} - If an error occurs during retrieval.
  */
   static async findByIds (legalBasisIds) {
+    if (legalBasisIds.length === 0) {
+      return []
+    }
     const query = `
     SELECT 
       legal_basis.id, 

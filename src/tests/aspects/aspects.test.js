@@ -77,7 +77,7 @@ describe('Aspects API tests', () => {
       expect(response.body.message).toMatch(/Missing required fields/i)
     })
 
-    test('Should return 403 if the user is unauthorized', async () => {
+    test('Should return 401 if the user is unauthorized', async () => {
       const response = await api
         .post(`/api/subjects/${createdSubjectId}/aspects`)
         .send({ aspectName })
@@ -164,7 +164,7 @@ describe('Aspects API - GET /aspect/:id', () => {
     expect(aspect).toHaveProperty('subject_name', subjectName)
   })
 
-  test('Should return 403 if the user is unauthorized', async () => {
+  test('Should return 401 if the user is unauthorized', async () => {
     const response = await api
       .get(`/api/aspect/${createdAspectId}`)
       .expect(401)
