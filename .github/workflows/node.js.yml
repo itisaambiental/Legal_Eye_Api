@@ -67,7 +67,7 @@ jobs:
           connection_url: smtp://${{ secrets.SMTP_USER }}:${{ secrets.SMTP_PASSWORD }}@${{ secrets.SMTP_SERVER }}:${{ secrets.SMTP_PORT }}
           subject: 'CI Notification: All Tests Passed'
           to: ${{ secrets.NOTIFICATION_EMAIL }} 
-          from: ${{ secrets.SMTP_USER }}
+          from: ${{ secrets.GITHUB_TOKEN }}
           body: |
             All tests have passed successfully in the LegalEye API REST CI workflow.
 
