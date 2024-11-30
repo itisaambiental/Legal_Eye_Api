@@ -120,7 +120,7 @@ router.get('/legalBasis/subject/:subjectId', UserExtractor, getLegalBasisBySubje
 /**
  * Route to retrieve legal basis entries filtered by subject and optionally by aspects.
  * @method GET
- * @path /legalBasis/subject/aspects
+ * @path /legalBasis/aspects/subject
  * @description Retrieves legal basis entries by subject and optionally by aspects.
  * @query {string} subjectId - The subject ID to filter by.
  * @query {string} [aspectIds] - Comma-separated list of aspect IDs to filter by (optional).
