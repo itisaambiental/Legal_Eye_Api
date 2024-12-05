@@ -127,7 +127,7 @@ class LegalBasisService {
         }
         return {
           id: legalBasis.id,
-          legalName: legalBasis.legal_name,
+          legal_name: legalBasis.legal_name,
           subject: legalBasis.subject,
           aspects: legalBasis.aspects,
           classification: legalBasis.classification,
@@ -171,7 +171,7 @@ class LegalBasisService {
       }
       return {
         id: legalBase.id,
-        legalName: legalBase.legal_name,
+        legal_name: legalBase.legal_name,
         subject: legalBase.subject,
         aspects: legalBase.aspects,
         classification: legalBase.classification,
@@ -191,50 +191,55 @@ class LegalBasisService {
   }
 
   /**
-   * Retrieves a legal basis entry by its name.
-   * @param {string} legalName - The name of the legal basis to retrieve.
-   * @returns {Promise<Object>} - The legal basis entry.
-   * @throws {ErrorUtils} - If an error occurs during retrieval.
-   */
+ * Retrieves all legal basis entries by name.
+ * @param {string} legalName - The name or part of the name of the legal basis to retrieve.
+ * @returns {Promise<Array<Object>>} - A list of legal basis entries matching the name.
+ * @throws {ErrorUtils} - If an error occurs during retrieval.
+ */
   static async getByName (legalName) {
     try {
-      const legalBase = await LegalBasisRepository.findByName(legalName)
-      if (!legalBase) {
-        throw new ErrorUtils(404, 'LegalBasis not found')
+      const legalBasis = await LegalBasisRepository.findByName(legalName)
+      if (!legalBasis) {
+        return []
       }
-      let documentUrl = null
-      if (legalBase.url) {
-        documentUrl = await FileService.getFile(legalBase.url)
-      }
-      let formattedLastReform = null
-      if (legalBase.lastReform) {
-        formattedLastReform = format(new Date(legalBase.lastReform), 'dd-MM-yyyy', { locale: es })
-      }
-      return {
-        id: legalBase.id,
-        legalName: legalBase.legal_name,
-        subject: legalBase.subject,
-        aspects: legalBase.aspects,
-        classification: legalBase.classification,
-        jurisdiction: legalBase.jurisdiction,
-        state: legalBase.state,
-        municipality: legalBase.municipality,
-        last_reform: formattedLastReform,
-        abbreviation: legalBase.abbreviation,
-        url: documentUrl
-      }
+      const legalBases = await Promise.all(legalBasis.map(async (legalBase) => {
+        let documentUrl = null
+        if (legalBase.url) {
+          documentUrl = await FileService.getFile(legalBase.url)
+        }
+
+        let formattedLastReform = null
+        if (legalBase.lastReform) {
+          formattedLastReform = format(new Date(legalBase.lastReform), 'dd-MM-yyyy', { locale: es })
+        }
+
+        return {
+          id: legalBase.id,
+          legal_name: legalBase.legal_name,
+          subject: legalBase.subject,
+          aspects: legalBase.aspects,
+          classification: legalBase.classification,
+          jurisdiction: legalBase.jurisdiction,
+          state: legalBase.state,
+          municipality: legalBase.municipality,
+          last_reform: formattedLastReform,
+          abbreviation: legalBase.abbreviation,
+          url: documentUrl
+        }
+      }))
+      return legalBases
     } catch (error) {
       if (error instanceof ErrorUtils) {
         throw error
       }
-      throw new ErrorUtils(500, 'Failed to retrieve legal basis record by name')
+      throw new ErrorUtils(500, 'Failed to retrieve legal basis records by name')
     }
   }
 
   /**
-   * Retrieves a legal basis entry by its abbreviation.
-   * @param {string} abbreviation - The abbreviation of the legal basis to retrieve.
-   * @returns {Promise<Array<Object>>} - The legal basis entry.
+   * Retrieves all legal basis entry by abbreviation.
+   * @param {string} abbreviation - The abbreviation or part of the abbreviation of the legal basis to retrieve.
+   * @returns {Promise<Array<Object>>} - A list of legal basis entries matching the abbreviation.
    * @throws {ErrorUtils} - If an error occurs during retrieval.
    */
   static async getByAbbreviation (abbreviation) {
@@ -254,7 +259,7 @@ class LegalBasisService {
         }
         return {
           id: legalBasis.id,
-          legalName: legalBasis.legal_name,
+          legal_name: legalBasis.legal_name,
           subject: legalBasis.subject,
           aspects: legalBasis.aspects,
           classification: legalBasis.classification,
@@ -298,7 +303,7 @@ class LegalBasisService {
         }
         return {
           id: legalBasis.id,
-          legalName: legalBasis.legal_name,
+          legal_name: legalBasis.legal_name,
           subject: legalBasis.subject,
           aspects: legalBasis.aspects,
           classification: legalBasis.classification,
@@ -343,7 +348,7 @@ class LegalBasisService {
         }
         return {
           id: legalBasis.id,
-          legalName: legalBasis.legal_name,
+          legal_name: legalBasis.legal_name,
           subject: legalBasis.subject,
           aspects: legalBasis.aspects,
           classification: legalBasis.classification,
@@ -365,19 +370,14 @@ class LegalBasisService {
   }
 
   /**
- * Retrieves legal basis entries filtered by state and optionally by municipality.
- * @param {Object} params - The parameters for filtering.
- * @param {string} params.state - The state to filter by.
- * @param {string} [params.municipality] - The municipality to filter by (optional).
+ * Retrieves legal basis entries filtered by state.
+ * @param {string} state - The state to filter by.
  * @returns {Promise<Array<Object>>} - A list of legal basis entries.
  * @throws {ErrorUtils} - If an error occurs during retrieval.
  */
-  static async getByStateAndMunicipality ({ state, municipality = null }) {
-    if (!state) {
-      return []
-    }
+  static async getByState (state) {
     try {
-      const legalBasis = await LegalBasisRepository.findByStateAndMunicipality(state, municipality)
+      const legalBasis = await LegalBasisRepository.findByState(state)
       if (!legalBasis) {
         return []
       }
@@ -392,7 +392,7 @@ class LegalBasisService {
         }
         return {
           id: legalBasis.id,
-          legalName: legalBasis.legal_name,
+          legal_name: legalBasis.legal_name,
           subject: legalBasis.subject,
           aspects: legalBasis.aspects,
           classification: legalBasis.classification,
@@ -410,7 +410,53 @@ class LegalBasisService {
       if (error instanceof ErrorUtils) {
         throw error
       }
-      throw new ErrorUtils(500, 'Failed to retrieve legal basis records by state and municipality')
+      throw new ErrorUtils(500, 'Failed to retrieve legal basis records by state')
+    }
+  }
+
+  /**
+ * Retrieves legal basis entries filtered by state and optionally by municipalities.
+ * @param {string} state - The state to filter by.
+ * @param {Array<string>} [municipalities] - An array of municipalities to filter by (optional).
+ * @returns {Promise<Array<Object>>} - A list of legal basis entries.
+ * @throws {ErrorUtils} - If an error occurs during retrieval.
+ */
+  static async getByStateAndMunicipalities (state, municipalities = []) {
+    try {
+      const legalBasis = await LegalBasisRepository.findByStateAndMunicipalities(state, municipalities)
+      if (!legalBasis) {
+        return []
+      }
+      const legalBasesWithDetails = await Promise.all(legalBasis.map(async (legalBasis) => {
+        let documentUrl = null
+        if (legalBasis.url) {
+          documentUrl = await FileService.getFile(legalBasis.url)
+        }
+        let formattedLastReform = null
+        if (legalBasis.lastReform) {
+          formattedLastReform = format(new Date(legalBasis.lastReform), 'dd-MM-yyyy', { locale: es })
+        }
+        return {
+          id: legalBasis.id,
+          legal_name: legalBasis.legal_name,
+          subject: legalBasis.subject,
+          aspects: legalBasis.aspects,
+          classification: legalBasis.classification,
+          jurisdiction: legalBasis.jurisdiction,
+          state: legalBasis.state,
+          municipality: legalBasis.municipality,
+          last_reform: formattedLastReform,
+          abbreviation: legalBasis.abbreviation,
+          url: documentUrl
+        }
+      }))
+
+      return legalBasesWithDetails
+    } catch (error) {
+      if (error instanceof ErrorUtils) {
+        throw error
+      }
+      throw new ErrorUtils(500, 'Failed to retrieve legal basis records by state and municipalities')
     }
   }
 
@@ -441,7 +487,7 @@ class LegalBasisService {
         }
         return {
           id: legalBasis.id,
-          legalName: legalBasis.legal_name,
+          legal_name: legalBasis.legal_name,
           subject: legalBasis.subject,
           aspects: legalBasis.aspects,
           classification: legalBasis.classification,
@@ -496,7 +542,7 @@ class LegalBasisService {
         }
         return {
           id: legalBasis.id,
-          legalName: legalBasis.legal_name,
+          legal_name: legalBasis.legal_name,
           subject: legalBasis.subject,
           aspects: legalBasis.aspects,
           classification: legalBasis.classification,

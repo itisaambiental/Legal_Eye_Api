@@ -687,7 +687,7 @@ describe('Get All Legal Basis', () => {
     expect(legalBasis).toHaveLength(1)
     expect(legalBasis[0]).toMatchObject({
       id: createdLegalBasis.id,
-      legalName: createdLegalBasis.legal_name,
+      legal_name: createdLegalBasis.legal_name,
       classification: createdLegalBasis.classification,
       jurisdiction: createdLegalBasis.jurisdiction,
       abbreviation: createdLegalBasis.abbreviation,
@@ -745,7 +745,7 @@ describe('Get Legal Basis By ID', () => {
 
     expect(legalBasis).toMatchObject({
       id: createdLegalBasis.id,
-      legalName: createdLegalBasis.legal_name,
+      legal_name: createdLegalBasis.legal_name,
       classification: createdLegalBasis.classification,
       jurisdiction: createdLegalBasis.jurisdiction,
       abbreviation: createdLegalBasis.abbreviation,
@@ -793,6 +793,7 @@ describe('Get Legal Basis By Name', () => {
       subjectId: String(createdSubjectId),
       aspectsIds: JSON.stringify(createdAspectIds)
     })
+
     const response = await api
       .post('/api/legalBasis')
       .set('Authorization', `Bearer ${tokenAdmin}`)
@@ -805,16 +806,17 @@ describe('Get Legal Basis By Name', () => {
 
   test('Should successfully retrieve a legal basis by its name', async () => {
     const response = await api
-      .get(`/api/legalBasis/name/${createdLegalBasis.legal_name}`)
+      .get('/api/legalBasis/name/name')
+      .query({ name: createdLegalBasis.legal_name })
       .set('Authorization', `Bearer ${tokenAdmin}`)
       .expect(200)
       .expect('Content-Type', /application\/json/)
 
     const { legalBasis } = response.body
-
-    expect(legalBasis).toMatchObject({
+    expect(legalBasis).toHaveLength(1)
+    expect(legalBasis[0]).toMatchObject({
       id: createdLegalBasis.id,
-      legalName: createdLegalBasis.legal_name,
+      legal_name: createdLegalBasis.legal_name,
       classification: createdLegalBasis.classification,
       jurisdiction: createdLegalBasis.jurisdiction,
       abbreviation: createdLegalBasis.abbreviation,
@@ -832,26 +834,29 @@ describe('Get Legal Basis By Name', () => {
     })
   })
 
-  test('Should return 404 if the legal basis does not exist', async () => {
-    const nonExistentName = 'NonExistent Legal Basis'
+  test('Should return an empty array if no legal basis is found', async () => {
     const response = await api
-      .get(`/api/legalBasis/name/${nonExistentName}`)
+      .get('/api/legalBasis/name/name')
+      .query({ name: 'NonExistent Legal Basis' })
       .set('Authorization', `Bearer ${tokenAdmin}`)
-      .expect(404)
+      .expect(200)
       .expect('Content-Type', /application\/json/)
 
-    expect(response.body.message).toMatch(/LegalBasis not found/i)
+    const { legalBasis } = response.body
+    expect(legalBasis).toHaveLength(0)
   })
 
   test('Should return 401 if user is unauthorized', async () => {
     const response = await api
-      .get(`/api/legalBasis/name/${createdLegalBasis.legal_name}`)
+      .get('/api/legalBasis/name/name')
+      .query({ name: createdLegalBasis.legal_name })
       .expect(401)
       .expect('Content-Type', /application\/json/)
 
     expect(response.body.error).toMatch(/token missing or invalid/i)
   })
 })
+
 describe('Get Legal Basis By Abbreviation', () => {
   let createdLegalBasis
 
@@ -862,6 +867,7 @@ describe('Get Legal Basis By Abbreviation', () => {
       subjectId: String(createdSubjectId),
       aspectsIds: JSON.stringify(createdAspectIds)
     })
+
     const response = await api
       .post('/api/legalBasis')
       .set('Authorization', `Bearer ${tokenAdmin}`)
@@ -874,7 +880,8 @@ describe('Get Legal Basis By Abbreviation', () => {
 
   test('Should successfully retrieve a legal basis by its abbreviation', async () => {
     const response = await api
-      .get(`/api/legalBasis/abbreviation/${createdLegalBasis.abbreviation}`)
+      .get('/api/legalBasis/abbreviation/abbreviation')
+      .query({ abbreviation: createdLegalBasis.abbreviation })
       .set('Authorization', `Bearer ${tokenAdmin}`)
       .expect(200)
       .expect('Content-Type', /application\/json/)
@@ -885,7 +892,7 @@ describe('Get Legal Basis By Abbreviation', () => {
     expect(legalBasis).toHaveLength(1)
     expect(legalBasis[0]).toMatchObject({
       id: createdLegalBasis.id,
-      legalName: createdLegalBasis.legal_name,
+      legal_name: createdLegalBasis.legal_name,
       classification: createdLegalBasis.classification,
       jurisdiction: createdLegalBasis.jurisdiction,
       abbreviation: createdLegalBasis.abbreviation,
@@ -906,7 +913,8 @@ describe('Get Legal Basis By Abbreviation', () => {
   test('Should return 404 if the legal basis with the abbreviation does not exist', async () => {
     const nonExistentAbbreviation = 'NON-EXISTENT'
     const response = await api
-      .get(`/api/legalBasis/abbreviation/${nonExistentAbbreviation}`)
+      .get('/api/legalBasis/abbreviation/abbreviation')
+      .query({ abbreviation: nonExistentAbbreviation })
       .set('Authorization', `Bearer ${tokenAdmin}`)
       .expect(200)
       .expect('Content-Type', /application\/json/)
@@ -917,15 +925,18 @@ describe('Get Legal Basis By Abbreviation', () => {
 
   test('Should return 401 if user is unauthorized', async () => {
     const response = await api
-      .get(`/api/legalBasis/abbreviation/${createdLegalBasis.abbreviation}`)
+      .get('/api/legalBasis/abbreviation/abbreviation')
+      .query({ abbreviation: createdLegalBasis.abbreviation })
       .expect(401)
       .expect('Content-Type', /application\/json/)
 
     expect(response.body.error).toMatch(/token missing or invalid/i)
   })
 })
+
 describe('Get Legal Basis By Classification', () => {
   let createdLegalBasis
+
   beforeEach(async () => {
     await LegalBasisRepository.deleteAll()
     const legalBasisData = generateLegalBasisData({
@@ -944,16 +955,19 @@ describe('Get Legal Basis By Classification', () => {
 
   test('Should successfully retrieve legal basis by classification', async () => {
     const response = await api
-      .get(`/api/legalBasis/classification/${createdLegalBasis.classification}`)
+      .get('/api/legalBasis/classification/classification')
+      .query({ classification: createdLegalBasis.classification })
       .set('Authorization', `Bearer ${tokenAdmin}`)
       .expect(200)
       .expect('Content-Type', /application\/json/)
+
     const { legalBasis } = response.body
+
     expect(legalBasis).toBeInstanceOf(Array)
     expect(legalBasis).toHaveLength(1)
     expect(legalBasis[0]).toMatchObject({
       id: createdLegalBasis.id,
-      legalName: createdLegalBasis.legal_name,
+      legal_name: createdLegalBasis.legal_name,
       classification: createdLegalBasis.classification,
       jurisdiction: createdLegalBasis.jurisdiction,
       abbreviation: createdLegalBasis.abbreviation,
@@ -972,9 +986,10 @@ describe('Get Legal Basis By Classification', () => {
   })
 
   test('Should return 200 with an empty array if no legal basis exists for the classification', async () => {
-    const nonExistentClassification = 'Acuerdos'
+    const nonExistentClassification = 'NonExistentClassification'
     const response = await api
-      .get(`/api/legalBasis/classification/${nonExistentClassification}`)
+      .get('/api/legalBasis/classification/classification')
+      .query({ classification: nonExistentClassification })
       .set('Authorization', `Bearer ${tokenAdmin}`)
       .expect(200)
       .expect('Content-Type', /application\/json/)
@@ -985,7 +1000,8 @@ describe('Get Legal Basis By Classification', () => {
 
   test('Should return 401 if user is unauthorized', async () => {
     const response = await api
-      .get(`/api/legalBasis/classification/${createdLegalBasis.classification}`)
+      .get('/api/legalBasis/classification/classification')
+      .query({ classification: createdLegalBasis.classification })
       .expect(401)
       .expect('Content-Type', /application\/json/)
 
@@ -995,6 +1011,7 @@ describe('Get Legal Basis By Classification', () => {
 
 describe('Get Legal Basis By Jurisdiction', () => {
   let createdLegalBasis
+
   beforeEach(async () => {
     await LegalBasisRepository.deleteAll()
     const legalBasisData = generateLegalBasisData({
@@ -1011,18 +1028,21 @@ describe('Get Legal Basis By Jurisdiction', () => {
     createdLegalBasis = response.body.legalBasis
   })
 
-  test('Should successfully retrieve legal basis by Jurisdiction', async () => {
+  test('Should successfully retrieve legal basis by jurisdiction', async () => {
     const response = await api
-      .get(`/api/legalBasis/jurisdiction/${createdLegalBasis.jurisdiction}`)
+      .get('/api/legalBasis/jurisdiction/jurisdiction')
+      .query({ jurisdiction: createdLegalBasis.jurisdiction })
       .set('Authorization', `Bearer ${tokenAdmin}`)
       .expect(200)
       .expect('Content-Type', /application\/json/)
+
     const { legalBasis } = response.body
+
     expect(legalBasis).toBeInstanceOf(Array)
     expect(legalBasis).toHaveLength(1)
     expect(legalBasis[0]).toMatchObject({
       id: createdLegalBasis.id,
-      legalName: createdLegalBasis.legal_name,
+      legal_name: createdLegalBasis.legal_name,
       classification: createdLegalBasis.classification,
       jurisdiction: createdLegalBasis.jurisdiction,
       abbreviation: createdLegalBasis.abbreviation,
@@ -1040,10 +1060,11 @@ describe('Get Legal Basis By Jurisdiction', () => {
     })
   })
 
-  test('Should return 200 with an empty array if no legal basis exists for the Jurisdiction', async () => {
+  test('Should return 200 with an empty array if no legal basis exists for the jurisdiction', async () => {
     const nonExistentJurisdiction = 'Mundial'
     const response = await api
-      .get(`/api/legalBasis/jurisdiction/${nonExistentJurisdiction}`)
+      .get('/api/legalBasis/jurisdiction/jurisdiction')
+      .query({ jurisdiction: nonExistentJurisdiction })
       .set('Authorization', `Bearer ${tokenAdmin}`)
       .expect(200)
       .expect('Content-Type', /application\/json/)
@@ -1054,21 +1075,23 @@ describe('Get Legal Basis By Jurisdiction', () => {
 
   test('Should return 401 if user is unauthorized', async () => {
     const response = await api
-      .get(`/api/legalBasis/jurisdiction/${createdLegalBasis.jurisdiction}`)
+      .get('/api/legalBasis/jurisdiction')
+      .query({ jurisdiction: createdLegalBasis.jurisdiction })
       .expect(401)
       .expect('Content-Type', /application\/json/)
 
     expect(response.body.error).toMatch(/token missing or invalid/i)
   })
 })
-describe('Get Legal Basis By State and Municipality', () => {
+
+describe('Get Legal Basis By State', () => {
   let createdLegalBasis
+
   beforeEach(async () => {
     await LegalBasisRepository.deleteAll()
     const legalBasisData = generateLegalBasisData({
-      jurisdiction: 'Local',
+      jurisdiction: 'Estatal',
       state: 'Test State',
-      municipality: 'Test Municipality',
       subjectId: String(createdSubjectId),
       aspectsIds: JSON.stringify(createdAspectIds)
     })
@@ -1084,9 +1107,9 @@ describe('Get Legal Basis By State and Municipality', () => {
 
   test('Should successfully retrieve legal basis by state', async () => {
     const response = await api
-      .get('/api/legalBasis/state/municipality')
-      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .get('/api/legalBasis/state/state')
       .query({ state: createdLegalBasis.state })
+      .set('Authorization', `Bearer ${tokenAdmin}`)
       .expect(200)
       .expect('Content-Type', /application\/json/)
 
@@ -1096,7 +1119,7 @@ describe('Get Legal Basis By State and Municipality', () => {
     expect(legalBasis).toHaveLength(1)
     expect(legalBasis[0]).toMatchObject({
       id: createdLegalBasis.id,
-      legalName: createdLegalBasis.legal_name,
+      legal_name: createdLegalBasis.legal_name,
       classification: createdLegalBasis.classification,
       jurisdiction: createdLegalBasis.jurisdiction,
       abbreviation: createdLegalBasis.abbreviation,
@@ -1114,11 +1137,92 @@ describe('Get Legal Basis By State and Municipality', () => {
     })
   })
 
-  test('Should successfully retrieve legal basis by state and municipality', async () => {
+  test('Should return an empty array if no legal basis exists for the state', async () => {
     const response = await api
-      .get('/api/legalBasis/state/municipality')
+      .get('/api/legalBasis/state/state')
+      .query({ state: 'Non-existent' })
       .set('Authorization', `Bearer ${tokenAdmin}`)
-      .query({ state: createdLegalBasis.state, municipality: createdLegalBasis.municipality })
+      .expect(200)
+      .expect('Content-Type', /application\/json/)
+
+    expect(response.body.legalBasis).toBeInstanceOf(Array)
+    expect(response.body.legalBasis).toHaveLength(0)
+  })
+
+  test('Should return 401 if user is unauthorized', async () => {
+    const response = await api
+      .get('/api/legalBasis/state/state')
+      .query({ state: createdLegalBasis.state })
+      .expect(401)
+      .expect('Content-Type', /application\/json/)
+
+    expect(response.body.error).toMatch(/token missing or invalid/i)
+  })
+})
+
+describe('Get Legal Basis By State and Municipalities', () => {
+  let createdLegalBasis
+
+  beforeEach(async () => {
+    await LegalBasisRepository.deleteAll()
+
+    const legalBasisData = generateLegalBasisData({
+      jurisdiction: 'Local',
+      state: 'Test State',
+      municipality: 'Test Municipality',
+      subjectId: String(createdSubjectId),
+      aspectsIds: JSON.stringify(createdAspectIds)
+    })
+
+    const response = await api
+      .post('/api/legalBasis')
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .send(legalBasisData)
+      .expect(201)
+      .expect('Content-Type', /application\/json/)
+
+    createdLegalBasis = response.body.legalBasis
+  })
+
+  test('Should successfully retrieve legal basis by state', async () => {
+    const response = await api
+      .get('/api/legalBasis/state/municipalities/query')
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .query({ state: createdLegalBasis.state })
+      .expect(200)
+      .expect('Content-Type', /application\/json/)
+
+    const { legalBasis } = response.body
+
+    expect(legalBasis).toBeInstanceOf(Array)
+    expect(legalBasis).toHaveLength(1)
+    expect(legalBasis[0]).toMatchObject({
+      id: createdLegalBasis.id,
+      legal_name: createdLegalBasis.legal_name,
+      classification: createdLegalBasis.classification,
+      jurisdiction: createdLegalBasis.jurisdiction,
+      abbreviation: createdLegalBasis.abbreviation,
+      state: createdLegalBasis.state,
+      municipality: createdLegalBasis.municipality,
+      last_reform: createdLegalBasis.lastReform,
+      url: createdLegalBasis.url,
+      subject: expect.objectContaining({
+        subject_id: createdSubjectId,
+        subject_name: subjectName
+      }),
+      aspects: expect.arrayContaining(
+        createdAspectIds.map((aspectId) =>
+          expect.objectContaining({ aspect_id: aspectId })
+        )
+      )
+    })
+  })
+
+  test('Should successfully retrieve legal basis by state and specific municipalities', async () => {
+    const response = await api
+      .get('/api/legalBasis/state/municipalities/query')
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .query({ state: createdLegalBasis.state, municipalities: [createdLegalBasis.municipality] })
       .expect(200)
       .expect('Content-Type', /application\/json/)
 
@@ -1133,23 +1237,24 @@ describe('Get Legal Basis By State and Municipality', () => {
     })
   })
 
-  test('Should return an empty array if no state is provided', async () => {
+  test('Should return 400 error if municipalities are provided but state is missing', async () => {
     const response = await api
-      .get('/api/legalBasis/state/municipality')
+      .get('/api/legalBasis/state/municipalities/query')
       .set('Authorization', `Bearer ${tokenAdmin}`)
-      .query({})
-      .expect(200)
+      .query({ municipalities: ['Test Municipality'] })
+      .expect(400)
       .expect('Content-Type', /application\/json/)
 
-    expect(response.body.legalBasis).toBeInstanceOf(Array)
-    expect(response.body.legalBasis).toHaveLength(0)
+    expect(response.body).toMatchObject({
+      message: 'State is required if municipalities are provided'
+    })
   })
 
-  test('Should return an empty array if no legal basis exists for the state and municipality', async () => {
+  test('Should return an empty array if no legal basis exists for the state and municipalities', async () => {
     const response = await api
-      .get('/api/legalBasis/state/municipality')
+      .get('/api/legalBasis/state/municipalities/query')
       .set('Authorization', `Bearer ${tokenAdmin}`)
-      .query({ state: '', municipality: '' })
+      .query({ state: 'Non-existent', municipalities: ['Non-existent Municipality'] })
       .expect(200)
       .expect('Content-Type', /application\/json/)
 
@@ -1159,7 +1264,7 @@ describe('Get Legal Basis By State and Municipality', () => {
 
   test('Should return 401 if user is unauthorized', async () => {
     const response = await api
-      .get('/api/legalBasis/state/municipality')
+      .get('/api/legalBasis/state/municipalities/query')
       .query({ state: 'Test State' })
       .expect(401)
       .expect('Content-Type', /application\/json/)
@@ -1167,6 +1272,7 @@ describe('Get Legal Basis By State and Municipality', () => {
     expect(response.body.error).toMatch(/token missing or invalid/i)
   })
 })
+
 describe('Get Legal Basis By Subject', () => {
   let createdLegalBasis
 
@@ -1201,7 +1307,7 @@ describe('Get Legal Basis By Subject', () => {
     expect(legalBasis).toHaveLength(1)
     expect(legalBasis[0]).toMatchObject({
       id: createdLegalBasis.id,
-      legalName: createdLegalBasis.legal_name,
+      legal_name: createdLegalBasis.legal_name,
       classification: createdLegalBasis.classification,
       jurisdiction: createdLegalBasis.jurisdiction,
       abbreviation: createdLegalBasis.abbreviation,
@@ -1286,7 +1392,7 @@ describe('Get Legal Basis By Subject And Aspects', () => {
       .set('Authorization', `Bearer ${tokenAdmin}`)
       .query({
         subjectId: createdLegalBasis.subject.subject_id,
-        aspectIds: createdAspectIds.join(',')
+        aspectIds: [createdAspectIds]
       })
       .expect(200)
       .expect('Content-Type', /application\/json/)
@@ -1297,7 +1403,7 @@ describe('Get Legal Basis By Subject And Aspects', () => {
     expect(legalBasis).toHaveLength(1)
     expect(legalBasis[0]).toMatchObject({
       id: createdLegalBasis.id,
-      legalName: createdLegalBasis.legal_name,
+      legal_name: createdLegalBasis.legal_name,
       classification: createdLegalBasis.classification,
       jurisdiction: createdLegalBasis.jurisdiction,
       abbreviation: createdLegalBasis.abbreviation,
@@ -1322,7 +1428,7 @@ describe('Get Legal Basis By Subject And Aspects', () => {
       .set('Authorization', `Bearer ${tokenAdmin}`)
       .query({
         subjectId: nonExistentSubjectId,
-        aspectIds: createdAspectIds.join(',')
+        aspectIds: [createdAspectIds]
       })
       .expect(404)
       .expect('Content-Type', /application\/json/)
@@ -1337,7 +1443,7 @@ describe('Get Legal Basis By Subject And Aspects', () => {
       .set('Authorization', `Bearer ${tokenAdmin}`)
       .query({
         subjectId: createdLegalBasis.subject.subject_id,
-        aspectIds: invalidAspectIds.join(',')
+        aspectIds: [invalidAspectIds]
       })
       .expect(404)
       .expect('Content-Type', /application\/json/)
@@ -1355,7 +1461,7 @@ describe('Get Legal Basis By Subject And Aspects', () => {
       .get('/api/legalBasis/aspects/subject')
       .query({
         subjectId: createdLegalBasis.subject.subject_id,
-        aspectIds: createdAspectIds.join(',')
+        aspectIds: [createdAspectIds]
       })
       .expect(401)
       .expect('Content-Type', /application\/json/)

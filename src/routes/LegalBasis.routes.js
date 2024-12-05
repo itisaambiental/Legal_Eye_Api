@@ -13,7 +13,8 @@ import {
   getLegalBasisByAbbreviation,
   getLegalBasisByClassification,
   getLegalBasisByJurisdiction,
-  getLegalBasisByStateAndMunicipality,
+  getLegalBasisByState,
+  getLegalBasisByStateAndMunicipalities,
   getLegalBasisBySubject,
   getLegalBasisBySubjectAndAspects,
   updateLegalBasis,
@@ -59,53 +60,63 @@ router.get('/legalBasis/:id', UserExtractor, getLegalBasisById)
 /**
  * Route to retrieve a legal basis by its name.
  * @method GET
- * @path /legalBasis/name/:name
- * @param {string} name - The name of the legal basis to retrieve.
+ * @path /legalBasis/name/name
+ * @query {string} name - The name of the legal basis to retrieve.
  * @description Retrieves a specific legal basis by its name.
  * @middleware UserExtractor
  */
-router.get('/legalBasis/name/:name', UserExtractor, getLegalBasisByName)
+router.get('/legalBasis/name/name', UserExtractor, getLegalBasisByName)
 
 /**
  * Route to retrieve a legal basis by its abbreviation.
  * @method GET
- * @path /legalBasis/abbreviation/:abbreviation
- * @param {string} abbreviation - The abbreviation of the legal basis to retrieve.
+ * @path /legalBasis/abbreviation/abbreviation
+ * @query {string} abbreviation - The abbreviation of the legal basis to retrieve.
  * @description Retrieves a specific legal basis by its abbreviation.
  * @middleware UserExtractor
  */
-router.get('/legalBasis/abbreviation/:abbreviation', UserExtractor, getLegalBasisByAbbreviation)
+router.get('/legalBasis/abbreviation/abbreviation', UserExtractor, getLegalBasisByAbbreviation)
 
 /**
  * Route to retrieve a legal basis by its classification.
  * @method GET
- * @path /legalBasis/classification/:classification
- * @param {string} classification - The classification of the legal basis to retrieve.
+ * @path /legalBasis/classification/classification
+ * @query {string} classification - The classification of the legal basis to retrieve.
  * @description Retrieves a list of legal basis records by their classification.
  * @middleware UserExtractor
  */
-router.get('/legalBasis/classification/:classification', UserExtractor, getLegalBasisByClassification)
+router.get('/legalBasis/classification/classification', UserExtractor, getLegalBasisByClassification)
 
 /**
  * Route to retrieve legal basis entries filtered by jurisdiction.
  * @method GET
- * @path /legalBasis/jurisdiction/:jurisdiction
+ * @path /legalBasis/jurisdiction/jurisdiction
  * @description Retrieves legal basis entries by jurisdiction.
- * @param {string} jurisdiction - The jurisdiction to filter by.
+ * @query {string} jurisdiction - The jurisdiction to filter by.
  * @middleware UserExtractor
  */
-router.get('/legalBasis/jurisdiction/:jurisdiction', UserExtractor, getLegalBasisByJurisdiction)
+router.get('/legalBasis/jurisdiction/jurisdiction', UserExtractor, getLegalBasisByJurisdiction)
 
 /**
- * Route to retrieve legal basis entries filtered by state and municipality.
+ * Route to retrieve legal basis entries filtered by state.
  * @method GET
- * @path /legalBasis/state/municipality
- * @description Retrieves legal basis entries by state and optionally by municipality.
+ * @path /legalBasis/state/state
+ * @description Retrieves legal basis entries by state.
  * @query {string} state - The state to filter by.
- * @query {string} [municipality] - The municipality to filter by (optional).
  * @middleware UserExtractor
  */
-router.get('/legalBasis/state/municipality', UserExtractor, getLegalBasisByStateAndMunicipality)
+router.get('/legalBasis/state/state', UserExtractor, getLegalBasisByState)
+
+/**
+ * Route to retrieve legal basis entries filtered by state and municipalities.
+ * @method GET
+ * @path /legalBasis/state/municipalities/query
+ * @description Retrieves legal basis entries by state and optionally by municipalities.
+ * @query {string} state - The state to filter by.
+ * @query {Array<string>} [municipalities] - An array of municipalities to filter by (optional).
+ * @middleware UserExtractor
+ */
+router.get('/legalBasis/state/municipalities/query', UserExtractor, getLegalBasisByStateAndMunicipalities)
 
 /**
  * Route to retrieve legal basis entries filtered by subject.

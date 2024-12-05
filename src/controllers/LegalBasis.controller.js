@@ -102,7 +102,7 @@ export const getLegalBasisById = async (req, res) => {
 }
 
 /**
- * Retrieves a legal basis by its name.
+ * Retrieves legal basis by their name.
  * @function getLegalBasisByName
  * @param {Object} req - Request object, expects { name } in params.
  * @param {Object} res - Response object.
@@ -111,7 +111,7 @@ export const getLegalBasisById = async (req, res) => {
  */
 export const getLegalBasisByName = async (req, res) => {
   const { userId } = req
-  const { name } = req.params
+  const { name } = req.query
   try {
     const isAuthorized = await UserService.userExists(userId)
     if (!isAuthorized) {
@@ -140,7 +140,7 @@ export const getLegalBasisByName = async (req, res) => {
  */
 export const getLegalBasisByAbbreviation = async (req, res) => {
   const { userId } = req
-  const { abbreviation } = req.params
+  const { abbreviation } = req.query
   try {
     const isAuthorized = await UserService.userExists(userId)
     if (!isAuthorized) {
@@ -169,7 +169,7 @@ export const getLegalBasisByAbbreviation = async (req, res) => {
  */
 export const getLegalBasisByClassification = async (req, res) => {
   const { userId } = req
-  const { classification } = req.params
+  const { classification } = req.query
   try {
     const isAuthorized = await UserService.userExists(userId)
     if (!isAuthorized) {
@@ -198,7 +198,7 @@ export const getLegalBasisByClassification = async (req, res) => {
  */
 export const getLegalBasisByJurisdiction = async (req, res) => {
   const { userId } = req
-  const { jurisdiction } = req.params
+  const { jurisdiction } = req.query
   try {
     const isAuthorized = await UserService.userExists(userId)
     if (!isAuthorized) {
@@ -218,24 +218,65 @@ export const getLegalBasisByJurisdiction = async (req, res) => {
 }
 
 /**
- * Retrieves legal basis entries by state and municipality.
- * @function getLegalBasisByStateAndMunicipality
- * @param {Object} req - Request object, expects { state, municipality } in query parameters.
+ * Retrieves legal basis entries by state.
+ * @function getLegalBasisByState
+ * @param {Object} req - Request object, expects { state } in query parameters.
  * @param {Object} res - Response object.
  * @returns {Object} - A list of filtered legal basis entries.
  * @throws {ErrorUtils} - Throws an instance of ErrorUtils if the process fails.
  */
-export const getLegalBasisByStateAndMunicipality = async (req, res) => {
+export const getLegalBasisByState = async (req, res) => {
   const { userId } = req
-  const { state, municipality } = req.query
+  const { state } = req.query
   try {
     const isAuthorized = await UserService.userExists(userId)
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-    const legalBasis = await LegalBasisService.getByStateAndMunicipality({ state, municipality })
+    const legalBasis = await LegalBasisService.getByState(state)
     return res.status(200).json({ legalBasis })
   } catch (error) {
+    if (error instanceof ErrorUtils) {
+      return res.status(error.status).json({
+        message: error.message,
+        ...(error.errors && { errors: error.errors })
+      })
+    }
+    return res.status(500).json({ message: 'Internal Server Error' })
+  }
+}
+
+/**
+ * Retrieves legal basis entries by state and municipalities.
+ * @function getLegalBasisByStateAndMunicipalities
+ * @param {Object} req - Request object, expects { state, municipalities } in query parameters.
+ * @param {Object} res - Response object.
+ * @returns {Object} - A list of filtered legal basis entries.
+ * @throws {ErrorUtils} - Throws an instance of ErrorUtils if the process fails.
+ */
+export const getLegalBasisByStateAndMunicipalities = async (req, res) => {
+  const { userId } = req
+  const { state } = req.query
+  let { municipalities } = req.query
+  if (municipalities && municipalities.length > 0 && !state) {
+    return res.status(400).json({
+      message: 'State is required if municipalities are provided'
+    })
+  }
+  try {
+    const isAuthorized = await UserService.userExists(userId)
+    if (!isAuthorized) {
+      return res.status(403).json({ message: 'Unauthorized' })
+    }
+    municipalities = Array.isArray(municipalities)
+      ? municipalities.map(municipality => String(municipality).trim()).filter(municipality => municipality.length > 0)
+      : typeof municipalities === 'string'
+        ? municipalities.split(',').map(municipality => String(municipality).trim()).filter(municipality => municipality.length > 0)
+        : []
+    const legalBasis = await LegalBasisService.getByStateAndMunicipalities(state, municipalities)
+    return res.status(200).json({ legalBasis })
+  } catch (error) {
+    console.error(error)
     if (error instanceof ErrorUtils) {
       return res.status(error.status).json({
         message: error.message,
@@ -291,11 +332,10 @@ export const getLegalBasisBySubjectAndAspects = async (req, res) => {
       return res.status(403).json({ message: 'Unauthorized' })
     }
     aspectIds = Array.isArray(aspectIds)
-      ? aspectIds.map(id => parseInt(id, 10))
+      ? aspectIds.map(id => Number(id)).filter(id => !isNaN(id))
       : typeof aspectIds === 'string'
-        ? aspectIds.split(',').map(id => parseInt(id.trim(), 10))
+        ? aspectIds.split(',').map(id => Number(id)).filter(id => !isNaN(id))
         : []
-    aspectIds = aspectIds.filter(id => !isNaN(id))
     const legalBasis = await LegalBasisService.getBySubjectAndAspects(subjectId, aspectIds)
     return res.status(200).json({ legalBasis })
   } catch (error) {
