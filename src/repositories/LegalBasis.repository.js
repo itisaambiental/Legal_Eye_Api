@@ -974,6 +974,99 @@ class LegalBasisRepository {
   }
 
   /**
+ * Retrieves legal basis entries filtered by a date range.
+ * @param {Date|null} from - Start date as a Date object (optional).
+ * @param {Date|null} to - End date as a Date object (optional).
+ * @returns {Promise<Array<LegalBasis>|null>} - An array of LegalBasis.
+ * @throws {ErrorUtils} - If an error occurs during retrieval.
+ */
+  static async findByLastReform (from, to) {
+    let query = `
+    SELECT 
+      legal_basis.id,
+      legal_basis.legal_name,
+      legal_basis.abbreviation,
+      legal_basis.classification,
+      legal_basis.jurisdiction,
+      legal_basis.state,
+      legal_basis.municipality,
+      legal_basis.last_reform,
+      legal_basis.url,
+      subjects.id AS subject_id,
+      subjects.subject_name AS subject_name,
+      aspects.id AS aspect_id,
+      aspects.aspect_name AS aspect_name
+    FROM legal_basis
+    JOIN subjects ON legal_basis.subject_id = subjects.id
+    LEFT JOIN legal_basis_subject_aspect ON legal_basis.id = legal_basis_subject_aspect.legal_basis_id
+    LEFT JOIN aspects ON legal_basis_subject_aspect.aspect_id = aspects.id
+  `
+    const values = []
+    const conditions = []
+    if (from && to) {
+      conditions.push('legal_basis.last_reform BETWEEN ? AND ?')
+      values.push(from, to)
+    } else if (from) {
+      conditions.push('legal_basis.last_reform >= ?')
+      values.push(from)
+    } else if (to) {
+      conditions.push('legal_basis.last_reform <= ?')
+      values.push(to)
+    }
+    if (conditions.length > 0) {
+      query += ' WHERE ' + conditions.join(' AND ')
+    }
+    try {
+      const [rows] = await pool.query(query, values)
+      if (rows.length === 0) return null
+      const legalBasisMap = new Map()
+      rows.forEach(row => {
+        if (!legalBasisMap.has(row.id)) {
+          legalBasisMap.set(row.id, {
+            id: row.id,
+            legal_name: row.legal_name,
+            abbreviation: row.abbreviation,
+            classification: row.classification,
+            jurisdiction: row.jurisdiction,
+            state: row.state,
+            municipality: row.municipality,
+            lastReform: row.last_reform,
+            url: row.url,
+            subject: {
+              subject_id: row.subject_id,
+              subject_name: row.subject_name
+            },
+            aspects: []
+          })
+        }
+        if (row.aspect_id !== null) {
+          legalBasisMap.get(row.id).aspects.push({
+            aspect_id: row.aspect_id,
+            aspect_name: row.aspect_name
+          })
+        }
+      })
+      const legalBasisArray = Array.from(legalBasisMap.values())
+      return legalBasisArray.map(legalBasis => new LegalBasis(
+        legalBasis.id,
+        legalBasis.legal_name,
+        legalBasis.subject,
+        legalBasis.aspects,
+        legalBasis.abbreviation,
+        legalBasis.classification,
+        legalBasis.jurisdiction,
+        legalBasis.state,
+        legalBasis.municipality,
+        legalBasis.lastReform,
+        legalBasis.url
+      ))
+    } catch (error) {
+      console.error('Error retrieving legal basis by last reform range:', error.message)
+      throw new ErrorUtils(500, 'Error retrieving legal basis by last reform range')
+    }
+  }
+
+  /**
  * Finds a legal basis by legalName, excluding the given legalBasisId.
  * @param {string} legalName - The legal name to check for uniqueness.
  * @param {number} legalBasisId - The legal Basis ID to exclude from the check.
@@ -1222,6 +1315,54 @@ VALUES ${aspectsIds.map(() => '(?, ?, ?)').join(', ')}
       throw new ErrorUtils(500, 'Error deleting all legal basis records')
     } finally {
       connection.release()
+    }
+  }
+
+  /**
+ * Retrieves all the unique classification values.
+ *
+ * @async
+ * @function findClassifications
+ * @returns {Promise<string[]|null>} - A promise that resolves to an array of unique classification strings.
+ * @throws {ErrorUtils} - If an error occurs while fetching the classifications.
+ */
+  static async findClassifications () {
+    const query = `
+    SELECT DISTINCT classification
+    FROM legal_basis
+  `
+    try {
+      const [rows] = await pool.query(query)
+      if (rows.length === 0) return null
+      const classifications = rows.map(row => row.classification)
+      return classifications
+    } catch (error) {
+      console.error('Error fetching distinct classifications:', error.message)
+      throw new ErrorUtils(500, 'Error fetching distinct classifications')
+    }
+  }
+
+  /**
+ * Retrieves all the unique jurisdiction values.
+ *
+ * @async
+ * @function findJurisdictions
+ * @returns {Promise<string[]|null>} - A promise that resolves to an array of unique jurisdiction strings.
+ * @throws {ErrorUtils} - If an error occurs while fetching the jurisdictions.
+ */
+  static async findJurisdictions () {
+    const query = `
+    SELECT DISTINCT jurisdiction
+    FROM legal_basis
+  `
+    try {
+      const [rows] = await pool.query(query)
+      if (rows.length === 0) return null
+      const jurisdictions = rows.map(row => row.jurisdiction)
+      return jurisdictions
+    } catch (error) {
+      console.error('Error fetching distinct jurisdictions:', error.message)
+      throw new ErrorUtils(500, 'Error fetching distinct jurisdictions')
     }
   }
 }

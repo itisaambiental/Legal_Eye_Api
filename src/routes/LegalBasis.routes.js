@@ -17,9 +17,12 @@ import {
   getLegalBasisByStateAndMunicipalities,
   getLegalBasisBySubject,
   getLegalBasisBySubjectAndAspects,
+  getLegalBasisByLastReform,
   updateLegalBasis,
   deleteLegalBasis,
-  deleteLegalBasisBatch
+  deleteLegalBasisBatch,
+  getClassifications,
+  getJurisdictions
 } from '../controllers/LegalBasis.controller.js'
 import { upload } from '../config/multer.config.js'
 
@@ -140,6 +143,17 @@ router.get('/legalBasis/subject/:subjectId', UserExtractor, getLegalBasisBySubje
 router.get('/legalBasis/aspects/subject', UserExtractor, getLegalBasisBySubjectAndAspects)
 
 /**
+ * Route to retrieve legal basis entries filtered by a date range for the last_reform field.
+ * @method GET
+ * @path /legalBasis/lastReform/lastReform
+ * @description Retrieves legal basis entries filtered by a date range on last_reform.
+ * @query {string} [from] - The start date.
+ * @query {string} [to] - The end date.
+ * @middleware UserExtractor
+ */
+router.get('/legalBasis/lastReform/lastReform', UserExtractor, getLegalBasisByLastReform)
+
+/**
  * Route to create a new legal basis.
  * @method PATCH
  * @path /legalBases/:id
@@ -167,5 +181,23 @@ router.delete('/legalBasis/:id', UserExtractor, deleteLegalBasis)
  * @middlewares UserExtractor
  */
 router.delete('/legalBases/batch', UserExtractor, deleteLegalBasisBatch)
+
+/**
+ * Route to retrieve legal basis entries filtered by subject and optionally by aspects.
+ * @method GET
+ * @path /legalBasis/classification/classification/all
+ * @description Retrieves all classification entries.
+ * @middleware UserExtractor
+ */
+router.get('/legalBasis/classification/classification/all', UserExtractor, getClassifications)
+
+/**
+ * Route to retrieve all jurisdiction entries.
+ * @method GET
+ * @path /legalBasis/jurisdiction/jurisdiction/all
+ * @description Retrieves all jurisdiction entries.
+ * @middleware UserExtractor
+ */
+router.get('/legalBasis/jurisdiction/jurisdiction/all', UserExtractor, getJurisdictions)
 
 export default router

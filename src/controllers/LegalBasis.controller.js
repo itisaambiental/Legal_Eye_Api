@@ -1,6 +1,7 @@
 import LegalBasisService from '../services/legalBasis/LegalBasis.service.js'
 import ErrorUtils from '../utils/Error.js'
 import UserService from '../services/users/User.service.js'
+import validateDate from '../validations/dateValidation.js'
 /**
  * Controller for legal basis operations.
  * @module LegalBasisController
@@ -350,6 +351,56 @@ export const getLegalBasisBySubjectAndAspects = async (req, res) => {
 }
 
 /**
+ * Retrieves legal basis entries filtered by a date range for the last_reform.
+ * @function getLegalBasisByLastReform
+ * @param {Object} req - Request object, expects { from, to } in query parameters.
+ * @param {Object} res - Response object.
+ * @returns {Object} - A list of filtered legal basis entries by date range.
+ */
+export const getLegalBasisByLastReform = async (req, res) => {
+  const { userId } = req
+  const { from, to } = req.query
+  const errors = []
+  if (!from && !to) {
+    errors.push(
+      { field: 'from', message: 'At least one of "from" or "to" must be provided' },
+      { field: 'to', message: 'At least one of "from" or "to" must be provided' }
+    )
+  } else if (!from) {
+    errors.push({ field: 'from', message: 'The "from" date must be provided when "to" is specified' })
+  } else if (!to) {
+    errors.push({ field: 'to', message: 'The "to" date must be provided when "from" is specified' })
+  }
+  if (errors.length > 0) {
+    return res.status(400).json({ message: 'Validation failed', errors })
+  }
+  const { date: parsedFrom, error: fromError } = from ? validateDate(from, 'from') : {}
+  const { date: parsedTo, error: toError } = to ? validateDate(to, 'to') : {}
+
+  if (fromError) errors.push(fromError)
+  if (toError) errors.push(toError)
+  if (errors.length > 0) {
+    return res.status(400).json({ message: 'Validation failed', errors })
+  }
+  try {
+    const isAuthorized = await UserService.userExists(userId)
+    if (!isAuthorized) {
+      return res.status(403).json({ message: 'Unauthorized' })
+    }
+    const legalBasis = await LegalBasisService.getByLastReform(parsedFrom, parsedTo)
+    return res.status(200).json({ legalBasis })
+  } catch (error) {
+    if (error instanceof ErrorUtils) {
+      return res.status(error.status).json({
+        message: error.message,
+        ...(error.errors && { errors: error.errors })
+      })
+    }
+    return res.status(500).json({ message: 'Internal Server Error' })
+  }
+}
+
+/**
  * Updates a legal basis record.
  * @function updateLegalBasis
  * @param {Object} req - Request object, expects { id } in params and { legalName, abbreviation, subjectId, aspectsIds, classification, jurisdiction, state, municipality, lastReform, extractArticles, removeDocument } in body and an optional 'document' file.
@@ -463,5 +514,60 @@ export const deleteLegalBasisBatch = async (req, res) => {
       })
     }
     return res.status(500).json({ message: 'Failed to delete legal basis by ID' })
+  }
+}
+
+/**
+ * Retrieves all unique classification values.
+ * @function getClassifications
+ * @param {Object} req - Express request object.
+ * @param {Object} res - Express response object.
+ * @returns {Object} - Returns a JSON object containing an array of unique classifications.
+ * @throws {ErrorUtils} - If an error occurs during retrieval, an ErrorUtils instance is thrown.
+ */
+export const getClassifications = async (req, res) => {
+  const { userId } = req
+  try {
+    const isAuthorized = await UserService.userExists(userId)
+    if (!isAuthorized) {
+      return res.status(403).json({ message: 'Unauthorized' })
+    }
+    const classifications = await LegalBasisService.getClassifications()
+    return res.status(200).json({ classifications })
+  } catch (error) {
+    if (error instanceof ErrorUtils) {
+      return res.status(error.status).json({
+        message: error.message,
+        ...(error.errors && { errors: error.errors })
+      })
+    }
+    return res.status(500).json({ message: 'Internal Server Error' })
+  }
+}
+/**
+ * Retrieves all unique jurisdiction values.
+ * @function getJurisdictions
+ * @param {Object} req - Express request object.
+ * @param {Object} res - Express response object.
+ * @returns {Object} - Returns a JSON object containing an array of unique jurisdictions.
+ * @throws {ErrorUtils} - If an error occurs during retrieval, an ErrorUtils instance is thrown.
+ */
+export const getJurisdictions = async (req, res) => {
+  const { userId } = req
+  try {
+    const isAuthorized = await UserService.userExists(userId)
+    if (!isAuthorized) {
+      return res.status(403).json({ message: 'Unauthorized' })
+    }
+    const jurisdictions = await LegalBasisService.getJurisdictions()
+    return res.status(200).json({ jurisdictions })
+  } catch (error) {
+    if (error instanceof ErrorUtils) {
+      return res.status(error.status).json({
+        message: error.message,
+        ...(error.errors && { errors: error.errors })
+      })
+    }
+    return res.status(500).json({ message: 'Internal Server Error' })
   }
 }

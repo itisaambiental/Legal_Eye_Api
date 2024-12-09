@@ -565,6 +565,58 @@ class LegalBasisService {
   }
 
   /**
+ * Retrieves legal basis entries filtered by a date range for the last_reform.
+ * Both 'from' and 'to' are optional. If provided, they can be in 'YYYY-MM-DD' or 'DD-MM-YYYY'.
+ *
+ * @function getByLastReform
+ * @param {Date} [from] - Start date.
+ * @param {Date} [to] - End date.
+ * @returns {Promise<Array<Object>>} - A list of legal basis entries filtered by the date range.
+ * @throws {ErrorUtils} - If an error occurs during retrieval or date validation.
+ */
+  static async getByLastReform (from, to) {
+    try {
+      const legalBasis = await LegalBasisRepository.findByLastReform(from, to)
+      if (!legalBasis) {
+        return []
+      }
+      const legalBases = await Promise.all(
+        legalBasis.map(async (legalBasis) => {
+          let documentUrl = null
+          if (legalBasis.url) {
+            documentUrl = await FileService.getFile(legalBasis.url)
+          }
+          let formattedLastReform = null
+          if (legalBasis.lastReform) {
+            formattedLastReform = format(new Date(legalBasis.lastReform), 'dd-MM-yyyy', { locale: es })
+          }
+          return {
+            id: legalBasis.id,
+            legal_name: legalBasis.legal_name,
+            subject: legalBasis.subject,
+            aspects: legalBasis.aspects,
+            classification: legalBasis.classification,
+            jurisdiction: legalBasis.jurisdiction,
+            state: legalBasis.state,
+            municipality: legalBasis.municipality,
+            last_reform: formattedLastReform,
+            abbreviation: legalBasis.abbreviation,
+            url: documentUrl
+          }
+        })
+      )
+
+      return legalBases
+    } catch (error) {
+      if (error instanceof ErrorUtils) {
+        throw error
+      }
+      console.error('Failed to retrieve legal basis records by last reform range:', error.message)
+      throw new ErrorUtils(500, 'Failed to retrieve legal basis records by last reform range')
+    }
+  }
+
+  /**
  * Updates an existing Legal Basis entry.
  * @param {number} legalBasisId - The ID of the legal basis to update.
  * @param {Object} data - Parameters for updating the legal basis.
@@ -756,6 +808,54 @@ class LegalBasisService {
         throw error
       }
       throw new ErrorUtils(500, 'Unexpected error during batch Legal Basis deletion')
+    }
+  }
+
+  /**
+ * Retrieves all unique classification values.
+ * @function getClassifications
+ * @returns {Promise<Array<{classification_name: string}>>}
+ * @throws {ErrorUtils} -  If any error occurs during the fetching process.
+ */
+  static async getClassifications () {
+    try {
+      const classifications = await LegalBasisRepository.findClassifications()
+      if (!classifications) {
+        return []
+      }
+      const classificationsData = classifications.map(classification => ({
+        classification_name: classification
+      }))
+      return classificationsData
+    } catch (error) {
+      if (error instanceof ErrorUtils) {
+        throw error
+      }
+      throw new ErrorUtils(500, 'Unexpected error during fetching distinct classifications')
+    }
+  };
+
+  /**
+ * Retrieves all unique jurisdiction values.
+ * @function getJurisdictions
+ * @returns {Promise<Array<{jurisdiction_name: string}>>}
+ * @throws {ErrorUtils} - If any error occurs during the fetching process.
+ */
+  static async getJurisdictions () {
+    try {
+      const jurisdictions = await LegalBasisRepository.findJurisdictions()
+      if (!jurisdictions) {
+        return []
+      }
+      const jurisdictionsData = jurisdictions.map(jurisdiction => ({
+        jurisdiction_name: jurisdiction
+      }))
+      return jurisdictionsData
+    } catch (error) {
+      if (error instanceof ErrorUtils) {
+        throw error
+      }
+      throw new ErrorUtils(500, 'Unexpected error during fetching distinct jurisdictions')
     }
   }
 }

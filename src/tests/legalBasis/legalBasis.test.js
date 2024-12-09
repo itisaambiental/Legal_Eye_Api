@@ -1468,4 +1468,242 @@ describe('Get Legal Basis By Subject And Aspects', () => {
 
     expect(response.body.error).toMatch(/token missing or invalid/i)
   })
+
+  describe('GET All Classifications', () => {
+    beforeEach(async () => {
+      await LegalBasisRepository.deleteAll()
+    })
+
+    test('Should return an empty array if no classifications exist', async () => {
+      const response = await api
+        .get('/api/legalBasis/classification/classification/all')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .expect(200)
+        .expect('Content-Type', /application\/json/)
+
+      expect(response.body).toHaveProperty('classifications')
+      expect(response.body.classifications).toBeInstanceOf(Array)
+      expect(response.body.classifications).toHaveLength(0)
+    })
+
+    test('Should return the created classification if a legal basis is created', async () => {
+      const legalBasisData = generateLegalBasisData({
+        subjectId: String(createdSubjectId),
+        aspectsIds: JSON.stringify(createdAspectIds),
+        classification: 'Ley'
+      })
+      const responseCreated = await api
+        .post('/api/legalBasis')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send(legalBasisData)
+        .expect(201)
+        .expect('Content-Type', /application\/json/)
+      createdLegalBasis = responseCreated.body.legalBasis
+      const response = await api
+        .get('/api/legalBasis/classification/classification/all')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .expect(200)
+        .expect('Content-Type', /application\/json/)
+      expect(response.body.classifications).toBeInstanceOf(Array)
+      const classificationNames = response.body.classifications.map(c => c.classification_name)
+      expect(classificationNames).toContain(createdLegalBasis.classification)
+    })
+
+    test('Should return 401 if the user is unauthorized', async () => {
+      const response = await api
+        .get('/api/legalBasis/classification/classification/all')
+        .expect(401)
+        .expect('Content-Type', /application\/json/)
+
+      expect(response.body.error).toMatch(/token missing or invalid/i)
+    })
+  })
+  describe('GET All Jurisdictions', () => {
+    beforeEach(async () => {
+      await LegalBasisRepository.deleteAll()
+    })
+
+    test('Should return an empty array if no jurisdictions exist', async () => {
+      const response = await api
+        .get('/api/legalBasis/jurisdiction/jurisdiction/all')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .expect(200)
+        .expect('Content-Type', /application\/json/)
+
+      expect(response.body).toHaveProperty('jurisdictions')
+      expect(response.body.jurisdictions).toBeInstanceOf(Array)
+      expect(response.body.jurisdictions).toHaveLength(0)
+    })
+
+    test('Should return the created jurisdiction if a legal basis is created', async () => {
+      const legalBasisData = generateLegalBasisData({
+        subjectId: String(createdSubjectId),
+        aspectsIds: JSON.stringify(createdAspectIds),
+        jurisdiction: 'Federal'
+      })
+
+      const responseCreated = await api
+        .post('/api/legalBasis')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send(legalBasisData)
+        .expect(201)
+        .expect('Content-Type', /application\/json/)
+
+      const createdLegalBasis = responseCreated.body.legalBasis
+
+      const response = await api
+        .get('/api/legalBasis/jurisdiction/jurisdiction/all')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .expect(200)
+        .expect('Content-Type', /application\/json/)
+
+      expect(response.body.jurisdictions).toBeInstanceOf(Array)
+      const jurisdictionNames = response.body.jurisdictions.map(j => j.jurisdiction_name)
+      expect(jurisdictionNames).toContain(createdLegalBasis.jurisdiction)
+    })
+
+    test('Should return 401 if the user is unauthorized', async () => {
+      const response = await api
+        .get('/api/legalBasis/jurisdiction/jurisdiction/all')
+        .expect(401)
+        .expect('Content-Type', /application\/json/)
+
+      expect(response.body.error).toMatch(/token missing or invalid/i)
+    })
+  })
+
+  describe('Get Legal Basis By Last Reform', () => {
+    let createdLegalBasis
+
+    beforeEach(async () => {
+      await LegalBasisRepository.deleteAll()
+      const legalBasisData = generateLegalBasisData({
+        subjectId: String(createdSubjectId),
+        aspectsIds: JSON.stringify(createdAspectIds),
+        lastReform: '01-01-2024'
+      })
+
+      const response = await api
+        .post('/api/legalBasis')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send(legalBasisData)
+        .expect(201)
+        .expect('Content-Type', /application\/json/)
+
+      createdLegalBasis = response.body.legalBasis
+    })
+    test('Should return 400 if both "from" and "to" are missing', async () => {
+      const response = await api
+        .get('/api/legalBasis/lastReform/lastReform')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .expect(400)
+        .expect('Content-Type', /application\/json/)
+
+      expect(response.body.message).toMatch(/Validation failed/i)
+      expect(response.body.errors).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ field: 'from', message: expect.stringMatching(/At least one of "from" or "to"/i) }),
+          expect.objectContaining({ field: 'to', message: expect.stringMatching(/At least one of "from" or "to"/i) })
+        ])
+      )
+    })
+
+    test('Should return 400 if only "from" is provided', async () => {
+      const response = await api
+        .get('/api/legalBasis/lastReform/lastReform')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .query({ from: '2024-01-01' })
+        .expect(400)
+        .expect('Content-Type', /application\/json/)
+
+      expect(response.body.message).toMatch(/Validation failed/i)
+      expect(response.body.errors).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ field: 'to', message: expect.stringMatching(/The "to" date must be provided when "from" is specified/i) })
+        ])
+      )
+    })
+
+    test('Should return 400 if only "to" is provided', async () => {
+      const response = await api
+        .get('/api/legalBasis/lastReform/lastReform')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .query({ to: '2024-12-31' })
+        .expect(400)
+        .expect('Content-Type', /application\/json/)
+
+      expect(response.body.message).toMatch(/Validation failed/i)
+      expect(response.body.errors).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ field: 'from', message: expect.stringMatching(/The "from" date must be provided when "to" is specified/i) })
+        ])
+      )
+    })
+
+    test('Should return 400 if "from" date is invalid', async () => {
+      const response = await api
+        .get('/api/legalBasis/lastReform/lastReform')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .query({ from: 'invalid-date', to: '2024-12-31' })
+        .expect(400)
+        .expect('Content-Type', /application\/json/)
+
+      expect(response.body.message).toMatch(/Validation failed/i)
+      expect(response.body.errors).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ field: 'from', message: expect.stringMatching(/is not a valid date/i) })
+        ])
+      )
+    })
+
+    test('Should return 400 if "to" date is invalid', async () => {
+      const response = await api
+        .get('/api/legalBasis/lastReform/lastReform')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .query({ from: '2024-01-01', to: 'invalid-date' })
+        .expect(400)
+        .expect('Content-Type', /application\/json/)
+
+      expect(response.body.message).toMatch(/Validation failed/i)
+      expect(response.body.errors).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ field: 'to', message: expect.stringMatching(/is not a valid date/i) })
+        ])
+      )
+    })
+
+    test('Should return 200 and legal basis if valid "from" and "to" are provided', async () => {
+      const response = await api
+        .get('/api/legalBasis/lastReform/lastReform')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .query({ from: '2024-01-01', to: '2024-12-31' })
+        .expect(200)
+        .expect('Content-Type', /application\/json/)
+
+      const { legalBasis } = response.body
+      expect(legalBasis).toBeInstanceOf(Array)
+      expect(legalBasis).toHaveLength(1)
+      expect(legalBasis[0]).toMatchObject({
+        id: createdLegalBasis.id,
+        legal_name: createdLegalBasis.legal_name,
+        classification: createdLegalBasis.classification,
+        jurisdiction: createdLegalBasis.jurisdiction,
+        abbreviation: createdLegalBasis.abbreviation,
+        state: createdLegalBasis.state,
+        municipality: createdLegalBasis.municipality,
+        last_reform: createdLegalBasis.lastReform,
+        url: createdLegalBasis.url
+      })
+    })
+
+    test('Should return 401 if the user is unauthorized', async () => {
+      const response = await api
+        .get('/api/legalBasis/lastReform/lastReform')
+        .query({ from: '2024-01-01', to: '2024-12-31' })
+        .expect(401)
+        .expect('Content-Type', /application\/json/)
+
+      expect(response.body.error).toMatch(/token missing or invalid/i)
+    })
+  })
 })
