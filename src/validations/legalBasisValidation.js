@@ -122,8 +122,8 @@ const legalBasisSchema = z
     document: z
       .object({
         mimetype: z.string().refine(
-          (mime) => ['application/pdf', 'image/png', 'image/jpg', 'image/jpeg'].includes(mime),
-          { message: 'Invalid document type. Allowed types are: pdf, png, jpg, jpeg' }
+          (mime) => ['application/pdf', 'image/png', 'image/jpeg'].includes(mime),
+          { message: 'Invalid document type. Allowed types are: pdf, png, jpeg' }
         )
       })
       .optional(),

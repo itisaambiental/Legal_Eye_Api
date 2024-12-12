@@ -47,12 +47,12 @@ const userSchema = z.object({
   profilePicture: z.object({
   /**
    * MIME type of the profile picture.
-   * Must be one of the allowed types: 'image/png', 'image/jpeg', 'image/webp'.
+   * Must be one of the allowed types: 'image/png', 'image/jpeg'.
    * Throws a validation error if the mimetype is not one of the allowed values.
    */
     mimetype: z.string().refine(
-      (mime) => ['image/png', 'image/jpeg', 'image/webp'].includes(mime),
-      { message: 'Invalid profile picture type. Allowed types are: png, jpeg, webp' }
+      (mime) => ['image/png', 'image/jpeg'].includes(mime),
+      { message: 'Invalid profile picture type. Allowed types are: png, jpeg' }
     )
   }).optional(),
 
