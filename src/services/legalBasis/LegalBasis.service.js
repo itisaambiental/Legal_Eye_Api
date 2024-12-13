@@ -38,6 +38,7 @@ class LegalBasisService {
         ...data,
         document
       })
+      console.log(parsedData.lastReform)
       const legalBasisExists = await LegalBasisRepository.exists(parsedData.legalName)
       if (legalBasisExists) {
         throw new ErrorUtils(409, 'LegalBasis already exists')
@@ -82,11 +83,12 @@ class LegalBasisService {
       if (createdLegalBasis.lastReform) {
         formattedLastReform = format(new Date(createdLegalBasis.lastReform), 'dd-MM-yyyy')
       }
+      console.log(formattedLastReform)
       return {
         jobId,
         legalBasis: {
           ...createdLegalBasis,
-          lastReform: formattedLastReform,
+          last_reform: formattedLastReform,
           url: documentUrl
         }
       }
@@ -712,7 +714,7 @@ class LegalBasisService {
         jobId,
         legalBasis: {
           ...updatedLegalBasis,
-          lastReform: formattedLastReform,
+          last_reform: formattedLastReform,
           url: documentUrl
         }
       }
