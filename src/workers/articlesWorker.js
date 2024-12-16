@@ -1,9 +1,9 @@
 import articlesQueue from '../queues/articlesQueue.js'
 import ArticleExtractorFactory from '../services/articles/articleExtraction/ArticleExtractorFactory.js'
 import ErrorUtils from '../utils/Error.js'
-import DocumentService from '../services/files/DocumentService.js'
+import DocumentService from '../services/files/Document.service.js'
 import LegalBasisRepository from '../repositories/LegalBasis.repository.js'
-import ArticlesService from '../services/articles/ArticlesService.js'
+import ArticlesService from '../services/articles/Articles.service.js'
 import FileService from '../services/files/File.service.js'
 
 /**

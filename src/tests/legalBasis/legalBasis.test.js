@@ -4,7 +4,10 @@ import UserRepository from '../../repositories/User.repository.js'
 import SubjectsRepository from '../../repositories/Subject.repository.js'
 import LegalBasisRepository from '../../repositories/LegalBasis.repository.js'
 import AspectsRepository from '../../repositories/Aspects.repository.js'
-import { ADMIN_PASSWORD_TEST, ADMIN_GMAIL } from '../../config/variables.config.js'
+import {
+  ADMIN_PASSWORD_TEST,
+  ADMIN_GMAIL
+} from '../../config/variables.config.js'
 import generateLegalBasisData from '../../utils/generateLegalBasis.js'
 
 const subjectName = 'Seguridad & Higiene'
@@ -75,12 +78,14 @@ describe('Create a legal base', () => {
       jurisdiction: legalBasisData.jurisdiction,
       state: null,
       municipality: null,
-      lastReform: legalBasisData.lastReform,
+      last_reform: legalBasisData.lastReform,
       url: null
     })
     expect(legalBasis.aspects).toEqual(
       expect.arrayContaining(
-        createdAspectIds.map((aspectId) => expect.objectContaining({ aspect_id: aspectId }))
+        createdAspectIds.map((aspectId) =>
+          expect.objectContaining({ aspect_id: aspectId })
+        )
       )
     )
     expect(legalBasis.subject).toMatchObject({
@@ -132,12 +137,14 @@ describe('Create a legal base', () => {
       jurisdiction: legalBasisData.jurisdiction,
       state: null,
       municipality: null,
-      lastReform: legalBasisData.lastReform,
+      last_reform: legalBasisData.lastReform,
       url: expect.stringContaining('file.pdf')
     })
     expect(legalBasis.aspects).toEqual(
       expect.arrayContaining(
-        createdAspectIds.map((aspectId) => expect.objectContaining({ aspect_id: aspectId }))
+        createdAspectIds.map((aspectId) =>
+          expect.objectContaining({ aspect_id: aspectId })
+        )
       )
     )
     expect(legalBasis.subject).toMatchObject({
@@ -439,7 +446,9 @@ describe('Create a legal base', () => {
         expect.arrayContaining([
           {
             field: 'state',
-            message: expect.stringMatching(/should not be provided for Federal jurisdiction/i)
+            message: expect.stringMatching(
+              /should not be provided for Federal jurisdiction/i
+            )
           }
         ])
       )
@@ -464,7 +473,9 @@ describe('Create a legal base', () => {
         expect.arrayContaining([
           {
             field: 'municipality',
-            message: expect.stringMatching(/should not be provided for Federal jurisdiction/i)
+            message: expect.stringMatching(
+              /should not be provided for Federal jurisdiction/i
+            )
           }
         ])
       )
@@ -489,7 +500,9 @@ describe('Create a legal base', () => {
         expect.arrayContaining([
           {
             field: 'state',
-            message: expect.stringMatching(/must be provided for Estatal jurisdiction/i)
+            message: expect.stringMatching(
+              /must be provided for Estatal jurisdiction/i
+            )
           }
         ])
       )
@@ -515,7 +528,9 @@ describe('Create a legal base', () => {
         expect.arrayContaining([
           {
             field: 'municipality',
-            message: expect.stringMatching(/should not be provided for Estatal jurisdiction/i)
+            message: expect.stringMatching(
+              /should not be provided for Estatal jurisdiction/i
+            )
           }
         ])
       )
@@ -549,7 +564,9 @@ describe('Create a legal base', () => {
         expect.arrayContaining([
           {
             field: 'state',
-            message: expect.stringMatching(/must be provided for Local jurisdiction/i)
+            message: expect.stringMatching(
+              /must be provided for Local jurisdiction/i
+            )
           }
         ])
       )
@@ -558,12 +575,16 @@ describe('Create a legal base', () => {
         .set('Authorization', `Bearer ${tokenAdmin}`)
         .send(legalBasisDataMissingMunicipality)
         .expect(400)
-      expect(responseMissingMunicipality.body.message).toMatch(/Validation failed/i)
+      expect(responseMissingMunicipality.body.message).toMatch(
+        /Validation failed/i
+      )
       expect(responseMissingMunicipality.body.errors).toEqual(
         expect.arrayContaining([
           {
             field: 'municipality',
-            message: expect.stringMatching(/must be provided for Local jurisdiction/i)
+            message: expect.stringMatching(
+              /must be provided for Local jurisdiction/i
+            )
           }
         ])
       )
@@ -587,7 +608,9 @@ describe('Create a legal base', () => {
         expect.arrayContaining([
           {
             field: 'lastReform',
-            message: expect.stringMatching(/must be a valid date in yyyy-mm-dd or dd-mm-yyyy format/i)
+            message: expect.stringMatching(
+              /must be a valid date in yyyy-mm-dd or dd-mm-yyyy format/i
+            )
           }
         ])
       )
@@ -616,7 +639,9 @@ describe('Create a legal base', () => {
         expect.arrayContaining([
           {
             field: 'document',
-            message: expect.stringMatching(/Invalid document type\. Allowed types are: pdf, png, jpg, jpeg/i)
+            message: expect.stringMatching(
+              /Invalid document type\. Allowed types are: pdf, png, jpeg/i
+            )
           }
         ])
       )
@@ -693,14 +718,16 @@ describe('Get All Legal Basis', () => {
       abbreviation: createdLegalBasis.abbreviation,
       state: createdLegalBasis.state,
       municipality: createdLegalBasis.municipality,
-      last_reform: createdLegalBasis.lastReform,
+      last_reform: createdLegalBasis.last_reform,
       url: createdLegalBasis.url,
       subject: expect.objectContaining({
         subject_id: createdSubjectId,
         subject_name: subjectName
       }),
       aspects: expect.arrayContaining(
-        createdAspectIds.map((aspectId) => expect.objectContaining({ aspect_id: aspectId }))
+        createdAspectIds.map((aspectId) =>
+          expect.objectContaining({ aspect_id: aspectId })
+        )
       )
     })
   })
@@ -751,14 +778,16 @@ describe('Get Legal Basis By ID', () => {
       abbreviation: createdLegalBasis.abbreviation,
       state: createdLegalBasis.state,
       municipality: createdLegalBasis.municipality,
-      last_reform: createdLegalBasis.lastReform,
+      last_reform: createdLegalBasis.last_reform,
       url: createdLegalBasis.url,
       subject: expect.objectContaining({
         subject_id: createdSubjectId,
         subject_name: subjectName
       }),
       aspects: expect.arrayContaining(
-        createdAspectIds.map((aspectId) => expect.objectContaining({ aspect_id: aspectId }))
+        createdAspectIds.map((aspectId) =>
+          expect.objectContaining({ aspect_id: aspectId })
+        )
       )
     })
   })
@@ -822,14 +851,16 @@ describe('Get Legal Basis By Name', () => {
       abbreviation: createdLegalBasis.abbreviation,
       state: createdLegalBasis.state,
       municipality: createdLegalBasis.municipality,
-      last_reform: createdLegalBasis.lastReform,
+      last_reform: createdLegalBasis.last_reform,
       url: createdLegalBasis.url,
       subject: expect.objectContaining({
         subject_id: createdSubjectId,
         subject_name: subjectName
       }),
       aspects: expect.arrayContaining(
-        createdAspectIds.map((aspectId) => expect.objectContaining({ aspect_id: aspectId }))
+        createdAspectIds.map((aspectId) =>
+          expect.objectContaining({ aspect_id: aspectId })
+        )
       )
     })
   })
@@ -898,14 +929,16 @@ describe('Get Legal Basis By Abbreviation', () => {
       abbreviation: createdLegalBasis.abbreviation,
       state: createdLegalBasis.state,
       municipality: createdLegalBasis.municipality,
-      last_reform: createdLegalBasis.lastReform,
+      last_reform: createdLegalBasis.last_reform,
       url: createdLegalBasis.url,
       subject: expect.objectContaining({
         subject_id: createdSubjectId,
         subject_name: subjectName
       }),
       aspects: expect.arrayContaining(
-        createdAspectIds.map((aspectId) => expect.objectContaining({ aspect_id: aspectId }))
+        createdAspectIds.map((aspectId) =>
+          expect.objectContaining({ aspect_id: aspectId })
+        )
       )
     })
   })
@@ -973,14 +1006,16 @@ describe('Get Legal Basis By Classification', () => {
       abbreviation: createdLegalBasis.abbreviation,
       state: createdLegalBasis.state,
       municipality: createdLegalBasis.municipality,
-      last_reform: createdLegalBasis.lastReform,
+      last_reform: createdLegalBasis.last_reform,
       url: createdLegalBasis.url,
       subject: expect.objectContaining({
         subject_id: createdSubjectId,
         subject_name: subjectName
       }),
       aspects: expect.arrayContaining(
-        createdAspectIds.map((aspectId) => expect.objectContaining({ aspect_id: aspectId }))
+        createdAspectIds.map((aspectId) =>
+          expect.objectContaining({ aspect_id: aspectId })
+        )
       )
     })
   })
@@ -1048,14 +1083,16 @@ describe('Get Legal Basis By Jurisdiction', () => {
       abbreviation: createdLegalBasis.abbreviation,
       state: createdLegalBasis.state,
       municipality: createdLegalBasis.municipality,
-      last_reform: createdLegalBasis.lastReform,
+      last_reform: createdLegalBasis.last_reform,
       url: createdLegalBasis.url,
       subject: expect.objectContaining({
         subject_id: createdSubjectId,
         subject_name: subjectName
       }),
       aspects: expect.arrayContaining(
-        createdAspectIds.map((aspectId) => expect.objectContaining({ aspect_id: aspectId }))
+        createdAspectIds.map((aspectId) =>
+          expect.objectContaining({ aspect_id: aspectId })
+        )
       )
     })
   })
@@ -1125,14 +1162,16 @@ describe('Get Legal Basis By State', () => {
       abbreviation: createdLegalBasis.abbreviation,
       state: createdLegalBasis.state,
       municipality: createdLegalBasis.municipality,
-      last_reform: createdLegalBasis.lastReform,
+      last_reform: createdLegalBasis.last_reform,
       url: createdLegalBasis.url,
       subject: expect.objectContaining({
         subject_id: createdSubjectId,
         subject_name: subjectName
       }),
       aspects: expect.arrayContaining(
-        createdAspectIds.map((aspectId) => expect.objectContaining({ aspect_id: aspectId }))
+        createdAspectIds.map((aspectId) =>
+          expect.objectContaining({ aspect_id: aspectId })
+        )
       )
     })
   })
@@ -1204,7 +1243,7 @@ describe('Get Legal Basis By State and Municipalities', () => {
       abbreviation: createdLegalBasis.abbreviation,
       state: createdLegalBasis.state,
       municipality: createdLegalBasis.municipality,
-      last_reform: createdLegalBasis.lastReform,
+      last_reform: createdLegalBasis.last_reform,
       url: createdLegalBasis.url,
       subject: expect.objectContaining({
         subject_id: createdSubjectId,
@@ -1222,7 +1261,10 @@ describe('Get Legal Basis By State and Municipalities', () => {
     const response = await api
       .get('/api/legalBasis/state/municipalities/query')
       .set('Authorization', `Bearer ${tokenAdmin}`)
-      .query({ state: createdLegalBasis.state, municipalities: [createdLegalBasis.municipality] })
+      .query({
+        state: createdLegalBasis.state,
+        municipalities: [createdLegalBasis.municipality]
+      })
       .expect(200)
       .expect('Content-Type', /application\/json/)
 
@@ -1254,7 +1296,10 @@ describe('Get Legal Basis By State and Municipalities', () => {
     const response = await api
       .get('/api/legalBasis/state/municipalities/query')
       .set('Authorization', `Bearer ${tokenAdmin}`)
-      .query({ state: 'Non-existent', municipalities: ['Non-existent Municipality'] })
+      .query({
+        state: 'Non-existent',
+        municipalities: ['Non-existent Municipality']
+      })
       .expect(200)
       .expect('Content-Type', /application\/json/)
 
@@ -1313,14 +1358,16 @@ describe('Get Legal Basis By Subject', () => {
       abbreviation: createdLegalBasis.abbreviation,
       state: createdLegalBasis.state,
       municipality: createdLegalBasis.municipality,
-      last_reform: createdLegalBasis.lastReform,
+      last_reform: createdLegalBasis.last_reform,
       url: createdLegalBasis.url,
       subject: expect.objectContaining({
         subject_id: createdSubjectId,
         subject_name: subjectName
       }),
       aspects: expect.arrayContaining(
-        createdAspectIds.map((aspectId) => expect.objectContaining({ aspect_id: aspectId }))
+        createdAspectIds.map((aspectId) =>
+          expect.objectContaining({ aspect_id: aspectId })
+        )
       )
     })
   })
@@ -1409,14 +1456,16 @@ describe('Get Legal Basis By Subject And Aspects', () => {
       abbreviation: createdLegalBasis.abbreviation,
       state: createdLegalBasis.state,
       municipality: createdLegalBasis.municipality,
-      last_reform: createdLegalBasis.lastReform,
+      last_reform: createdLegalBasis.last_reform,
       url: createdLegalBasis.url,
       subject: expect.objectContaining({
         subject_id: createdSubjectId,
         subject_name: subjectName
       }),
       aspects: expect.arrayContaining(
-        createdAspectIds.map((aspectId) => expect.objectContaining({ aspect_id: aspectId }))
+        createdAspectIds.map((aspectId) =>
+          expect.objectContaining({ aspect_id: aspectId })
+        )
       )
     })
   })
@@ -1468,7 +1517,162 @@ describe('Get Legal Basis By Subject And Aspects', () => {
 
     expect(response.body.error).toMatch(/token missing or invalid/i)
   })
+  describe('Get Legal Basis By Last Reform', () => {
+    let createdLegalBasis
 
+    beforeEach(async () => {
+      await LegalBasisRepository.deleteAll()
+      const legalBasisData = generateLegalBasisData({
+        subjectId: String(createdSubjectId),
+        aspectsIds: JSON.stringify(createdAspectIds),
+        lastReform: '01-01-2024'
+      })
+
+      const response = await api
+        .post('/api/legalBasis')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send(legalBasisData)
+        .expect(201)
+        .expect('Content-Type', /application\/json/)
+
+      createdLegalBasis = response.body.legalBasis
+    })
+    test('Should return 400 if both "from" and "to" are missing', async () => {
+      const response = await api
+        .get('/api/legalBasis/lastReform/lastReform')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .expect(400)
+        .expect('Content-Type', /application\/json/)
+
+      expect(response.body.message).toMatch(/Validation failed/i)
+      expect(response.body.errors).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            field: 'from',
+            message: expect.stringMatching(/At least one of "from" or "to"/i)
+          }),
+          expect.objectContaining({
+            field: 'to',
+            message: expect.stringMatching(/At least one of "from" or "to"/i)
+          })
+        ])
+      )
+    })
+
+    test('Should return 400 if only "from" is provided', async () => {
+      const response = await api
+        .get('/api/legalBasis/lastReform/lastReform')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .query({ from: '2024-01-01' })
+        .expect(400)
+        .expect('Content-Type', /application\/json/)
+
+      expect(response.body.message).toMatch(/Validation failed/i)
+      expect(response.body.errors).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            field: 'to',
+            message: expect.stringMatching(
+              /The "to" date must be provided when "from" is specified/i
+            )
+          })
+        ])
+      )
+    })
+
+    test('Should return 400 if only "to" is provided', async () => {
+      const response = await api
+        .get('/api/legalBasis/lastReform/lastReform')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .query({ to: '2024-12-31' })
+        .expect(400)
+        .expect('Content-Type', /application\/json/)
+
+      expect(response.body.message).toMatch(/Validation failed/i)
+      expect(response.body.errors).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            field: 'from',
+            message: expect.stringMatching(
+              /The "from" date must be provided when "to" is specified/i
+            )
+          })
+        ])
+      )
+    })
+
+    test('Should return 400 if "from" date is invalid', async () => {
+      const response = await api
+        .get('/api/legalBasis/lastReform/lastReform')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .query({ from: 'invalid-date', to: '2024-12-31' })
+        .expect(400)
+        .expect('Content-Type', /application\/json/)
+
+      expect(response.body.message).toMatch(/Validation failed/i)
+      expect(response.body.errors).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            field: 'from',
+            message: expect.stringMatching(/is not a valid date/i)
+          })
+        ])
+      )
+    })
+
+    test('Should return 400 if "to" date is invalid', async () => {
+      const response = await api
+        .get('/api/legalBasis/lastReform/lastReform')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .query({ from: '2024-01-01', to: 'invalid-date' })
+        .expect(400)
+        .expect('Content-Type', /application\/json/)
+
+      expect(response.body.message).toMatch(/Validation failed/i)
+      expect(response.body.errors).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            field: 'to',
+            message: expect.stringMatching(/is not a valid date/i)
+          })
+        ])
+      )
+    })
+
+    test('Should return 200 and legal basis if valid "from" and "to" are provided', async () => {
+      const response = await api
+        .get('/api/legalBasis/lastReform/lastReform')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .query({ from: '2024-01-01', to: '2024-12-31' })
+        .expect(200)
+        .expect('Content-Type', /application\/json/)
+
+      const { legalBasis } = response.body
+      expect(legalBasis).toBeInstanceOf(Array)
+      expect(legalBasis).toHaveLength(1)
+      expect(legalBasis[0]).toMatchObject({
+        id: createdLegalBasis.id,
+        legal_name: createdLegalBasis.legal_name,
+        classification: createdLegalBasis.classification,
+        jurisdiction: createdLegalBasis.jurisdiction,
+        abbreviation: createdLegalBasis.abbreviation,
+        state: createdLegalBasis.state,
+        municipality: createdLegalBasis.municipality,
+        last_reform: createdLegalBasis.last_reform,
+        url: createdLegalBasis.url
+      })
+    })
+
+    test('Should return 401 if the user is unauthorized', async () => {
+      const response = await api
+        .get('/api/legalBasis/lastReform/lastReform')
+        .query({ from: '2024-01-01', to: '2024-12-31' })
+        .expect(401)
+        .expect('Content-Type', /application\/json/)
+
+      expect(response.body.error).toMatch(/token missing or invalid/i)
+    })
+  })
   describe('GET All Classifications', () => {
     beforeEach(async () => {
       await LegalBasisRepository.deleteAll()
@@ -1505,7 +1709,9 @@ describe('Get Legal Basis By Subject And Aspects', () => {
         .expect(200)
         .expect('Content-Type', /application\/json/)
       expect(response.body.classifications).toBeInstanceOf(Array)
-      const classificationNames = response.body.classifications.map(c => c.classification_name)
+      const classificationNames = response.body.classifications.map(
+        (c) => c.classification_name
+      )
       expect(classificationNames).toContain(createdLegalBasis.classification)
     })
 
@@ -1558,148 +1764,15 @@ describe('Get Legal Basis By Subject And Aspects', () => {
         .expect('Content-Type', /application\/json/)
 
       expect(response.body.jurisdictions).toBeInstanceOf(Array)
-      const jurisdictionNames = response.body.jurisdictions.map(j => j.jurisdiction_name)
+      const jurisdictionNames = response.body.jurisdictions.map(
+        (j) => j.jurisdiction_name
+      )
       expect(jurisdictionNames).toContain(createdLegalBasis.jurisdiction)
     })
 
     test('Should return 401 if the user is unauthorized', async () => {
       const response = await api
         .get('/api/legalBasis/jurisdiction/jurisdiction/all')
-        .expect(401)
-        .expect('Content-Type', /application\/json/)
-
-      expect(response.body.error).toMatch(/token missing or invalid/i)
-    })
-  })
-
-  describe('Get Legal Basis By Last Reform', () => {
-    let createdLegalBasis
-
-    beforeEach(async () => {
-      await LegalBasisRepository.deleteAll()
-      const legalBasisData = generateLegalBasisData({
-        subjectId: String(createdSubjectId),
-        aspectsIds: JSON.stringify(createdAspectIds),
-        lastReform: '01-01-2024'
-      })
-
-      const response = await api
-        .post('/api/legalBasis')
-        .set('Authorization', `Bearer ${tokenAdmin}`)
-        .send(legalBasisData)
-        .expect(201)
-        .expect('Content-Type', /application\/json/)
-
-      createdLegalBasis = response.body.legalBasis
-    })
-    test('Should return 400 if both "from" and "to" are missing', async () => {
-      const response = await api
-        .get('/api/legalBasis/lastReform/lastReform')
-        .set('Authorization', `Bearer ${tokenAdmin}`)
-        .expect(400)
-        .expect('Content-Type', /application\/json/)
-
-      expect(response.body.message).toMatch(/Validation failed/i)
-      expect(response.body.errors).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({ field: 'from', message: expect.stringMatching(/At least one of "from" or "to"/i) }),
-          expect.objectContaining({ field: 'to', message: expect.stringMatching(/At least one of "from" or "to"/i) })
-        ])
-      )
-    })
-
-    test('Should return 400 if only "from" is provided', async () => {
-      const response = await api
-        .get('/api/legalBasis/lastReform/lastReform')
-        .set('Authorization', `Bearer ${tokenAdmin}`)
-        .query({ from: '2024-01-01' })
-        .expect(400)
-        .expect('Content-Type', /application\/json/)
-
-      expect(response.body.message).toMatch(/Validation failed/i)
-      expect(response.body.errors).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({ field: 'to', message: expect.stringMatching(/The "to" date must be provided when "from" is specified/i) })
-        ])
-      )
-    })
-
-    test('Should return 400 if only "to" is provided', async () => {
-      const response = await api
-        .get('/api/legalBasis/lastReform/lastReform')
-        .set('Authorization', `Bearer ${tokenAdmin}`)
-        .query({ to: '2024-12-31' })
-        .expect(400)
-        .expect('Content-Type', /application\/json/)
-
-      expect(response.body.message).toMatch(/Validation failed/i)
-      expect(response.body.errors).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({ field: 'from', message: expect.stringMatching(/The "from" date must be provided when "to" is specified/i) })
-        ])
-      )
-    })
-
-    test('Should return 400 if "from" date is invalid', async () => {
-      const response = await api
-        .get('/api/legalBasis/lastReform/lastReform')
-        .set('Authorization', `Bearer ${tokenAdmin}`)
-        .query({ from: 'invalid-date', to: '2024-12-31' })
-        .expect(400)
-        .expect('Content-Type', /application\/json/)
-
-      expect(response.body.message).toMatch(/Validation failed/i)
-      expect(response.body.errors).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({ field: 'from', message: expect.stringMatching(/is not a valid date/i) })
-        ])
-      )
-    })
-
-    test('Should return 400 if "to" date is invalid', async () => {
-      const response = await api
-        .get('/api/legalBasis/lastReform/lastReform')
-        .set('Authorization', `Bearer ${tokenAdmin}`)
-        .query({ from: '2024-01-01', to: 'invalid-date' })
-        .expect(400)
-        .expect('Content-Type', /application\/json/)
-
-      expect(response.body.message).toMatch(/Validation failed/i)
-      expect(response.body.errors).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({ field: 'to', message: expect.stringMatching(/is not a valid date/i) })
-        ])
-      )
-    })
-
-    test('Should return 200 and legal basis if valid "from" and "to" are provided', async () => {
-      const response = await api
-        .get('/api/legalBasis/lastReform/lastReform')
-        .set('Authorization', `Bearer ${tokenAdmin}`)
-        .query({ from: '2024-01-01', to: '2024-12-31' })
-        .expect(200)
-        .expect('Content-Type', /application\/json/)
-
-      const { legalBasis } = response.body
-      expect(legalBasis).toBeInstanceOf(Array)
-      expect(legalBasis).toHaveLength(1)
-      expect(legalBasis[0]).toMatchObject({
-        id: createdLegalBasis.id,
-        legal_name: createdLegalBasis.legal_name,
-        classification: createdLegalBasis.classification,
-        jurisdiction: createdLegalBasis.jurisdiction,
-        abbreviation: createdLegalBasis.abbreviation,
-        state: createdLegalBasis.state,
-        municipality: createdLegalBasis.municipality,
-        last_reform: createdLegalBasis.lastReform,
-        url: createdLegalBasis.url
-      })
-    })
-
-    test('Should return 401 if the user is unauthorized', async () => {
-      const response = await api
-        .get('/api/legalBasis/lastReform/lastReform')
-        .query({ from: '2024-01-01', to: '2024-12-31' })
         .expect(401)
         .expect('Content-Type', /application\/json/)
 

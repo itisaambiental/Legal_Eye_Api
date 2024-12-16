@@ -1,4 +1,4 @@
-import ArticlesService from '../services/articles/ArticlesService.js'
+import ArticlesService from '../services/articles/Articles.service.js'
 import UserService from '../services/users/User.service.js'
 import ErrorUtils from '../utils/Error.js'
 /**

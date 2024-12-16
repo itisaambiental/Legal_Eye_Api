@@ -3,7 +3,7 @@ import articlesQueue from '../../workers/articlesWorker.js'
 import legalBasisSchema from '../../validations/legalBasisValidation.js'
 import SubjectsRepository from '../../repositories/Subject.repository.js'
 import AspectsRepository from '../../repositories/Aspects.repository.js'
-import ArticlesWorkerService from '../articles/ArticlesWorkerService.js'
+import ArticlesWorkerService from '../articles/ArticlesWorker.service.js'
 import { z } from 'zod'
 import ErrorUtils from '../../utils/Error.js'
 import FileService from '../files/File.service.js'
@@ -38,7 +38,6 @@ class LegalBasisService {
         ...data,
         document
       })
-      console.log(parsedData.lastReform)
       const legalBasisExists = await LegalBasisRepository.exists(parsedData.legalName)
       if (legalBasisExists) {
         throw new ErrorUtils(409, 'LegalBasis already exists')
@@ -83,7 +82,6 @@ class LegalBasisService {
       if (createdLegalBasis.lastReform) {
         formattedLastReform = format(new Date(createdLegalBasis.lastReform), 'dd-MM-yyyy')
       }
-      console.log(formattedLastReform)
       return {
         jobId,
         legalBasis: {
@@ -613,7 +611,6 @@ class LegalBasisService {
       if (error instanceof ErrorUtils) {
         throw error
       }
-      console.error('Failed to retrieve legal basis records by last reform range:', error.message)
       throw new ErrorUtils(500, 'Failed to retrieve legal basis records by last reform range')
     }
   }

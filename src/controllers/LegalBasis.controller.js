@@ -19,7 +19,6 @@ export const createLegalBasis = async (req, res) => {
   const { userId } = req
   const { legalName, abbreviation, subjectId, aspectsIds, classification, jurisdiction, state, municipality, lastReform, extractArticles } = req.body
   const document = req.file
-  console.log(legalName, abbreviation, subjectId, aspectsIds, classification, jurisdiction, state, municipality, lastReform, extractArticles, document)
   if (!legalName || !abbreviation || !subjectId || !aspectsIds || !classification || !jurisdiction || !lastReform || !extractArticles) {
     return res.status(400).json({
       message: 'Missing required fields: legalName, abbreviation, subjectId, aspectsIds (non-empty array), classification, jurisdiction, lastReform, extractArticles'
@@ -278,7 +277,6 @@ export const getLegalBasisByStateAndMunicipalities = async (req, res) => {
     const legalBasis = await LegalBasisService.getByStateAndMunicipalities(state, municipalities)
     return res.status(200).json({ legalBasis })
   } catch (error) {
-    console.error(error)
     if (error instanceof ErrorUtils) {
       return res.status(error.status).json({
         message: error.message,
