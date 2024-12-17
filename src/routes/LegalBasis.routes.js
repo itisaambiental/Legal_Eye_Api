@@ -154,7 +154,7 @@ router.get('/legalBasis/aspects/subject', UserExtractor, getLegalBasisBySubjectA
 router.get('/legalBasis/lastReform/lastReform', UserExtractor, getLegalBasisByLastReform)
 
 /**
- * Route to create a new legal basis.
+ * Route to update a legal basis.
  * @method PATCH
  * @path /legalBases/:id
  * @description Allows an authorized user to update a legal basis record.

@@ -4,6 +4,8 @@ import UserRepository from '../../repositories/User.repository.js'
 import SubjectsRepository from '../../repositories/Subject.repository.js'
 import LegalBasisRepository from '../../repositories/LegalBasis.repository.js'
 import AspectsRepository from '../../repositories/Aspects.repository.js'
+import WorkerService from '../../services/worker/Worker.service.js'
+
 import {
   ADMIN_PASSWORD_TEST,
   ADMIN_GMAIL
@@ -1673,6 +1675,78 @@ describe('Get Legal Basis By Subject And Aspects', () => {
       expect(response.body.error).toMatch(/token missing or invalid/i)
     })
   })
+
+  describe('Delete Legal Basis By ID', () => {
+    let createdLegalBasis
+    beforeEach(async () => {
+      await LegalBasisRepository.deleteAll()
+
+      const legalBasisData = generateLegalBasisData({
+        subjectId: String(createdSubjectId),
+        aspectsIds: JSON.stringify(createdAspectIds)
+      })
+      const response = await api
+        .post('/api/legalBasis')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send(legalBasisData)
+        .expect(201)
+        .expect('Content-Type', /application\/json/)
+
+      createdLegalBasis = response.body.legalBasis
+    })
+
+    test('Should delete a legal basis and return 204 status', async () => {
+      await api
+        .delete(`/api/legalBasis/${createdLegalBasis.id}`)
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .expect(204)
+      const response = await api
+        .get('/api/legalBasis/aspects/subject')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .query({
+          subjectId: createdLegalBasis.subject.subject_id,
+          aspectIds: [createdAspectIds]
+        })
+        .expect(200)
+
+      const { legalBasis } = response.body
+
+      expect(legalBasis).toBeInstanceOf(Array)
+      expect(legalBasis).not.toContainEqual(
+        expect.objectContaining({ id: createdLegalBasis.id })
+      )
+    })
+    test('Should return 404 if the legal basis does not exist', async () => {
+      const nonExistentId = '-1'
+      const response = await api
+        .delete(`/api/legalBasis/${nonExistentId}`)
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .expect(404)
+
+      expect(response.body.message).toMatch(/LegalBasis not found/i)
+    })
+    test('Should return 409 if the legal basis has pending jobs', async () => {
+      jest
+        .spyOn(WorkerService, 'hasPendingJobs')
+        .mockResolvedValue({ hasPendingJobs: true })
+      const response = await api
+        .delete(`/api/legalBasis/${createdLegalBasis.id}`)
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .expect(409)
+
+      expect(response.body.message).toMatch(
+        /Cannot delete LegalBasis with pending jobs/i
+      )
+    })
+    test('Should return 401 if the user is unauthorized', async () => {
+      const response = await api
+        .delete(`/api/legalBasis/${createdLegalBasis.id}`)
+        .expect(401)
+        .expect('Content-Type', /application\/json/)
+      expect(response.body.error).toMatch(/token missing or invalid/i)
+    })
+  })
+
   describe('GET All Classifications', () => {
     beforeEach(async () => {
       await LegalBasisRepository.deleteAll()

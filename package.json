@@ -6,10 +6,11 @@
   "scripts": {
     "dev": "NODE_ENV=development nodemon src/index.js",
     "start": "NODE_ENV=production node src/index.js",
-    "test": "npm run test:subjects --silent && npm run test:aspects --silent && npm run test:legalBasis --silent && npm run test:users --silent",
+    "test": "npm run test:subjects --silent && npm run test:aspects --silent && npm run test:legalBasis --silent  && npm run test:worker --silent && npm run test:users --silent",
     "test:subjects": "NODE_ENV=test jest --verbose tests/subjects/subjects.test.js",
     "test:aspects": "NODE_ENV=test jest  --silent  --verbose  tests/aspects/aspects.test.js",
     "test:legalBasis": "NODE_ENV=test jest --verbose tests/legalBasis/legalBasis.test.js",
+    "test:worker": "NODE_ENV=test jest --verbose tests/worker/worker.test.js",
     "test:users": "NODE_ENV=test jest --verbose tests/users/users.test.js",
     "test:watch": "npm run test -- --watch"
   },

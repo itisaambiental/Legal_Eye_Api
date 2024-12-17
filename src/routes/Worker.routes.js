@@ -5,7 +5,7 @@
 
 import { Router } from 'express'
 import UserExtractor from '../middleware/access_token.js'
-import { getStatusJob, checkPendingJobs } from '../controllers/ArticlesWorker.controller.js'
+import { getStatusJob, checkLegalBasisJobs } from '../controllers/Worker.controller.js'
 
 const router = Router()
 
@@ -31,6 +31,6 @@ router.get('/jobs/articles/:id', UserExtractor, getStatusJob)
  * - `hasPendingJobs`: Boolean indicating if there are pending jobs.
  * - `progress`: Number representing the job's progress, or null if no jobs exist.
  */
-router.get('/jobs/articles/legalBasis/:legalBasisId', UserExtractor, checkPendingJobs)
+router.get('/jobs/articles/legalBasis/:legalBasisId', UserExtractor, checkLegalBasisJobs)
 
 export default router

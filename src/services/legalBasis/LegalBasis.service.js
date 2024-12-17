@@ -3,7 +3,7 @@ import articlesQueue from '../../workers/articlesWorker.js'
 import legalBasisSchema from '../../validations/legalBasisValidation.js'
 import SubjectsRepository from '../../repositories/Subject.repository.js'
 import AspectsRepository from '../../repositories/Aspects.repository.js'
-import ArticlesWorkerService from '../articles/ArticlesWorker.service.js'
+import WorkerService from '../worker/Worker.service.js'
 import { z } from 'zod'
 import ErrorUtils from '../../utils/Error.js'
 import FileService from '../files/File.service.js'
@@ -654,7 +654,7 @@ class LegalBasisService {
         const notFoundIds = parsedData.aspectsIds.filter(id => !validAspectIds.includes(id))
         throw new ErrorUtils(404, 'Invalid Aspects IDs', { notFoundIds })
       }
-      const { hasPendingJobs } = await ArticlesWorkerService.hasPendingJobs(legalBasisId)
+      const { hasPendingJobs } = await WorkerService.hasPendingJobs(legalBasisId)
       if (parsedData.removeDocument && document) {
         throw new ErrorUtils(400, 'Cannot provide a document if removeDocument is true')
       }
@@ -742,7 +742,7 @@ class LegalBasisService {
       if (!legalBasis) {
         throw new ErrorUtils(404, 'LegalBasis not found')
       }
-      const { hasPendingJobs } = await ArticlesWorkerService.hasPendingJobs(legalBasisId)
+      const { hasPendingJobs } = await WorkerService.hasPendingJobs(legalBasisId)
       if (hasPendingJobs) {
         throw new ErrorUtils(409, 'Cannot delete LegalBasis with pending jobs')
       }
@@ -779,7 +779,7 @@ class LegalBasisService {
       }
       const pendingJobs = []
       for (const legalBasis of existingLegalBases) {
-        const { hasPendingJobs } = await ArticlesWorkerService.hasPendingJobs(legalBasis.id)
+        const { hasPendingJobs } = await WorkerService.hasPendingJobs(legalBasis.id)
         if (hasPendingJobs) {
           pendingJobs.push({
             id: legalBasis.id,
@@ -789,7 +789,7 @@ class LegalBasisService {
       }
       if (pendingJobs.length > 0) {
         throw new ErrorUtils(409, 'Cannot delete Legal Bases with pending jobs', {
-          associatedLegalBases: pendingJobs
+          LegalBases: pendingJobs
         })
       }
       for (const legalBasis of existingLegalBases) {

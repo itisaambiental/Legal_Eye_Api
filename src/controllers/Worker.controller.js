@@ -1,6 +1,6 @@
 import ErrorUtils from '../utils/Error.js'
 import UserService from '../services/users/User.service.js'
-import ArticlesWorkerService from '../services/articles/ArticlesWorker.service.js'
+import WorkerService from '../services/worker/Worker.service.js'
 
 /**
  * Controller for Articles Jobs operations.
@@ -24,7 +24,7 @@ export const getStatusJob = async (req, res) => {
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-    const jobStatus = await ArticlesWorkerService.getStatusJob(id)
+    const jobStatus = await WorkerService.getStatusJob(id)
     return res.status(jobStatus.status).json(jobStatus.data)
   } catch (error) {
     if (error instanceof ErrorUtils) {
@@ -42,7 +42,7 @@ export const getStatusJob = async (req, res) => {
  * @param {Object} res - Response object.
  * @returns {Object} - Response with job status and progress or error details.
  */
-export const checkPendingJobs = async (req, res) => {
+export const checkLegalBasisJobs = async (req, res) => {
   const { userId } = req
   const { legalBasisId } = req.params
 
@@ -54,7 +54,7 @@ export const checkPendingJobs = async (req, res) => {
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-    const { hasPendingJobs, progress } = await ArticlesWorkerService.hasPendingJobs(legalBasisId)
+    const { hasPendingJobs, progress } = await WorkerService.hasPendingJobs(legalBasisId)
     return res.status(200).json({ hasPendingJobs, progress })
   } catch (error) {
     if (error instanceof ErrorUtils) {
