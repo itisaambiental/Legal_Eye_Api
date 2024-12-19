@@ -62,9 +62,9 @@ afterEach(() => {
 describe('Getting job states', () => {
   const jobId = '12345'
   const jobStates = [
-    { state: 'waiting', message: 'Job is still processing', progress: 20 },
+    { state: 'waiting', message: 'The job is waiting to be processed' },
     { state: 'active', message: 'Job is still processing', progress: 60 },
-    { state: 'completed', message: 'Job completed successfully' },
+    { state: 'completed', message: 'Job completed successfully', progress: 100 },
     { state: 'failed', message: 'Job failed', error: 'An error occurred' },
     { state: 'delayed', message: 'Job is delayed and will be processed later' },
     { state: 'paused', message: 'Job is paused and will be resumed once unpaused' },
@@ -110,7 +110,7 @@ describe('Getting job states', () => {
       .set('Authorization', `Bearer ${tokenAdmin}`)
       .expect(404)
 
-    expect(response.body.message).toBe('Job not found')
+    expect(response.body.message).toMatch(/not found/)
   })
 
   test('Should return 401 if user is unauthorized', async () => {

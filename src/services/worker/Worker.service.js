@@ -21,9 +21,9 @@ class WorkerService {
       }
       const state = await job.getState()
       const response = {
-        waiting: { message: 'Job is still processing', jobProgress: job.progress() },
+        waiting: { message: 'The job is waiting to be processed' },
         active: { message: 'Job is still processing', jobProgress: job.progress() },
-        completed: { message: 'Job completed successfully' },
+        completed: { message: 'Job completed successfully', jobProgress: job.progress() },
         failed: { message: 'Job failed', error: job.failedReason || 'Unknown error' },
         delayed: { message: 'Job is delayed and will be processed later' },
         paused: { message: 'Job is paused and will be resumed once unpaused' },
