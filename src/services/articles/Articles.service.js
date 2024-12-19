@@ -47,44 +47,6 @@ class ArticlesService {
   }
 
   /**
- * Replaces existing articles associated with a legal basis in the database with new ones.
- * Validates the articles array using the defined schema before updating.
- * @param {number} legalBasisId - The ID of the legal basis to associate the articles with.
- * @param {Array<Object>} articles - The list of articles to replace existing ones.
- * @param {string} articles[].title - The title of the article.
- * @param {string} articles[].article - The content of the article.
- * @param {number} articles[].order - The order of the article.
- * @returns {Promise<boolean>} - Returns true if the update is successful, false otherwise.
- * @throws {ErrorUtils} - If an error occurs during validation or the update.
- */
-  static async replaceArticles (legalBasisId, articles) {
-    try {
-      const parsedArticles = articlesSchema.parse(articles)
-      const legalBase = await LegalBasisRepository.findById(legalBasisId)
-      if (!legalBase) {
-        throw new ErrorUtils(404, 'Legal basis not found')
-      }
-      const updateSuccess = await ArticlesRepository.updateArticles(legalBasisId, parsedArticles)
-      if (!updateSuccess) {
-        return false
-      }
-      return true
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        const validationErrors = error.errors.map((e) => ({
-          field: e.path[0],
-          message: e.message
-        }))
-        throw new ErrorUtils(400, 'Validation failed for articles', validationErrors)
-      }
-      if (error instanceof ErrorUtils) {
-        throw error
-      }
-      throw new ErrorUtils(500, 'Unexpected error during article replacement')
-    }
-  }
-
-  /**
  * Fetches articles associated with a specific legal basis.
  * @param {number} legalBasisId - The ID of the legal basis.
  * @returns {Promise<Array<Object>>} - A list of articles associated with the legal basis.

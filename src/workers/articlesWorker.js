@@ -26,14 +26,23 @@ articlesQueue.process(async (job, done) => {
     }
     const document = await FileService.getFileContent(legalBase.url)
     if (!document || !document.buffer || !document.mimetype) {
-      return done(new ErrorUtils(400, 'Invalid document: missing buffer or mimetype'))
+      return done(
+        new ErrorUtils(400, 'Invalid document: missing buffer or mimetype')
+      )
     }
-    const { error, success, data } = await DocumentService.process({ document })
+    const { error, success, data } = await DocumentService.process({
+      document
+    })
     if (!success) {
       console.error('Document Processing Error', error)
       return done(new ErrorUtils(500, 'Document Processing Error'))
     }
-    const extractor = ArticleExtractorFactory.getExtractor(legalBase.classification, legalBase.legal_name, data, job)
+    const extractor = ArticleExtractorFactory.getExtractor(
+      legalBase.classification,
+      legalBase.legal_name,
+      data,
+      job
+    )
     if (!extractor) {
       return done(new ErrorUtils(400, 'Invalid Classification'))
     }
@@ -41,14 +50,11 @@ articlesQueue.process(async (job, done) => {
     if (!extractedArticles || extractedArticles.length === 0) {
       return done(new ErrorUtils(500, 'Article Processing Error'))
     }
-    let articlesOperation
-    const existingArticles = await ArticlesService.getArticlesByLegalBasisId(legalBasisId)
-    if (existingArticles && existingArticles.length > 0) {
-      articlesOperation = await ArticlesService.replaceArticles(legalBase.id, extractedArticles)
-    } else {
-      articlesOperation = await ArticlesService.insertArticles(legalBase.id, extractedArticles)
-    }
-    if (!articlesOperation) {
+    const insertionSuccess = await ArticlesService.insertArticles(
+      legalBase.id,
+      extractedArticles
+    )
+    if (!insertionSuccess) {
       return done(new ErrorUtils(500, 'Failed to insert articles'))
     }
     done(null)
@@ -56,7 +62,9 @@ articlesQueue.process(async (job, done) => {
     if (error instanceof ErrorUtils) {
       return done(error)
     }
-    return done(new ErrorUtils(500, 'Unexpected error during article processing'))
+    return done(
+      new ErrorUtils(500, 'Unexpected error during article processing')
+    )
   }
 })
 
