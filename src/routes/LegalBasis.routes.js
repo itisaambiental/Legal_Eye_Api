@@ -180,7 +180,7 @@ router.delete('/legalBasis/:id', UserExtractor, deleteLegalBasis)
  * @description Allows an authorized user to delete multiple legal basis record.
  * @middlewares UserExtractor
  */
-router.delete('/legalBases/batch', UserExtractor, deleteLegalBasisBatch)
+router.delete('/legalBasis/delete/batch', UserExtractor, deleteLegalBasisBatch)
 
 /**
  * Route to retrieve legal basis entries filtered by subject and optionally by aspects.

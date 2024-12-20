@@ -1701,12 +1701,8 @@ describe('Get Legal Basis By Subject And Aspects', () => {
         .set('Authorization', `Bearer ${tokenAdmin}`)
         .expect(204)
       const response = await api
-        .get('/api/legalBasis/aspects/subject')
+        .get('/api/legalBasis')
         .set('Authorization', `Bearer ${tokenAdmin}`)
-        .query({
-          subjectId: createdLegalBasis.subject.subject_id,
-          aspectIds: [createdAspectIds]
-        })
         .expect(200)
 
       const { legalBasis } = response.body
@@ -1743,6 +1739,96 @@ describe('Get Legal Basis By Subject And Aspects', () => {
         .delete(`/api/legalBasis/${createdLegalBasis.id}`)
         .expect(401)
         .expect('Content-Type', /application\/json/)
+      expect(response.body.error).toMatch(/token missing or invalid/i)
+    })
+  })
+
+  describe('Delete Multiple Legal Bases By IDs', () => {
+    let createdLegalBasis
+    beforeEach(async () => {
+      await LegalBasisRepository.deleteAll()
+      const legalBasisData = generateLegalBasisData({
+        subjectId: String(createdSubjectId),
+        aspectsIds: JSON.stringify(createdAspectIds)
+      })
+      const response = await api
+        .post('/api/legalBasis')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send(legalBasisData)
+        .expect(201)
+        .expect('Content-Type', /application\/json/)
+      createdLegalBasis = response.body.legalBasis
+      jest.spyOn(WorkerService, 'hasPendingJobs').mockResolvedValue({ hasPendingJobs: false })
+    })
+
+    test('Should delete multiple legal bases and return 204 status', async () => {
+      const idToDelete = [createdLegalBasis.id]
+      await api
+        .delete('/api/legalBasis/delete/batch')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send({ legalBasisIds: idToDelete })
+        .expect(204)
+
+      const response = await api
+        .get('/api/legalBasis')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .expect(200)
+
+      const { legalBasis } = response.body
+
+      expect(legalBasis).toBeInstanceOf(Array)
+      expect(legalBasis).not.toContainEqual(
+        expect.objectContaining({ id: createdLegalBasis.id })
+      )
+    })
+    test('Should return 404 if any legal basis does not exist', async () => {
+      const nonExistentIds = ['-1', '-2']
+      const response = await api
+        .delete('/api/legalBasis/delete/batch')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send({ legalBasisIds: nonExistentIds })
+        .expect(404)
+
+      expect(response.body.message).toMatch(/Legal Basis not found for IDs/i)
+      expect(response.body.errors.notFoundIds).toEqual(nonExistentIds)
+    })
+
+    test('Should return 400 if no legalBasisIds are provided', async () => {
+      const response = await api
+        .delete('/api/legalBasis/delete/batch')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send({})
+        .expect(400)
+
+      expect(response.body.message).toMatch(/Missing required fields: legalBasisIds/i)
+    })
+    test('Should return 409 if the legal basis has pending jobs', async () => {
+      const idToDelete = createdLegalBasis.id
+      jest.spyOn(WorkerService, 'hasPendingJobs').mockImplementation(async (id) => {
+        return { hasPendingJobs: id === idToDelete }
+      })
+      const response = await api
+        .delete('/api/legalBasis/delete/batch')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send({ legalBasisIds: [idToDelete] })
+        .expect(409)
+      expect(response.body.message).toMatch(/Cannot delete Legal Bases with pending jobs/i)
+      expect(response.body.errors.LegalBases).toContainEqual(
+        expect.objectContaining({
+          id: idToDelete,
+          name: createdLegalBasis.legal_name
+        })
+      )
+    })
+    test('Should return 401 if the user is unauthorized', async () => {
+      const idToDelete = [createdLegalBasis.id]
+
+      const response = await api
+        .delete('/api/legalBasis/delete/batch')
+        .send({ legalBasisIds: idToDelete })
+        .expect(401)
+        .expect('Content-Type', /application\/json/)
+
       expect(response.body.error).toMatch(/token missing or invalid/i)
     })
   })

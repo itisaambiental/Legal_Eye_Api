@@ -233,13 +233,10 @@ class LegalBasisRepository {
   /**
  * Retrieves multiple legal basis records by their IDs.
  * @param {Array<number>} legalBasisIds - An array of IDs of the legal bases to retrieve.
- * @returns {Promise<Array<LegalBasis>>} - An array of legal basis records.
+   * @returns {Promise<LegalBasis>} - An array of legal basis records.
  * @throws {ErrorUtils} - If an error occurs during retrieval.
  */
   static async findByIds (legalBasisIds) {
-    if (legalBasisIds.length === 0) {
-      return []
-    }
     const query = `
     SELECT 
       legal_basis.id, 
@@ -263,7 +260,7 @@ class LegalBasisRepository {
   `
     try {
       const [rows] = await pool.query(query, [legalBasisIds])
-      if (rows.length === 0) return null
+      if (rows.length === 0) return []
       const legalBasisMap = new Map()
       rows.forEach(row => {
         if (!legalBasisMap.has(row.id)) {
@@ -1249,19 +1246,19 @@ VALUES ${aspectsIds.map(() => '(?, ?, ?)').join(', ')}
  */
   static async deleteBatch (legalBasisIds) {
     const checkAspectsQuery = `
-    SELECT legal_basis_id, COUNT(*) AS aspectCount
-    FROM legal_basis_subject_aspect
-    WHERE legal_basis_id IN (?)
-    GROUP BY legal_basis_id
-  `
+      SELECT legal_basis_id, COUNT(*) AS aspectCount
+      FROM legal_basis_subject_aspect
+      WHERE legal_basis_id IN (?)
+      GROUP BY legal_basis_id
+    `
     const deleteAspectsQuery = `
-    DELETE FROM legal_basis_subject_aspect
-    WHERE legal_basis_id IN (?)
-  `
+      DELETE FROM legal_basis_subject_aspect
+      WHERE legal_basis_id IN (?)
+    `
     const deleteLegalBasisQuery = `
-    DELETE FROM legal_basis
-    WHERE id IN (?)
-  `
+      DELETE FROM legal_basis
+      WHERE id IN (?)
+    `
     const connection = await pool.getConnection()
     try {
       await connection.beginTransaction()
@@ -1269,7 +1266,7 @@ VALUES ${aspectsIds.map(() => '(?, ?, ?)').join(', ')}
       const aspectIdsToDelete = aspectCheckResults.map(row => row.legal_basis_id)
       if (aspectIdsToDelete.length > 0) {
         const [deletedAspectsResult] = await connection.query(deleteAspectsQuery, [aspectIdsToDelete])
-        if (deletedAspectsResult.affectedRows !== aspectIdsToDelete.length) {
+        if (deletedAspectsResult.affectedRows < aspectIdsToDelete.length) {
           await connection.rollback()
           throw new ErrorUtils(500, 'Failed to delete aspects for some legal basis IDs')
         }

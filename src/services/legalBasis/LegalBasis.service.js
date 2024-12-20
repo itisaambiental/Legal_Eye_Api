@@ -770,20 +770,20 @@ class LegalBasisService {
  */
   static async deleteBatch (legalBasisIds) {
     try {
-      const existingLegalBases = await LegalBasisRepository.findByIds(legalBasisIds)
-      if (existingLegalBases.length !== legalBasisIds.length) {
+      const legalBasis = await LegalBasisRepository.findByIds(legalBasisIds)
+      if (legalBasis.length !== legalBasisIds.length) {
         const notFoundIds = legalBasisIds.filter(
-          id => !existingLegalBases.some(legalBasis => legalBasis.id === id)
+          id => !legalBasis.some(legalBase => legalBase.id === id)
         )
         throw new ErrorUtils(404, 'Legal Basis not found for IDs', { notFoundIds })
       }
       const pendingJobs = []
-      for (const legalBasis of existingLegalBases) {
-        const { hasPendingJobs } = await WorkerService.hasPendingJobs(legalBasis.id)
+      for (const legalBase of legalBasis) {
+        const { hasPendingJobs } = await WorkerService.hasPendingJobs(legalBase.id)
         if (hasPendingJobs) {
           pendingJobs.push({
-            id: legalBasis.id,
-            name: legalBasis.legal_name
+            id: legalBase.id,
+            name: legalBase.legal_name
           })
         }
       }
@@ -792,9 +792,9 @@ class LegalBasisService {
           LegalBases: pendingJobs
         })
       }
-      for (const legalBasis of existingLegalBases) {
-        if (legalBasis.url) {
-          await FileService.deleteFile(legalBasis.url)
+      for (const legalBase of legalBasis) {
+        if (legalBase.url) {
+          await FileService.deleteFile(legalBase.url)
         }
       }
       const LegalBasisDeleted = await LegalBasisRepository.deleteBatch(legalBasisIds)
