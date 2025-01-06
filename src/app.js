@@ -10,6 +10,7 @@ import AspectsRoutes from './routes/Aspects.routes.js'
 import LegalBasisRoutes from './routes/LegalBasis.routes.js'
 import ArticlesRoutes from './routes/Articles.routes.js'
 import WorkerRoutes from './routes/Worker.routes.js'
+import { NODE_ENV } from './config/variables.config.js'
 /**
  * Configure the Express application.
  * @type {Express}
@@ -19,7 +20,15 @@ const app = express()
 /**
  * Middleware setup.
  */
-app.use(cors()) // Enable Cross-Origin Resource Sharing
+
+const corsOptions =
+  NODE_ENV === 'production'
+    ? {
+        origin: 'https://acmsuite.isaambiental.com'
+      }
+    : {}
+
+app.use(cors(corsOptions)) // Enable Cross-Origin Resource Sharing
 app.use(express.json()) // Parse incoming JSON requests
 
 /**

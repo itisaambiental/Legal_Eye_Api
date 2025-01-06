@@ -327,7 +327,7 @@ class UserService {
         } else {
           throw new ErrorUtils(500, 'Failed to upload profile picture')
         }
-      } else if (profilePicture === undefined && parsedUser.removePicture) {
+      } else if (!profilePicture && parsedUser.removePicture) {
         if (currentUser.profile_picture) {
           await FileService.deleteFile(currentUser.profile_picture)
         }

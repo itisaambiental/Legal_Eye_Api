@@ -34,8 +34,7 @@ articlesQueue.process(async (job, done) => {
       document
     })
     if (!success) {
-      console.error('Document Processing Error', error)
-      return done(new ErrorUtils(500, 'Document Processing Error'))
+      return done(new ErrorUtils(500, 'Document Processing Error', error))
     }
     const extractor = ArticleExtractorFactory.getExtractor(
       legalBase.classification,

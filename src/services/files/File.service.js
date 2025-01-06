@@ -34,8 +34,7 @@ class FileService {
       const response = await client.send(command)
       return { response, uniqueFileName }
     } catch (error) {
-      console.error('Error uploading file:', error.message)
-      throw new ErrorUtils(500, 'Error uploading file')
+      throw new ErrorUtils(500, 'Error uploading file', error.message)
     }
   }
 
@@ -57,8 +56,7 @@ class FileService {
       const presignedUrl = await getSignedUrl(client, command, { expiresIn: urlExpiration })
       return presignedUrl
     } catch (error) {
-      console.error('Error generating presigned URL:', error.message)
-      throw new ErrorUtils(500, 'Error generating presigned URL')
+      throw new ErrorUtils(500, 'Error generating presigned URL', error.message)
     }
   }
 
@@ -87,8 +85,7 @@ class FileService {
       const buffer = await streamToBuffer(Body)
       return { buffer, mimetype: ContentType }
     } catch (error) {
-      console.error('Error fetching file content:', error.message)
-      throw new ErrorUtils(500, 'Error fetching file content')
+      throw new ErrorUtils(500, 'Error fetching file content', error.message)
     }
   }
 
@@ -108,8 +105,7 @@ class FileService {
       const response = await client.send(command)
       return { response }
     } catch (error) {
-      console.error('Error deleting file:', error.message)
-      throw new ErrorUtils(500, 'Error deleting file')
+      throw new ErrorUtils(500, 'Error deleting file', error.message)
     }
   }
 }

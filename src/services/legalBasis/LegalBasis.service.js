@@ -644,9 +644,7 @@ class LegalBasisService {
  * @param {string} [data.extractArticles] - The flag to determine whether to extract articles from the document.
  * @param {string} [data.removeDocument] - The flag to determine whether the document should be deleted.
  * @param {Object} [document] - The new document to process (optional).
- * @returns {Promise<Object>} - An object containing the update `legalBasis` and the optional `jobId` (which may be null).
- * @property {Object} legalBasis - The created legal basis object.
- * @property {string|null} jobId - The job ID if a job was created, or `null` if no job was created.
+ * @returns {Promise<Object>} - An object containing the updated `legalBasis` and the optional `jobId` (which may be null).
  * @throws {ErrorUtils} - If an error occurs during the update validation or processing.
  */
   static async updateById (legalBasisId, data, document) {
@@ -676,11 +674,13 @@ class LegalBasisService {
       if (parsedData.removeDocument && hasPendingJobs) {
         throw new ErrorUtils(409, 'The document cannot be removed because there are pending jobs for this Legal Basis')
       }
-      if (parsedData.extractArticles && !document) {
-        throw new ErrorUtils(400, 'A document must be provided if extractArticles is true')
-      }
-      if (document && parsedData.extractArticles && hasPendingJobs) {
-        throw new ErrorUtils(409, 'Articles cannot be extracted because there is already a process that does so.')
+      if (parsedData.extractArticles) {
+        if (!document && !existingLegalBasis.url) {
+          throw new ErrorUtils(400, 'A document must be provided if extractArticles is true and no existing document is associated')
+        }
+        if (hasPendingJobs) {
+          throw new ErrorUtils(409, 'Articles cannot be extracted because there is already a process that does so')
+        }
       }
       let documentKey = existingLegalBasis.url
       if (document && !parsedData.removeDocument) {
@@ -712,16 +712,13 @@ class LegalBasisService {
       if (documentKey) {
         documentUrl = await FileService.getFile(documentKey)
         if (parsedData.extractArticles) {
-          const job = await articlesQueue.add({
-            legalBasisId: updatedLegalBasis.id
-          })
+          const job = await articlesQueue.add({ legalBasisId: updatedLegalBasis.id })
           jobId = job.id
         }
       }
-      let formattedLastReform = null
-      if (updatedLegalBasis.lastReform) {
-        formattedLastReform = format(new Date(updatedLegalBasis.lastReform), 'dd-MM-yyyy', { locale: es })
-      }
+      const formattedLastReform = updatedLegalBasis.lastReform
+        ? format(new Date(updatedLegalBasis.lastReform), 'dd-MM-yyyy', { locale: es })
+        : null
       const { lastReform, ...legalBases } = updatedLegalBasis
       return {
         jobId,

@@ -30,7 +30,6 @@ export async function getUserData (accessToken) {
     if (error.response && error.response.status === 401) {
       throw new ErrorUtils(401, 'Invalid token')
     }
-    console.error('Error in Microsoft API call:', error.message)
-    throw new ErrorUtils(500, 'Microsoft API call failed')
+    throw new ErrorUtils(500, 'Microsoft API call failed', error.message)
   }
 }

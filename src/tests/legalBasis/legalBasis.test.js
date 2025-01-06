@@ -1951,7 +1951,7 @@ describe('Get Legal Basis By Subject And Aspects', () => {
         .expect('Content-Type', /application\/json/)
 
       expect(response.body.message).toBe(
-        'A document must be provided if extractArticles is true'
+        'A document must be provided if extractArticles is true and no existing document is associated'
       )
     })
     test('Should return 409 if removeDocument is true and there are pending jobs for the legal basis', async () => {
@@ -2008,9 +2008,26 @@ describe('Get Legal Basis By Subject And Aspects', () => {
         .expect('Content-Type', /application\/json/)
 
       expect(response.body.message).toBe(
-        'Articles cannot be extracted because there is already a process that does so.'
+        'Articles cannot be extracted because there is already a process that does so'
       )
     })
+
+    test('Should return 401 if the user is unauthorized', async () => {
+      const updatedData = generateLegalBasisData({
+        legalName: 'Updated Legal Name',
+        subjectId: String(createdSubjectId),
+        aspectsIds: JSON.stringify(createdAspectIds)
+      })
+
+      const response = await api
+        .patch(`/api/legalBasis/${createdLegalBasis.id}`)
+        .send(updatedData)
+        .expect(401)
+        .expect('Content-Type', /application\/json/)
+
+      expect(response.body.error).toMatch(/token missing or invalid/i)
+    }
+    )
   })
 
   describe('Delete Legal Basis By ID', () => {
