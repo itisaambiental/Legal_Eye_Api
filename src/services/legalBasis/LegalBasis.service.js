@@ -733,7 +733,6 @@ class LegalBasisService {
         }
       }
     } catch (error) {
-      console.error(error)
       if (error instanceof z.ZodError) {
         const validationErrors = error.errors.map(e => ({
           field: e.path[0],

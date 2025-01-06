@@ -1976,6 +1976,41 @@ describe('Get Legal Basis By Subject And Aspects', () => {
         'The document cannot be removed because there are pending jobs for this Legal Basis'
       )
     })
+    test('Should return 409 if extractArticles is true, a document is provided, and there are pending jobs', async () => {
+      jest.spyOn(WorkerService, 'hasPendingJobs').mockResolvedValue({
+        hasPendingJobs: true,
+        jobId: '12345'
+      })
+      const document = Buffer.from('mock pdf content')
+      const updatedData = generateLegalBasisData({
+        legalName: 'Updated Legal Name with Document',
+        subjectId: String(createdSubjectId),
+        aspectsIds: JSON.stringify(createdAspectIds),
+        extractArticles: 'true'
+      })
+
+      const response = await api
+        .patch(`/api/legalBasis/${createdLegalBasis.id}`)
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .attach('document', document, {
+          filename: 'file.pdf',
+          contentType: 'application/pdf'
+        })
+        .field('legalName', updatedData.legalName)
+        .field('abbreviation', updatedData.abbreviation)
+        .field('subjectId', updatedData.subjectId)
+        .field('aspectsIds', updatedData.aspectsIds)
+        .field('classification', updatedData.classification)
+        .field('jurisdiction', updatedData.jurisdiction)
+        .field('lastReform', updatedData.lastReform)
+        .field('extractArticles', updatedData.extractArticles)
+        .expect(409)
+        .expect('Content-Type', /application\/json/)
+
+      expect(response.body.message).toBe(
+        'Articles cannot be extracted because there is already a process that does so.'
+      )
+    })
   })
 
   describe('Delete Legal Basis By ID', () => {
