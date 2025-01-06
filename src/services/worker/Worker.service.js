@@ -1,5 +1,5 @@
 import ErrorUtils from '../../utils/Error.js'
-import articlesQueue from '../../queues/articlesQueue.js'
+import articlesQueue from '../../workers/articlesWorker.js'
 import LegalBasisRepository from '../../repositories/LegalBasis.repository.js'
 /**
  * Service class for handling Article Jobs operations.
@@ -45,12 +45,13 @@ class WorkerService {
 
   /**
  * Checks if there are pending jobs in the articlesQueue for a given legalBasisId.
- * If jobs exist, returns their progress; otherwise, returns null.
+ * If jobs exist, returns the jobId; otherwise, returns null.
+ *
  * @param {number} legalBasisId - The ID of the legal basis to check.
- * @returns {Promise<{ hasPendingJobs: boolean, progress: number | null }>}
+ * @returns {Promise<{ hasPendingJobs: boolean, jobId: string | null }>}
  * An object containing:
  * - `hasPendingJobs`: Boolean indicating if there are pending jobs for the given legalBasisId.
- * - `progress`: The progress of the job if it exists, otherwise null.
+ * - `jobId`: The ID of the job if it exists, otherwise null.
  * @throws {ErrorUtils} - If an error occurs while checking the articlesQueue.
  */
   static async hasPendingJobs (legalBasisId) {
@@ -65,10 +66,9 @@ class WorkerService {
       )
       const job = jobMap.get(Number(legalBasisId))
       if (job) {
-        const progress = await job.progress()
-        return { hasPendingJobs: true, progress }
+        return { hasPendingJobs: true, jobId: job.id }
       }
-      return { hasPendingJobs: false, progress: null }
+      return { hasPendingJobs: false, jobId: null }
     } catch (error) {
       if (error instanceof ErrorUtils) {
         throw error

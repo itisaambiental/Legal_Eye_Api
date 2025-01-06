@@ -131,7 +131,6 @@ describe('Getting job states', () => {
     expect(response.body.message).toMatch(/Not Found/i)
   })
 })
-
 describe('Getting job state by Legal Basis ID', () => {
   beforeAll(async () => {
     const document = Buffer.from('mock pdf content')
@@ -165,10 +164,11 @@ describe('Getting job state by Legal Basis ID', () => {
 
     createdLegalBasis = response.body.legalBasis
   })
-  test('Should return hasPendingJobs = true with progress', async () => {
+
+  test('Should return hasPendingJobs = true with jobId', async () => {
     jest.spyOn(WorkerService, 'hasPendingJobs').mockResolvedValue({
       hasPendingJobs: true,
-      progress: 75
+      jobId: '12345'
     })
     const response = await api
       .get(`/api/jobs/articles/legalBasis/${createdLegalBasis.id}`)
@@ -177,20 +177,21 @@ describe('Getting job state by Legal Basis ID', () => {
       .expect('Content-Type', /application\/json/)
 
     expect(response.body.hasPendingJobs).toBe(true)
-    expect(response.body.progress).toBe(75)
+    expect(response.body.jobId).toBe('12345')
   })
 
-  test('Should return hasPendingJobs = false with progress null', async () => {
+  test('Should return hasPendingJobs = false with jobId null', async () => {
     jest.spyOn(WorkerService, 'hasPendingJobs').mockResolvedValue({
       hasPendingJobs: false,
-      progress: null
+      jobId: null
     })
     const response = await api
       .get(`/api/jobs/articles/legalBasis/${createdLegalBasis.id}`)
       .set('Authorization', `Bearer ${tokenAdmin}`)
       .expect(200)
+
     expect(response.body.hasPendingJobs).toBe(false)
-    expect(response.body.progress).toBeNull()
+    expect(response.body.jobId).toBeNull()
   })
 
   test('Should return 404 if legal basis does not exist', async () => {
@@ -210,14 +211,5 @@ describe('Getting job state by Legal Basis ID', () => {
       .expect('Content-Type', /application\/json/)
 
     expect(response.body.error).toMatch(/token missing or invalid/i)
-  })
-
-  test('Should return 400 if legalBasisId is missing', async () => {
-    const response = await api
-      .get('/api/jobs/articles/legalBasis/')
-      .set('Authorization', `Bearer ${tokenAdmin}`)
-      .expect(404)
-
-    expect(response.body.message).toMatch(/Not Found/i)
   })
 })

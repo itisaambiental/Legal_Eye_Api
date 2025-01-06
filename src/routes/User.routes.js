@@ -136,11 +136,11 @@ router.delete('/users/batch', UserExtractor, deleteUsersBatch)
 /**
  * Route to verify the JWT token.
  * @method GET
- * @path /user/verify/:token
+ * @path /user/verify/token
  * @description Verifies the JWT token for authentication.
  * @param {number} token - The JWT token to verify.
  */
-router.get('/user/verify/:token', verifyToken)
+router.post('/user/verify/token', verifyToken)
 
 /**
  * Route for password recovery.

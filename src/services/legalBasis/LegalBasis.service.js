@@ -80,14 +80,16 @@ class LegalBasisService {
       }
       let formattedLastReform = null
       if (createdLegalBasis.lastReform) {
-        formattedLastReform = format(new Date(createdLegalBasis.lastReform), 'dd-MM-yyyy')
+        formattedLastReform = format(new Date(createdLegalBasis.lastReform), 'dd-MM-yyyy', { locale: es })
       }
+      const { lastReform, ...legalBases } = createdLegalBasis
       return {
         jobId,
         legalBasis: {
-          ...createdLegalBasis,
+          ...legalBases,
           last_reform: formattedLastReform,
-          url: documentUrl
+          url: documentUrl,
+          fileKey: documentKey
         }
       }
     } catch (error) {
@@ -136,7 +138,8 @@ class LegalBasisService {
           municipality: legalBasis.municipality,
           last_reform: formattedLastReform,
           abbreviation: legalBasis.abbreviation,
-          url: documentUrl
+          url: documentUrl,
+          fileKey: legalBasis.url
         }
       }))
 
@@ -180,7 +183,8 @@ class LegalBasisService {
         municipality: legalBase.municipality,
         last_reform: formattedLastReform,
         abbreviation: legalBase.abbreviation,
-        url: documentUrl
+        url: documentUrl,
+        fileKey: legalBase.url
       }
     } catch (error) {
       if (error instanceof ErrorUtils) {
@@ -224,7 +228,8 @@ class LegalBasisService {
           municipality: legalBase.municipality,
           last_reform: formattedLastReform,
           abbreviation: legalBase.abbreviation,
-          url: documentUrl
+          url: documentUrl,
+          fileKey: legalBase.url
         }
       }))
       return legalBases
@@ -268,7 +273,8 @@ class LegalBasisService {
           municipality: legalBasis.municipality,
           last_reform: formattedLastReform,
           abbreviation: legalBasis.abbreviation,
-          url: documentUrl
+          url: documentUrl,
+          fileKey: legalBasis.url
         }
       }))
       return legalBases
@@ -312,7 +318,8 @@ class LegalBasisService {
           municipality: legalBasis.municipality,
           last_reform: formattedLastReform,
           abbreviation: legalBasis.abbreviation,
-          url: documentUrl
+          url: documentUrl,
+          fileKey: legalBasis.url
         }
       }))
 
@@ -357,7 +364,8 @@ class LegalBasisService {
           municipality: legalBasis.municipality,
           last_reform: formattedLastReform,
           abbreviation: legalBasis.abbreviation,
-          url: documentUrl
+          url: documentUrl,
+          fileKey: legalBasis.url
         }
       }))
       return legalBases
@@ -381,7 +389,7 @@ class LegalBasisService {
       if (!legalBasis) {
         return []
       }
-      const legalBasesWithDetails = await Promise.all(legalBasis.map(async (legalBasis) => {
+      const legalBases = await Promise.all(legalBasis.map(async (legalBasis) => {
         let documentUrl = null
         if (legalBasis.url) {
           documentUrl = await FileService.getFile(legalBasis.url)
@@ -401,11 +409,12 @@ class LegalBasisService {
           municipality: legalBasis.municipality,
           last_reform: formattedLastReform,
           abbreviation: legalBasis.abbreviation,
-          url: documentUrl
+          url: documentUrl,
+          fileKey: legalBasis.url
         }
       }))
 
-      return legalBasesWithDetails
+      return legalBases
     } catch (error) {
       if (error instanceof ErrorUtils) {
         throw error
@@ -427,7 +436,7 @@ class LegalBasisService {
       if (!legalBasis) {
         return []
       }
-      const legalBasesWithDetails = await Promise.all(legalBasis.map(async (legalBasis) => {
+      const legalBases = await Promise.all(legalBasis.map(async (legalBasis) => {
         let documentUrl = null
         if (legalBasis.url) {
           documentUrl = await FileService.getFile(legalBasis.url)
@@ -447,11 +456,12 @@ class LegalBasisService {
           municipality: legalBasis.municipality,
           last_reform: formattedLastReform,
           abbreviation: legalBasis.abbreviation,
-          url: documentUrl
+          url: documentUrl,
+          fileKey: legalBasis.url
         }
       }))
 
-      return legalBasesWithDetails
+      return legalBases
     } catch (error) {
       if (error instanceof ErrorUtils) {
         throw error
@@ -476,7 +486,7 @@ class LegalBasisService {
       if (!legalBasis) {
         return []
       }
-      const legalBasesWithDetails = await Promise.all(legalBasis.map(async (legalBasis) => {
+      const legalBases = await Promise.all(legalBasis.map(async (legalBasis) => {
         let documentUrl = null
         if (legalBasis.url) {
           documentUrl = await FileService.getFile(legalBasis.url)
@@ -496,10 +506,11 @@ class LegalBasisService {
           municipality: legalBasis.municipality,
           last_reform: formattedLastReform,
           abbreviation: legalBasis.abbreviation,
-          url: documentUrl
+          url: documentUrl,
+          fileKey: legalBasis.url
         }
       }))
-      return legalBasesWithDetails
+      return legalBases
     } catch (error) {
       if (error instanceof ErrorUtils) {
         throw error
@@ -551,7 +562,8 @@ class LegalBasisService {
           municipality: legalBasis.municipality,
           last_reform: formattedLastReform,
           abbreviation: legalBasis.abbreviation,
-          url: documentUrl
+          url: documentUrl,
+          fileKey: legalBasis.url
         }
       }))
 
@@ -601,7 +613,8 @@ class LegalBasisService {
             municipality: legalBasis.municipality,
             last_reform: formattedLastReform,
             abbreviation: legalBasis.abbreviation,
-            url: documentUrl
+            url: documentUrl,
+            fileKey: legalBasis.url
           }
         })
       )
@@ -631,7 +644,9 @@ class LegalBasisService {
  * @param {string} [data.extractArticles] - The flag to determine whether to extract articles from the document.
  * @param {string} [data.removeDocument] - The flag to determine whether the document should be deleted.
  * @param {Object} [document] - The new document to process (optional).
- * @returns {Promise<Object>} - The updated LegalBasis object and any related job information.
+ * @returns {Promise<Object>} - An object containing the update `legalBasis` and the optional `jobId` (which may be null).
+ * @property {Object} legalBasis - The created legal basis object.
+ * @property {string|null} jobId - The job ID if a job was created, or `null` if no job was created.
  * @throws {ErrorUtils} - If an error occurs during the update validation or processing.
  */
   static async updateById (legalBasisId, data, document) {
@@ -705,17 +720,20 @@ class LegalBasisService {
       }
       let formattedLastReform = null
       if (updatedLegalBasis.lastReform) {
-        formattedLastReform = format(new Date(updatedLegalBasis.lastReform), 'dd-MM-yyyy')
+        formattedLastReform = format(new Date(updatedLegalBasis.lastReform), 'dd-MM-yyyy', { locale: es })
       }
+      const { lastReform, ...legalBases } = updatedLegalBasis
       return {
         jobId,
         legalBasis: {
-          ...updatedLegalBasis,
+          ...legalBases,
           last_reform: formattedLastReform,
-          url: documentUrl
+          url: documentUrl,
+          fileKey: documentKey
         }
       }
     } catch (error) {
+      console.error(error)
       if (error instanceof z.ZodError) {
         const validationErrors = error.errors.map(e => ({
           field: e.path[0],

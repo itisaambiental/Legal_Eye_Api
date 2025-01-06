@@ -40,7 +40,7 @@ export const getStatusJob = async (req, res) => {
  * Checks if there are pending jobs for a given legalBasisId.
  * @param {Object} req - Request object, expects legalBasisId in req.params and userId in req.
  * @param {Object} res - Response object.
- * @returns {Object} - Response with job status and progress or error details.
+ * @returns {Object} - Response with job status and jobId or error details.
  */
 export const checkLegalBasisJobs = async (req, res) => {
   const { userId } = req
@@ -54,8 +54,8 @@ export const checkLegalBasisJobs = async (req, res) => {
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-    const { hasPendingJobs, progress } = await WorkerService.hasPendingJobs(legalBasisId)
-    return res.status(200).json({ hasPendingJobs, progress })
+    const { hasPendingJobs, jobId } = await WorkerService.hasPendingJobs(legalBasisId)
+    return res.status(200).json({ hasPendingJobs, jobId })
   } catch (error) {
     if (error instanceof ErrorUtils) {
       return res.status(error.status).json({

@@ -54,7 +54,9 @@ beforeAll(async () => {
     createdAspectIds.push(aspect.id)
   }
 })
-
+afterEach(() => {
+  jest.restoreAllMocks()
+})
 describe('Create a legal base', () => {
   beforeEach(async () => {
     await LegalBasisRepository.deleteAll()
@@ -81,7 +83,8 @@ describe('Create a legal base', () => {
       state: null,
       municipality: null,
       last_reform: legalBasisData.lastReform,
-      url: null
+      url: null,
+      fileKey: null
     })
     expect(legalBasis.aspects).toEqual(
       expect.arrayContaining(
@@ -98,7 +101,7 @@ describe('Create a legal base', () => {
 
   test('Should successfully create a legal basis with a valid document and return a jobId', async () => {
     const document = Buffer.from('mock pdf content')
-    const legalBasisData = {
+    const legalBasisData = generateLegalBasisData({
       legalName: 'Normativa con Documento',
       abbreviation: 'DocTest',
       subjectId: String(createdSubjectId),
@@ -107,8 +110,7 @@ describe('Create a legal base', () => {
       jurisdiction: 'Federal',
       lastReform: '01-01-2024',
       extractArticles: 'true'
-    }
-
+    })
     const response = await api
       .post('/api/legalBasis')
       .set('Authorization', `Bearer ${tokenAdmin}`)
@@ -140,7 +142,8 @@ describe('Create a legal base', () => {
       state: null,
       municipality: null,
       last_reform: legalBasisData.lastReform,
-      url: expect.stringContaining('file.pdf')
+      url: expect.stringContaining('file.pdf'),
+      fileKey: expect.stringContaining('file.pdf')
     })
     expect(legalBasis.aspects).toEqual(
       expect.arrayContaining(
@@ -187,7 +190,7 @@ describe('Create a legal base', () => {
       .send(LegalBasisData)
       .expect(404)
 
-    expect(response.body.message).toBe('Invalid Subject ID')
+    expect(response.body.message).toMatch(/Invalid Subject ID/i)
   })
   test('Should return 404 if Aspect IDs are invalid', async () => {
     const invalidAspectIds = ['-1', '-2']
@@ -201,7 +204,8 @@ describe('Create a legal base', () => {
       .set('Authorization', `Bearer ${tokenAdmin}`)
       .send(LegalBasisData)
       .expect(404)
-    expect(response.body.message).toBe('Invalid Aspects IDs')
+
+    expect(response.body.message).toMatch(/Invalid Aspects IDs/i)
     expect(response.body.errors).toEqual(
       expect.objectContaining({
         notFoundIds: expect.arrayContaining(invalidAspectIds)
@@ -591,7 +595,6 @@ describe('Create a legal base', () => {
         ])
       )
     })
-
     test('Should return 400 if lastReform date format is invalid', async () => {
       const legalBasisData = generateLegalBasisData({
         subjectId: String(createdSubjectId),
@@ -722,6 +725,7 @@ describe('Get All Legal Basis', () => {
       municipality: createdLegalBasis.municipality,
       last_reform: createdLegalBasis.last_reform,
       url: createdLegalBasis.url,
+      fileKey: createdLegalBasis.fileKey,
       subject: expect.objectContaining({
         subject_id: createdSubjectId,
         subject_name: subjectName
@@ -782,6 +786,7 @@ describe('Get Legal Basis By ID', () => {
       municipality: createdLegalBasis.municipality,
       last_reform: createdLegalBasis.last_reform,
       url: createdLegalBasis.url,
+      fileKey: createdLegalBasis.fileKey,
       subject: expect.objectContaining({
         subject_id: createdSubjectId,
         subject_name: subjectName
@@ -855,6 +860,7 @@ describe('Get Legal Basis By Name', () => {
       municipality: createdLegalBasis.municipality,
       last_reform: createdLegalBasis.last_reform,
       url: createdLegalBasis.url,
+      fileKey: createdLegalBasis.fileKey,
       subject: expect.objectContaining({
         subject_id: createdSubjectId,
         subject_name: subjectName
@@ -933,6 +939,7 @@ describe('Get Legal Basis By Abbreviation', () => {
       municipality: createdLegalBasis.municipality,
       last_reform: createdLegalBasis.last_reform,
       url: createdLegalBasis.url,
+      fileKey: createdLegalBasis.fileKey,
       subject: expect.objectContaining({
         subject_id: createdSubjectId,
         subject_name: subjectName
@@ -1010,6 +1017,7 @@ describe('Get Legal Basis By Classification', () => {
       municipality: createdLegalBasis.municipality,
       last_reform: createdLegalBasis.last_reform,
       url: createdLegalBasis.url,
+      fileKey: createdLegalBasis.fileKey,
       subject: expect.objectContaining({
         subject_id: createdSubjectId,
         subject_name: subjectName
@@ -1087,6 +1095,7 @@ describe('Get Legal Basis By Jurisdiction', () => {
       municipality: createdLegalBasis.municipality,
       last_reform: createdLegalBasis.last_reform,
       url: createdLegalBasis.url,
+      fileKey: createdLegalBasis.fileKey,
       subject: expect.objectContaining({
         subject_id: createdSubjectId,
         subject_name: subjectName
@@ -1166,6 +1175,7 @@ describe('Get Legal Basis By State', () => {
       municipality: createdLegalBasis.municipality,
       last_reform: createdLegalBasis.last_reform,
       url: createdLegalBasis.url,
+      fileKey: createdLegalBasis.fileKey,
       subject: expect.objectContaining({
         subject_id: createdSubjectId,
         subject_name: subjectName
@@ -1247,6 +1257,7 @@ describe('Get Legal Basis By State and Municipalities', () => {
       municipality: createdLegalBasis.municipality,
       last_reform: createdLegalBasis.last_reform,
       url: createdLegalBasis.url,
+      fileKey: createdLegalBasis.fileKey,
       subject: expect.objectContaining({
         subject_id: createdSubjectId,
         subject_name: subjectName
@@ -1362,6 +1373,7 @@ describe('Get Legal Basis By Subject', () => {
       municipality: createdLegalBasis.municipality,
       last_reform: createdLegalBasis.last_reform,
       url: createdLegalBasis.url,
+      fileKey: createdLegalBasis.fileKey,
       subject: expect.objectContaining({
         subject_id: createdSubjectId,
         subject_name: subjectName
@@ -1460,6 +1472,7 @@ describe('Get Legal Basis By Subject And Aspects', () => {
       municipality: createdLegalBasis.municipality,
       last_reform: createdLegalBasis.last_reform,
       url: createdLegalBasis.url,
+      fileKey: createdLegalBasis.fileKey,
       subject: expect.objectContaining({
         subject_id: createdSubjectId,
         subject_name: subjectName
@@ -1661,7 +1674,8 @@ describe('Get Legal Basis By Subject And Aspects', () => {
         state: createdLegalBasis.state,
         municipality: createdLegalBasis.municipality,
         last_reform: createdLegalBasis.last_reform,
-        url: createdLegalBasis.url
+        url: createdLegalBasis.url,
+        fileKey: createdLegalBasis.fileKey
       })
     })
 
@@ -1676,11 +1690,298 @@ describe('Get Legal Basis By Subject And Aspects', () => {
     })
   })
 
-  describe('Delete Legal Basis By ID', () => {
+  describe('Update a Legal Basis', () => {
     let createdLegalBasis
     beforeEach(async () => {
       await LegalBasisRepository.deleteAll()
 
+      const legalBasisData = generateLegalBasisData({
+        subjectId: String(createdSubjectId),
+        aspectsIds: JSON.stringify(createdAspectIds)
+      })
+      const response = await api
+        .post('/api/legalBasis')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send(legalBasisData)
+        .expect(201)
+        .expect('Content-Type', /application\/json/)
+
+      createdLegalBasis = response.body.legalBasis
+    })
+
+    test('Should successfully update a legal basis without a document', async () => {
+      const updatedData = generateLegalBasisData({
+        legalName: 'Updated Legal Name',
+        subjectId: String(createdSubjectId),
+        aspectsIds: JSON.stringify(createdAspectIds)
+      })
+
+      const updateResponse = await api
+        .patch(`/api/legalBasis/${createdLegalBasis.id}`)
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send(updatedData)
+        .expect(200)
+        .expect('Content-Type', /application\/json/)
+
+      const { jobId, legalBasis: updatedLegalBasis } = updateResponse.body
+      expect(jobId).toBeNull()
+
+      expect(updatedLegalBasis).toMatchObject({
+        ...createdLegalBasis,
+        legal_name: updatedData.legalName,
+        abbreviation: updatedData.abbreviation,
+        classification: updatedData.classification,
+        jurisdiction: updatedData.jurisdiction,
+        last_reform: updatedData.lastReform
+      })
+
+      expect(updatedLegalBasis.aspects).toEqual(
+        expect.arrayContaining(
+          createdAspectIds.map((aspectId) =>
+            expect.objectContaining({ aspect_id: aspectId })
+          )
+        )
+      )
+      expect(updatedLegalBasis.subject).toMatchObject({
+        subject_id: createdSubjectId,
+        subject_name: subjectName
+      })
+      const getResponse = await api
+        .get(`/api/legalBasis/${createdLegalBasis.id}`)
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .expect(200)
+        .expect('Content-Type', /application\/json/)
+
+      const { legalBasis: retrievedLegalBasis } = getResponse.body
+      expect(retrievedLegalBasis).toMatchObject({
+        id: createdLegalBasis.id,
+        legal_name: updatedLegalBasis.legal_name,
+        classification: updatedLegalBasis.classification,
+        jurisdiction: updatedLegalBasis.jurisdiction,
+        abbreviation: updatedLegalBasis.abbreviation,
+        state: updatedLegalBasis.state,
+        municipality: updatedLegalBasis.municipality,
+        last_reform: updatedLegalBasis.last_reform,
+        url: updatedLegalBasis.url,
+        fileKey: updatedLegalBasis.fileKey,
+        subject: expect.objectContaining({
+          subject_id: createdSubjectId,
+          subject_name: subjectName
+        }),
+        aspects: expect.arrayContaining(
+          createdAspectIds.map((aspectId) =>
+            expect.objectContaining({ aspect_id: aspectId })
+          )
+        )
+      })
+    })
+    test('Should successfully update a legal basis with a document and return a jobId', async () => {
+      const document = Buffer.from('mock pdf content')
+      const updatedData = generateLegalBasisData({
+        legalName: 'Updated Legal Name with Document',
+        subjectId: String(createdSubjectId),
+        aspectsIds: JSON.stringify(createdAspectIds),
+        extractArticles: 'true'
+      })
+
+      const updateResponse = await api
+        .patch(`/api/legalBasis/${createdLegalBasis.id}`)
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .attach('document', document, {
+          filename: 'file.pdf',
+          contentType: 'application/pdf'
+        })
+        .field('legalName', updatedData.legalName)
+        .field('abbreviation', updatedData.abbreviation)
+        .field('subjectId', updatedData.subjectId)
+        .field('aspectsIds', updatedData.aspectsIds)
+        .field('classification', updatedData.classification)
+        .field('jurisdiction', updatedData.jurisdiction)
+        .field('lastReform', updatedData.lastReform)
+        .field('extractArticles', updatedData.extractArticles)
+        .expect(200)
+        .expect('Content-Type', /application\/json/)
+
+      const { jobId, legalBasis: updatedLegalBasis } = updateResponse.body
+      expect(jobId).not.toBeNull()
+      expect(typeof jobId).toBe('string')
+      expect(updatedLegalBasis).toMatchObject({
+        ...createdLegalBasis,
+        legal_name: updatedData.legalName,
+        abbreviation: updatedData.abbreviation,
+        classification: updatedData.classification,
+        jurisdiction: updatedData.jurisdiction,
+        last_reform: updatedData.lastReform,
+        url: expect.stringContaining('file.pdf'),
+        fileKey: expect.stringContaining('file.pdf')
+      })
+      expect(updatedLegalBasis.aspects).toEqual(
+        expect.arrayContaining(
+          createdAspectIds.map((aspectId) =>
+            expect.objectContaining({ aspect_id: aspectId })
+          )
+        )
+      )
+      expect(updatedLegalBasis.subject).toMatchObject({
+        subject_id: createdSubjectId,
+        subject_name: subjectName
+      })
+    })
+    test('Should return 404 when trying to update a non-existing legal basis', async () => {
+      const nonExistentId = -1
+      const updatedData = generateLegalBasisData({
+        legalName: 'Non-Existent',
+        subjectId: String(createdSubjectId),
+        aspectsIds: JSON.stringify(createdAspectIds)
+      })
+
+      const response = await api
+        .patch(`/api/legalBasis/${nonExistentId}`)
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send(updatedData)
+        .expect(404)
+        .expect('Content-Type', /application\/json/)
+
+      expect(response.body.message).toMatch(/LegalBasis not found/i)
+    })
+
+    test('Should return 409 when trying to update a legal basis with a duplicate name', async () => {
+      const LegalBasisData = generateLegalBasisData({
+        legalName: 'Duplicate Name',
+        subjectId: String(createdSubjectId),
+        aspectsIds: JSON.stringify(createdAspectIds)
+      })
+
+      await api
+        .post('/api/legalBasis')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send(LegalBasisData)
+        .expect(201)
+        .expect('Content-Type', /application\/json/)
+
+      const response = await api
+        .patch(`/api/legalBasis/${createdLegalBasis.id}`)
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send(LegalBasisData)
+        .expect(409)
+        .expect('Content-Type', /application\/json/)
+
+      expect(response.body.message).toMatch(/LegalBasis already exists/i)
+    })
+    test('Should return 404 if Subject ID is invalid', async () => {
+      const updatedData = generateLegalBasisData({
+        legalName: 'Updated Legal Name',
+        subjectId: '-1',
+        aspectsIds: JSON.stringify(createdAspectIds)
+      })
+      const response = await api
+        .patch(`/api/legalBasis/${createdLegalBasis.id}`)
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send(updatedData)
+        .expect(404)
+        .expect('Content-Type', /application\/json/)
+      expect(response.body.message).toMatch(/Invalid Subject ID/i)
+    })
+    test('Should return 404 if Aspect IDs are invalid when updating a legal basis', async () => {
+      const invalidAspectIds = ['-1', '-2']
+      const updatedData = generateLegalBasisData({
+        legalName: 'Updated Legal Name',
+        subjectId: String(createdSubjectId),
+        aspectsIds: JSON.stringify(invalidAspectIds)
+      })
+
+      const response = await api
+        .patch(`/api/legalBasis/${createdLegalBasis.id}`)
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send(updatedData)
+        .expect(404)
+        .expect('Content-Type', /application\/json/)
+
+      expect(response.body.message).toMatch(/Invalid Aspects IDs/i)
+      expect(response.body.errors).toEqual(
+        expect.objectContaining({
+          notFoundIds: expect.arrayContaining(invalidAspectIds)
+        })
+      )
+    })
+    test('Should return 400 if removeDocument is true and a document is provided', async () => {
+      const document = Buffer.from('mock pdf content')
+      const updatedData = generateLegalBasisData({
+        legalName: 'Updated Legal Name',
+        subjectId: String(createdSubjectId),
+        aspectsIds: JSON.stringify(createdAspectIds),
+        removeDocument: 'true'
+      })
+
+      const response = await api
+        .patch(`/api/legalBasis/${createdLegalBasis.id}`)
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .attach('document', document, {
+          filename: 'file.pdf',
+          contentType: 'application/pdf'
+        })
+        .field('legalName', updatedData.legalName)
+        .field('abbreviation', updatedData.abbreviation)
+        .field('subjectId', updatedData.subjectId)
+        .field('aspectsIds', updatedData.aspectsIds)
+        .field('classification', updatedData.classification)
+        .field('jurisdiction', updatedData.jurisdiction)
+        .field('lastReform', updatedData.lastReform)
+        .field('removeDocument', updatedData.removeDocument)
+        .field('extractArticles', updatedData.extractArticles)
+        .expect(400)
+        .expect('Content-Type', /application\/json/)
+
+      expect(response.body.message).toBe(
+        'Cannot provide a document if removeDocument is true'
+      )
+    })
+    test('Should return 400 if extractArticles is true and no document is provided', async () => {
+      const updatedData = generateLegalBasisData({
+        legalName: 'Updated Legal Name',
+        subjectId: String(createdSubjectId),
+        aspectsIds: JSON.stringify(createdAspectIds),
+        extractArticles: 'true'
+      })
+      const response = await api
+        .patch(`/api/legalBasis/${createdLegalBasis.id}`)
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send(updatedData)
+        .expect(400)
+        .expect('Content-Type', /application\/json/)
+
+      expect(response.body.message).toBe(
+        'A document must be provided if extractArticles is true'
+      )
+    })
+    test('Should return 409 if removeDocument is true and there are pending jobs for the legal basis', async () => {
+      jest.spyOn(WorkerService, 'hasPendingJobs').mockResolvedValue({
+        hasPendingJobs: true,
+        jobId: '12345'
+      })
+      const updatedData = generateLegalBasisData({
+        legalName: 'Updated Legal Name',
+        subjectId: String(createdSubjectId),
+        aspectsIds: JSON.stringify(createdAspectIds),
+        removeDocument: 'true'
+      })
+
+      const response = await api
+        .patch(`/api/legalBasis/${createdLegalBasis.id}`)
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send(updatedData)
+        .expect(409)
+        .expect('Content-Type', /application\/json/)
+      expect(response.body.message).toBe(
+        'The document cannot be removed because there are pending jobs for this Legal Basis'
+      )
+    })
+  })
+
+  describe('Delete Legal Basis By ID', () => {
+    let createdLegalBasis
+    beforeEach(async () => {
+      await LegalBasisRepository.deleteAll()
       const legalBasisData = generateLegalBasisData({
         subjectId: String(createdSubjectId),
         aspectsIds: JSON.stringify(createdAspectIds)

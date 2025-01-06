@@ -24,12 +24,16 @@ router.get('/jobs/articles/:id', UserExtractor, getStatusJob)
  * Route to check for jobs for a legal basis.
  * @method GET
  * @path /jobs/articles/legalBasis/:legalBasisId
- * @description Checks if there are pending jobs for the specified legalBasisId and retrieves their progress if applicable.
+ * @description Checks if there are pending jobs for the specified legalBasisId.
+ * Returns whether a job exists and its jobId if applicable.
+ *
  * @param {string} legalBasisId - The ID of the legal basis to check for pending jobs.
+ *
  * @middlewares UserExtractor - Middleware to ensure that the user is authorized and extracted from the request.
+ *
  * @returns {Object} - A JSON response containing:
  * - `hasPendingJobs`: Boolean indicating if there are pending jobs.
- * - `progress`: Number representing the job's progress, or null if no jobs exist.
+ * - `jobId`: String representing the job's ID if a job exists, or null if no jobs exist.
  */
 router.get('/jobs/articles/legalBasis/:legalBasisId', UserExtractor, checkLegalBasisJobs)
 

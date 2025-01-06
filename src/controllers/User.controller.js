@@ -441,17 +441,14 @@ export const verifyCode = async (req, res) => {
  * @param {Object} res - Response object.
  */
 export const verifyToken = async (req, res) => {
-  const { token } = req.params
-
+  const { token } = req.body
   if (!token) {
     return res.status(400).send({ error: 'Token is required' })
   }
-
   try {
     jsonwebtoken.verify(token, JWT_SECRET)
-
     return res.status(200).send({ valid: true })
   } catch (error) {
-    return res.status(401).send({ valid: false })
+    return res.status(200).send({ valid: false })
   }
 }
