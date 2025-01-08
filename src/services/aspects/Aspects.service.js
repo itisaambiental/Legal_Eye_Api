@@ -21,10 +21,10 @@ class AspectsService {
         throw new ErrorUtils(404, 'Subject not found')
       }
       if (typeof aspectName !== 'string') {
-        throw new ErrorUtils(400, 'The aspect name must be a string.')
+        throw new ErrorUtils(400, 'The aspect name must be a string')
       }
       if (aspectName.length > 255) {
-        throw new ErrorUtils(400, 'The aspect name cannot exceed 255 characters.')
+        throw new ErrorUtils(400, 'The aspect name cannot exceed 255 characters')
       }
       const aspectExists = await AspectsRepository.findByNameAndSubjectId(aspectName, subjectId)
       if (aspectExists) {
@@ -105,10 +105,10 @@ class AspectsService {
         throw new ErrorUtils(404, 'Aspect not found')
       }
       if (typeof aspectName !== 'string') {
-        throw new ErrorUtils(400, 'The aspect name must be a string.')
+        throw new ErrorUtils(400, 'The aspect name must be a string')
       }
       if (aspectName.length > 255) {
-        throw new ErrorUtils(400, 'The aspect name cannot exceed 255 characters.')
+        throw new ErrorUtils(400, 'The aspect name cannot exceed 255 characters')
       }
       if (currentAspect.aspect_name === aspectName) {
         return {

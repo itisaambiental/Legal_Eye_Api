@@ -18,13 +18,11 @@ import { JWT_SECRET } from '../config/variables.config.js'
  */
 export const loginUser = async (req, res) => {
   const { gmail, password } = req.body
-
   if (!gmail || !password) {
     return res.status(400).json({
       message: 'Missing required fields: gmail, password'
     })
   }
-
   try {
     const { token } = await UserService.loginUser(req.body)
     return res.status(200).json({
@@ -392,7 +390,6 @@ export const resetPassword = async (req, res) => {
 
   try {
     await UserService.requestPasswordReset(gmail)
-
     return res.sendStatus(200)
   } catch (error) {
     if (error instanceof ErrorUtils) {

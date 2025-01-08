@@ -523,15 +523,12 @@ class UserService {
   static async canAccessUser (requestingUserId, targetUserId) {
     try {
       const requestingUser = await UserRepository.findById(requestingUserId)
-
       if (!requestingUser) {
         return false
       }
-
       if (requestingUser.roleId === 1 || requestingUserId === parseInt(targetUserId, 10)) {
         return true
       }
-
       return false
     } catch (error) {
       if (error instanceof ErrorUtils) {
@@ -576,18 +573,15 @@ class UserService {
   static async verifyPasswordResetCode (gmail, code) {
     try {
       const verification = await UserRepository.getVerificationCode(gmail, code)
-
       if (!verification) {
         return false
       }
-
       const { expiresAt } = verification
       const currentTime = new Date()
 
       if (currentTime > expiresAt) {
         return false
       }
-
       const password = generatePassword()
       const salt = await bcrypt.genSalt()
       const hashedPassword = await bcrypt.hash(password, salt)
@@ -597,10 +591,8 @@ class UserService {
       if (!userUpdated) {
         throw new ErrorUtils(500, 'Failed to update user password')
       }
-
       const emailData = EmailService.generatePasswordResetEmailSend(gmail, password)
       await emailQueue.add(emailData)
-
       return true
     } catch (error) {
       if (error instanceof ErrorUtils) {
