@@ -4,7 +4,7 @@ import UserRepository from '../../repositories/User.repository.js'
 import SubjectsRepository from '../../repositories/Subject.repository.js'
 import LegalBasisRepository from '../../repositories/LegalBasis.repository.js'
 import AspectsRepository from '../../repositories/Aspects.repository.js'
-import WorkerService from '../../services/worker/Worker.service.js'
+import extractArticles from '../../services/extractArticles/extractArticles.service.js'
 
 import {
   ADMIN_PASSWORD_TEST,
@@ -74,7 +74,7 @@ describe('Getting job states', () => {
   test.each(jobStates)(
     'Should return correct response for job state: $state',
     async ({ message, progress, error }) => {
-      jest.spyOn(WorkerService, 'getStatusJob').mockResolvedValue({
+      jest.spyOn(extractArticles, 'getStatusJob').mockResolvedValue({
         status: 200,
         data: {
           message,
@@ -99,7 +99,7 @@ describe('Getting job states', () => {
   )
 
   test('Should return 404 when job does not exist', async () => {
-    jest.spyOn(WorkerService, 'getStatusJob').mockResolvedValue({
+    jest.spyOn(extractArticles, 'getStatusJob').mockResolvedValue({
       status: 404,
       data: { message: 'Job not found' }
     })
@@ -166,7 +166,7 @@ describe('Getting job state by Legal Basis ID', () => {
   })
 
   test('Should return hasPendingJobs = true with jobId', async () => {
-    jest.spyOn(WorkerService, 'hasPendingJobs').mockResolvedValue({
+    jest.spyOn(extractArticles, 'hasPendingJobs').mockResolvedValue({
       hasPendingJobs: true,
       jobId: '12345'
     })
@@ -181,7 +181,7 @@ describe('Getting job state by Legal Basis ID', () => {
   })
 
   test('Should return hasPendingJobs = false with jobId null', async () => {
-    jest.spyOn(WorkerService, 'hasPendingJobs').mockResolvedValue({
+    jest.spyOn(extractArticles, 'hasPendingJobs').mockResolvedValue({
       hasPendingJobs: false,
       jobId: null
     })

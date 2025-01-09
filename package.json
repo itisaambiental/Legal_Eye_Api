@@ -10,7 +10,7 @@
     "test:subjects": "NODE_ENV=test jest --verbose tests/subjects/subjects.test.js",
     "test:aspects": "NODE_ENV=test jest  --silent  --verbose  tests/aspects/aspects.test.js",
     "test:legalBasis": "NODE_ENV=test jest --verbose tests/legalBasis/legalBasis.test.js",
-    "test:worker": "NODE_ENV=test jest --verbose tests/worker/worker.test.js",
+    "test:extractArticles": "NODE_ENV=test jest --verbose tests/extractArticles/extractArticles.test.js",
     "test:users": "NODE_ENV=test jest --verbose tests/users/users.test.js",
     "test:watch": "npm run test -- --watch"
   },

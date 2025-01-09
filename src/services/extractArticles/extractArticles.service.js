@@ -2,9 +2,9 @@ import ErrorUtils from '../../utils/Error.js'
 import articlesQueue from '../../workers/articlesWorker.js'
 import LegalBasisRepository from '../../repositories/LegalBasis.repository.js'
 /**
- * Service class for handling Article Jobs operations.
+ * Service class for handling extract Articles Jobs operations.
  */
-class WorkerService {
+class extractArticles {
 /**
  * Fetch the job from the queue and return the job state.
  * @param {string} jobId - The job ID.
@@ -78,4 +78,4 @@ class WorkerService {
   }
 }
 
-export default WorkerService
+export default extractArticles

@@ -54,7 +54,6 @@ class UserService {
           throw new ErrorUtils(500, 'Failed to upload profile picture')
         }
       }
-
       const userId = await UserRepository.create({
         name: parsedUser.name,
         password: hashedPassword,
@@ -67,10 +66,8 @@ class UserService {
       if (profilePictureKey) {
         profilePictureUrl = await FileService.getFile(profilePictureKey)
       }
-
       const emailData = EmailService.generateWelcomeEmail(parsedUser, password)
       await emailQueue.add(emailData)
-
       return {
         id: userId,
         name: parsedUser.name,

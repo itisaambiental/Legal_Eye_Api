@@ -1,10 +1,10 @@
 import ErrorUtils from '../utils/Error.js'
 import UserService from '../services/users/User.service.js'
-import WorkerService from '../services/worker/Worker.service.js'
+import extractArticles from '../services/extractArticles/extractArticles.service.js'
 
 /**
- * Controller for Articles Jobs operations.
- * @module ArticlesWorkerController
+ * Controller for extract Articles Jobs operations.
+ * @module extractArticlesController
  */
 
 /**
@@ -24,7 +24,7 @@ export const getStatusJob = async (req, res) => {
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-    const jobStatus = await WorkerService.getStatusJob(id)
+    const jobStatus = await extractArticles.getStatusJob(id)
     return res.status(jobStatus.status).json(jobStatus.data)
   } catch (error) {
     if (error instanceof ErrorUtils) {
@@ -54,7 +54,7 @@ export const checkLegalBasisJobs = async (req, res) => {
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-    const { hasPendingJobs, jobId } = await WorkerService.hasPendingJobs(legalBasisId)
+    const { hasPendingJobs, jobId } = await extractArticles.hasPendingJobs(legalBasisId)
     return res.status(200).json({ hasPendingJobs, jobId })
   } catch (error) {
     if (error instanceof ErrorUtils) {

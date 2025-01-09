@@ -9,7 +9,7 @@ import SubjectsRoutes from './routes/Subjects.routes.js'
 import AspectsRoutes from './routes/Aspects.routes.js'
 import LegalBasisRoutes from './routes/LegalBasis.routes.js'
 import ArticlesRoutes from './routes/Articles.routes.js'
-import WorkerRoutes from './routes/Worker.routes.js'
+import extractArticlesRoutes from './routes/extractArticles.routes.js'
 import { NODE_ENV } from './config/variables.config.js'
 /**
  * Configure the Express application.
@@ -40,7 +40,7 @@ app.use('/api', SubjectsRoutes)
 app.use('/api', AspectsRoutes)
 app.use('/api', LegalBasisRoutes)
 app.use('/api', ArticlesRoutes)
-app.use('/api', WorkerRoutes)
+app.use('/api', extractArticlesRoutes)
 /**
  * Handle 404 Not Found errors.
  */
