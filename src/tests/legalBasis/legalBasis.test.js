@@ -1973,7 +1973,7 @@ describe('Get Legal Basis By Subject And Aspects', () => {
         .expect(409)
         .expect('Content-Type', /application\/json/)
       expect(response.body.message).toBe(
-        'The dcoument cannot be removed because there are pending jobs for this Legal Basis'
+        'The docoument cannot be removed because there are pending jobs for this Legal Basis'
       )
     })
     test('Should return 409 if extractArticles is true, a document is provided, and there are pending jobs', async () => {
