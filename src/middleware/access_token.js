@@ -17,25 +17,20 @@ import { JWT_SECRET } from '../config/variables.config.js'
 const UserExtractor = (req, res, next) => {
   const authorization = req.get('authorization')
   let token = ''
-
   if (authorization && authorization.toLowerCase().startsWith('bearer')) {
     token = authorization.substring(7)
   }
-
   let decodedToken
   try {
     decodedToken = jwt.verify(token, JWT_SECRET)
   } catch (error) {
     return res.status(401).send({ error: 'token missing or invalid' })
   }
-
   if (!token || !decodedToken.userForToken.id) {
     return res.status(401).send({ error: 'token missing or invalid' })
   }
-
   const { id: userId } = decodedToken.userForToken
   req.userId = userId
-
   next()
 }
 

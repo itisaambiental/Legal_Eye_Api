@@ -4,7 +4,7 @@ import UserRepository from '../../repositories/User.repository.js'
 import SubjectsRepository from '../../repositories/Subject.repository.js'
 import LegalBasisRepository from '../../repositories/LegalBasis.repository.js'
 import AspectsRepository from '../../repositories/Aspects.repository.js'
-import extractArticles from '../../services/extractArticles/extractArticles.service.js'
+import extractArticles from '../../services/articles/extractArticles/extractArticles.service.js'
 
 import {
   ADMIN_PASSWORD_TEST,

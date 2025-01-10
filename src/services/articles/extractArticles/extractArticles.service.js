@@ -1,6 +1,6 @@
-import ErrorUtils from '../../utils/Error.js'
-import articlesQueue from '../../workers/articlesWorker.js'
-import LegalBasisRepository from '../../repositories/LegalBasis.repository.js'
+import ErrorUtils from '../../../utils/Error.js'
+import articlesQueue from '../../../workers/articlesWorker.js'
+import LegalBasisRepository from '../../../repositories/LegalBasis.repository.js'
 /**
  * Service class for handling extract Articles Jobs operations.
  */

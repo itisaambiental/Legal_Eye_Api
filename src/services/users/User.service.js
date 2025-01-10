@@ -1,3 +1,4 @@
+import axios from 'axios'
 import UserRepository from '../../repositories/User.repository.js'
 import bcrypt from 'bcrypt'
 import userSchema from '../../validations/userValidation.js'
@@ -7,9 +8,8 @@ import { z } from 'zod'
 import ErrorUtils from '../../utils/Error.js'
 import emailQueue from '../../workers/emailWorker.js'
 import jwt from 'jsonwebtoken'
-import { JWT_SECRET, JWT_EXPIRATION } from '../../config/variables.config.js'
+import { JWT_SECRET, JWT_EXPIRATION, MICROSOFT_GRAPH_API } from '../../config/variables.config.js'
 import FileService from '../files/File.service.js'
-import { getUserData } from '../../utils/microsoftAPICalls.js'
 import generateVerificationCode from '../../utils/generateCode.js'
 import { addMinutes } from 'date-fns'
 import EmailService from '../email/Email.service.js'
@@ -133,6 +133,34 @@ class UserService {
   }
 
   /**
+   * Calls the Microsoft Graph API to retrieve user email.
+   * @param {string} accessToken - The Microsoft access token.
+   * @returns {Promise<string>} - The user's email address.
+   * @throws {ErrorUtils} - If the token is invalid or the API call fails.
+   */
+  static async getUserDataFromMicrosoft (accessToken) {
+    try {
+      const graphUrl = `${MICROSOFT_GRAPH_API}/me`
+      const { data } = await axios.get(graphUrl, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`
+        }
+      })
+      const { mail, userPrincipalName } = data
+      const userEmail = mail || userPrincipalName
+      if (!userEmail) {
+        throw new ErrorUtils(401, 'Invalid token')
+      }
+      return userEmail
+    } catch (error) {
+      if (error.response && error.response.status === 401) {
+        throw new ErrorUtils(401, 'Invalid token')
+      }
+      throw new ErrorUtils(500, 'Microsoft API call failed', error.message)
+    }
+  }
+
+  /**
    * Logs in a user using Microsoft OAuth.
    * @param {string} accessToken - Microsoft access token.
    * @returns {Promise<Object>} - Object containing JWT token.
@@ -140,13 +168,11 @@ class UserService {
    */
   static async microsoftLogin (accessToken) {
     try {
-      const userEmail = await getUserData(accessToken)
-
+      const userEmail = await this.getUserDataFromMicrosoft(accessToken)
       const user = await UserRepository.findByGmail(userEmail)
       if (!user) {
         throw new ErrorUtils(401, 'Invalid email')
       }
-
       const userForToken = {
         id: user.id,
         gmail: user.gmail,

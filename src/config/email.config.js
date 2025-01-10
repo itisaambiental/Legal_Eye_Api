@@ -31,7 +31,7 @@ const transporterConfig = {
 
 /**
  * Creates a Nodemailer transporter with the defined configuration.
- * @type {import('nodemailer').Transporter}
+ * @type {nodemailer.Transporter}
  */
 const transporter = nodemailer.createTransport(transporterConfig)
 

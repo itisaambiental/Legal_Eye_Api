@@ -4,13 +4,13 @@ import UserRepository from '../../repositories/User.repository.js'
 import SubjectsRepository from '../../repositories/Subject.repository.js'
 import LegalBasisRepository from '../../repositories/LegalBasis.repository.js'
 import AspectsRepository from '../../repositories/Aspects.repository.js'
-import WorkerService from '../../services/extractArticles/extractArticles.service.js'
+import extractArticles from '../../services/articles/extractArticles/extractArticles.service.js'
 
 import {
   ADMIN_PASSWORD_TEST,
   ADMIN_GMAIL
 } from '../../config/variables.config.js'
-import generateLegalBasisData from '../../utils/generateLegalBasis.js'
+import generateLegalBasisData from '../../utils/generateLegalBasisData.js'
 
 const subjectName = 'Seguridad & Higiene'
 const aspectsToCreate = ['Organizacional', 'Técnico', 'Legal']
@@ -190,7 +190,7 @@ describe('Create a legal base', () => {
       .send(LegalBasisData)
       .expect(404)
 
-    expect(response.body.message).toMatch(/Invalid Subject ID/i)
+    expect(response.body.message).toMatch(/Subject not found/i)
   })
   test('Should return 404 if Aspect IDs are invalid', async () => {
     const invalidAspectIds = ['-1', '-2']
@@ -205,7 +205,7 @@ describe('Create a legal base', () => {
       .send(LegalBasisData)
       .expect(404)
 
-    expect(response.body.message).toMatch(/Invalid Aspects IDs/i)
+    expect(response.body.message).toMatch(/Aspects not found for IDs/i)
     expect(response.body.errors).toEqual(
       expect.objectContaining({
         notFoundIds: expect.arrayContaining(invalidAspectIds)
@@ -1880,7 +1880,7 @@ describe('Get Legal Basis By Subject And Aspects', () => {
         .send(updatedData)
         .expect(404)
         .expect('Content-Type', /application\/json/)
-      expect(response.body.message).toMatch(/Invalid Subject ID/i)
+      expect(response.body.message).toMatch(/Subject not found/i)
     })
     test('Should return 404 if Aspect IDs are invalid when updating a legal basis', async () => {
       const invalidAspectIds = ['-1', '-2']
@@ -1897,7 +1897,7 @@ describe('Get Legal Basis By Subject And Aspects', () => {
         .expect(404)
         .expect('Content-Type', /application\/json/)
 
-      expect(response.body.message).toMatch(/Invalid Aspects IDs/i)
+      expect(response.body.message).toMatch(/Aspects not found for IDs/i)
       expect(response.body.errors).toEqual(
         expect.objectContaining({
           notFoundIds: expect.arrayContaining(invalidAspectIds)
@@ -1951,11 +1951,11 @@ describe('Get Legal Basis By Subject And Aspects', () => {
         .expect('Content-Type', /application\/json/)
 
       expect(response.body.message).toBe(
-        'A document must be provided if extractArticles is true and no existing document is associated'
+        'A document must be provided if extractArticles is true'
       )
     })
     test('Should return 409 if removeDocument is true and there are pending jobs for the legal basis', async () => {
-      jest.spyOn(WorkerService, 'hasPendingJobs').mockResolvedValue({
+      jest.spyOn(extractArticles, 'hasPendingJobs').mockResolvedValue({
         hasPendingJobs: true,
         jobId: '12345'
       })
@@ -1977,7 +1977,7 @@ describe('Get Legal Basis By Subject And Aspects', () => {
       )
     })
     test('Should return 409 if extractArticles is true, a document is provided, and there are pending jobs', async () => {
-      jest.spyOn(WorkerService, 'hasPendingJobs').mockResolvedValue({
+      jest.spyOn(extractArticles, 'hasPendingJobs').mockResolvedValue({
         hasPendingJobs: true,
         jobId: '12345'
       })
@@ -2076,7 +2076,7 @@ describe('Get Legal Basis By Subject And Aspects', () => {
     })
     test('Should return 409 if the legal basis has pending jobs', async () => {
       jest
-        .spyOn(WorkerService, 'hasPendingJobs')
+        .spyOn(extractArticles, 'hasPendingJobs')
         .mockResolvedValue({ hasPendingJobs: true })
       const response = await api
         .delete(`/api/legalBasis/${createdLegalBasis.id}`)
@@ -2111,7 +2111,7 @@ describe('Get Legal Basis By Subject And Aspects', () => {
         .expect(201)
         .expect('Content-Type', /application\/json/)
       createdLegalBasis = response.body.legalBasis
-      jest.spyOn(WorkerService, 'hasPendingJobs').mockResolvedValue({ hasPendingJobs: false })
+      jest.spyOn(extractArticles, 'hasPendingJobs').mockResolvedValue({ hasPendingJobs: false })
     })
 
     test('Should delete multiple legal bases and return 204 status', async () => {
@@ -2157,7 +2157,7 @@ describe('Get Legal Basis By Subject And Aspects', () => {
     })
     test('Should return 409 if the legal basis has pending jobs', async () => {
       const idToDelete = createdLegalBasis.id
-      jest.spyOn(WorkerService, 'hasPendingJobs').mockImplementation(async (id) => {
+      jest.spyOn(extractArticles, 'hasPendingJobs').mockImplementation(async (id) => {
         return { hasPendingJobs: id === idToDelete }
       })
       const response = await api

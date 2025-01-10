@@ -3,7 +3,7 @@ import articlesQueue from '../../workers/articlesWorker.js'
 import legalBasisSchema from '../../validations/legalBasisValidation.js'
 import SubjectsRepository from '../../repositories/Subject.repository.js'
 import AspectsRepository from '../../repositories/Aspects.repository.js'
-import WorkerService from '../extractArticles/extractArticles.service.js'
+import extractArticles from '../articles/extractArticles/extractArticles.service.js'
 import { z } from 'zod'
 import ErrorUtils from '../../utils/Error.js'
 import FileService from '../files/File.service.js'
@@ -44,12 +44,12 @@ class LegalBasisService {
       }
       const subjectExists = await SubjectsRepository.findById(parsedData.subjectId)
       if (!subjectExists) {
-        throw new ErrorUtils(404, 'Invalid Subject ID')
+        throw new ErrorUtils(404, 'Subject not found')
       }
       const validAspectIds = await AspectsRepository.findByIds(parsedData.aspectsIds)
       if (validAspectIds.length !== parsedData.aspectsIds.length) {
         const notFoundIds = parsedData.aspectsIds.filter(id => !validAspectIds.includes(id))
-        throw new ErrorUtils(404, 'Invalid Aspects IDs', { notFoundIds })
+        throw new ErrorUtils(404, 'Aspects not found for IDs', { notFoundIds })
       }
       if (parsedData.extractArticles && !document) {
         throw new ErrorUtils(400, 'A document must be provided if extractArticles is true')
@@ -660,14 +660,14 @@ class LegalBasisService {
       }
       const subjectExists = await SubjectsRepository.findById(parsedData.subjectId)
       if (!subjectExists) {
-        throw new ErrorUtils(404, 'Invalid Subject ID')
+        throw new ErrorUtils(404, 'Subject not found')
       }
       const validAspectIds = await AspectsRepository.findByIds(parsedData.aspectsIds)
       if (validAspectIds.length !== parsedData.aspectsIds.length) {
         const notFoundIds = parsedData.aspectsIds.filter(id => !validAspectIds.includes(id))
-        throw new ErrorUtils(404, 'Invalid Aspects IDs', { notFoundIds })
+        throw new ErrorUtils(404, 'Aspects not found for IDs', { notFoundIds })
       }
-      const { hasPendingJobs } = await WorkerService.hasPendingJobs(legalBasisId)
+      const { hasPendingJobs } = await extractArticles.hasPendingJobs(legalBasisId)
       if (parsedData.removeDocument && document) {
         throw new ErrorUtils(400, 'Cannot provide a document if removeDocument is true')
       }
@@ -676,7 +676,7 @@ class LegalBasisService {
       }
       if (parsedData.extractArticles) {
         if (!document && !existingLegalBasis.url) {
-          throw new ErrorUtils(400, 'A document must be provided if extractArticles is true and no existing document is associated')
+          throw new ErrorUtils(400, 'A document must be provided if extractArticles is true')
         }
         if (hasPendingJobs) {
           throw new ErrorUtils(409, 'Articles cannot be extracted because there is already a process that does so')
@@ -756,7 +756,7 @@ class LegalBasisService {
       if (!legalBasis) {
         throw new ErrorUtils(404, 'LegalBasis not found')
       }
-      const { hasPendingJobs } = await WorkerService.hasPendingJobs(legalBasisId)
+      const { hasPendingJobs } = await extractArticles.hasPendingJobs(legalBasisId)
       if (hasPendingJobs) {
         throw new ErrorUtils(409, 'Cannot delete LegalBasis with pending jobs')
       }
@@ -793,7 +793,7 @@ class LegalBasisService {
       }
       const pendingJobs = []
       for (const legalBase of legalBasis) {
-        const { hasPendingJobs } = await WorkerService.hasPendingJobs(legalBase.id)
+        const { hasPendingJobs } = await extractArticles.hasPendingJobs(legalBase.id)
         if (hasPendingJobs) {
           pendingJobs.push({
             id: legalBase.id,
