@@ -1,8 +1,8 @@
 import axios from 'axios'
 import UserRepository from '../../repositories/User.repository.js'
 import bcrypt from 'bcrypt'
-import userSchema from '../../validations/userValidation.js'
-import loginSchema from '../../validations/loginValidation.js'
+import userSchema from '../../schemas/userValidation.js'
+import loginSchema from '../../schemas/loginValidation.js'
 import { generatePassword } from '../../utils/generatePassword.js'
 import { z } from 'zod'
 import ErrorUtils from '../../utils/Error.js'
@@ -39,11 +39,9 @@ class UserService {
       if (existingUser) {
         throw new ErrorUtils(409, 'Gmail already exists')
       }
-
-      const password = generatePassword()
+      const userPassword = generatePassword()
       const salt = await bcrypt.genSalt()
-      const hashedPassword = await bcrypt.hash(password, salt)
-
+      const hashedPassword = await bcrypt.hash(userPassword, salt)
       let profilePictureKey = null
       if (profilePicture) {
         const uploadResponse = await FileService.uploadFile(profilePicture)
@@ -54,7 +52,7 @@ class UserService {
           throw new ErrorUtils(500, 'Failed to upload profile picture')
         }
       }
-      const userId = await UserRepository.create({
+      const user = await UserRepository.create({
         name: parsedUser.name,
         password: hashedPassword,
         gmail: parsedUser.gmail,
@@ -66,13 +64,11 @@ class UserService {
       if (profilePictureKey) {
         profilePictureUrl = await FileService.getFile(profilePictureKey)
       }
-      const emailData = EmailService.generateWelcomeEmail(parsedUser, password)
+      const emailData = EmailService.generateWelcomeEmail(parsedUser, userPassword)
       await emailQueue.add(emailData)
+      const { password, ..._user } = user
       return {
-        id: userId,
-        name: parsedUser.name,
-        gmail: parsedUser.gmail,
-        roleId: parsedUser.roleId,
+        ..._user,
         profile_picture: profilePictureUrl
       }
     } catch (error) {
@@ -206,20 +202,18 @@ class UserService {
       if (!users) {
         return []
       }
-      const usersWithProfilePicture = await Promise.all(users.map(async (user) => {
+      const userList = await Promise.all(users.map(async (user) => {
         let profilePictureUrl = null
         if (user.profile_picture) {
           profilePictureUrl = await FileService.getFile(user.profile_picture)
         }
-        const { password, ...userWithoutPassword } = user
-
+        const { password, ..._user } = user
         return {
-          ...userWithoutPassword,
+          ..._user,
           profile_picture: profilePictureUrl
         }
       }))
-
-      return usersWithProfilePicture
+      return userList
     } catch (error) {
       if (error instanceof ErrorUtils) {
         throw error
@@ -290,7 +284,7 @@ class UserService {
       if (!users) {
         return []
       }
-      const usersWithProfilePictures = await Promise.all(users.map(async (user) => {
+      const userList = await Promise.all(users.map(async (user) => {
         let profilePictureUrl = null
         if (user.profile_picture) {
           profilePictureUrl = await FileService.getFile(user.profile_picture)
@@ -304,7 +298,7 @@ class UserService {
         }
       }))
 
-      return usersWithProfilePictures
+      return userList
     } catch (error) {
       if (error instanceof ErrorUtils) {
         throw error
@@ -365,23 +359,23 @@ class UserService {
         throw new ErrorUtils(404, 'User not found')
       }
       let profilePictureUrl = null
-      if (updatedUser.user.profile_picture) {
-        profilePictureUrl = await FileService.getFile(updatedUser.user.profile_picture)
+      if (updatedUser.profile_picture) {
+        profilePictureUrl = await FileService.getFile(updatedUser.profile_picture)
       }
-      const { password, ...userWithoutPassword } = updatedUser.user
+      const { password, ..._user } = updatedUser
       let token = null
       if (Number(userId) === Number(currentUserId)) {
         const userForToken = {
-          id: updatedUser.user.id,
-          gmail: updatedUser.user.gmail,
-          username: updatedUser.user.name,
-          userType: updatedUser.user.roleId
+          id: updatedUser.id,
+          gmail: updatedUser.gmail,
+          username: updatedUser.name,
+          userType: updatedUser.roleId
         }
         token = jwt.sign({ userForToken }, JWT_SECRET, { expiresIn: JWT_EXPIRATION })
       }
       return {
         updatedUser: {
-          ...userWithoutPassword,
+          ..._user,
           profile_picture: profilePictureUrl
         },
         token
@@ -416,12 +410,11 @@ class UserService {
         throw new ErrorUtils(500, 'Failed to upload profile picture')
       }
       const profilePictureKey = uploadResponse.uniqueFileName
-      const savePicture = await UserRepository.updateProfilePicture(userId, profilePictureKey)
-      if (!savePicture) {
+      const user = await UserRepository.updateProfilePicture(userId, profilePictureKey)
+      if (!user) {
         throw new ErrorUtils(404, 'User not found')
       }
-      const profilePictureUrl = await FileService.getFile(profilePictureKey)
-      return profilePictureUrl
+      return user
     } catch (error) {
       if (error instanceof ErrorUtils) {
         throw error

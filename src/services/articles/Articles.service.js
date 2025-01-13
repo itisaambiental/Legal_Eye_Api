@@ -1,6 +1,6 @@
 import ArticlesRepository from '../../repositories/Articles.repository.js'
 import LegalBasisRepository from '../../repositories/LegalBasis.repository.js'
-import articlesSchema from '../../validations/articlesValidation.js'
+import articlesSchema from '../../schemas/articlesValidation.js'
 import ErrorUtils from '../../utils/Error.js'
 import { z } from 'zod'
 
@@ -26,7 +26,7 @@ class ArticlesService {
       if (!legalBase) {
         throw new ErrorUtils(404, 'Legal basis not found')
       }
-      const insertionSuccess = await ArticlesRepository.insertArticles(legalBasisId, parsedArticles)
+      const insertionSuccess = await ArticlesRepository.createMany(legalBasisId, parsedArticles)
       if (!insertionSuccess) {
         return false
       }
@@ -58,7 +58,7 @@ class ArticlesService {
       if (!legalBase) {
         throw new ErrorUtils(404, 'Legal basis not found')
       }
-      const articles = await ArticlesRepository.getArticlesByLegalBasisId(legalBasisId)
+      const articles = await ArticlesRepository.findByLegalBasisId(legalBasisId)
       if (!articles) {
         return []
       }

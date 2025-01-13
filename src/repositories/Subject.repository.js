@@ -9,17 +9,18 @@ class SubjectsRepository {
   /**
    * Inserts a new subject into the database.
    * @param {string} subjectName - The name of the subject to insert.
-   * @returns {Promise<id>} - Returns the id of the created Subject.
+   * @returns {Promise<Subject>} - Returns the the created Subject.
    * @throws {ErrorUtils} - If an error occurs during insertion.
    */
-  static async createSubject (subjectName) {
+  static async create (subjectName) {
     const query = `
       INSERT INTO subjects (subject_name)
       VALUES (?)
     `
     try {
       const [result] = await pool.query(query, [subjectName])
-      return result.insertId
+      const subject = await this.findById(result.insertId)
+      return subject
     } catch (error) {
       console.error('Error creating subject:', error.message)
       throw new ErrorUtils(500, 'Error inserting subject into the database')
@@ -63,7 +64,6 @@ class SubjectsRepository {
       `, [id])
 
       if (rows.length === 0) return null
-
       const subject = rows[0]
       return new Subject(subject.id, subject.subject_name)
     } catch (error) {
@@ -95,6 +95,28 @@ class SubjectsRepository {
   }
 
   /**
+ * Checks if a subject with the given name exists, excluding the specified subject ID.
+ * @param {string} subjectName - The subject name to check for uniqueness.
+ * @param {number} subjectId - The subject ID to exclude from the check.
+ * @returns {Promise<boolean>} - True if a subject with the same name exists (excluding the given ID), false otherwise.
+ */
+  static async existsByNameExcludingId (subjectName, subjectId) {
+    const query = `
+    SELECT 1 
+    FROM subjects 
+    WHERE subject_name = ? AND id != ?
+    LIMIT 1
+  `
+    try {
+      const [rows] = await pool.query(query, [subjectName, subjectId])
+      return rows.length > 0
+    } catch (error) {
+      console.error('Error checking if subject exists:', error.message)
+      throw new ErrorUtils(500, 'Error checking if subject exists')
+    }
+  }
+
+  /**
    * Fetches a subject by its name from the database.
    * @param {string} subjectName - The name of the subject to retrieve.
    * @returns {Promise<Subject|null>} - Returns the Subject instance or null if not found.
@@ -122,7 +144,7 @@ class SubjectsRepository {
    * Updates a subject by its ID using IFNULL to preserve existing values.
    * @param {number} id - The ID of the subject to update.
    * @param {string|null} subjectName - The new name of the subject, or null to keep the current name.
-   * @returns {Promise<boolean>} - Returns true if the update is successful, false otherwise.
+   * @returns {Promise<boolean|Subject>} - Returns true if the update is successful, false otherwise.
    * @throws {ErrorUtils} - If an error occurs during update.
    */
   static async updateById (id, subjectName) {
@@ -137,7 +159,8 @@ class SubjectsRepository {
       if (rows.affectedRows === 0) {
         return false
       }
-      return true
+      const subject = await this.findById(id)
+      return subject
     } catch (error) {
       console.error('Error updating subject:', error.message)
       throw new ErrorUtils(500, 'Error updating subject in the database')

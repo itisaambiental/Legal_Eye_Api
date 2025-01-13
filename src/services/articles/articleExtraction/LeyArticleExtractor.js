@@ -1,6 +1,6 @@
 import ArticleExtractor from './ArticleExtractor.js'
 import openai from '../../../config/openapi.config.js'
-import { articleResponseSchema } from '../../../validations/articlesValidationResponse.js'
+import { articleResponseSchema } from '../../../schemas/articlesValidationResponse.js'
 import { zodResponseFormat } from 'openai/helpers/zod'
 /**
  * Class extending ArticleExtractor to extract articles from legal texts.

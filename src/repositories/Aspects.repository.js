@@ -10,17 +10,18 @@ class AspectsRepository {
      * Inserts a new aspect linked to a specific subject into the database.
      * @param {number} subjectId - The ID of the subject to link this aspect to.
      * @param {string} aspectName - The name of the aspect to insert.
-     * @returns {Promise<id>} - Returns the ID of the created aspect.
+     * @returns {Promise<Aspect>} - Returns the created aspect.
      * @throws {ErrorUtils} - If an error occurs during insertion.
      */
-  static async createSubject (subjectId, aspectName) {
+  static async create (subjectId, aspectName) {
     const query = `
       INSERT INTO aspects (subject_id, aspect_name)
       VALUES (?, ?)
     `
     try {
       const [result] = await pool.query(query, [subjectId, aspectName])
-      return result.insertId
+      const aspect = await this.findById(result.insertId)
+      return aspect
     } catch (error) {
       console.error('Error creating aspect:', error.message)
       throw new ErrorUtils(500, 'Error inserting aspect into the database')
@@ -70,6 +71,30 @@ class AspectsRepository {
     } catch (error) {
       console.error('Error finding aspects by IDs:', error.message)
       throw new ErrorUtils(500, 'Error finding aspects by IDs from the database')
+    }
+  }
+
+  /**
+ * Checks if an aspect with the given name exists for the specified subject, excluding the given aspect ID.
+ * @param {string} aspectName - The aspect name to check for uniqueness.
+ * @param {number} subjectId - The subject ID to check within.
+ * @param {number} aspectId - The aspect ID to exclude from the check.
+ * @returns {Promise<boolean>} - True if an aspect with the same name exists (excluding the given ID), false otherwise.
+ * @throws {ErrorUtils} - If an error occurs during retrieval.
+ */
+  static async existsByNameExcludingId (aspectName, subjectId, aspectId) {
+    const query = `
+    SELECT 1 
+    FROM aspects 
+    WHERE aspect_name = ? AND subject_id = ? AND id != ?
+    LIMIT 1
+  `
+    try {
+      const [rows] = await pool.query(query, [aspectName, subjectId, aspectId])
+      return rows.length > 0
+    } catch (error) {
+      console.error('Error checking if aspect exists:', error.message)
+      throw new ErrorUtils(500, 'Error checking if aspect exists')
     }
   }
 
@@ -130,7 +155,7 @@ class AspectsRepository {
      * Updates an aspect by its ID, associated with a specific subject.
      * @param {number} id - The ID of the aspect to update.
      * @param {string|null} aspectName - The new name of the aspect, or null to keep the current name.
-     * @returns {Promise<boolean>} - Returns true if the update is successful, false otherwise.
+     * @returns {Promise<boolean|Aspect>} - Returns Aspect if the update is successful, false otherwise.
      * @throws {ErrorUtils} - If an error occurs during update.
      */
   static async updateById (id, aspectName) {
@@ -144,7 +169,8 @@ class AspectsRepository {
       if (rows.affectedRows === 0) {
         return false
       }
-      return true
+      const aspect = await this.findById(id)
+      return aspect
     } catch (error) {
       console.error('Error updating aspect:', error.message)
       throw new ErrorUtils(500, 'Error updating aspect in the database')

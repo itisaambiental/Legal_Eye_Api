@@ -54,10 +54,8 @@ class DocumentService {
   static async process ({ document }) {
     try {
       await this.initializeWorker()
-
       let extractedText = ''
       const { buffer, mimetype } = document
-
       if (mimetype === 'application/pdf') {
         if (!(buffer instanceof Buffer)) {
           return { success: false, error: 'The document buffer is not valid' }
@@ -68,7 +66,6 @@ class DocumentService {
       } else {
         return { success: false, error: 'Allowed types are: pdf, png, jpg, jpeg' }
       }
-
       if (extractedText.trim()) {
         return { success: true, data: extractedText }
       } else {

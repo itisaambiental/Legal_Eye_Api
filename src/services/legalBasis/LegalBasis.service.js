@@ -1,6 +1,6 @@
 import LegalBasisRepository from '../../repositories/LegalBasis.repository.js'
 import articlesQueue from '../../workers/articlesWorker.js'
-import legalBasisSchema from '../../validations/legalBasisValidation.js'
+import legalBasisSchema from '../../schemas/legalBasisValidation.js'
 import SubjectsRepository from '../../repositories/Subject.repository.js'
 import AspectsRepository from '../../repositories/Aspects.repository.js'
 import extractArticles from '../articles/extractArticles/extractArticles.service.js'
@@ -28,7 +28,7 @@ class LegalBasisService {
  * @param {string} data.extractArticles - The flag to determine whether to extract articles from the document.
  * @param {Object} [document] - The document to process (optional).
  * @returns {Promise<Object>} - An object containing the created `legalBasis` and the optional `jobId` (which may be null).
- * @property {Object} legalBasis - The created legal basis object.
+ * @property {legalBasis} legalBasis - The created legal basis object.
  * @property {string|null} jobId - The job ID if a job was created, or `null` if no job was created.
  * @throws {ErrorUtils} - If an error occurs during the creation validation.
  */
@@ -644,7 +644,9 @@ class LegalBasisService {
  * @param {string} [data.extractArticles] - The flag to determine whether to extract articles from the document.
  * @param {string} [data.removeDocument] - The flag to determine whether the document should be deleted.
  * @param {Object} [document] - The new document to process (optional).
- * @returns {Promise<Object>} - An object containing the updated `legalBasis` and the optional `jobId` (which may be null).
+ * @returns {Promise<Object>} - An object containing the created `legalBasis` and the optional `jobId` (which may be null).
+ * @property {legalBasis} legalBasis - The created legal basis object.
+ * @property {string|null} jobId - The job ID if a job was created, or `null` if no job was created.
  * @throws {ErrorUtils} - If an error occurs during the update validation or processing.
  */
   static async updateById (legalBasisId, data, document) {

@@ -17,7 +17,7 @@ class UserRepository {
    * @param {string} userData.gmail - User's email address.
    * @param {number} userData.roleId - ID of the user's role.
    * @param {string} userData.profilePicture - URL of the user's profile picture.
-   * @returns {Promise<number>} - The ID of the created user.
+   * @returns {Promise<User>} - The ID of the created user.
    * @throws {ErrorUtils} - If an error occurs during user creation.
    */
   static async create (userData) {
@@ -28,7 +28,8 @@ class UserRepository {
     `
     try {
       const [result] = await pool.query(query, [name, password, gmail, roleId, profilePicture])
-      return result.insertId
+      const user = await this.findById(result.insertId)
+      return user
     } catch (error) {
       console.error('Error creating user:', error)
       throw new ErrorUtils(500, 'Error creating user in the database')
@@ -49,7 +50,6 @@ class UserRepository {
     WHERE gmail = ?
   `
     const values = [hashedPassword, gmail]
-
     try {
       const [rows] = await pool.query(query, values)
       if (rows.affectedRows === 0) {
@@ -71,7 +71,7 @@ class UserRepository {
    * @param {string} [userData.gmail] - New Gmail address for the user.
    * @param {number} [userData.roleId] - New role ID for the user.
    * @param {string} [userData.profilePicture] - New profile picture URL.
-   * @returns {Promise<Object|null>} - Updated user data without the password or null if not found.
+   * @returns {Promise<User|null>} - Updated user data without the password or null if not found.
    * @throws {ErrorUtils} - If an error occurs during the update.
    */
   static async update (id, userData) {
@@ -92,8 +92,7 @@ class UserRepository {
         return null
       }
       const updatedUser = await this.findById(id)
-      const { password: userPassword, ...userWithoutPassword } = updatedUser
-      return { user: userWithoutPassword }
+      return updatedUser
     } catch (error) {
       console.error('Error updating user:', error)
       throw new ErrorUtils(500, 'Error updating user in the database')
@@ -104,7 +103,7 @@ class UserRepository {
    * Updates the user's profile picture in the database.
    * @param {number} id - User's ID.
    * @param {string} profilePicture - New profile picture URL.
-   * @returns {Promise<boolean>} - True if the profile picture was updated, otherwise false.
+   * @returns {Promise<boolean|User>} - True if the profile picture was updated, otherwise false.
    * @throws {ErrorUtils} - If an error occurs during the update.
    */
   static async updateProfilePicture (id, profilePicture) {
@@ -119,7 +118,8 @@ class UserRepository {
       if (result.affectedRows === 0) {
         return false
       }
-      return true
+      const user = await this.findById(id)
+      return user
     } catch (error) {
       console.error('Error updating user profile picture:', error)
       throw new ErrorUtils(500, 'Error updating profile picture in the database')
@@ -158,14 +158,11 @@ class UserRepository {
     const query = `
       DELETE FROM users WHERE id IN (?)
     `
-
     try {
       const [result] = await pool.query(query, [userIds])
-
       if (result.affectedRows === 0) {
         return false
       }
-
       return true
     } catch (error) {
       console.error('Error deleting users:', error)
@@ -208,7 +205,6 @@ class UserRepository {
     const query = `
     SELECT * FROM users WHERE id IN (?)
   `
-
     try {
       const [rows] = await pool.query(query, [userIds])
       return rows.map(user => new User(user.id, user.name, user.password, user.gmail, user.role_id, user.profile_picture))

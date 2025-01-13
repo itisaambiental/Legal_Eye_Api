@@ -1,6 +1,8 @@
 import AspectsRepository from '../../repositories/Aspects.repository.js'
 import SubjectsRepository from '../../repositories/Subject.repository.js'
 import ErrorUtils from '../../utils/Error.js'
+import aspectSchema from '../../schemas/aspectValidation.js'
+import { z } from 'zod'
 
 /**
  * Service class for handling Aspect operations.
@@ -11,33 +13,30 @@ class AspectsService {
    * @param {Object} params - Parameters for creating an aspect.
    * @param {number} params.subjectId - The ID of the associated subject.
    * @param {string} params.aspectName - The name of the aspect.
-   * @returns {Promise<Object>} - The created aspect data.
+   * @returns {Promise<Aspect>} - The created aspect data.
    * @throws {ErrorUtils} - If an error occurs during creation.
    */
   static async create ({ subjectId, aspectName }) {
     try {
-      const subjectExists = await SubjectsRepository.findById(subjectId)
+      const parsedAspect = aspectSchema.parse({ subjectId, aspectName })
+      const subjectExists = await SubjectsRepository.findById(parsedAspect.subjectId)
       if (!subjectExists) {
         throw new ErrorUtils(404, 'Subject not found')
       }
-      if (typeof aspectName !== 'string') {
-        throw new ErrorUtils(400, 'The aspect name must be a string')
-      }
-      if (aspectName.length > 255) {
-        throw new ErrorUtils(400, 'The aspect name cannot exceed 255 characters')
-      }
-      const aspectExists = await AspectsRepository.findByNameAndSubjectId(aspectName, subjectId)
+      const aspectExists = await AspectsRepository.findByNameAndSubjectId(parsedAspect.aspectName, parsedAspect.subjectId)
       if (aspectExists) {
         throw new ErrorUtils(409, 'Aspect already exists')
       }
-      const aspectId = await AspectsRepository.createSubject(subjectId, aspectName)
-      return {
-        id: aspectId,
-        subject_id: Number(subjectId),
-        aspect_name: aspectName,
-        subject_name: subjectExists.subject_name
-      }
+      const createdAspect = await AspectsRepository.create(parsedAspect.subjectId, parsedAspect.aspectName)
+      return createdAspect
     } catch (error) {
+      if (error instanceof z.ZodError) {
+        const validationErrors = error.errors.map((e) => ({
+          field: e.path[0],
+          message: e.message
+        }))
+        throw new ErrorUtils(400, 'Validation failed', validationErrors)
+      }
       if (error instanceof ErrorUtils) {
         throw error
       }
@@ -48,7 +47,7 @@ class AspectsService {
   /**
    * Fetches all aspects associated with a specific subject.
    * @param {number} subjectId - The ID of the subject to retrieve aspects for.
-   * @returns {Promise<Array<Object>>} - List of aspects associated with the subject.
+   * @returns {Promise<Array<Aspect>>} - List of aspects associated with the subject.
    * @throws {ErrorUtils} - If an error occurs during retrieval.
    */
   static async getBySubjectId (subjectId) {
@@ -73,7 +72,7 @@ class AspectsService {
   /**
    * Fetches an aspect by ID.
    * @param {number} id - The ID of the aspect to retrieve.
-   * @returns {Promise<Object>} - The aspect data or null if not found.
+   * @returns {Promise<Aspect>} - The aspect data or null if not found.
    * @throws {ErrorUtils} - If an error occurs during retrieval.
    */
   static async getById (id) {
@@ -95,44 +94,33 @@ class AspectsService {
  * Updates an aspect by ID.
  * @param {number} id - The ID of the aspect to update.
  * @param {string} aspectName - The new name of the aspect.
- * @returns {Promise<Object>} - The updated aspect data.
+ * @returns {Promise<Aspect>} - The updated aspect data.
  * @throws {ErrorUtils} - If an error occurs during update.
  */
   static async updateById (id, aspectName) {
     try {
+      const parsedAspect = aspectSchema.parse({ subjectId: id, aspectName })
       const currentAspect = await AspectsRepository.findById(id)
       if (!currentAspect) {
         throw new ErrorUtils(404, 'Aspect not found')
       }
-      if (typeof aspectName !== 'string') {
-        throw new ErrorUtils(400, 'The aspect name must be a string')
-      }
-      if (aspectName.length > 255) {
-        throw new ErrorUtils(400, 'The aspect name cannot exceed 255 characters')
-      }
-      if (currentAspect.aspect_name === aspectName) {
-        return {
-          id,
-          aspect_name: aspectName,
-          subject_id: currentAspect.subject_id,
-          subject_name: currentAspect.subject_name
-        }
-      }
-      const aspectExists = await AspectsRepository.findByNameAndSubjectId(aspectName, currentAspect.subject_id)
+      const aspectExists = await AspectsRepository.existsByNameExcludingId(parsedAspect.aspectName, currentAspect.subject_id, id)
       if (aspectExists) {
         throw new ErrorUtils(409, 'Aspect already exists')
       }
-      const updated = await AspectsRepository.updateById(id, aspectName)
-      if (!updated) {
+      const updatedAspect = await AspectsRepository.updateById(id, parsedAspect.aspectName)
+      if (!updatedAspect) {
         throw new ErrorUtils(404, 'Aspect not found')
       }
-      return {
-        id: Number(id),
-        aspect_name: aspectName,
-        subject_id: currentAspect.subject_id,
-        subject_name: currentAspect.subject_name
-      }
+      return updatedAspect
     } catch (error) {
+      if (error instanceof z.ZodError) {
+        const validationErrors = error.errors.map((e) => ({
+          field: e.path[0],
+          message: e.message
+        }))
+        throw new ErrorUtils(400, 'Validation failed', validationErrors)
+      }
       if (error instanceof ErrorUtils) {
         throw error
       }
@@ -143,7 +131,7 @@ class AspectsService {
   /**
    * Deletes an aspect by ID.
    * @param {number} id - The ID of the aspect to delete.
-   * @returns {Promise<Object>} - Success message if aspect was deleted.
+   * @returns {Promise<{ success: boolean }>} - An object indicating the deletion was successful.
    * @throws {ErrorUtils} - If an error occurs during deletion.
    */
   static async deleteById (id) {
@@ -172,7 +160,7 @@ class AspectsService {
   /**
  * Deletes multiple aspects by their IDs.
  * @param {Array<number>} aspectIds - Array of aspect IDs to delete.
- * @returns {Promise<Object>} - Success message if aspects were deleted.
+ * @returns {Promise<{ success: boolean }>} - An object indicating the deletion was successful.
  * @throws {ErrorUtils} - If aspects not found, have associations preventing deletion, or deletion fails.
  */
   static async deleteAspectsBatch (aspectIds) {
