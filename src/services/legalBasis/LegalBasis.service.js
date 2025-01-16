@@ -791,7 +791,7 @@ class LegalBasisService {
         const notFoundIds = legalBasisIds.filter(
           id => !legalBasis.some(legalBase => legalBase.id === id)
         )
-        throw new ErrorUtils(404, 'Legal Basis not found for IDs', { notFoundIds })
+        throw new ErrorUtils(404, 'LegalBasis not found for IDs', { notFoundIds })
       }
       const pendingJobs = []
       for (const legalBase of legalBasis) {
@@ -815,7 +815,7 @@ class LegalBasisService {
       }
       const LegalBasisDeleted = await LegalBasisRepository.deleteBatch(legalBasisIds)
       if (!LegalBasisDeleted) {
-        throw new ErrorUtils(500, 'Legal Basis not found')
+        throw new ErrorUtils(500, 'LegalBasis not found')
       }
       return { success: true }
     } catch (error) {

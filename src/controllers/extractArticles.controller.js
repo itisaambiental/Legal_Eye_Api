@@ -15,16 +15,13 @@ import extractArticles from '../services/articles/extractArticles/extractArticle
  */
 export const getStatusJob = async (req, res) => {
   const { userId } = req
-  const { id } = req.params
-  if (!id) {
-    return res.status(400).json({ message: 'jobId is required' })
-  }
+  const { jobId } = req.params
   try {
     const isAuthorized = await UserService.userExists(userId)
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-    const jobStatus = await extractArticles.getStatusJob(id)
+    const jobStatus = await extractArticles.getStatusJob(jobId)
     return res.status(jobStatus.status).json(jobStatus.data)
   } catch (error) {
     if (error instanceof ErrorUtils) {
@@ -45,10 +42,6 @@ export const getStatusJob = async (req, res) => {
 export const checkLegalBasisJobs = async (req, res) => {
   const { userId } = req
   const { legalBasisId } = req.params
-
-  if (!legalBasisId) {
-    return res.status(400).json({ message: 'legalBasisId is required' })
-  }
   try {
     const isAuthorized = await UserService.userExists(userId)
     if (!isAuthorized) {

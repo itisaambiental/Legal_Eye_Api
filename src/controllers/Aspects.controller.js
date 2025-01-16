@@ -14,9 +14,6 @@ export const createAspect = async (req, res) => {
   const { userId } = req
   const { aspectName } = req.body
   const { subjectId } = req.params
-  if (!subjectId || !aspectName) {
-    return res.status(400).json({ message: 'Missing required fields: subjectId and/or aspectName' })
-  }
   try {
     const isAuthorized = await UserService.userExists(userId)
     if (!isAuthorized) {
@@ -31,7 +28,7 @@ export const createAspect = async (req, res) => {
         ...(error.errors && { errors: error.errors })
       })
     }
-    return res.status(500).json({ message: 'Failed to create aspect' })
+    return res.status(500).json({ message: 'Internal Server Error' })
   }
 }
 
@@ -60,7 +57,7 @@ export const getAspectsBySubject = async (req, res) => {
         ...(error.errors && { errors: error.errors })
       })
     }
-    return res.status(500).json({ message: 'Failed to fetch aspects' })
+    return res.status(500).json({ message: 'Internal Server Error' })
   }
 }
 
@@ -89,7 +86,7 @@ export const getAspectById = async (req, res) => {
         ...(error.errors && { errors: error.errors })
       })
     }
-    return res.status(500).json({ message: 'Failed to fetch aspect' })
+    return res.status(500).json({ message: 'Internal Server Error' })
   }
 }
 
@@ -110,9 +107,6 @@ export const updateAspect = async (req, res) => {
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-    if (!aspectName) {
-      return res.status(400).json({ message: 'Missing required field: aspectName' })
-    }
     const updatedAspect = await AspectsService.updateById(id, aspectName)
     return res.status(200).json({ updatedAspect })
   } catch (error) {
@@ -122,7 +116,7 @@ export const updateAspect = async (req, res) => {
         ...(error.errors && { errors: error.errors })
       })
     }
-    return res.status(500).json({ message: 'Failed to update aspect' })
+    return res.status(500).json({ message: 'Internal Server Error' })
   }
 }
 
@@ -155,7 +149,7 @@ export const deleteAspect = async (req, res) => {
         ...(error.errors && { errors: error.errors })
       })
     }
-    return res.status(500).json({ message: 'Failed to delete aspect' })
+    return res.status(500).json({ message: 'Internal Server Error' })
   }
 }
 

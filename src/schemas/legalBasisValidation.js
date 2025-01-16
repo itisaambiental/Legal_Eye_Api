@@ -22,7 +22,7 @@ const legalBasisSchema = z
      */
     abbreviation: z.string()
       .min(1, 'The abbreviation is required')
-      .max(20, 'The abbreviation cannot exceed 20 characters'),
+      .max(255, 'The abbreviation cannot exceed 255 characters'),
 
     /**
      * The subject associated with the legal basis.

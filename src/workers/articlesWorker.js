@@ -22,7 +22,7 @@ articlesQueue.process(async (job, done) => {
   try {
     const legalBase = await LegalBasisRepository.findById(legalBasisId)
     if (!legalBase) {
-      return done(new ErrorUtils(404, 'Legal Basis not found'))
+      return done(new ErrorUtils(404, 'LegalBasis not found'))
     }
     const document = await FileService.getFileContent(legalBase.url)
     if (!document || !document.buffer || !document.mimetype) {
@@ -49,7 +49,7 @@ articlesQueue.process(async (job, done) => {
     if (!extractedArticles || extractedArticles.length === 0) {
       return done(new ErrorUtils(500, 'Article Processing Error'))
     }
-    const insertionSuccess = await ArticlesService.insertArticles(
+    const insertionSuccess = await ArticlesService.createMany(
       legalBase.id,
       extractedArticles
     )

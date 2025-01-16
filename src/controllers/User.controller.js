@@ -48,13 +48,11 @@ export const loginUser = async (req, res) => {
  */
 export const loginUserMicrosoftAuth = async (req, res) => {
   const { accessToken } = req.body
-
   if (!accessToken) {
     return res.status(400).json({
       message: 'Missing required field: access_token'
     })
   }
-
   try {
     const { token } = await UserService.microsoftLogin(accessToken)
 
@@ -232,16 +230,6 @@ export const updateUser = async (req, res) => {
   const { name, gmail, roleId, removePicture } = req.body
   const profilePicture = req.file
   const { userId } = req
-  if (!id) {
-    return res.status(400).json({
-      message: 'Missing required parameter: id'
-    })
-  }
-  if (!name && !gmail && !roleId && !removePicture) {
-    return res.status(400).json({
-      message: 'Missing required fields: name, gmail, roleId, removePicture'
-    })
-  }
   try {
     const isAuthorized = await UserService.isAuthorized(userId)
     if (!isAuthorized) {
@@ -279,11 +267,9 @@ export const updateUserPicture = async (req, res) => {
   const { id } = req.params
   const { userId } = req
   const profilePicture = req.file
-
   if (!profilePicture) {
     return res.status(400).json({ message: 'Profile picture is required' })
   }
-
   try {
     const isAuthorized = await UserService.canAccessUser(userId, id)
 
@@ -387,7 +373,6 @@ export const deleteUsersBatch = async (req, res) => {
  */
 export const resetPassword = async (req, res) => {
   const { gmail } = req.body
-
   try {
     await UserService.requestPasswordReset(gmail)
     return res.sendStatus(200)
@@ -411,10 +396,8 @@ export const resetPassword = async (req, res) => {
  */
 export const verifyCode = async (req, res) => {
   const { gmail, code } = req.body
-
   try {
     const isValid = await UserService.verifyPasswordResetCode(gmail, code)
-
     if (isValid) {
       return res.sendStatus(200)
     } else {

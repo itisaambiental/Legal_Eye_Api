@@ -18,16 +18,24 @@ class AspectsService {
    */
   static async create ({ subjectId, aspectName }) {
     try {
-      const parsedAspect = aspectSchema.parse({ subjectId, aspectName })
-      const subjectExists = await SubjectsRepository.findById(parsedAspect.subjectId)
+      const parsedAspect = aspectSchema.parse({ aspectName })
+      const subjectExists = await SubjectsRepository.findById(
+        subjectId
+      )
       if (!subjectExists) {
         throw new ErrorUtils(404, 'Subject not found')
       }
-      const aspectExists = await AspectsRepository.findByNameAndSubjectId(parsedAspect.aspectName, parsedAspect.subjectId)
+      const aspectExists = await AspectsRepository.findByNameAndSubjectId(
+        parsedAspect.aspectName,
+        subjectId
+      )
       if (aspectExists) {
         throw new ErrorUtils(409, 'Aspect already exists')
       }
-      const createdAspect = await AspectsRepository.create(parsedAspect.subjectId, parsedAspect.aspectName)
+      const createdAspect = await AspectsRepository.create(
+        subjectId,
+        parsedAspect.aspectName
+      )
       return createdAspect
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -91,24 +99,31 @@ class AspectsService {
   }
 
   /**
- * Updates an aspect by ID.
- * @param {number} id - The ID of the aspect to update.
- * @param {string} aspectName - The new name of the aspect.
- * @returns {Promise<Aspect>} - The updated aspect data.
- * @throws {ErrorUtils} - If an error occurs during update.
- */
+   * Updates an aspect by ID.
+   * @param {number} id - The ID of the aspect to update.
+   * @param {string} aspectName - The new name of the aspect.
+   * @returns {Promise<Aspect>} - The updated aspect data.
+   * @throws {ErrorUtils} - If an error occurs during update.
+   */
   static async updateById (id, aspectName) {
     try {
-      const parsedAspect = aspectSchema.parse({ subjectId: id, aspectName })
+      const parsedAspect = aspectSchema.parse({ aspectName })
       const currentAspect = await AspectsRepository.findById(id)
       if (!currentAspect) {
         throw new ErrorUtils(404, 'Aspect not found')
       }
-      const aspectExists = await AspectsRepository.existsByNameExcludingId(parsedAspect.aspectName, currentAspect.subject_id, id)
+      const aspectExists = await AspectsRepository.existsByNameExcludingId(
+        parsedAspect.aspectName,
+        currentAspect.subject_id,
+        id
+      )
       if (aspectExists) {
         throw new ErrorUtils(409, 'Aspect already exists')
       }
-      const updatedAspect = await AspectsRepository.updateById(id, parsedAspect.aspectName)
+      const updatedAspect = await AspectsRepository.updateById(
+        id,
+        parsedAspect.aspectName
+      )
       if (!updatedAspect) {
         throw new ErrorUtils(404, 'Aspect not found')
       }
@@ -140,9 +155,13 @@ class AspectsService {
       if (!aspect) {
         throw new ErrorUtils(404, 'Aspect not found')
       }
-      const { isAspectAssociatedToLegalBasis } = await AspectsRepository.checkAspectLegalBasisAssociations(id)
+      const { isAspectAssociatedToLegalBasis } =
+        await AspectsRepository.checkAspectLegalBasisAssociations(id)
       if (isAspectAssociatedToLegalBasis) {
-        throw new ErrorUtils(409, 'The aspect is associated with one or more legal bases')
+        throw new ErrorUtils(
+          409,
+          'The aspect is associated with one or more legal bases'
+        )
       }
       const aspectDeleted = await AspectsRepository.deleteById(id)
       if (!aspectDeleted) {
@@ -158,28 +177,35 @@ class AspectsService {
   }
 
   /**
- * Deletes multiple aspects by their IDs.
- * @param {Array<number>} aspectIds - Array of aspect IDs to delete.
- * @returns {Promise<{ success: boolean }>} - An object indicating the deletion was successful.
- * @throws {ErrorUtils} - If aspects not found, have associations preventing deletion, or deletion fails.
- */
+   * Deletes multiple aspects by their IDs.
+   * @param {Array<number>} aspectIds - Array of aspect IDs to delete.
+   * @returns {Promise<{ success: boolean }>} - An object indicating the deletion was successful.
+   * @throws {ErrorUtils} - If aspects not found, have associations preventing deletion, or deletion fails.
+   */
   static async deleteAspectsBatch (aspectIds) {
     try {
       const existingAspects = await AspectsRepository.findByIds(aspectIds)
       if (existingAspects.length !== aspectIds.length) {
         const notFoundIds = aspectIds.filter(
-          id => !existingAspects.some(aspect => aspect.id === id))
+          (id) => !existingAspects.some((aspect) => aspect.id === id)
+        )
         throw new ErrorUtils(404, 'Aspects not found for IDs', { notFoundIds })
       }
-      const associations = await AspectsRepository.checkAspectsLegalBasisAssociationsBatch(aspectIds)
+      const associations =
+        await AspectsRepository.checkAspectsLegalBasisAssociationsBatch(
+          aspectIds
+        )
       const aspectsWithLegalBasisAssociations = associations.filter(
-        aspect => aspect.isAspectAssociatedToLegalBasis)
+        (aspect) => aspect.isAspectAssociatedToLegalBasis
+      )
       if (aspectsWithLegalBasisAssociations.length > 0) {
         throw new ErrorUtils(409, 'Aspects are associated with legal bases', {
-          associatedAspects: aspectsWithLegalBasisAssociations.map(aspect => ({
-            id: aspect.id,
-            name: aspect.name
-          }))
+          associatedAspects: aspectsWithLegalBasisAssociations.map(
+            (aspect) => ({
+              id: aspect.id,
+              name: aspect.name
+            })
+          )
         })
       }
       const aspectsDeleted = await AspectsRepository.deleteBatch(aspectIds)

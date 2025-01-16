@@ -18,7 +18,7 @@ const router = Router()
  * @middlewares UserExtractor - Middleware to ensure that the user is authorized and extracted from the request.
  * @returns {Object} - A JSON response containing the job status and relevant details (progress, result, or error).
  */
-router.get('/jobs/articles/:id', UserExtractor, getStatusJob)
+router.get('/jobs/articles/:jobId', UserExtractor, getStatusJob)
 
 /**
  * Route to check for jobs for a legal basis.

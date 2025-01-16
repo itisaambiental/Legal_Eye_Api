@@ -62,7 +62,7 @@ describe('User API tests', () => {
         .expect(400)
         .expect('Content-Type', /application\/json/)
 
-      expect(response.body.message).toMatch(/Missing required fields/i)
+      expect(response.body.message).toMatch(/Missing required fields: gmail, password/i)
     })
   })
 
@@ -247,7 +247,7 @@ describe('User API tests', () => {
         .expect(400)
         .expect('Content-Type', /application\/json/)
 
-      expect(response.body.message).toMatch(/Missing required fields: name, gmail, roleId, removePicture/i)
+      expect(response.body.message).toMatch(/Validation failed/i)
     })
 
     test('Should successfully update analyst user using admin token', async () => {

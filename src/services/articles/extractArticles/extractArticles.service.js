@@ -58,7 +58,7 @@ class extractArticles {
     try {
       const legalBase = await LegalBasisRepository.findById(legalBasisId)
       if (!legalBase) {
-        throw new ErrorUtils(404, 'Legal basis not found')
+        throw new ErrorUtils(404, 'LegalBasis not found')
       }
       const existingJobs = await articlesQueue.getJobs(['waiting', 'paused', 'active', 'delayed'])
       const jobMap = new Map(

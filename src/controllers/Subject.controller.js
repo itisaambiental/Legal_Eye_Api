@@ -13,9 +13,6 @@ import UserService from '../services/users/User.service.js'
 export const createSubject = async (req, res) => {
   const { userId } = req
   const { subjectName } = req.body
-  if (!subjectName) {
-    return res.status(400).json({ message: 'Missing required field: subjectName' })
-  }
   try {
     const isAuthorized = await UserService.userExists(userId)
     if (!isAuthorized) {
@@ -30,7 +27,7 @@ export const createSubject = async (req, res) => {
         ...(error.errors && { errors: error.errors })
       })
     }
-    return res.status(500).json({ message: 'Failed to create subject' })
+    return res.status(500).json({ message: 'Internal Server Error' })
   }
 }
 /**
@@ -57,7 +54,7 @@ export const getSubjects = async (req, res) => {
         ...(error.errors && { errors: error.errors })
       })
     }
-    return res.status(500).json({ message: 'Failed to fetch subjects' })
+    return res.status(500).json({ message: 'Internal Server Error' })
   }
 }
 
@@ -86,7 +83,7 @@ export const getSubjectById = async (req, res) => {
         ...(error.errors && { errors: error.errors })
       })
     }
-    return res.status(500).json({ message: 'Failed to fetch subject' })
+    return res.status(500).json({ message: 'Internal Server Error' })
   }
 }
 
@@ -102,9 +99,6 @@ export const updateSubject = async (req, res) => {
   const { userId } = req
   const { id } = req.params
   const { subjectName } = req.body
-  if (!subjectName) {
-    return res.status(400).json({ message: 'Missing required field: subjectName' })
-  }
   try {
     const isAuthorized = await UserService.userExists(userId)
     if (!isAuthorized) {
@@ -119,7 +113,7 @@ export const updateSubject = async (req, res) => {
         ...(error.errors && { errors: error.errors })
       })
     }
-    return res.status(500).json({ message: 'Failed to update subject' })
+    return res.status(500).json({ message: 'Internal Server Error' })
   }
 }
 

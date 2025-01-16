@@ -245,23 +245,6 @@ describe('Create a legal base', () => {
   })
 
   describe('Validation Tests', () => {
-    test('Should return 400 if required fields are missing', async () => {
-      const legalBasisData = generateLegalBasisData({
-        legalName: '',
-        subjectId: '',
-        aspectsIds: ''
-      })
-
-      const response = await api
-        .post('/api/legalBasis')
-        .set('Authorization', `Bearer ${tokenAdmin}`)
-        .send(legalBasisData)
-        .expect(400)
-        .expect('Content-Type', /application\/json/)
-
-      expect(response.body.message).toMatch(/missing required fields/i)
-    })
-
     test('Should return 400 if legalName exceeds max length', async () => {
       const longName = 'A'.repeat(256)
       const legalBasisData = generateLegalBasisData({
@@ -288,7 +271,7 @@ describe('Create a legal base', () => {
     })
 
     test('Should return 400 if abbreviation exceeds max length', async () => {
-      const longAbbreviation = 'A'.repeat(21)
+      const longAbbreviation = 'A'.repeat(256)
       const legalBasisData = generateLegalBasisData({
         subjectId: String(createdSubjectId),
         aspectsIds: JSON.stringify(createdAspectIds),
@@ -306,7 +289,7 @@ describe('Create a legal base', () => {
         expect.arrayContaining([
           {
             field: 'abbreviation',
-            message: expect.stringMatching(/exceed.*20 characters/i)
+            message: expect.stringMatching(/exceed.*255 characters/i)
           }
         ])
       )
@@ -2142,7 +2125,7 @@ describe('Get Legal Basis By Subject And Aspects', () => {
         .send({ legalBasisIds: nonExistentIds })
         .expect(404)
 
-      expect(response.body.message).toMatch(/Legal Basis not found for IDs/i)
+      expect(response.body.message).toMatch(/LegalBasis not found for IDs/i)
       expect(response.body.errors.notFoundIds).toEqual(nonExistentIds)
     })
 

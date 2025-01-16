@@ -103,14 +103,13 @@ describe('Getting job states', () => {
       status: 404,
       data: { message: 'Job not found' }
     })
-
     const nonExistentJobId = '-1'
     const response = await api
       .get(`/api/jobs/articles/${nonExistentJobId}`)
       .set('Authorization', `Bearer ${tokenAdmin}`)
       .expect(404)
 
-    expect(response.body.message).toMatch(/not found/)
+    expect(response.body.message).toMatch(/Job not found/i)
   })
 
   test('Should return 401 if user is unauthorized', async () => {
@@ -120,15 +119,6 @@ describe('Getting job states', () => {
       .expect('Content-Type', /application\/json/)
 
     expect(response.body.error).toMatch(/token missing or invalid/i)
-  })
-
-  test('Should return 400 if jobId is missing', async () => {
-    const response = await api
-      .get('/api/jobs/articles/')
-      .set('Authorization', `Bearer ${tokenAdmin}`)
-      .expect(404)
-
-    expect(response.body.message).toMatch(/Not Found/i)
   })
 })
 describe('Getting job state by Legal Basis ID', () => {
@@ -201,7 +191,7 @@ describe('Getting job state by Legal Basis ID', () => {
       .set('Authorization', `Bearer ${tokenAdmin}`)
       .expect(404)
 
-    expect(response.body.message).toBe('Legal basis not found')
+    expect(response.body.message).toMatch(/LegalBasis not found/i)
   })
 
   test('Should return 401 if user is unauthorized', async () => {

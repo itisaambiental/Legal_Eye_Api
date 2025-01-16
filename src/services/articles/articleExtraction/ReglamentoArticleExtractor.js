@@ -1,6 +1,6 @@
 import ArticleExtractor from './ArticleExtractor.js'
 import openai from '../../../config/openapi.config.js'
-import { articleResponseSchema } from '../../../schemas/articlesValidationResponse.js'
+import { singleArticleModelSchema } from '../../../schemas/articlesValidation.js'
 import { zodResponseFormat } from 'openai/helpers/zod'
 /**
  * Class extending ArticleExtractor to extract and correct articles from legal texts.
@@ -123,7 +123,7 @@ class ReglamentoArticleExtractor extends ArticleExtractor {
         { role: 'user', content: prompt }
       ],
       temperature: 0,
-      response_format: zodResponseFormat(articleResponseSchema, 'articles_response')
+      response_format: zodResponseFormat(singleArticleModelSchema, 'articles_response')
     }
     const attemptRequest = async (retryCount = 0) => {
       try {

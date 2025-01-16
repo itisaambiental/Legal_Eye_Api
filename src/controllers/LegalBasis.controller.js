@@ -19,11 +19,6 @@ export const createLegalBasis = async (req, res) => {
   const { userId } = req
   const { legalName, abbreviation, subjectId, aspectsIds, classification, jurisdiction, state, municipality, lastReform, extractArticles } = req.body
   const document = req.file
-  if (!legalName || !abbreviation || !subjectId || !aspectsIds || !classification || !jurisdiction || !lastReform || !extractArticles) {
-    return res.status(400).json({
-      message: 'Missing required fields: legalName, abbreviation, subjectId, aspectsIds (non-empty array), classification, jurisdiction, lastReform, extractArticles'
-    })
-  }
   try {
     const isAuthorized = await UserService.userExists(userId)
     if (!isAuthorized) {
@@ -41,7 +36,7 @@ export const createLegalBasis = async (req, res) => {
         ...(error.errors && { errors: error.errors })
       })
     }
-    return res.status(500).json({ message: 'Error initializing legal basis creation' })
+    return res.status(500).json({ message: 'Internal Server Error' })
   }
 }
 
@@ -69,7 +64,7 @@ export const getAllLegalBasis = async (req, res) => {
         ...(error.errors && { errors: error.errors })
       })
     }
-    return res.status(500).json({ message: 'Failed to retrieve legal basis records' })
+    return res.status(500).json({ message: 'Internal Server Error' })
   }
 }
 
@@ -98,7 +93,7 @@ export const getLegalBasisById = async (req, res) => {
         ...(error.errors && { errors: error.errors })
       })
     }
-    return res.status(500).json({ message: 'Failed to retrieve legal basis by ID' })
+    return res.status(500).json({ message: 'Internal Server Error' })
   }
 }
 
@@ -127,7 +122,7 @@ export const getLegalBasisByName = async (req, res) => {
         ...(error.errors && { errors: error.errors })
       })
     }
-    return res.status(500).json({ message: 'Failed to retrieve legal basis by name' })
+    return res.status(500).json({ message: 'Internal Server Error' })
   }
 }
 
@@ -156,7 +151,7 @@ export const getLegalBasisByAbbreviation = async (req, res) => {
         ...(error.errors && { errors: error.errors })
       })
     }
-    return res.status(500).json({ message: 'Failed to retrieve legal basis by abbreviation' })
+    return res.status(500).json({ message: 'Internal Server Error' })
   }
 }
 
@@ -185,7 +180,7 @@ export const getLegalBasisByClassification = async (req, res) => {
         ...(error.errors && { errors: error.errors })
       })
     }
-    return res.status(500).json({ message: 'Failed to retrieve legal basis by classification' })
+    return res.status(500).json({ message: 'Internal Server Error' })
   }
 }
 
@@ -375,7 +370,6 @@ export const getLegalBasisByLastReform = async (req, res) => {
   }
   const { date: parsedFrom, error: fromError } = from ? validateDate(from, 'from') : {}
   const { date: parsedTo, error: toError } = to ? validateDate(to, 'to') : {}
-
   if (fromError) errors.push(fromError)
   if (toError) errors.push(toError)
   if (errors.length > 0) {
@@ -411,11 +405,6 @@ export const updateLegalBasis = async (req, res) => {
   const { userId } = req
   const { legalName, abbreviation, subjectId, aspectsIds, classification, jurisdiction, state, municipality, lastReform, extractArticles, removeDocument } = req.body
   const document = req.file
-  if (!id || !(legalName || abbreviation || subjectId || aspectsIds || classification || jurisdiction || state || municipality || lastReform || extractArticles || removeDocument || document)) {
-    return res.status(400).json({
-      message: 'Missing required parameter: id or at least one field to update.'
-    })
-  }
   try {
     const isAuthorized = await UserService.userExists(userId)
     if (!isAuthorized) {
@@ -469,7 +458,7 @@ export const deleteLegalBasis = async (req, res) => {
         ...(error.errors && { errors: error.errors })
       })
     }
-    return res.status(500).json({ message: 'Failed to delete legal basis by ID' })
+    return res.status(500).json({ message: 'Internal Server Error' })
   }
 }
 
@@ -507,7 +496,7 @@ export const deleteLegalBasisBatch = async (req, res) => {
         ...(error.errors && { errors: error.errors })
       })
     }
-    return res.status(500).json({ message: 'Failed to delete legal basis by ID' })
+    return res.status(500).json({ message: 'Internal Server Error' })
   }
 }
 

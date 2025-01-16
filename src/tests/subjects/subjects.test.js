@@ -51,7 +51,7 @@ describe('Subjects API tests', () => {
         .expect(400)
         .expect('Content-Type', /application\/json/)
 
-      expect(response.body.message).toMatch(/Missing required field/i)
+      expect(response.body.message).toMatch(/Validation failed/i)
     })
 
     test('Should return 401 if the user is unauthorized', async () => {
@@ -149,7 +149,7 @@ describe('Subjects API tests', () => {
         .expect(400)
         .expect('Content-Type', /application\/json/)
 
-      expect(response.body.message).toMatch(/Missing required field/i)
+      expect(response.body.message).toMatch(/Validation failed/i)
     })
 
     test('Should return 409 if the subject name already exists', async () => {

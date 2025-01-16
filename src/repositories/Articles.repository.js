@@ -29,13 +29,8 @@ class ArticlesRepository {
     ]
     try {
       const [result] = await pool.query(query, values)
-      return new Article(
-        result.insertId,
-        legalBasisId,
-        article.title,
-        article.article,
-        article.order
-      )
+      const article = await this.findById(result.insertId)
+      return article
     } catch (error) {
       console.error('Error creating article:', error.message)
       throw new ErrorUtils(500, 'Error creating article in the database')
@@ -201,6 +196,20 @@ class ArticlesRepository {
     } catch (error) {
       console.error('Error retrieving articles by description:', error.message)
       throw new ErrorUtils(500, 'Error retrieving articles by description')
+    }
+  }
+
+  /**
+ * Deletes all articles from the database.
+ * @returns {Promise<void>}
+ * @throws {ErrorUtils} - If an error occurs during deletion.
+ */
+  static async deleteAll () {
+    try {
+      await pool.query('DELETE FROM article')
+    } catch (error) {
+      console.error('Error deleting all articles:', error.message)
+      throw new ErrorUtils(500, 'Error deleting all articles from the database')
     }
   }
 }
