@@ -254,42 +254,80 @@ class UserRepository {
   }
 
   /**
-   * Finds a user in the database by their Gmail.
-   * @param {string} gmail - User's Gmail to find.
-   * @returns {Promise<User|null>} - The found user or null if not found.
-   * @throws {ErrorUtils} - If an error occurs during retrieval.
-   */
-  static async findByGmail (gmail) {
-    const query = 'SELECT * FROM users WHERE gmail = ?'
+ * Finds a user by Gmail.
+ * @param {string} gmail - The Gmail to find.
+ * @returns {Promise<User|null>} - The user object if found, or null if not found.
+ * @throws {ErrorUtils} - If an error occurs during the check.
+ */
+  static async existsByGmail (gmail) {
+    const query = `
+    SELECT * 
+    FROM users 
+    WHERE gmail = ?
+    LIMIT 1
+  `
     try {
       const [rows] = await pool.query(query, [gmail])
       if (rows.length === 0) return null
       const user = rows[0]
       return new User(user.id, user.name, user.password, user.gmail, user.role_id, user.profile_picture)
     } catch (error) {
-      console.error('Error finding user by gmail:', error)
-      throw new ErrorUtils(500, 'Error finding user by gmail')
+      console.error('Error finding user by Gmail:', error.message)
+      throw new ErrorUtils(500, 'Error finding user by Gmail')
     }
   }
 
   /**
- * Finds a user in the database by their Gmail, excluding a specific user ID.
- * @param {string} gmail - User's Gmail to find.
- * @param {number} excludeUserId - User ID to exclude from the search.
- * @returns {Promise<User|null>} - The found user or null if not found.
+ * Retrieves users from the database by their name or email (gmail).
+ * @param {string} [nameOrEmail] - The name or email of the user to search for.
+ * @returns {Promise<Array<User|null>>} - Array of users matching the search criteria.
  * @throws {ErrorUtils} - If an error occurs during retrieval.
  */
-  static async findByGmailExcludingUserId (gmail, excludeUserId) {
-    const query = 'SELECT * FROM users WHERE gmail = ? AND id != ?'
-
+  static async findByNameOrGmail (nameOrEmail) {
+    const query = 'SELECT * FROM users WHERE name LIKE ? OR gmail LIKE ?'
+    const searchValue = `%${nameOrEmail}%`
     try {
-      const [rows] = await pool.query(query, [gmail, excludeUserId])
+      const [rows] = await pool.query(query, [searchValue, searchValue])
+      if (rows.length === 0) return null
+      return rows.map(
+        (user) =>
+          new User(
+            user.id,
+            user.name,
+            user.password,
+            user.gmail,
+            user.role_id,
+            user.profile_picture
+          )
+      )
+    } catch (error) {
+      console.error('Error retrieving users by value:', error)
+      throw new ErrorUtils(500, 'Error retrieving users by value')
+    }
+  }
+
+  /**
+ * Checks if a user exists with the given Gmail, excluding a specific user ID.
+ * @param {string} gmail - The Gmail to check for existence.
+ * @param {number} userId - The user ID to exclude from the check.
+ * @returns {Promise<User|null>} - True if a user with the same Gmail (excluding the given ID) exists, false otherwise.
+ * @throws {ErrorUtils} - If an error occurs during the check.
+ */
+  static async existsByGmailExcludingId (gmail, userId) {
+    const query = `
+    SELECT 1 
+    FROM users 
+    WHERE gmail = ? AND id != ?
+    LIMIT 1
+  `
+    try {
+      const [rows] = await pool.query(query, [gmail, userId])
       if (rows.length === 0) return null
       const user = rows[0]
       return new User(user.id, user.name, user.password, user.gmail, user.role_id, user.profile_picture)
     } catch (error) {
-      console.error('Error finding user by Gmail excluding user ID:', error.message)
-      throw new ErrorUtils(500, 'Error finding user by Gmail excluding user ID')
+      console.error('Error checking if user exists by Gmail excluding ID:', error.message)
+      throw new ErrorUtils(500, 'Error checking if user exists by Gmail excluding ID')
     }
   }
 

@@ -17,7 +17,7 @@ class SubjectsService {
   static async create ({ subjectName }) {
     try {
       const parsedSubject = subjectSchema.parse({ subjectName })
-      const subjectExists = await SubjectsRepository.findByName(parsedSubject.subjectName)
+      const subjectExists = await SubjectsRepository.existsBySubjectName(parsedSubject.subjectName)
       if (subjectExists) {
         throw new ErrorUtils(409, 'Subject already exists')
       }
@@ -71,6 +71,27 @@ class SubjectsService {
         throw new ErrorUtils(404, 'Subject not found')
       }
       return subject
+    } catch (error) {
+      if (error instanceof ErrorUtils) {
+        throw error
+      }
+      throw new ErrorUtils(500, 'Failed to fetch subject')
+    }
+  }
+
+  /**
+   * Fetches subjects by name.
+   * @param {string} subjectName - The name of the subject to retrieve.
+   * @returns {Promise<Array<Subject>>} - The subject data.
+   * @throws {ErrorUtils} - If an error occurs during retrieval.
+   */
+  static async getByName (subjectName) {
+    try {
+      const subjects = await SubjectsRepository.findByName(subjectName)
+      if (!subjects) {
+        return []
+      }
+      return subjects
     } catch (error) {
       if (error instanceof ErrorUtils) {
         throw error

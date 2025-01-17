@@ -8,7 +8,11 @@ import { z } from 'zod'
 import ErrorUtils from '../../utils/Error.js'
 import emailQueue from '../../workers/emailWorker.js'
 import jwt from 'jsonwebtoken'
-import { JWT_SECRET, JWT_EXPIRATION, MICROSOFT_GRAPH_API } from '../../config/variables.config.js'
+import {
+  JWT_SECRET,
+  JWT_EXPIRATION,
+  MICROSOFT_GRAPH_API
+} from '../../config/variables.config.js'
 import FileService from '../files/File.service.js'
 import generateVerificationCode from '../../utils/generateCode.js'
 import { addMinutes } from 'date-fns'
@@ -35,7 +39,7 @@ class UserService {
         ...userData,
         profilePicture
       })
-      const existingUser = await UserRepository.findByGmail(parsedUser.gmail)
+      const existingUser = await UserRepository.existsByGmail(parsedUser.gmail)
       if (existingUser) {
         throw new ErrorUtils(409, 'Gmail already exists')
       }
@@ -64,7 +68,10 @@ class UserService {
       if (profilePictureKey) {
         profilePictureUrl = await FileService.getFile(profilePictureKey)
       }
-      const emailData = EmailService.generateWelcomeEmail(parsedUser, userPassword)
+      const emailData = EmailService.generateWelcomeEmail(
+        parsedUser,
+        userPassword
+      )
       await emailQueue.add(emailData)
       const { password, ..._user } = user
       return {
@@ -100,7 +107,7 @@ class UserService {
     try {
       const parsedLoginData = loginSchema.parse(loginData)
       const { gmail, password } = parsedLoginData
-      const user = await UserRepository.findByGmail(gmail)
+      const user = await UserRepository.existsByGmail(gmail)
       if (!user) {
         throw new ErrorUtils(401, 'Invalid email or password')
       }
@@ -114,11 +121,9 @@ class UserService {
         username: user.name,
         userType: user.roleId
       }
-      const token = jwt.sign(
-        { userForToken },
-        JWT_SECRET,
-        { expiresIn: JWT_EXPIRATION }
-      )
+      const token = jwt.sign({ userForToken }, JWT_SECRET, {
+        expiresIn: JWT_EXPIRATION
+      })
       return { token }
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -165,7 +170,7 @@ class UserService {
   static async microsoftLogin (accessToken) {
     try {
       const userEmail = await this.getUserDataFromMicrosoft(accessToken)
-      const user = await UserRepository.findByGmail(userEmail)
+      const user = await UserRepository.existsByGmail(userEmail)
       if (!user) {
         throw new ErrorUtils(401, 'Invalid email')
       }
@@ -176,11 +181,9 @@ class UserService {
         userType: user.roleId
       }
 
-      const token = jwt.sign(
-        { userForToken },
-        JWT_SECRET,
-        { expiresIn: JWT_EXPIRATION }
-      )
+      const token = jwt.sign({ userForToken }, JWT_SECRET, {
+        expiresIn: JWT_EXPIRATION
+      })
 
       return { token }
     } catch (error) {
@@ -202,17 +205,19 @@ class UserService {
       if (!users) {
         return []
       }
-      const userList = await Promise.all(users.map(async (user) => {
-        let profilePictureUrl = null
-        if (user.profile_picture) {
-          profilePictureUrl = await FileService.getFile(user.profile_picture)
-        }
-        const { password, ..._user } = user
-        return {
-          ..._user,
-          profile_picture: profilePictureUrl
-        }
-      }))
+      const userList = await Promise.all(
+        users.map(async (user) => {
+          let profilePictureUrl = null
+          if (user.profile_picture) {
+            profilePictureUrl = await FileService.getFile(user.profile_picture)
+          }
+          const { password, ..._user } = user
+          return {
+            ..._user,
+            profile_picture: profilePictureUrl
+          }
+        })
+      )
       return userList
     } catch (error) {
       if (error instanceof ErrorUtils) {
@@ -284,20 +289,19 @@ class UserService {
       if (!users) {
         return []
       }
-      const userList = await Promise.all(users.map(async (user) => {
-        let profilePictureUrl = null
-        if (user.profile_picture) {
-          profilePictureUrl = await FileService.getFile(user.profile_picture)
-        }
-
-        const { password, ..._user } = user
-
-        return {
-          ..._user,
-          profile_picture: profilePictureUrl
-        }
-      }))
-
+      const userList = await Promise.all(
+        users.map(async (user) => {
+          let profilePictureUrl = null
+          if (user.profile_picture) {
+            profilePictureUrl = await FileService.getFile(user.profile_picture)
+          }
+          const { password, ..._user } = user
+          return {
+            ..._user,
+            profile_picture: profilePictureUrl
+          }
+        })
+      )
       return userList
     } catch (error) {
       if (error instanceof ErrorUtils) {
@@ -308,21 +312,58 @@ class UserService {
   }
 
   /**
- * Updates a user's information by ID.
- * @param {number} userId - User's ID.
- * @param {Object} userData - Fields to update, expects { name, gmail, roleId, profilePicture, removePicture }.
- * @param {File|undefined} profilePicture - New profile picture file (optional).
- * @param {number} currentUserId - ID of the currently logged-in user.
- * @returns {Promise<Object>} - Updated user data and a new token if applicable.
- * @throws {ErrorUtils} - If update fails, user not found, or validation errors occur.
- */
+   * Retrieves users by name or gmail.
+   * @param {string} [nameOrEmail] - The name or email of the user to search for.
+   * @returns {Promise<Array<Object>>} - Array of user objects matching the criteria.
+   * @throws {ErrorUtils} - If retrieval fails.
+   */
+  static async getUsersByNameOrGmail (nameOrEmail) {
+    try {
+      const users = await UserRepository.findByNameOrGmail(nameOrEmail)
+      if (!users) {
+        return []
+      }
+      const userList = await Promise.all(
+        users.map(async (user) => {
+          let profilePictureUrl = null
+          if (user.profile_picture) {
+            profilePictureUrl = await FileService.getFile(user.profile_picture)
+          }
+          const { password, ..._user } = user
+          return {
+            ..._user,
+            profile_picture: profilePictureUrl
+          }
+        })
+      )
+      return userList
+    } catch (error) {
+      if (error instanceof ErrorUtils) {
+        throw error
+      }
+      throw new ErrorUtils(500, 'Failed to retrieve users by name or gmail')
+    }
+  }
+
+  /**
+   * Updates a user's information by ID.
+   * @param {number} userId - User's ID.
+   * @param {Object} userData - Fields to update, expects { name, gmail, roleId, profilePicture, removePicture }.
+   * @param {File|undefined} profilePicture - New profile picture file (optional).
+   * @param {number} currentUserId - ID of the currently logged-in user.
+   * @returns {Promise<Object>} - Updated user data and a new token if applicable.
+   * @throws {ErrorUtils} - If update fails, user not found, or validation errors occur.
+   */
   static async updateUser (userId, userData, profilePicture, currentUserId) {
     try {
       const parsedUser = userSchema.parse({
         ...userData,
         profilePicture
       })
-      const existingUser = await UserRepository.findByGmailExcludingUserId(parsedUser.gmail, userId)
+      const existingUser = await UserRepository.existsByGmailExcludingId(
+        parsedUser.gmail,
+        userId
+      )
       if (existingUser) {
         throw new ErrorUtils(409, 'Gmail already exists')
       }
@@ -331,7 +372,10 @@ class UserService {
         throw new ErrorUtils(404, 'User not found')
       }
       if (parsedUser.removePicture && profilePicture) {
-        throw new ErrorUtils(400, 'Cannot provide a profile picture if removePicture is true')
+        throw new ErrorUtils(
+          400,
+          'Cannot provide a profile picture if removePicture is true'
+        )
       }
       let profilePictureKey = currentUser.profile_picture
       if (profilePicture && !parsedUser.removePicture) {
@@ -360,7 +404,9 @@ class UserService {
       }
       let profilePictureUrl = null
       if (updatedUser.profile_picture) {
-        profilePictureUrl = await FileService.getFile(updatedUser.profile_picture)
+        profilePictureUrl = await FileService.getFile(
+          updatedUser.profile_picture
+        )
       }
       const { password, ..._user } = updatedUser
       let token = null
@@ -371,7 +417,9 @@ class UserService {
           username: updatedUser.name,
           userType: updatedUser.roleId
         }
-        token = jwt.sign({ userForToken }, JWT_SECRET, { expiresIn: JWT_EXPIRATION })
+        token = jwt.sign({ userForToken }, JWT_SECRET, {
+          expiresIn: JWT_EXPIRATION
+        })
       }
       return {
         updatedUser: {
@@ -410,7 +458,10 @@ class UserService {
         throw new ErrorUtils(500, 'Failed to upload profile picture')
       }
       const profilePictureKey = uploadResponse.uniqueFileName
-      const user = await UserRepository.updateProfilePicture(userId, profilePictureKey)
+      const user = await UserRepository.updateProfilePicture(
+        userId,
+        profilePictureKey
+      )
       if (!user) {
         throw new ErrorUtils(404, 'User not found')
       }
@@ -453,18 +504,17 @@ class UserService {
   }
 
   /**
- * Deletes multiple users by their IDs.
- * @param {Array<number>} userIds - Array of user IDs to delete.
- * @returns {Promise<Object>} - Success message if users were deleted.
- * @throws {ErrorUtils} - If users not found or deletion fails.
- */
+   * Deletes multiple users by their IDs.
+   * @param {Array<number>} userIds - Array of user IDs to delete.
+   * @returns {Promise<Object>} - Success message if users were deleted.
+   * @throws {ErrorUtils} - If users not found or deletion fails.
+   */
   static async deleteUsersBatch (userIds) {
     try {
       const existingUsers = await UserRepository.findByIds(userIds)
       if (existingUsers.length !== userIds.length) {
-        const foundIds = existingUsers.map(user => user.id)
-        const notFoundIds = userIds.filter(
-          id => !foundIds.includes(id))
+        const foundIds = existingUsers.map((user) => user.id)
+        const notFoundIds = userIds.filter((id) => !foundIds.includes(id))
         throw new ErrorUtils(404, 'Users not found for IDs', { notFoundIds })
       }
       for (const user of existingUsers) {
@@ -542,7 +592,10 @@ class UserService {
       if (!requestingUser) {
         return false
       }
-      if (requestingUser.roleId === 1 || requestingUserId === parseInt(targetUserId, 10)) {
+      if (
+        requestingUser.roleId === 1 ||
+        requestingUserId === parseInt(targetUserId, 10)
+      ) {
         return true
       }
       return false
@@ -566,9 +619,16 @@ class UserService {
 
       const expiresAt = addMinutes(new Date(), 1)
 
-      await UserRepository.saveVerificationCode({ gmail, code: verificationCode, expiresAt })
+      await UserRepository.saveVerificationCode({
+        gmail,
+        code: verificationCode,
+        expiresAt
+      })
 
-      const emailData = EmailService.generatePasswordResetEmail(gmail, verificationCode)
+      const emailData = EmailService.generatePasswordResetEmail(
+        gmail,
+        verificationCode
+      )
 
       await emailQueue.add(emailData)
     } catch (error) {
@@ -588,7 +648,10 @@ class UserService {
    */
   static async verifyPasswordResetCode (gmail, code) {
     try {
-      const verification = await UserRepository.getVerificationCode(gmail, code)
+      const verification = await UserRepository.getVerificationCode(
+        gmail,
+        code
+      )
       if (!verification) {
         return false
       }
@@ -602,12 +665,18 @@ class UserService {
       const salt = await bcrypt.genSalt()
       const hashedPassword = await bcrypt.hash(password, salt)
 
-      const userUpdated = await UserRepository.updateUserPassword(gmail, hashedPassword)
+      const userUpdated = await UserRepository.updateUserPassword(
+        gmail,
+        hashedPassword
+      )
 
       if (!userUpdated) {
         throw new ErrorUtils(500, 'Failed to update user password')
       }
-      const emailData = EmailService.generatePasswordResetEmailSend(gmail, password)
+      const emailData = EmailService.generatePasswordResetEmailSend(
+        gmail,
+        password
+      )
       await emailQueue.add(emailData)
       return true
     } catch (error) {

@@ -10,6 +10,7 @@ import {
   createAspect,
   getAspectsBySubject,
   getAspectById,
+  getAspectsByName,
   updateAspect,
   deleteAspect,
   deleteAspectsBatch
@@ -48,6 +49,15 @@ router.get('/subjects/:subjectId/aspects', UserExtractor, getAspectsBySubject)
  * @middleware UserExtractor
  */
 router.get('/aspect/:id', UserExtractor, getAspectById)
+
+/**
+ * Route to retrieve aspects by name for a specific subject.
+ * @method GET
+ * @path /subjects/:subjectId/aspects/name
+ * @description Retrieves a list of aspects by name associated with a specific subject.
+ * @middleware UserExtractor
+ */
+router.get('/subjects/:subjectId/aspects/name', UserExtractor, getAspectsByName)
 
 /**
  * Route to update an aspect by its ID for a specific subject.

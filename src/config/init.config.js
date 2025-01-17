@@ -19,7 +19,7 @@ import ErrorUtils from '../utils/Error.js'
  */
 export const initializeAdmin = async () => {
   try {
-    const existingAdmin = await UserRepository.findByGmail(ADMIN_GMAIL)
+    const existingAdmin = await UserRepository.existsByGmail(ADMIN_GMAIL)
     if (!existingAdmin) {
       const adminData = {
         name: ADMIN_NAME,

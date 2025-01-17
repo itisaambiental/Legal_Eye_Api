@@ -88,6 +88,35 @@ export const getSubjectById = async (req, res) => {
 }
 
 /**
+ * Retrieves subjects by name.
+ * @function getSubjectsByName
+ * @param {Object} req - Request object, expects `name` in the query parameters.
+ * @param {Object} res - Response object.
+ * @returns {Object} - The subjects data.
+ * @throws {ErrorUtils} - If the process fails.
+ */
+export const getSubjectsByName = async (req, res) => {
+  const { userId } = req
+  const { name } = req.query
+  try {
+    const isAuthorized = await UserService.userExists(userId)
+    if (!isAuthorized) {
+      return res.status(403).json({ message: 'Unauthorized' })
+    }
+    const subjects = await SubjectsService.getByName(name)
+    return res.status(200).json({ subjects })
+  } catch (error) {
+    if (error instanceof ErrorUtils) {
+      return res.status(error.status).json({
+        message: error.message,
+        ...(error.errors && { errors: error.errors })
+      })
+    }
+    return res.status(500).json({ message: 'Internal Server Error' })
+  }
+}
+
+/**
  * Updates a subject by ID.
  * @function updateSubject
  * @param {Object} req - Request object, expects { subjectName } in body and { id } as URL parameter.

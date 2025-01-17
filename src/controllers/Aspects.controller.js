@@ -91,6 +91,36 @@ export const getAspectById = async (req, res) => {
 }
 
 /**
+ * Retrieves aspects by name for a specific subject.
+ * @function getAspectsByName
+ * @param {Object} req - Request object, expects `aspectName` in query parameters and `subjectId` in URL parameters.
+ * @param {Object} res - Response object.
+ * @returns {Array} - An array of aspects matching the criteria or an empty array if none found.
+ * @throws {ErrorUtils} - If the process fails.
+ */
+export const getAspectsByName = async (req, res) => {
+  const { userId } = req
+  const { subjectId } = req.params
+  const { aspectName } = req.query
+  try {
+    const isAuthorized = await UserService.userExists(userId)
+    if (!isAuthorized) {
+      return res.status(403).json({ message: 'Unauthorized' })
+    }
+    const aspects = await AspectsService.getByName(aspectName, subjectId)
+    return res.status(200).json({ aspects })
+  } catch (error) {
+    if (error instanceof ErrorUtils) {
+      return res.status(error.status).json({
+        message: error.message,
+        ...(error.errors && { errors: error.errors })
+      })
+    }
+    return res.status(500).json({ message: 'Internal Server Error' })
+  }
+}
+
+/**
  * Updates an aspect by ID.
  * @function updateAspect
  * @param {Object} req - Request object, expects { aspectName } in body and { id } as URL parameter.

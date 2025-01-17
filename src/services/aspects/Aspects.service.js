@@ -25,7 +25,7 @@ class AspectsService {
       if (!subjectExists) {
         throw new ErrorUtils(404, 'Subject not found')
       }
-      const aspectExists = await AspectsRepository.findByNameAndSubjectId(
+      const aspectExists = await AspectsRepository.existsByNameAndSubjectId(
         parsedAspect.aspectName,
         subjectId
       )
@@ -90,6 +90,32 @@ class AspectsService {
         throw new ErrorUtils(404, 'Aspect not found')
       }
       return aspect
+    } catch (error) {
+      if (error instanceof ErrorUtils) {
+        throw error
+      }
+      throw new ErrorUtils(500, 'Failed to fetch aspect')
+    }
+  }
+
+  /**
+   * Fetches aspects by name.
+   * @param {number} aspectName - The name of the aspect to retrieve.
+   * @param {number} subjectId - The ID of the subject to retrieve aspects for.
+   * @returns {Promise<Array<Aspect>>} - The aspects data.
+   * @throws {ErrorUtils} - If an error occurs during retrieval.
+   */
+  static async getByName (aspectName, subjectId) {
+    try {
+      const subjectExists = await SubjectsRepository.findById(subjectId)
+      if (!subjectExists) {
+        throw new ErrorUtils(404, 'Subject not found')
+      }
+      const aspects = await AspectsRepository.findByNameAndSubjectId(aspectName, subjectId)
+      if (!aspects) {
+        return []
+      }
+      return aspects
     } catch (error) {
       if (error instanceof ErrorUtils) {
         throw error

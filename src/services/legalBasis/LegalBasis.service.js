@@ -38,7 +38,7 @@ class LegalBasisService {
         ...data,
         document
       })
-      const legalBasisExists = await LegalBasisRepository.exists(parsedData.legalName)
+      const legalBasisExists = await LegalBasisRepository.existsByLegalName(parsedData.legalName)
       if (legalBasisExists) {
         throw new ErrorUtils(409, 'LegalBasis already exists')
       }

@@ -19,7 +19,7 @@ beforeAll(async () => {
     .expect('Content-Type', /application\/json/)
 
   tokenAdmin = response.body.token
-  const adminUser = await UserRepository.findByGmail(ADMIN_GMAIL)
+  const adminUser = await UserRepository.existsByGmail(ADMIN_GMAIL)
   adminUserId = adminUser.id
 })
 
@@ -186,6 +186,110 @@ describe('User API tests', () => {
     })
   })
 
+  describe('Get users by role ID', () => {
+    const roleId = 2
+    const newUserData = {
+      name: 'Test Analyst',
+      gmail: 'testanalyst@isaambiental.com',
+      roleId: '2'
+    }
+    test('Should return an empty array when no users match the role ID', async () => {
+      const response = await api
+        .get(`/api/users/role/${roleId}`)
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .expect(200)
+        .expect('Content-Type', /application\/json/)
+
+      expect(response.body.users).toBeInstanceOf(Array)
+      expect(response.body.users.length).toBe(1)
+    })
+    test('Should return a list of users filtered by role ID after creating a user', async () => {
+      await api
+        .post('/api/user/register')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send(newUserData)
+        .expect(201)
+      const response = await api
+        .get(`/api/users/role/${roleId}`)
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .expect(200)
+        .expect('Content-Type', /application\/json/)
+
+      expect(response.body.users).toBeInstanceOf(Array)
+      expect(response.body.users.length).toBe(2)
+      expect(response.body.users[1].gmail).toBe(newUserData.gmail)
+    })
+
+    test('Should return 401 if the user is unauthorized', async () => {
+      const response = await api
+        .get(`/api/users/role/${roleId}`)
+        .expect(401)
+        .expect('Content-Type', /application\/json/)
+
+      expect(response.body.error).toMatch(/token missing or invalid/i)
+    })
+  })
+
+  describe('Get users by name or gmail', () => {
+    const searchUserData = {
+      name: 'Search User',
+      gmail: 'searchuser@isaambiental.com',
+      roleId: '2'
+    }
+
+    test('Should return an empty array when no users match the name or gmail', async () => {
+      const response = await api
+        .get('/api/users/search/filter')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .query({ nameOrEmail: 'NonExistentNameOrEmail' })
+        .expect(200)
+        .expect('Content-Type', /application\/json/)
+
+      expect(response.body.users).toBeInstanceOf(Array)
+      expect(response.body.users.length).toBe(0)
+    })
+
+    test('Should return a list of users filtered by name or gmail after creating a user', async () => {
+      await api
+        .post('/api/user/register')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send(searchUserData)
+        .expect(201)
+
+      const nameResponse = await api
+        .get('/api/users/search/filter')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .query({ nameOrEmail: 'Search User' })
+        .expect(200)
+        .expect('Content-Type', /application\/json/)
+
+      expect(nameResponse.body.users).toBeInstanceOf(Array)
+      expect(nameResponse.body.users.length).toBe(1)
+      expect(nameResponse.body.users[0].gmail).toBe(searchUserData.gmail)
+
+      const gmailResponse = await api
+        .get('/api/users/search/filter')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .query({ nameOrEmail: 'searchuser@isaambiental.com' })
+        .expect(200)
+        .expect('Content-Type', /application\/json/)
+
+      expect(gmailResponse.body.users).toBeInstanceOf(Array)
+      expect(gmailResponse.body.users.length).toBe(1)
+      expect(gmailResponse.body.users[0].name).toBe(searchUserData.name)
+    })
+
+    test('Should return 401 if the user is unauthorized', async () => {
+      const response = await api
+        .get('/api/users/search/filter')
+        .query({ nameOrEmail: 'Search User' })
+        .expect(401)
+        .expect('Content-Type', /application\/json/)
+
+      expect(response.body.error).toMatch(/token missing or invalid/i)
+    })
+  })
+
   describe('Updating user information', () => {
     test('Should successfully update admin user information with valid fields', async () => {
       const updatedData = { name: 'Admin Updated', gmail: ADMIN_GMAIL, roleId: '1' }
@@ -287,7 +391,7 @@ describe('User API tests', () => {
         .expect('Content-Type', /application\/json/)
 
       const users = response.body.users
-      expect(users).toHaveLength(1)
+      expect(users).toHaveLength(3)
       expect(users[0].gmail).toBe(ADMIN_GMAIL)
     })
 

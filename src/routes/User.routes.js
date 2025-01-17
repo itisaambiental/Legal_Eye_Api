@@ -13,6 +13,7 @@ import {
   getAllUsers,
   getAllRoles,
   getUserById,
+  getUsersByNameOrGmail,
   getUsersByRole,
   updateUser,
   updateUserPicture,
@@ -93,6 +94,16 @@ router.get('/user/:id', UserExtractor, getUserById)
  * @param {number} roleId - The ID of the role to filter users by.
  */
 router.get('/users/role/:roleId', UserExtractor, getUsersByRole)
+
+/**
+ * Route to get users by name or gmail.
+ * @method GET
+ * @path /users/search
+ * @description Retrieves a list of users filtered by name or gmail.
+ * @middleware UserExtractor
+ * @query {string} [nameOrEmail] - The name or email of the user to search for.
+ */
+router.get('/users/search/filter', UserExtractor, getUsersByNameOrGmail)
 
 /**
  * Route to update a specific user by ID.

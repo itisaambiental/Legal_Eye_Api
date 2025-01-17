@@ -113,6 +113,46 @@ describe('Subjects API tests', () => {
     })
   })
 
+  describe('Subjects API - GET /subjects/name', () => {
+    test('Should retrieve a subject by its name', async () => {
+      const response = await api
+        .get('/api/subjects/name')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .query({ name: subjectName })
+        .expect(200)
+        .expect('Content-Type', /application\/json/)
+
+      const { subjects } = response.body
+      expect(subjects).toHaveLength(1)
+      expect(subjects[0]).toHaveProperty('id')
+      expect(subjects[0].subject_name).toBe(subjectName)
+    })
+
+    test('Should return an empty array if the subject does not exist', async () => {
+      const nonExistentSubjectName = 'nonExistentSubjectName'
+      const response = await api
+        .get('/api/subjects/name')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .query({ name: nonExistentSubjectName })
+        .expect(200)
+        .expect('Content-Type', /application\/json/)
+
+      const { subjects } = response.body
+      expect(subjects).toBeInstanceOf(Array)
+      expect(subjects).toHaveLength(0)
+    })
+
+    test('Should return 401 if the user is unauthorized', async () => {
+      const response = await api
+        .get('/api/subjects/name')
+        .query({ name: subjectName })
+        .expect(401)
+        .expect('Content-Type', /application\/json/)
+
+      expect(response.body.error).toMatch(/token missing or invalid/i)
+    })
+  })
+
   describe('PATCH /subject/:id - Update subject by ID', () => {
     test('Should successfully update the subject name', async () => {
       const newSubjectName = 'Ambiental Actualizado'

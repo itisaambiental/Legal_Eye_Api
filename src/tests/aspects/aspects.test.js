@@ -185,6 +185,60 @@ describe('Aspects API - GET /aspect/:id', () => {
   })
 })
 
+describe('Aspects API - GET /subjects/:subjectId/aspects/name', () => {
+  test('Should retrieve aspects by their name for a specific subject', async () => {
+    const response = await api
+      .get(`/api/subjects/${createdSubjectId}/aspects/name`)
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .query({ aspectName })
+      .expect(200)
+      .expect('Content-Type', /application\/json/)
+
+    const { aspects } = response.body
+    expect(aspects).toBeInstanceOf(Array)
+    expect(aspects).toHaveLength(1)
+    expect(aspects[0]).toHaveProperty('id')
+    expect(aspects[0]).toHaveProperty('aspect_name', aspectName)
+    expect(aspects[0]).toHaveProperty('subject_id', createdSubjectId)
+  })
+
+  test('Should return an empty array if no aspects match the name for the subject', async () => {
+    const nonExistentAspectName = 'nonExistentAspectName'
+    const response = await api
+      .get(`/api/subjects/${createdSubjectId}/aspects/name`)
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .query({ aspectName: nonExistentAspectName })
+      .expect(200)
+      .expect('Content-Type', /application\/json/)
+
+    const { aspects } = response.body
+    expect(aspects).toBeInstanceOf(Array)
+    expect(aspects).toHaveLength(0)
+  })
+
+  test('Should return 404 if the subject does not exist', async () => {
+    const nonExistentSubjectId = -1
+    const response = await api
+      .get(`/api/subjects/${nonExistentSubjectId}/aspects/name`)
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .query({ aspectName })
+      .expect(404)
+      .expect('Content-Type', /application\/json/)
+
+    expect(response.body.message).toMatch(/Subject not found/i)
+  })
+
+  test('Should return 401 if the user is unauthorized', async () => {
+    const response = await api
+      .get(`/api/subjects/${createdSubjectId}/aspects/name`)
+      .query({ aspectName })
+      .expect(401)
+      .expect('Content-Type', /application\/json/)
+
+    expect(response.body.error).toMatch(/token missing or invalid/i)
+  })
+})
+
 describe('Aspects API - PATCH /aspect/:id', () => {
   const newAspectName = 'Actualizado Organizacional'
   test('Should successfully update an aspect by ID', async () => {

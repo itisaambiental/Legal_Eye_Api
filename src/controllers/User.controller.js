@@ -29,6 +29,7 @@ export const loginUser = async (req, res) => {
       token
     })
   } catch (error) {
+    console.log(error)
     if (error instanceof ErrorUtils) {
       return res.status(error.status).json({
         message: error.message,
@@ -179,6 +180,34 @@ export const getUserById = async (req, res) => {
     }
     const user = await UserService.getUserById(id)
     return res.status(200).json({ user })
+  } catch (error) {
+    if (error instanceof ErrorUtils) {
+      return res.status(error.status).json({
+        message: error.message,
+        ...(error.errors && { errors: error.errors })
+      })
+    }
+    return res.status(500).json({ message: 'Internal Server Error' })
+  }
+}
+
+/**
+ * Retrieve users by name or gmail.
+ * @function getUsersByNameOrGmail
+ * @param {Object} req - Request object, expects { nameOrEmail } in query parameters.
+ * @param {Object} res - Response object.
+ * @throws {ErrorUtils} - Throws an instance of ErrorUtils error if the process fails.
+ */
+export const getUsersByNameOrGmail = async (req, res) => {
+  const { userId } = req
+  const { nameOrEmail } = req.query
+  try {
+    const isAuthorized = await UserService.isAuthorized(userId)
+    if (!isAuthorized) {
+      return res.status(403).json({ message: 'Unauthorized' })
+    }
+    const users = await UserService.getUsersByNameOrGmail(nameOrEmail)
+    return res.status(200).json({ users })
   } catch (error) {
     if (error instanceof ErrorUtils) {
       return res.status(error.status).json({

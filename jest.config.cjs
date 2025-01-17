@@ -4,6 +4,5 @@ module.exports = {
     '^.+\\.js$': 'babel-jest'
   },
   testEnvironment: 'node',
-  moduleFileExtensions: ['js', 'json', 'node'],
-  transformIgnorePatterns: ['/node_modules/(?!llamaai)']
+  moduleFileExtensions: ['js', 'json', 'node']
 }

@@ -28,7 +28,6 @@ export const createArticle = async (req, res) => {
     )
     return res.status(201).json({ article: createdArticle })
   } catch (error) {
-    console.error(error)
     if (error instanceof ErrorUtils) {
       return res.status(error.status).json({
         message: error.message,

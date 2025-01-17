@@ -39,10 +39,9 @@ class SubjectsRepository {
         FROM subjects
       `)
       if (rows.length === 0) return null
-      return rows.map(subject => new Subject(
-        subject.id,
-        subject.subject_name
-      ))
+      return rows.map(
+        (subject) => new Subject(subject.id, subject.subject_name)
+      )
     } catch (error) {
       console.error('Error fetching subjects:', error.message)
       throw new ErrorUtils(500, 'Error fetching subjects from the database')
@@ -57,11 +56,14 @@ class SubjectsRepository {
    */
   static async findById (id) {
     try {
-      const [rows] = await pool.query(`
+      const [rows] = await pool.query(
+        `
         SELECT id, subject_name
         FROM subjects
         WHERE id = ?
-      `, [id])
+      `,
+        [id]
+      )
 
       if (rows.length === 0) return null
       const subject = rows[0]
@@ -73,11 +75,11 @@ class SubjectsRepository {
   }
 
   /**
- * Finds subjects in the database using an array of IDs.
- * @param {Array<number>} subjectIds - Array of subject IDs to find.
- * @returns {Promise<Array<Object>>} - Array of objects with found subject IDs and names.
- * @throws {ErrorUtils} - If an error occurs during retrieval.
- */
+   * Finds subjects in the database using an array of IDs.
+   * @param {Array<number>} subjectIds - Array of subject IDs to find.
+   * @returns {Promise<Array<Object>>} - Array of objects with found subject IDs and names.
+   * @throws {ErrorUtils} - If an error occurs during retrieval.
+   */
   static async findByIds (subjectIds) {
     if (subjectIds.length === 0) {
       return []
@@ -87,19 +89,22 @@ class SubjectsRepository {
   `
     try {
       const [rows] = await pool.query(query, [subjectIds])
-      return rows.map(row => ({ id: row.id, name: row.name }))
+      return rows.map((row) => ({ id: row.id, name: row.name }))
     } catch (error) {
       console.error('Error finding subjects by IDs:', error.message)
-      throw new ErrorUtils(500, 'Error finding subjects by IDs from the database')
+      throw new ErrorUtils(
+        500,
+        'Error finding subjects by IDs from the database'
+      )
     }
   }
 
   /**
- * Checks if a subject with the given name exists, excluding the specified subject ID.
- * @param {string} subjectName - The subject name to check for uniqueness.
- * @param {number} subjectId - The subject ID to exclude from the check.
- * @returns {Promise<boolean>} - True if a subject with the same name exists (excluding the given ID), false otherwise.
- */
+   * Checks if a subject with the given name exists, excluding the specified subject ID.
+   * @param {string} subjectName - The subject name to check for uniqueness.
+   * @param {number} subjectId - The subject ID to exclude from the check.
+   * @returns {Promise<boolean>} - True if a subject with the same name exists (excluding the given ID), false otherwise.
+   */
   static async existsByNameExcludingId (subjectName, subjectId) {
     const query = `
     SELECT 1 
@@ -117,26 +122,51 @@ class SubjectsRepository {
   }
 
   /**
-   * Fetches a subject by its name from the database.
-   * @param {string} subjectName - The name of the subject to retrieve.
-   * @returns {Promise<Subject|null>} - Returns the Subject instance or null if not found.
+   * Checks if a subject exists with the given name.
+   * @param {string} subjectName - The name of the subject to check for existence.
+   * @returns {Promise<boolean>} - True if a subject with the same name exists, false otherwise.
+   * @throws {ErrorUtils} - If an error occurs during the check.
+   */
+  static async existsBySubjectName (subjectName) {
+    const query = `
+    SELECT 1 
+    FROM subjects 
+    WHERE subject_name = ?
+    LIMIT 1
+  `
+    try {
+      const [rows] = await pool.query(query, [subjectName])
+      return rows.length > 0
+    } catch (error) {
+      console.error('Error checking if subject exists by name:', error.message)
+      throw new ErrorUtils(500, 'Error checking if subject exists by name')
+    }
+  }
+
+  /**
+   * Fetches subjects from the database by a partial match of their name.
+   * @param {string} subjectName - A partial or full name of the subject to search for.
+   * @returns {Promise<Array<Subject|null>>} - Returns an array of Subject instances matching the criteria.
    * @throws {ErrorUtils} - If an error occurs during retrieval.
    */
   static async findByName (subjectName) {
+    const searchValue = `%${subjectName}%`
     try {
-      const [rows] = await pool.query(`
-        SELECT id, subject_name
-        FROM subjects
-        WHERE subject_name = ?
-      `, [subjectName])
-
+      const [rows] = await pool.query(
+        `
+          SELECT id, subject_name
+          FROM subjects
+          WHERE subject_name LIKE ?
+        `,
+        [`%${searchValue}%`]
+      )
       if (rows.length === 0) return null
-
-      const subject = rows[0]
-      return new Subject(subject.id, subject.subject_name)
+      return rows.map(
+        (subject) => new Subject(subject.id, subject.subject_name)
+      )
     } catch (error) {
-      console.error('Error fetching subject by name:', error.message)
-      throw new ErrorUtils(500, 'Error fetching subject from the database')
+      console.error('Error fetching subjects by partial name:', error.message)
+      throw new ErrorUtils(500, 'Error fetching subjects from the database')
     }
   }
 
@@ -175,11 +205,13 @@ class SubjectsRepository {
    */
   static async deleteById (id) {
     try {
-      const [rows] = await pool.query(`
+      const [rows] = await pool.query(
+        `
         DELETE FROM subjects
         WHERE id = ?
-      `, [id])
-
+      `,
+        [id]
+      )
       if (rows.affectedRows === 0) {
         return false
       }
@@ -191,11 +223,11 @@ class SubjectsRepository {
   }
 
   /**
- * Deletes multiple subjects from the database using an array of IDs.
- * @param {Array<number>} subjectIds - Array of subject IDs to delete.
- * @returns {Promise<boolean>} - True if subjects were deleted, otherwise false.
- * @throws {ErrorUtils} - If an error occurs during the deletion.
- */
+   * Deletes multiple subjects from the database using an array of IDs.
+   * @param {Array<number>} subjectIds - Array of subject IDs to delete.
+   * @returns {Promise<boolean>} - True if subjects were deleted, otherwise false.
+   * @throws {ErrorUtils} - If an error occurs during the deletion.
+   */
   static async deleteBatch (subjectIds) {
     const query = `
     DELETE FROM subjects WHERE id IN (?)
@@ -222,21 +254,25 @@ class SubjectsRepository {
       await pool.query('DELETE FROM subjects')
     } catch (error) {
       console.error('Error deleting all subjects:', error.message)
-      throw new ErrorUtils(500, 'Error deleting all subjects from the database')
+      throw new ErrorUtils(
+        500,
+        'Error deleting all subjects from the database'
+      )
     }
   }
 
   /**
- * Checks if a subject or any of its aspects is associated with any legal basis.
- * @param {number} subjectId - The ID of the subject to check.
- * @returns {Promise<Object<boolean>>} - Returns an object with two boolean values:
- *      - isAssociatedToLegalBasis: true if the subject is associated with one or more legal bases.
- *      - isSubjectAspectAssociatedToLegalBasis: true if any aspect of the subject is associated with legal bases.
- * @throws {Error} - If an error occurs while querying the database.
- */
+   * Checks if a subject or any of its aspects is associated with any legal basis.
+   * @param {number} subjectId - The ID of the subject to check.
+   * @returns {Promise<Object<boolean>>} - Returns an object with two boolean values:
+   *      - isAssociatedToLegalBasis: true if the subject is associated with one or more legal bases.
+   *      - isSubjectAspectAssociatedToLegalBasis: true if any aspect of the subject is associated with legal bases.
+   * @throws {Error} - If an error occurs while querying the database.
+   */
   static async checkSubjectLegalBasisAssociations (subjectId) {
     try {
-      const [rows] = await pool.query(`
+      const [rows] = await pool.query(
+        `
       SELECT 
           COUNT(DISTINCT lb.id) AS legalBasisCount, 
           COUNT(DISTINCT lbsa.aspect_id) AS aspectAssociationCount
@@ -244,7 +280,9 @@ class SubjectsRepository {
       LEFT JOIN legal_basis lb ON s.id = lb.subject_id
       LEFT JOIN legal_basis_subject_aspect lbsa ON lb.id = lbsa.legal_basis_id AND s.id = lbsa.subject_id
       WHERE s.id = ?
-    `, [subjectId])
+    `,
+        [subjectId]
+      )
       const { legalBasisCount, aspectAssociationCount } = rows[0]
       return {
         isAssociatedToLegalBasis: legalBasisCount > 0,
@@ -257,14 +295,15 @@ class SubjectsRepository {
   }
 
   /**
- * Checks if any of the subjects in the given array are associated with any legal basis or aspects.
- * @param {Array<number>} subjectIds - Array of subject IDs to check.
- * @returns {Promise<Array<Object>>} - Returns an array of objects with subject ID, name, and their association status.
- * @throws {Error} - If an error occurs while querying the database.
- */
+   * Checks if any of the subjects in the given array are associated with any legal basis or aspects.
+   * @param {Array<number>} subjectIds - Array of subject IDs to check.
+   * @returns {Promise<Array<Object>>} - Returns an array of objects with subject ID, name, and their association status.
+   * @throws {Error} - If an error occurs while querying the database.
+   */
   static async checkSubjectsLegalBasisAssociationsBatch (subjectIds) {
     try {
-      const [rows] = await pool.query(`
+      const [rows] = await pool.query(
+        `
       SELECT 
           s.id AS subjectId,
           s.subject_name AS subjectName,
@@ -275,9 +314,11 @@ class SubjectsRepository {
       LEFT JOIN legal_basis_subject_aspect lbsa ON lb.id = lbsa.legal_basis_id AND s.id = lbsa.subject_id
       WHERE s.id IN (?) 
       GROUP BY s.id
-    `, [subjectIds])
+    `,
+        [subjectIds]
+      )
 
-      return rows.map(row => ({
+      return rows.map((row) => ({
         id: row.subjectId,
         name: row.subjectName,
         isAssociatedToLegalBasis: row.legalBasisCount > 0,

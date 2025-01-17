@@ -10,6 +10,7 @@ import {
   createSubject,
   getSubjects,
   getSubjectById,
+  getSubjectsByName,
   updateSubject,
   deleteSubject,
   deleteSubjectsBatch
@@ -48,6 +49,15 @@ router.get('/subjects', UserExtractor, getSubjects)
  * @middleware UserExtractor
  */
 router.get('/subject/:id', UserExtractor, getSubjectById)
+
+/**
+ * Route to retrieve a specific subject by name.
+ * @method GET
+ * @path /subjects/name
+ * @description Retrieves details of a specific subject by its name.
+ * @middleware UserExtractor
+ */
+router.get('/subjects/name', UserExtractor, getSubjectsByName)
 
 /**
  * Route to update a subject by ID.
