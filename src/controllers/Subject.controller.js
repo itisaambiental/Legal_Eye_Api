@@ -97,13 +97,13 @@ export const getSubjectById = async (req, res) => {
  */
 export const getSubjectsByName = async (req, res) => {
   const { userId } = req
-  const { name } = req.query
+  const { subjectName } = req.query
   try {
     const isAuthorized = await UserService.userExists(userId)
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-    const subjects = await SubjectsService.getByName(name)
+    const subjects = await SubjectsService.getByName(subjectName)
     return res.status(200).json({ subjects })
   } catch (error) {
     if (error instanceof ErrorUtils) {

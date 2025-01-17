@@ -118,7 +118,7 @@ describe('Subjects API tests', () => {
       const response = await api
         .get('/api/subjects/name')
         .set('Authorization', `Bearer ${tokenAdmin}`)
-        .query({ name: subjectName })
+        .query({ subjectName })
         .expect(200)
         .expect('Content-Type', /application\/json/)
 
@@ -133,7 +133,7 @@ describe('Subjects API tests', () => {
       const response = await api
         .get('/api/subjects/name')
         .set('Authorization', `Bearer ${tokenAdmin}`)
-        .query({ name: nonExistentSubjectName })
+        .query({ subjectName: nonExistentSubjectName })
         .expect(200)
         .expect('Content-Type', /application\/json/)
 
@@ -145,7 +145,7 @@ describe('Subjects API tests', () => {
     test('Should return 401 if the user is unauthorized', async () => {
       const response = await api
         .get('/api/subjects/name')
-        .query({ name: subjectName })
+        .query({ subjectName })
         .expect(401)
         .expect('Content-Type', /application\/json/)
 
