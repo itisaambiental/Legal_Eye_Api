@@ -9,8 +9,9 @@ import extractArticles from '../services/articles/extractArticles/extractArticle
 
 /**
  * Retrieves the status of a job by its ID.
- * @param {Object} req - Request object, expects jobId in req.params.
- * @param {Object} res - Response object.
+ * @function getStatusJob
+ * @param {import('express').Request} req - Request object, expects jobId in req.params.
+ * @param {import('express').Response} res - Response object.
  * @returns {Object} - The job status or error details.
  */
 export const getStatusJob = async (req, res) => {
@@ -33,10 +34,12 @@ export const getStatusJob = async (req, res) => {
     return res.status(500).json({ message: 'Internal Server Error' })
   }
 }
+
 /**
  * Checks if there are pending jobs for a given legalBasisId.
- * @param {Object} req - Request object, expects legalBasisId in req.params and userId in req.
- * @param {Object} res - Response object.
+ * @function checkLegalBasisJobs
+ * @param {import('express').Request} req - Request object, expects legalBasisId in req.params and userId in req.
+ * @param {import('express').Response} res - Response object.
  * @returns {Object} - Response with job status and jobId or error details.
  */
 export const checkLegalBasisJobs = async (req, res) => {

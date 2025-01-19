@@ -3,12 +3,16 @@ import ErrorUtils from '../utils/Error.js'
 import UserService from '../services/users/User.service.js'
 
 /**
+ * Controller for subjects operations.
+ * @module SubjectsController
+ */
+
+/**
  * Creates a new subject.
  * @function createSubject
- * @param {Object} req - Request object, expects { subjectName } in body.
- * @param {Object} res - Response object.
+ * @param {import('express').Request} req - Request object, expects { subjectName } in body.
+ * @param {import('express').Response} res - Response object.
  * @returns {Object} - The created subject data.
- * @throws {ErrorUtils} - If the process fails.
  */
 export const createSubject = async (req, res) => {
   const { userId } = req
@@ -30,13 +34,13 @@ export const createSubject = async (req, res) => {
     return res.status(500).json({ message: 'Internal Server Error' })
   }
 }
+
 /**
  * Retrieves all subjects.
  * @function getSubjects
- * @param {Object} req - Request object.
- * @param {Object} res - Response object.
+ * @param {import('express').Request} req - Request object.
+ * @param {import('express').Response} res - Response object.
  * @returns {Array} - List of all subjects.
- * @throws {ErrorUtils} - If the process fails.
  */
 export const getSubjects = async (req, res) => {
   const { userId } = req
@@ -61,10 +65,9 @@ export const getSubjects = async (req, res) => {
 /**
  * Retrieves a subject by ID.
  * @function getSubjectById
- * @param {Object} req - Request object, expects { id } as URL parameter.
- * @param {Object} res - Response object.
+ * @param {import('express').Request} req - Request object, expects { id } as URL parameter.
+ * @param {import('express').Response} res - Response object.
  * @returns {Object} - The subject data.
- * @throws {ErrorUtils} - If the process fails.
  */
 export const getSubjectById = async (req, res) => {
   const { userId } = req
@@ -90,10 +93,9 @@ export const getSubjectById = async (req, res) => {
 /**
  * Retrieves subjects by name.
  * @function getSubjectsByName
- * @param {Object} req - Request object, expects `name` in the query parameters.
- * @param {Object} res - Response object.
+ * @param {import('express').Request} req - Request object, expects `name` in the query parameters.
+ * @param {import('express').Response} res - Response object.
  * @returns {Object} - The subjects data.
- * @throws {ErrorUtils} - If the process fails.
  */
 export const getSubjectsByName = async (req, res) => {
   const { userId } = req
@@ -119,10 +121,9 @@ export const getSubjectsByName = async (req, res) => {
 /**
  * Updates a subject by ID.
  * @function updateSubject
- * @param {Object} req - Request object, expects { subjectName } in body and { id } as URL parameter.
- * @param {Object} res - Response object.
+ * @param {import('express').Request} req - Request object, expects { subjectName } in body and { id } as URL parameter.
+ * @param {import('express').Response} res - Response object.
  * @returns {Object} - The updated subject data.
- * @throws {ErrorUtils} - If the process fails.
  */
 export const updateSubject = async (req, res) => {
   const { userId } = req
@@ -149,10 +150,9 @@ export const updateSubject = async (req, res) => {
 /**
  * Deletes a subject by ID.
  * @function deleteSubject
- * @param {Object} req - Request object, expects { id } as URL parameter.
- * @param {Object} res - Response object.
+ * @param {import('express').Request} req - Request object, expects { id } as URL parameter.
+ * @param {import('express').Response} res - Response object.
  * @returns {Object} - The result of the deletion operation.
- * @throws {ErrorUtils} - If the process fails.
  */
 export const deleteSubject = async (req, res) => {
   const { userId } = req
@@ -182,9 +182,9 @@ export const deleteSubject = async (req, res) => {
 /**
  * Delete multiple subjects using an array of IDs.
  * @function deleteSubjectsBatch
- * @param {Object} req - Request object, expects { subjectIds } in body.
- * @param {Object} res - Response object.
- * @throws {ErrorUtils} - Throws an instance of ErrorUtils error if the process fails.
+ * @param {import('express').Request} req - Request object, expects { subjectIds } in body.
+ * @param {import('express').Response} res - Response object.
+ * @returns {void}
  */
 export const deleteSubjectsBatch = async (req, res) => {
   const { subjectIds } = req.body

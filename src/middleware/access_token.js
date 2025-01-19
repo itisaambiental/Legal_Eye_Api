@@ -10,9 +10,9 @@ import { JWT_SECRET } from '../config/variables.config.js'
 /**
  * Extracts and verifies the JWT token from the 'Authorization' header.
  * If valid, sets the user ID in the request object; otherwise, returns a 401 error.
- * @param {Object} req - Express request object.
- * @param {Object} res - Express response object.
- * @param {Function} next - Next middleware function.
+ * @param {import('express').Request} req - Express request object.
+ * @param {import('express').Response} res - Express response object.
+ * @param {import('express').NextFunction} next - Next middleware function.
  */
 const UserExtractor = (req, res, next) => {
   const authorization = req.get('authorization')

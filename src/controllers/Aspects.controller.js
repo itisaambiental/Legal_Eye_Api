@@ -3,12 +3,16 @@ import ErrorUtils from '../utils/Error.js'
 import UserService from '../services/users/User.service.js'
 
 /**
+ * Controller for Aspects operations.
+ * @module AspectsController
+ */
+
+/**
  * Creates a new aspect.
  * @function createAspect
- * @param {Object} req - Request object, expects { subjectId, aspectName } in body.
- * @param {Object} res - Response object.
+ * @param {import('express').Request} req - Request object, expects { subjectId, aspectName } in body.
+ * @param {import('express').Response} res - Response object.
  * @returns {Object} - The created aspect data.
- * @throws {ErrorUtils} - If the process fails.
  */
 export const createAspect = async (req, res) => {
   const { userId } = req
@@ -35,10 +39,9 @@ export const createAspect = async (req, res) => {
 /**
  * Retrieves all aspects associated with a specific subject.
  * @function getAspectsBySubject
- * @param {Object} req - Request object, expects { subjectId } as URL parameter.
- * @param {Object} res - Response object.
+ * @param {import('express').Request} req - Request object, expects { subjectId } as URL parameter.
+ * @param {import('express').Response} res - Response object.
  * @returns {Array} - List of aspects associated with the subject.
- * @throws {ErrorUtils} - If the process fails.
  */
 export const getAspectsBySubject = async (req, res) => {
   const { userId } = req
@@ -64,10 +67,9 @@ export const getAspectsBySubject = async (req, res) => {
 /**
  * Retrieves an aspect by ID.
  * @function getAspectById
- * @param {Object} req - Request object, expects { id } as URL parameter.
- * @param {Object} res - Response object.
+ * @param {import('express').Request} req - Request object, expects { id } as URL parameter.
+ * @param {import('express').Response} res - Response object.
  * @returns {Object} - The aspect data.
- * @throws {ErrorUtils} - If the process fails.
  */
 export const getAspectById = async (req, res) => {
   const { userId } = req
@@ -93,10 +95,9 @@ export const getAspectById = async (req, res) => {
 /**
  * Retrieves aspects by name for a specific subject.
  * @function getAspectsByName
- * @param {Object} req - Request object, expects `aspectName` in query parameters and `subjectId` in URL parameters.
- * @param {Object} res - Response object.
+ * @param {import('express').Request} req - Request object, expects `aspectName` in query parameters and `subjectId` in URL parameters.
+ * @param {import('express').Response} res - Response object.
  * @returns {Array} - An array of aspects matching the criteria or an empty array if none found.
- * @throws {ErrorUtils} - If the process fails.
  */
 export const getAspectsByName = async (req, res) => {
   const { userId } = req
@@ -123,10 +124,9 @@ export const getAspectsByName = async (req, res) => {
 /**
  * Updates an aspect by ID.
  * @function updateAspect
- * @param {Object} req - Request object, expects { aspectName } in body and { id } as URL parameter.
- * @param {Object} res - Response object.
+ * @param {import('express').Request} req - Request object, expects { aspectName } in body and { id } as URL parameter.
+ * @param {import('express').Response} res - Response object.
  * @returns {Object} - The updated aspect data.
- * @throws {ErrorUtils} - If the process fails.
  */
 export const updateAspect = async (req, res) => {
   const { userId } = req
@@ -153,10 +153,9 @@ export const updateAspect = async (req, res) => {
 /**
  * Deletes an aspect by ID.
  * @function deleteAspect
- * @param {Object} req - Request object, expects { id } as URL parameter.
- * @param {Object} res - Response object.
+ * @param {import('express').Request} req - Request object, expects { id } as URL parameter.
+ * @param {import('express').Response} res - Response object.
  * @returns {Object} - The result of the deletion operation.
- * @throws {ErrorUtils} - If the process fails.
  */
 export const deleteAspect = async (req, res) => {
   const { userId } = req
@@ -184,11 +183,11 @@ export const deleteAspect = async (req, res) => {
 }
 
 /**
- * Delete multiple aspects using an array of IDs.
+ * Deletes multiple aspects using an array of IDs.
  * @function deleteAspectsBatch
- * @param {Object} req - Request object, expects { aspectIds } in body.
- * @param {Object} res - Response object.
- * @throws {ErrorUtils} - Throws an instance of ErrorUtils error if the process fails.
+ * @param {import('express').Request} req - Request object, expects { aspectIds } in body.
+ * @param {import('express').Response} res - Response object.
+ * @returns {void}
  */
 export const deleteAspectsBatch = async (req, res) => {
   const { aspectIds } = req.body

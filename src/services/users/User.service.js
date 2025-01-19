@@ -563,7 +563,6 @@ class UserService {
    * @returns {Promise<boolean>} - True if the exists.
    * @throws {ErrorUtils} - If check fails.
    */
-
   static async userExists (userId) {
     try {
       const user = await UserRepository.findById(userId)

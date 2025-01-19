@@ -2,6 +2,7 @@ import LegalBasisService from '../services/legalBasis/LegalBasis.service.js'
 import ErrorUtils from '../utils/Error.js'
 import UserService from '../services/users/User.service.js'
 import validateDate from '../schemas/dateValidation.js'
+
 /**
  * Controller for legal basis operations.
  * @module LegalBasisController
@@ -10,10 +11,9 @@ import validateDate from '../schemas/dateValidation.js'
 /**
  * Creates a new legal basis record.
  * @function createLegalBasis
- * @param {Object} req - Request object, expects { legalName, abbreviation, subjectId, aspectsIds, classification, jurisdiction, state, municipality, lastReform, extractArticles } in body, and 'document' as a file.
- * @param {Object} res - Response object.
+ * @param {import('express').Request} req - Request object, expects { legalName, abbreviation, subjectId, aspectsIds, classification, jurisdiction, state, municipality, lastReform, extractArticles } in body, and 'document' as a file.
+ * @param {import('express').Response} res - Response object.
  * @returns {Object} - The jobId and the created legalBasis data.
- * @throws {ErrorUtils} - Throws an instance of ErrorUtils error if the process fails.
  */
 export const createLegalBasis = async (req, res) => {
   const { userId } = req
@@ -43,10 +43,9 @@ export const createLegalBasis = async (req, res) => {
 /**
  * Retrieves all legal basis records.
  * @function getAllLegalBasis
- * @param {Object} req - Request object.
- * @param {Object} res - Response object.
+ * @param {import('express').Request} req - Request object.
+ * @param {import('express').Response} res - Response object.
  * @returns {Array<Object>} - A list of legal basis entries.
- * @throws {ErrorUtils} - Throws an instance of ErrorUtils if retrieval fails.
  */
 export const getAllLegalBasis = async (req, res) => {
   try {
@@ -71,10 +70,9 @@ export const getAllLegalBasis = async (req, res) => {
 /**
  * Retrieves a legal basis by its ID.
  * @function getLegalBasisById
- * @param {Object} req - Request object, expects { id } in params.
- * @param {Object} res - Response object.
+ * @param {import('express').Request} req - Request object, expects { id } in params.
+ * @param {import('express').Response} res - Response object.
  * @returns {Object} - The legal basis data.
- * @throws {ErrorUtils} - Throws an instance of ErrorUtils if retrieval fails.
  */
 export const getLegalBasisById = async (req, res) => {
   const { userId } = req
@@ -100,10 +98,9 @@ export const getLegalBasisById = async (req, res) => {
 /**
  * Retrieves legal basis by their name.
  * @function getLegalBasisByName
- * @param {Object} req - Request object, expects { name } in params.
- * @param {Object} res - Response object.
+ * @param {import('express').Request} req - Request object, expects { name } in params.
+ * @param {import('express').Response} res - Response object.
  * @returns {Object} - The legal basis data.
- * @throws {ErrorUtils} - Throws an instance of ErrorUtils if retrieval fails.
  */
 export const getLegalBasisByName = async (req, res) => {
   const { userId } = req
@@ -129,10 +126,9 @@ export const getLegalBasisByName = async (req, res) => {
 /**
  * Retrieves a legal basis by its abbreviation.
  * @function getLegalBasisByAbbreviation
- * @param {Object} req - Request object, expects { abbreviation } in params.
- * @param {Object} res - Response object.
+ * @param {import('express').Request} req - Request object, expects { abbreviation } in params.
+ * @param {import('express').Response} res - Response object.
  * @returns {Object} - The legal basis data.
- * @throws {ErrorUtils} - Throws an instance of ErrorUtils if retrieval fails.
  */
 export const getLegalBasisByAbbreviation = async (req, res) => {
   const { userId } = req
@@ -158,10 +154,9 @@ export const getLegalBasisByAbbreviation = async (req, res) => {
 /**
  * Retrieves a legal basis by its classification.
  * @function getLegalBasisByClassification
- * @param {Object} req - Request object, expects { classification } in params.
- * @param {Object} res - Response object.
+ * @param {import('express').Request} req - Request object, expects { classification } in params.
+ * @param {import('express').Response} res - Response object.
  * @returns {Object} - The legal basis data.
- * @throws {ErrorUtils} - Throws an instance of ErrorUtils if retrieval fails.
  */
 export const getLegalBasisByClassification = async (req, res) => {
   const { userId } = req
@@ -187,10 +182,9 @@ export const getLegalBasisByClassification = async (req, res) => {
 /**
  * Retrieves legal basis entries by jurisdiction.
  * @function getLegalBasisByJurisdiction
- * @param {Object} req - Request object, expects { jurisdiction } as a route parameter.
- * @param {Object} res - Response object.
+ * @param {import('express').Request} req - Request object, expects { jurisdiction } as a route parameter.
+ * @param {import('express').Response} res - Response object.
  * @returns {Object} - A list of filtered legal basis entries.
- * @throws {ErrorUtils} - Throws an instance of ErrorUtils if the process fails.
  */
 export const getLegalBasisByJurisdiction = async (req, res) => {
   const { userId } = req
@@ -216,10 +210,9 @@ export const getLegalBasisByJurisdiction = async (req, res) => {
 /**
  * Retrieves legal basis entries by state.
  * @function getLegalBasisByState
- * @param {Object} req - Request object, expects { state } in query parameters.
- * @param {Object} res - Response object.
+ * @param {import('express').Request} req - Request object, expects { state } in query parameters.
+ * @param {import('express').Response} res - Response object.
  * @returns {Object} - A list of filtered legal basis entries.
- * @throws {ErrorUtils} - Throws an instance of ErrorUtils if the process fails.
  */
 export const getLegalBasisByState = async (req, res) => {
   const { userId } = req
@@ -245,10 +238,9 @@ export const getLegalBasisByState = async (req, res) => {
 /**
  * Retrieves legal basis entries by state and municipalities.
  * @function getLegalBasisByStateAndMunicipalities
- * @param {Object} req - Request object, expects { state, municipalities } in query parameters.
- * @param {Object} res - Response object.
+ * @param {import('express').Request} req - Request object, expects { state, municipalities } in query parameters.
+ * @param {import('express').Response} res - Response object.
  * @returns {Object} - A list of filtered legal basis entries.
- * @throws {ErrorUtils} - Throws an instance of ErrorUtils if the process fails.
  */
 export const getLegalBasisByStateAndMunicipalities = async (req, res) => {
   const { userId } = req
@@ -285,10 +277,9 @@ export const getLegalBasisByStateAndMunicipalities = async (req, res) => {
 /**
  * Retrieves legal basis entries filtered by subject.
  * @function getLegalBasisBySubject
- * @param {Object} req - Request object, expects { subjectId } in query parameters.
- * @param {Object} res - Response object.
+ * @param {import('express').Request} req - Request object, expects { subjectId } in query parameters.
+ * @param {import('express').Response} res - Response object.
  * @returns {Object} - A list of filtered legal basis entries by subject.
- * @throws {ErrorUtils} - Throws an instance of ErrorUtils if the process fails.
  */
 export const getLegalBasisBySubject = async (req, res) => {
   const { userId } = req
@@ -310,13 +301,13 @@ export const getLegalBasisBySubject = async (req, res) => {
     return res.status(500).json({ message: 'Internal Server Error' })
   }
 }
+
 /**
  * Retrieves legal basis entries filtered by subject and optionally by aspects.
  * @function getLegalBasisBySubjectAndAspects
- * @param {Object} req - Request object, expects { subjectId, aspectIds } in query parameters.
- * @param {Object} res - Response object.
+ * @param {import('express').Request} req - Request object, expects { subjectId, aspectIds } in query parameters.
+ * @param {import('express').Response} res - Response object.
  * @returns {Object} - A list of filtered legal basis entries by subject and aspects.
- * @throws {ErrorUtils} - Throws an instance of ErrorUtils if the process fails.
  */
 export const getLegalBasisBySubjectAndAspects = async (req, res) => {
   const { userId } = req
@@ -347,8 +338,8 @@ export const getLegalBasisBySubjectAndAspects = async (req, res) => {
 /**
  * Retrieves legal basis entries filtered by a date range for the last_reform.
  * @function getLegalBasisByLastReform
- * @param {Object} req - Request object, expects { from, to } in query parameters.
- * @param {Object} res - Response object.
+ * @param {import('express').Request} req - Request object, expects { from, to } in query parameters.
+ * @param {import('express').Response} res - Response object.
  * @returns {Object} - A list of filtered legal basis entries by date range.
  */
 export const getLegalBasisByLastReform = async (req, res) => {
@@ -392,13 +383,12 @@ export const getLegalBasisByLastReform = async (req, res) => {
     return res.status(500).json({ message: 'Internal Server Error' })
   }
 }
-
 /**
  * Updates a legal basis record.
  * @function updateLegalBasis
- * @param {Object} req - Request object, expects { id } in params and { legalName, abbreviation, subjectId, aspectsIds, classification, jurisdiction, state, municipality, lastReform, extractArticles, removeDocument } in body and an optional 'document' file.
- * @param {Object} res - Response object.
- * @throws {ErrorUtils} - Throws an instance of ErrorUtils error if the process fails.
+ * @param {import('express').Request} req - Request object, expects { id } in params and { legalName, abbreviation, subjectId, aspectsIds, classification, jurisdiction, state, municipality, lastReform, extractArticles, removeDocument } in body and an optional 'document' file.
+ * @param {import('express').Response} res - Response object.
+ * @returns {Object} - The updated legal basis record.
  */
 export const updateLegalBasis = async (req, res) => {
   const { id } = req.params
@@ -429,13 +419,13 @@ export const updateLegalBasis = async (req, res) => {
     return res.status(500).json({ message: 'Internal Server Error' })
   }
 }
+
 /**
- * Deletes a Legal Base by ID.
+ * Deletes a legal basis by ID.
  * @function deleteLegalBasis
- * @param {Object} req - Request object, expects { id } in params.
- * @param {Object} res - Response object.
- * @returns {Object} - The result of the deletion operation.
- * @throws {ErrorUtils} - If the process fails.
+ * @param {import('express').Request} req - Request object, expects { id } in params.
+ * @param {import('express').Response} res - Response object.
+ * @returns {void}
  */
 export const deleteLegalBasis = async (req, res) => {
   const { userId } = req
@@ -463,12 +453,11 @@ export const deleteLegalBasis = async (req, res) => {
 }
 
 /**
- * Deletes a Legal Base by ID.
+ * Deletes multiple legal bases by their IDs.
  * @function deleteLegalBasisBatch
- * @param {Object} req - Request object, expects { legalBasisIds } in body.
- * @param {Object} res - Response object.
- * @returns {Object} - The result of the deletion operation.
- * @throws {ErrorUtils} - If the process fails.
+ * @param {import('express').Request} req - Request object, expects { legalBasisIds } in body.
+ * @param {import('express').Response} res - Response object.
+ * @returns {void}
  */
 export const deleteLegalBasisBatch = async (req, res) => {
   const { userId } = req
@@ -503,10 +492,9 @@ export const deleteLegalBasisBatch = async (req, res) => {
 /**
  * Retrieves all unique classification values.
  * @function getClassifications
- * @param {Object} req - Express request object.
- * @param {Object} res - Express response object.
- * @returns {Object} - Returns a JSON object containing an array of unique classifications.
- * @throws {ErrorUtils} - If an error occurs during retrieval, an ErrorUtils instance is thrown.
+ * @param {import('express').Request} req - Request object.
+ * @param {import('express').Response} res - Response object.
+ * @returns {Object} - A JSON object containing an array of unique classifications.
  */
 export const getClassifications = async (req, res) => {
   const { userId } = req
@@ -527,13 +515,13 @@ export const getClassifications = async (req, res) => {
     return res.status(500).json({ message: 'Internal Server Error' })
   }
 }
+
 /**
  * Retrieves all unique jurisdiction values.
  * @function getJurisdictions
- * @param {Object} req - Express request object.
- * @param {Object} res - Express response object.
- * @returns {Object} - Returns a JSON object containing an array of unique jurisdictions.
- * @throws {ErrorUtils} - If an error occurs during retrieval, an ErrorUtils instance is thrown.
+ * @param {import('express').Request} req - Request object.
+ * @param {import('express').Response} res - Response object.
+ * @returns {Object} - A JSON object containing an array of unique jurisdictions.
  */
 export const getJurisdictions = async (req, res) => {
   const { userId } = req
