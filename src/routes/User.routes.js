@@ -139,6 +139,7 @@ router.delete('/user/:id', UserExtractor, deleteUser)
  * Route to delete multiple users using an array of IDs.
  * @method DELETE
  * @path /users/batch
+ * @body {Array<number>} userIds - Array of IDs of the users to delete.
  * @description Deletes multiple users from the system.
  * @middleware UserExtractor
  */

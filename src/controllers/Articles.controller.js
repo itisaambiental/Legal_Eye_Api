@@ -193,7 +193,44 @@ export const deleteArticle = async (req, res) => {
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-    const success = await ArticlesService.deleteById(id)
+    const { success } = await ArticlesService.deleteById(id)
+    if (success) {
+      return res.sendStatus(204)
+    } else {
+      return res.status(500).json({ message: 'Internal Server Error' })
+    }
+  } catch (error) {
+    if (error instanceof ErrorUtils) {
+      return res.status(error.status).json({
+        message: error.message,
+        ...(error.errors && { errors: error.errors })
+      })
+    }
+    return res.status(500).json({ message: 'Internal Server Error' })
+  }
+}
+
+/**
+ * Deletes multiple articles using an array of IDs.
+ * @function deleteArticlesBatch
+ * @param {import('express').Request} req - Request object, expects { articleIds } in body.
+ * @param {import('express').Response} res - Response object.
+ * @returns {void}
+ */
+export const deleteArticlesBatch = async (req, res) => {
+  const { articleIds } = req.body
+  const { userId } = req
+  if (!articleIds || !Array.isArray(articleIds) || articleIds.length === 0) {
+    return res.status(400).json({
+      message: 'Missing required fields: articleIds'
+    })
+  }
+  try {
+    const isAuthorized = await UserService.userExists(userId)
+    if (!isAuthorized) {
+      return res.status(403).json({ message: 'Unauthorized' })
+    }
+    const { success } = await ArticlesService.deleteArticlesBatch(articleIds)
     if (success) {
       return res.sendStatus(204)
     } else {

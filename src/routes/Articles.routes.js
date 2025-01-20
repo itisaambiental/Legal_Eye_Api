@@ -12,7 +12,8 @@ import {
   getArticlesByDescription,
   getArticleById,
   updateArticle,
-  deleteArticle
+  deleteArticle,
+  deleteArticlesBatch
 } from '../controllers/Articles.controller.js'
 
 const router = Router()
@@ -75,7 +76,7 @@ router.get('/articles/:legalBasisId/description', UserExtractor, getArticlesByDe
  * @middlewares UserExtractor - Middleware to ensure that the user is authorized and extracted from the request.
  * @returns {Object} - A JSON response containing the article or an error message.
  */
-router.get('/articles/:id', UserExtractor, getArticleById)
+router.get('/article/:id', UserExtractor, getArticleById)
 
 /**
  * Route to update an article by its ID.
@@ -89,7 +90,7 @@ router.get('/articles/:id', UserExtractor, getArticleById)
  * @middlewares UserExtractor - Middleware to ensure that the user is authorized and extracted from the request.
  * @returns {Object} - A JSON response containing the updated article or an error message.
  */
-router.patch('/articles/:id', UserExtractor, updateArticle)
+router.patch('/article/:id', UserExtractor, updateArticle)
 
 /**
  * Route to delete an article by its ID.
@@ -100,6 +101,17 @@ router.patch('/articles/:id', UserExtractor, updateArticle)
  * @middlewares UserExtractor - Middleware to ensure that the user is authorized and extracted from the request.
  * @returns {Object} - A 204 No Content response or an error message.
  */
-router.delete('/articles/:id', UserExtractor, deleteArticle)
+router.delete('/article/:id', UserExtractor, deleteArticle)
+
+/**
+ * Route to delete multiple articles by their IDs.
+ * @method DELETE
+ * @path /articles/batch
+ * @description Deletes multiple articles using an array of IDs.
+ * @body {Array<number>} articleIds - Array of IDs of the articles to delete.
+ * @middlewares UserExtractor - Middleware to ensure that the user is authorized and extracted from the request.
+ * @returns {Object} - A 204 No Content response or an error message.
+ */
+router.delete('/articles/batch', UserExtractor, deleteArticlesBatch)
 
 export default router

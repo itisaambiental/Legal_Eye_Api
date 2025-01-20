@@ -80,6 +80,7 @@ router.delete('/aspect/:id', UserExtractor, deleteAspect)
 /**
  * Route to delete multiple aspects using an array of IDs.
  * @method DELETE
+  * @body {Array<number>} aspectIds - Array of IDs of the aspects to delete.
  * @path /aspects/batch
  * @description Deletes multiple aspects from the system.
  * @middleware UserExtractor

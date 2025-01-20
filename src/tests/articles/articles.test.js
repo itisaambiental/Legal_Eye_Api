@@ -339,7 +339,7 @@ describe('Get an article by its ID', () => {
     const invalidId = -1
 
     const response = await api
-      .get(`/api/articles/${invalidId}`)
+      .get(`/api/article/${invalidId}`)
       .set('Authorization', `Bearer ${tokenAdmin}`)
       .expect(404)
       .expect('Content-Type', /application\/json/)
@@ -349,7 +349,7 @@ describe('Get an article by its ID', () => {
 
   test('Should return the correct article by its ID', async () => {
     const getResponse = await api
-      .get(`/api/articles/${createdArticleId}`)
+      .get(`/api/article/${createdArticleId}`)
       .set('Authorization', `Bearer ${tokenAdmin}`)
       .expect(200)
       .expect('Content-Type', /application\/json/)
@@ -366,7 +366,7 @@ describe('Get an article by its ID', () => {
 
   test('Should return 401 if the user is unauthorized', async () => {
     const response = await api
-      .get(`/api/articles/${createdArticleId}`)
+      .get(`/api/article/${createdArticleId}`)
       .expect(401)
       .expect('Content-Type', /application\/json/)
 
@@ -395,7 +395,7 @@ describe('Update an article', () => {
       order: 99
     }
     const updateResponse = await api
-      .patch(`/api/articles/${createdArticleId}`)
+      .patch(`/api/article/${createdArticleId}`)
       .set('Authorization', `Bearer ${tokenAdmin}`)
       .send(updatedData)
       .expect(200)
@@ -409,7 +409,7 @@ describe('Update an article', () => {
     expect(updatedArticle).toHaveProperty('article_order', updatedData.order)
 
     const getResponse = await api
-      .get(`/api/articles/${createdArticleId}`)
+      .get(`/api/article/${createdArticleId}`)
       .set('Authorization', `Bearer ${tokenAdmin}`)
       .expect(200)
       .expect('Content-Type', /application\/json/)
@@ -433,7 +433,7 @@ describe('Update an article', () => {
       order: 1
     }
     const response = await api
-      .patch(`/api/articles/${invalidId}`)
+      .patch(`/api/article/${invalidId}`)
       .set('Authorization', `Bearer ${tokenAdmin}`)
       .send(updatedData)
       .expect(404)
@@ -449,7 +449,7 @@ describe('Update an article', () => {
       order: 2
     }
     const response = await api
-      .patch(`/api/articles/${createdArticleId}`)
+      .patch(`/api/article/${createdArticleId}`)
       .send(updatedData)
       .expect(401)
       .expect('Content-Type', /application\/json/)
@@ -464,7 +464,7 @@ describe('Update an article', () => {
       order: 0
     }
     const response = await api
-      .patch(`/api/articles/${createdArticleId}`)
+      .patch(`/api/article/${createdArticleId}`)
       .set('Authorization', `Bearer ${tokenAdmin}`)
       .send(invalidData)
       .expect(400)
@@ -480,6 +480,7 @@ describe('Update an article', () => {
     })
   })
 })
+
 describe('Delete an article', () => {
   let createdArticleId
   beforeEach(async () => {
@@ -496,7 +497,7 @@ describe('Delete an article', () => {
 
   test('Should successfully delete an article by its ID', async () => {
     const getResponseBeforeDelete = await api
-      .get(`/api/articles/${createdArticleId}`)
+      .get(`/api/article/${createdArticleId}`)
       .set('Authorization', `Bearer ${tokenAdmin}`)
       .expect(200)
       .expect('Content-Type', /application\/json/)
@@ -506,11 +507,12 @@ describe('Delete an article', () => {
     expect(article).toHaveProperty('legal_basis_id', createdLegalBasisId)
 
     await api
-      .delete(`/api/articles/${createdArticleId}`)
+      .delete(`/api/article/${createdArticleId}`)
       .set('Authorization', `Bearer ${tokenAdmin}`)
       .expect(204)
+
     const getResponseAfterDelete = await api
-      .get(`/api/articles/${createdArticleId}`)
+      .get(`/api/article/${createdArticleId}`)
       .set('Authorization', `Bearer ${tokenAdmin}`)
       .expect(404)
       .expect('Content-Type', /application\/json/)
@@ -521,7 +523,7 @@ describe('Delete an article', () => {
   test('Should return 404 when trying to delete a non-existent article', async () => {
     const invalidId = -1
     const response = await api
-      .delete(`/api/articles/${invalidId}`)
+      .delete(`/api/article/${invalidId}`)
       .set('Authorization', `Bearer ${tokenAdmin}`)
       .expect(404)
       .expect('Content-Type', /application\/json/)
@@ -531,7 +533,100 @@ describe('Delete an article', () => {
 
   test('Should return 401 if the user is unauthorized', async () => {
     const response = await api
-      .delete(`/api/articles/${createdArticleId}`)
+      .delete(`/api/article/${createdArticleId}`)
+      .expect(401)
+      .expect('Content-Type', /application\/json/)
+
+    expect(response.body.error).toMatch(/token missing or invalid/i)
+  })
+})
+
+describe('Delete multiple articles', () => {
+  let createdArticleIds = []
+  beforeEach(async () => {
+    for (let i = 0; i < 5; i++) {
+      const articleData = generateArticleData()
+      const response = await api
+        .post(`/api/articles/legalBasis/${createdLegalBasisId}`)
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send(articleData)
+        .expect(201)
+        .expect('Content-Type', /application\/json/)
+
+      createdArticleIds.push(response.body.article.id)
+    }
+  })
+
+  afterEach(async () => {
+    createdArticleIds = []
+  })
+
+  test('Should successfully delete multiple articles by their IDs', async () => {
+    const articlesToDelete = createdArticleIds.slice(0, 3)
+    await api
+      .delete('/api/articles/batch')
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .send({ articleIds: articlesToDelete })
+      .expect(204)
+
+    for (const articleId of articlesToDelete) {
+      const response = await api
+        .get(`/api/article/${articleId}`)
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .expect(404)
+        .expect('Content-Type', /application\/json/)
+
+      expect(response.body.message).toMatch(/Article not found/i)
+    }
+
+    const remainingArticles = createdArticleIds.slice(3)
+    for (const articleId of remainingArticles) {
+      const response = await api
+        .get(`/api/article/${articleId}`)
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .expect(200)
+        .expect('Content-Type', /application\/json/)
+
+      const { article } = response.body
+      expect(article).toBeDefined()
+      expect(article).toHaveProperty('id', articleId)
+    }
+  })
+
+  test('Should return 400 when articleIds is missing or invalid', async () => {
+    const invalidRequests = [{}, { articleIds: [] }, { articleIds: 'invalid' }]
+    for (const invalidRequest of invalidRequests) {
+      const response = await api
+        .delete('/api/articles/batch')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send(invalidRequest)
+        .expect(400)
+        .expect('Content-Type', /application\/json/)
+
+      expect(response.body.message).toMatch(
+        /Missing required fields: articleIds/i
+      )
+    }
+  })
+
+  test('Should return 404 when trying to delete non-existent articles', async () => {
+    const nonExistentIds = [-1, -2]
+    const response = await api
+      .delete('/api/articles/batch')
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .send({ articleIds: nonExistentIds })
+      .expect(404)
+      .expect('Content-Type', /application\/json/)
+
+    expect(response.body.message).toMatch(/Articles not found/i)
+    expect(response.body.errors.notFoundIds).toEqual(nonExistentIds)
+  })
+
+  test('Should return 401 if the user is unauthorized', async () => {
+    const articlesToDelete = createdArticleIds.slice(0, 3)
+    const response = await api
+      .delete('/api/articles/batch')
+      .send({ articleIds: articlesToDelete })
       .expect(401)
       .expect('Content-Type', /application\/json/)
 

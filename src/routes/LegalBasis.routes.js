@@ -176,6 +176,7 @@ router.delete('/legalBasis/:id', UserExtractor, deleteLegalBasis)
 /**
  * Route to delete multiple Legal basis using an array of IDs.
  * @method DELETE
+ * @body {Array<number>} legalBasisIds - Array of IDs of the legal basis to delete.
  * @path /legalBases/batch
  * @description Allows an authorized user to delete multiple legal basis record.
  * @middlewares UserExtractor

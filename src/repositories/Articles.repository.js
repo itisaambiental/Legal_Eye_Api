@@ -103,6 +103,39 @@ class ArticlesRepository {
   }
 
   /**
+ * Finds articles in the database using an array of IDs.
+ * @param {Array<number>} articleIds - Array of article IDs to find.
+ * @returns {Promise<Array<Article>>} - Array of Article instances matching the provided IDs.
+ * @throws {ErrorUtils} - If an error occurs during retrieval.
+ */
+  static async findByIds (articleIds) {
+    if (articleIds.length === 0) {
+      return []
+    }
+    const query = `
+    SELECT id, legal_basis_id, article_name, description, article_order
+    FROM article
+    WHERE id IN (?)
+  `
+    try {
+      const [rows] = await pool.query(query, [articleIds])
+      return rows.map(
+        (row) =>
+          new Article(
+            row.id,
+            row.legal_basis_id,
+            row.article_name,
+            row.description,
+            row.article_order
+          )
+      )
+    } catch (error) {
+      console.error('Error finding articles by IDs:', error.message)
+      throw new ErrorUtils(500, 'Error finding articles by IDs from the database')
+    }
+  }
+
+  /**
    * Fetches articles associated with a specific legal basis, ordered by 'article_order'.
    * Returns a list of Article instances.
    * @param {number} legalBasisId - The ID of the legal basis.
@@ -256,6 +289,28 @@ class ArticlesRepository {
     } catch (error) {
       console.error('Error deleting article:', error.message)
       throw new ErrorUtils(500, 'Error deleting article from the database')
+    }
+  }
+
+  /**
+ * Deletes multiple articles from the database using an array of IDs.
+ * @param {Array<number>} articleIds - Array of article IDs to delete.
+ * @returns {Promise<boolean>} - True if articles were deleted, otherwise false.
+ * @throws {ErrorUtils} - If an error occurs during the deletion.
+ */
+  static async deleteBatch (articleIds) {
+    const query = `
+    DELETE FROM article WHERE id IN (?)
+  `
+    try {
+      const [result] = await pool.query(query, [articleIds])
+      if (result.affectedRows === 0) {
+        return false
+      }
+      return true
+    } catch (error) {
+      console.error('Error deleting articles:', error.message)
+      throw new ErrorUtils(500, 'Error deleting articles from the database')
     }
   }
 

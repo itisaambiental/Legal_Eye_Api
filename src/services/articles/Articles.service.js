@@ -236,7 +236,7 @@ class ArticlesService {
   /**
    * Deletes an article by its ID.
    * @param {number} id - The ID of the article to delete.
-   * @returns {Promise<boolean>} - Returns true if deletion is successful, false otherwise.
+   * @returns {Promise<{ success: boolean }>} - An object indicating the deletion was successful.
    * @throws {ErrorUtils} - If an error occurs during deletion.
    */
   static async deleteById (id) {
@@ -249,12 +249,40 @@ class ArticlesService {
       if (!articleDeleted) {
         throw new ErrorUtils(500, 'Article not found')
       }
-      return true
+      return { success: true }
     } catch (error) {
       if (error instanceof ErrorUtils) {
         throw error
       }
       throw new ErrorUtils(500, 'Unexpected error during article deletion')
+    }
+  }
+
+  /**
+   * Deletes multiple articles by their IDs.
+   * @param {Array<number>} articleIds - Array of article IDs to delete.
+   * @returns {Promise<{ success: boolean }>} - An object indicating the deletion was successful.
+   * @throws {ErrorUtils} - If articles not found or deletion fails.
+   */
+  static async deleteArticlesBatch (articleIds) {
+    try {
+      const existingArticles = await ArticlesRepository.findByIds(articleIds)
+      if (existingArticles.length !== articleIds.length) {
+        const notFoundIds = articleIds.filter(
+          (id) => !existingArticles.some((article) => article.id === id)
+        )
+        throw new ErrorUtils(404, 'Articles not found for IDs', { notFoundIds })
+      }
+      const articlesDeleted = await ArticlesRepository.deleteBatch(articleIds)
+      if (!articlesDeleted) {
+        throw new ErrorUtils(404, 'Articles not found')
+      }
+      return { success: true }
+    } catch (error) {
+      if (error instanceof ErrorUtils) {
+        throw error
+      }
+      throw new ErrorUtils(500, 'Failed to delete articles')
     }
   }
 }

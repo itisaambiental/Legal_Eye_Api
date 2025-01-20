@@ -81,6 +81,7 @@ router.delete('/subject/:id', UserExtractor, deleteSubject)
  * Route to delete multiple subjects using an array of IDs.
  * @method DELETE
  * @path /subjects/batch
+ * @body {Array<number>} subjectIds - Array of IDs of the subjects to delete.
  * @description Deletes multiple subjects from the system.
  * @middleware UserExtractor
  */

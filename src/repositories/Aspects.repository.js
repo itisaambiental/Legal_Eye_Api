@@ -58,27 +58,35 @@ class AspectsRepository {
   }
 
   /**
-   * Finds aspects in the database using an array of IDs.
-   * @param {Array<number>} aspectIds - Array of aspect IDs to find.
-   * @returns {Promise<Array<number>>} - Array of found aspect IDs.
-   * @throws {ErrorUtils} - If an error occurs during retrieval.
-   */
+ * Finds aspects in the database using an array of IDs.
+ * @param {Array<number>} aspectIds - Array of aspect IDs to find.
+ * @returns {Promise<Array<Aspect>>} - Array of Aspect instances matching the provided IDs.
+ * @throws {ErrorUtils} - If an error occurs during retrieval.
+ */
   static async findByIds (aspectIds) {
     if (aspectIds.length === 0) {
       return []
     }
     const query = `
-    SELECT id FROM aspects WHERE id IN (?)
+    SELECT aspects.id, aspects.subject_id, aspects.aspect_name, subjects.subject_name
+    FROM aspects
+    JOIN subjects ON aspects.subject_id = subjects.id
+    WHERE aspects.id IN (?)
   `
     try {
       const [rows] = await pool.query(query, [aspectIds])
-      return rows.map((row) => row.id)
+      return rows.map(
+        (row) =>
+          new Aspect(
+            row.id,
+            row.aspect_name,
+            row.subject_id,
+            row.subject_name
+          )
+      )
     } catch (error) {
       console.error('Error finding aspects by IDs:', error.message)
-      throw new ErrorUtils(
-        500,
-        'Error finding aspects by IDs from the database'
-      )
+      throw new ErrorUtils(500, 'Error finding aspects by IDs from the database')
     }
   }
 
