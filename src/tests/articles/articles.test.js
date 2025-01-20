@@ -212,9 +212,9 @@ describe('Get articles by Legal Basis Id', () => {
   })
 })
 describe('Filter articles by name', () => {
-  test('Should return an empty list if no articles match the name', async () => {
+  test('Should return an empty list if no articles match the name for the given legal basis', async () => {
     const response = await api
-      .get('/api/articles/name')
+      .get(`/api/articles/${createdLegalBasisId}/name`)
       .set('Authorization', `Bearer ${tokenAdmin}`)
       .query({ name: 'NonExistentName' })
       .expect(200)
@@ -225,7 +225,7 @@ describe('Filter articles by name', () => {
     expect(articles.length).toBe(0)
   })
 
-  test('Should return a list of articles matching the name', async () => {
+  test('Should return a list of articles matching the name for the given legal basis', async () => {
     const articleData = generateArticleData({ title: 'UniqueArticleName' })
     await api
       .post(`/api/articles/legalBasis/${createdLegalBasisId}`)
@@ -235,7 +235,7 @@ describe('Filter articles by name', () => {
       .expect('Content-Type', /application\/json/)
 
     const response = await api
-      .get('/api/articles/name')
+      .get(`/api/articles/${createdLegalBasisId}/name`)
       .set('Authorization', `Bearer ${tokenAdmin}`)
       .query({ name: 'UniqueArticleName' })
       .expect(200)
@@ -252,9 +252,10 @@ describe('Filter articles by name', () => {
       article_order: articleData.order
     })
   })
+
   test('Should return 401 if the user is unauthorized', async () => {
     const response = await api
-      .get('/api/articles/name')
+      .get(`/api/articles/${createdLegalBasisId}/name`)
       .query({ name: 'UniqueArticleName' })
       .expect(401)
       .expect('Content-Type', /application\/json/)
@@ -262,10 +263,11 @@ describe('Filter articles by name', () => {
     expect(response.body.error).toMatch(/token missing or invalid/i)
   })
 })
+
 describe('Filter articles by description', () => {
-  test('Should return an empty list if no articles match the description', async () => {
+  test('Should return an empty list if no articles match the description for the given legal basis', async () => {
     const response = await api
-      .get('/api/articles/description')
+      .get(`/api/articles/${createdLegalBasisId}/description`)
       .set('Authorization', `Bearer ${tokenAdmin}`)
       .query({ description: 'NonExistentDescription' })
       .expect(200)
@@ -276,7 +278,7 @@ describe('Filter articles by description', () => {
     expect(articles.length).toBe(0)
   })
 
-  test('Should return a list of articles matching the description', async () => {
+  test('Should return a list of articles matching the description for the given legal basis', async () => {
     const articleData = generateArticleData({
       article: 'UniqueArticleDescription'
     })
@@ -289,7 +291,7 @@ describe('Filter articles by description', () => {
       .expect('Content-Type', /application\/json/)
 
     const response = await api
-      .get('/api/articles/description')
+      .get(`/api/articles/${createdLegalBasisId}/description`)
       .set('Authorization', `Bearer ${tokenAdmin}`)
       .query({ description: 'UniqueArticleDescription' })
       .expect(200)
@@ -309,8 +311,227 @@ describe('Filter articles by description', () => {
 
   test('Should return 401 if the user is unauthorized', async () => {
     const response = await api
-      .get('/api/articles/description')
+      .get(`/api/articles/${createdLegalBasisId}/description`)
       .query({ description: 'UniqueArticleDescription' })
+      .expect(401)
+      .expect('Content-Type', /application\/json/)
+
+    expect(response.body.error).toMatch(/token missing or invalid/i)
+  })
+})
+
+describe('Get an article by its ID', () => {
+  let createdArticleId
+
+  beforeEach(async () => {
+    const articleData = generateArticleData()
+    const response = await api
+      .post(`/api/articles/legalBasis/${createdLegalBasisId}`)
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .send(articleData)
+      .expect(201)
+      .expect('Content-Type', /application\/json/)
+
+    createdArticleId = response.body.article.id
+  })
+
+  test('Should return 404 when trying to retrieve a non-existent article', async () => {
+    const invalidId = -1
+
+    const response = await api
+      .get(`/api/articles/${invalidId}`)
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .expect(404)
+      .expect('Content-Type', /application\/json/)
+
+    expect(response.body.message).toMatch(/Article not found/i)
+  })
+
+  test('Should return the correct article by its ID', async () => {
+    const getResponse = await api
+      .get(`/api/articles/${createdArticleId}`)
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .expect(200)
+      .expect('Content-Type', /application\/json/)
+
+    const { article } = getResponse.body
+
+    expect(article).toBeDefined()
+    expect(article).toHaveProperty('id', createdArticleId)
+    expect(article).toHaveProperty('legal_basis_id', createdLegalBasisId)
+    expect(article).toHaveProperty('article_name')
+    expect(article).toHaveProperty('description')
+    expect(article).toHaveProperty('article_order')
+  })
+
+  test('Should return 401 if the user is unauthorized', async () => {
+    const response = await api
+      .get(`/api/articles/${createdArticleId}`)
+      .expect(401)
+      .expect('Content-Type', /application\/json/)
+
+    expect(response.body.error).toMatch(/token missing or invalid/i)
+  })
+})
+
+describe('Update an article', () => {
+  let createdArticleId
+  beforeEach(async () => {
+    const articleData = generateArticleData()
+    const response = await api
+      .post(`/api/articles/legalBasis/${createdLegalBasisId}`)
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .send(articleData)
+      .expect(201)
+      .expect('Content-Type', /application\/json/)
+
+    createdArticleId = response.body.article.id
+  })
+
+  test('Should successfully update an article by its ID', async () => {
+    const updatedData = {
+      title: 'Updated Article Title',
+      article: 'Updated article content.',
+      order: 99
+    }
+    const updateResponse = await api
+      .patch(`/api/articles/${createdArticleId}`)
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .send(updatedData)
+      .expect(200)
+      .expect('Content-Type', /application\/json/)
+
+    const { updatedArticle } = updateResponse.body
+
+    expect(updatedArticle).toHaveProperty('id', createdArticleId)
+    expect(updatedArticle).toHaveProperty('article_name', updatedData.title)
+    expect(updatedArticle).toHaveProperty('description', updatedData.article)
+    expect(updatedArticle).toHaveProperty('article_order', updatedData.order)
+
+    const getResponse = await api
+      .get(`/api/articles/${createdArticleId}`)
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .expect(200)
+      .expect('Content-Type', /application\/json/)
+
+    const { article } = getResponse.body
+
+    expect(article).toBeDefined()
+    expect(article).toMatchObject({
+      id: createdArticleId,
+      article_name: updatedData.title,
+      description: updatedData.article,
+      article_order: updatedData.order
+    })
+  })
+
+  test('Should return 404 when trying to update a non-existent article', async () => {
+    const invalidId = -1
+    const updatedData = {
+      title: 'Non-existent Title',
+      article: 'Non-existent Content',
+      order: 1
+    }
+    const response = await api
+      .patch(`/api/articles/${invalidId}`)
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .send(updatedData)
+      .expect(404)
+      .expect('Content-Type', /application\/json/)
+
+    expect(response.body.message).toMatch(/Article not found/i)
+  })
+
+  test('Should return 401 if the user is unauthorized', async () => {
+    const updatedData = {
+      title: 'Unauthorized Update',
+      article: 'Unauthorized Content',
+      order: 2
+    }
+    const response = await api
+      .patch(`/api/articles/${createdArticleId}`)
+      .send(updatedData)
+      .expect(401)
+      .expect('Content-Type', /application\/json/)
+
+    expect(response.body.error).toMatch(/token missing or invalid/i)
+  })
+
+  test('Should return 400 if required fields are invalid', async () => {
+    const invalidData = {
+      title: '',
+      article: '',
+      order: 0
+    }
+    const response = await api
+      .patch(`/api/articles/${createdArticleId}`)
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .send(invalidData)
+      .expect(400)
+      .expect('Content-Type', /application\/json/)
+
+    expect(response.body.message).toBe('Validation failed')
+    expect(response.body.errors).toBeInstanceOf(Array)
+    expect(response.body.errors.length).toBeGreaterThan(0)
+
+    response.body.errors.forEach((error) => {
+      expect(error).toHaveProperty('field')
+      expect(error).toHaveProperty('message')
+    })
+  })
+})
+describe('Delete an article', () => {
+  let createdArticleId
+  beforeEach(async () => {
+    const articleData = generateArticleData()
+    const response = await api
+      .post(`/api/articles/legalBasis/${createdLegalBasisId}`)
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .send(articleData)
+      .expect(201)
+      .expect('Content-Type', /application\/json/)
+
+    createdArticleId = response.body.article.id
+  })
+
+  test('Should successfully delete an article by its ID', async () => {
+    const getResponseBeforeDelete = await api
+      .get(`/api/articles/${createdArticleId}`)
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .expect(200)
+      .expect('Content-Type', /application\/json/)
+
+    const { article } = getResponseBeforeDelete.body
+    expect(article).toHaveProperty('id', createdArticleId)
+    expect(article).toHaveProperty('legal_basis_id', createdLegalBasisId)
+
+    await api
+      .delete(`/api/articles/${createdArticleId}`)
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .expect(204)
+    const getResponseAfterDelete = await api
+      .get(`/api/articles/${createdArticleId}`)
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .expect(404)
+      .expect('Content-Type', /application\/json/)
+
+    expect(getResponseAfterDelete.body.message).toMatch(/Article not found/i)
+  })
+
+  test('Should return 404 when trying to delete a non-existent article', async () => {
+    const invalidId = -1
+    const response = await api
+      .delete(`/api/articles/${invalidId}`)
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .expect(404)
+      .expect('Content-Type', /application\/json/)
+
+    expect(response.body.message).toMatch(/Article not found/i)
+  })
+
+  test('Should return 401 if the user is unauthorized', async () => {
+    const response = await api
+      .delete(`/api/articles/${createdArticleId}`)
       .expect(401)
       .expect('Content-Type', /application\/json/)
 

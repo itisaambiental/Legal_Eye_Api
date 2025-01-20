@@ -138,19 +138,21 @@ class ArticlesRepository {
   }
 
   /**
-   * Retrieves articles by name or partial name from the database.
-   * @param {string} articleName - The name or part of the name of the article to retrieve.
-   * @returns {Promise<Array<Article|null>>} - A list of Article instances matching the name.
-   * @throws {ErrorUtils} - If an error occurs during retrieval.
-   */
-  static async findByName (articleName) {
+ * Retrieves articles by name or partial name for a specific legal basis from the database.
+ * @param {number} legalBasisId - The ID of the legal basis to filter articles by.
+ * @param {string} articleName - The name or part of the name of the article to retrieve.
+ * @returns {Promise<Array<Article|null>>} - A list of Article instances matching the name for the given legal basis.
+ * @throws {ErrorUtils} - If an error occurs during retrieval.
+ */
+  static async findByName (legalBasisId, articleName) {
     const query = `
     SELECT id, legal_basis_id, article_name, description, article_order
     FROM article
-    WHERE article_name LIKE ?
+    WHERE legal_basis_id = ? AND article_name LIKE ?
+    ORDER BY article_order
   `
     try {
-      const [rows] = await pool.query(query, [`%${articleName}%`])
+      const [rows] = await pool.query(query, [legalBasisId, `%${articleName}%`])
       if (rows.length === 0) return null
       return rows.map(
         (row) =>
@@ -169,19 +171,21 @@ class ArticlesRepository {
   }
 
   /**
-   * Retrieves articles by a partial match in their description from the database.
-   * @param {string} description - The description or part of the description to search for.
-   * @returns {Promise<Array<Article|null>>} - A list of Article instances matching the description.
-   * @throws {ErrorUtils} - If an error occurs during retrieval.
-   */
-  static async findByDescription (description) {
+ * Retrieves articles by a partial match in their description for a specific legal basis from the database.
+ * @param {number} legalBasisId - The ID of the legal basis to filter articles by.
+ * @param {string} description - The description or part of the description to search for.
+ * @returns {Promise<Array<Article|null>>} - A list of Article instances matching the description for the given legal basis.
+ * @throws {ErrorUtils} - If an error occurs during retrieval.
+ */
+  static async findByDescription (legalBasisId, description) {
     const query = `
     SELECT id, legal_basis_id, article_name, description, article_order
     FROM article
-    WHERE description LIKE ?
+    WHERE legal_basis_id = ? AND description LIKE ?
+    ORDER BY article_order
   `
     try {
-      const [rows] = await pool.query(query, [`%${description}%`])
+      const [rows] = await pool.query(query, [legalBasisId, `%${description}%`])
       if (rows.length === 0) return null
       return rows.map(
         (row) =>
@@ -196,6 +200,62 @@ class ArticlesRepository {
     } catch (error) {
       console.error('Error retrieving articles by description:', error.message)
       throw new ErrorUtils(500, 'Error retrieving articles by description')
+    }
+  }
+
+  /**
+ * Updates an article by its ID.
+ * @param {number} id - The ID of the article to update.
+ * @param {Object} article - The updated article data.
+ * @param {string|null} article.title - The new title of the article, or null to keep the current title.
+ * @param {string|null} article.article - The new content of the article, or null to keep the current content.
+ * @param {number|null} article.order - The new order of the article, or null to keep the current order.
+ * @returns {Promise<boolean|Article>} - Returns the updated Article instance if successful, false otherwise.
+ * @throws {ErrorUtils} - If an error occurs during update.
+ */
+  static async updateById (id, article) {
+    const query = `
+    UPDATE article
+    SET 
+      article_name = IFNULL(?, article_name),
+      description = IFNULL(?, description),
+      article_order = IFNULL(?, article_order)
+    WHERE id = ?
+  `
+    const values = [article.title, article.article, article.order, id]
+    try {
+      const [rows] = await pool.query(query, values)
+      if (rows.affectedRows === 0) {
+        return false
+      }
+      const article = await this.findById(id)
+      return article
+    } catch (error) {
+      console.error('Error updating article:', error.message)
+      throw new ErrorUtils(500, 'Error updating article in the database')
+    }
+  }
+
+  /**
+ * Deletes an article by its ID.
+ * @param {number} id - The ID of the article to delete.
+ * @returns {Promise<boolean>} - Returns true if the deletion is successful, false otherwise.
+ * @throws {ErrorUtils} - If an error occurs during deletion.
+ */
+  static async deleteById (id) {
+    const query = `
+    DELETE FROM article
+    WHERE id = ?
+  `
+    try {
+      const [rows] = await pool.query(query, [id])
+      if (rows.affectedRows === 0) {
+        return false
+      }
+      return true
+    } catch (error) {
+      console.error('Error deleting article:', error.message)
+      throw new ErrorUtils(500, 'Error deleting article from the database')
     }
   }
 

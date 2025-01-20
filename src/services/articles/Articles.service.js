@@ -1,6 +1,9 @@
 import ArticlesRepository from '../../repositories/Articles.repository.js'
 import LegalBasisRepository from '../../repositories/LegalBasis.repository.js'
-import { singleArticleSchema, articlesSchema } from '../../schemas/articlesValidation.js'
+import {
+  singleArticleSchema,
+  articlesSchema
+} from '../../schemas/articlesValidation.js'
 import ErrorUtils from '../../utils/Error.js'
 import { z } from 'zod'
 
@@ -37,11 +40,7 @@ class ArticlesService {
           field: e.path[0],
           message: e.message
         }))
-        throw new ErrorUtils(
-          400,
-          'Validation failed',
-          validationErrors
-        )
+        throw new ErrorUtils(400, 'Validation failed', validationErrors)
       }
       if (error instanceof ErrorUtils) {
         throw error
@@ -82,11 +81,7 @@ class ArticlesService {
           field: e.path[0],
           message: e.message
         }))
-        throw new ErrorUtils(
-          400,
-          'Validation failed',
-          validationErrors
-        )
+        throw new ErrorUtils(400, 'Validation failed', validationErrors)
       }
       if (error instanceof ErrorUtils) {
         throw error
@@ -123,14 +118,19 @@ class ArticlesService {
   }
 
   /**
-   * Filters articles by their name.
+   * Filters articles by their name for a specific legal basis.
+   * @param {number} legalBasisId - The ID of the legal basis to filter articles by.
    * @param {string} name - The name or part of the name to filter by.
-   * @returns {Promise<Array<Article>>} - A list of articles matching the name.
+   * @returns {Promise<Array<Article>>} - A list of articles matching the name for the given legal basis.
    * @throws {ErrorUtils} - If an error occurs during retrieval.
    */
-  static async getByName (name) {
+  static async getByName (legalBasisId, name) {
     try {
-      const articles = await ArticlesRepository.findByName(name)
+      const legalBase = await LegalBasisRepository.findById(legalBasisId)
+      if (!legalBase) {
+        throw new ErrorUtils(404, 'LegalBasis not found')
+      }
+      const articles = await ArticlesRepository.findByName(legalBasisId, name)
       if (!articles) {
         return []
       }
@@ -144,14 +144,22 @@ class ArticlesService {
   }
 
   /**
-   * Filters articles by their description.
+   * Filters articles by their description for a specific legal basis.
+   * @param {number} legalBasisId - The ID of the legal basis to filter articles by.
    * @param {string} description - The description or part of the description to filter by.
-   * @returns {Promise<Array<Article>>} - A list of articles matching the description.
+   * @returns {Promise<Array<Article>>} - A list of articles matching the description for the given legal basis.
    * @throws {ErrorUtils} - If an error occurs during retrieval.
    */
-  static async getByDescription (description) {
+  static async getByDescription (legalBasisId, description) {
     try {
-      const articles = await ArticlesRepository.findByDescription(description)
+      const legalBase = await LegalBasisRepository.findById(legalBasisId)
+      if (!legalBase) {
+        throw new ErrorUtils(404, 'LegalBasis not found')
+      }
+      const articles = await ArticlesRepository.findByDescription(
+        legalBasisId,
+        description
+      )
       if (!articles) {
         return []
       }
@@ -161,6 +169,92 @@ class ArticlesService {
         throw error
       }
       throw new ErrorUtils(500, 'Error fetching articles by description')
+    }
+  }
+
+  /**
+   * Fetch an article by its ID.
+   * @param {number} id - The ID of the article to filter by.
+   * @returns {Promise<Article>} - Returns the Article instance if successful.
+   * @throws {ErrorUtils} - If an error occurs during retrieval.
+   */
+  static async getById (id) {
+    try {
+      const articles = await ArticlesRepository.findById(id)
+      if (!articles) {
+        throw new ErrorUtils(404, 'Article not found')
+      }
+      return articles
+    } catch (error) {
+      if (error instanceof ErrorUtils) {
+        throw error
+      }
+      throw new ErrorUtils(500, 'Error fetching articles by description')
+    }
+  }
+
+  /**
+   * Updates an article by its ID.
+   * @param {number} id - The ID of the article to update.
+   * @param {Object} article - The updated article data.
+   * @param {string|null} article.title - The new title of the article, or null to keep the current title.
+   * @param {string|null} article.article - The new content of the article, or null to keep the current content.
+   * @param {number|null} article.order - The new order of the article, or null to keep the current order.
+   * @returns {Promise<Article>} - Returns the updated Article instance if successful.
+   * @throws {ErrorUtils} - If an error occurs during validation or update.
+   */
+  static async updateById (id, article) {
+    try {
+      const parsedArticle = singleArticleSchema.parse(article)
+      const existingArticle = await ArticlesRepository.findById(id)
+      if (!existingArticle) {
+        throw new ErrorUtils(404, 'Article not found')
+      }
+      const updatedArticle = await ArticlesRepository.updateById(
+        id,
+        parsedArticle
+      )
+      if (!updatedArticle) {
+        throw new ErrorUtils(500, 'Article not found')
+      }
+      return updatedArticle
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        const validationErrors = error.errors.map((e) => ({
+          field: e.path[0],
+          message: e.message
+        }))
+        throw new ErrorUtils(400, 'Validation failed', validationErrors)
+      }
+      if (error instanceof ErrorUtils) {
+        throw error
+      }
+      throw new ErrorUtils(500, 'Unexpected error during article update')
+    }
+  }
+
+  /**
+   * Deletes an article by its ID.
+   * @param {number} id - The ID of the article to delete.
+   * @returns {Promise<boolean>} - Returns true if deletion is successful, false otherwise.
+   * @throws {ErrorUtils} - If an error occurs during deletion.
+   */
+  static async deleteById (id) {
+    try {
+      const existingArticle = await ArticlesRepository.findById(id)
+      if (!existingArticle) {
+        throw new ErrorUtils(404, 'Article not found')
+      }
+      const articleDeleted = await ArticlesRepository.deleteById(id)
+      if (!articleDeleted) {
+        throw new ErrorUtils(500, 'Article not found')
+      }
+      return true
+    } catch (error) {
+      if (error instanceof ErrorUtils) {
+        throw error
+      }
+      throw new ErrorUtils(500, 'Unexpected error during article deletion')
     }
   }
 }

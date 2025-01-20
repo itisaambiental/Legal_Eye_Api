@@ -9,7 +9,10 @@ import {
   createArticle,
   getArticlesByLegalBasisId,
   getArticlesByName,
-  getArticlesByDescription
+  getArticlesByDescription,
+  getArticleById,
+  updateArticle,
+  deleteArticle
 } from '../controllers/Articles.controller.js'
 
 const router = Router()
@@ -40,25 +43,63 @@ router.post('/articles/legalBasis/:legalBasisId', UserExtractor, createArticle)
 router.get('/articles/legalBasis/:legalBasisId', UserExtractor, getArticlesByLegalBasisId)
 
 /**
- * Route to filter articles by name.
+ * Route to filter articles by name for a specific legal basis.
  * @method GET
- * @path /articles/name
- * @description Retrieves a list of articles matching the specified name.
+ * @path /articles/:legalBasisId/name
+ * @description Retrieves a list of articles matching the specified name for the given legal basis.
+ * @param {string} legalBasisId - The ID of the legal basis.
  * @query {string} name - The name or part of the name of the articles to be retrieved.
  * @middlewares UserExtractor - Middleware to ensure that the user is authorized and extracted from the request.
  * @returns {Object} - A JSON response containing the list of articles or an error message.
  */
-router.get('/articles/name', UserExtractor, getArticlesByName)
+router.get('/articles/:legalBasisId/name', UserExtractor, getArticlesByName)
 
 /**
- * Route to filter articles by description.
+ * Route to filter articles by description for a specific legal basis.
  * @method GET
- * @path /articles/description
- * @description Retrieves a list of articles matching the specified description.
+ * @path /articles/:legalBasisId/description
+ * @description Retrieves a list of articles matching the specified description for the given legal basis.
+ * @param {string} legalBasisId - The ID of the legal basis.
  * @query {string} description - The description or part of the description of the articles to be retrieved.
  * @middlewares UserExtractor - Middleware to ensure that the user is authorized and extracted from the request.
  * @returns {Object} - A JSON response containing the list of articles or an error message.
  */
-router.get('/articles/description', UserExtractor, getArticlesByDescription)
+router.get('/articles/:legalBasisId/description', UserExtractor, getArticlesByDescription)
+
+/**
+ * Route to fetch an article by its ID.
+ * @method GET
+ * @path /articles/:id
+ * @description Retrieves an article by its ID.
+ * @param {string} id - The ID of the article to retrieve.
+ * @middlewares UserExtractor - Middleware to ensure that the user is authorized and extracted from the request.
+ * @returns {Object} - A JSON response containing the article or an error message.
+ */
+router.get('/articles/:id', UserExtractor, getArticleById)
+
+/**
+ * Route to update an article by its ID.
+ * @method PATCH
+ * @path /articles/:id
+ * @description Updates an article by its ID.
+ * @param {string} id - The ID of the article to update.
+ * @body {string} title - The new title of the article (optional).
+ * @body {string} article - The new content of the article (optional).
+ * @body {number} order - The new order of the article (optional).
+ * @middlewares UserExtractor - Middleware to ensure that the user is authorized and extracted from the request.
+ * @returns {Object} - A JSON response containing the updated article or an error message.
+ */
+router.patch('/articles/:id', UserExtractor, updateArticle)
+
+/**
+ * Route to delete an article by its ID.
+ * @method DELETE
+ * @path /articles/:id
+ * @description Deletes an article by its ID.
+ * @param {string} id - The ID of the article to delete.
+ * @middlewares UserExtractor - Middleware to ensure that the user is authorized and extracted from the request.
+ * @returns {Object} - A 204 No Content response or an error message.
+ */
+router.delete('/articles/:id', UserExtractor, deleteArticle)
 
 export default router
