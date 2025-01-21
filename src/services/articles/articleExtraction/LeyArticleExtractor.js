@@ -198,7 +198,7 @@ Follow these specific instructions based on the type of content:
 
 1. **Articles**: Review and correct long paragraphs ensuring each explains a specific concept or legal provision. Divide into sections or subsections if necessary for clarity. Complete truncated words or sentences without altering their meaning.
 
-2. **Chapters and sections**: Make sure they are short and concise, containing only the grouping heading (for example, "DISPOSICIONES GENERALES") without including articles or detailed content. If you include any articles, remove them from the chapter or section.
+2. **Chapters and sections**: Make sure they are short and concise, containing only the grouping heading (for example, "DISPOSICIONES GENERALES" "DE LA NATURALEZA Y OBJETO") without including articles or detailed content. If you include any articles, remove them from the chapter or section.
 
 3. **Transitory Articles**: Review and correct temporary provisions. Ensure they include clear conditions such as effective dates and adaptation periods, maintaining a consistent and detailed format.
 
