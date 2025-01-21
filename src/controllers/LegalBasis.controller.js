@@ -30,6 +30,7 @@ export const createLegalBasis = async (req, res) => {
     )
     return res.status(201).json({ jobId, legalBasis })
   } catch (error) {
+    console.error(error)
     if (error instanceof ErrorUtils) {
       return res.status(error.status).json({
         message: error.message,

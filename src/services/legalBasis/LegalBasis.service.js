@@ -669,12 +669,15 @@ class LegalBasisService {
         const notFoundIds = parsedData.aspectsIds.filter(id => !validAspectIds.includes(id))
         throw new ErrorUtils(404, 'Aspects not found for IDs', { notFoundIds })
       }
-      const { hasPendingJobs } = await extractArticles.hasPendingJobs(legalBasisId)
       if (parsedData.removeDocument && document) {
         throw new ErrorUtils(400, 'Cannot provide a document if removeDocument is true')
       }
+      const { hasPendingJobs } = await extractArticles.hasPendingJobs(legalBasisId)
       if (parsedData.removeDocument && hasPendingJobs) {
         throw new ErrorUtils(409, 'The document cannot be removed because there are pending jobs for this Legal Basis')
+      }
+      if (hasPendingJobs && document) {
+        throw new ErrorUtils(409, 'A new document cannot be uploaded because there are pending jobs for this Legal Basis')
       }
       if (parsedData.extractArticles) {
         if (!document && !existingLegalBasis.url) {

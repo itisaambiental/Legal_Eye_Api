@@ -28,20 +28,24 @@ class LeyArticleExtractor extends ArticleExtractor {
   }
 
   /**
- * Cleans the input text by normalizing spaces, removing line breaks,
- * and standardizing keywords like "ARTÍCULO", "CAPÍTULO", "SECCIÓN",
- * and "TRANSITORIOS", even if they have interleaved spaces.
- * Matches only uppercase or capitalized keywords to avoid false positives.
- * @param {string} text - Text to clean.
- * @returns {string} - Cleaned text.
- */
+   * Cleans the input text by normalizing spaces, removing line breaks,
+   * and standardizing keywords like "ARTÍCULO", "CAPÍTULO", "SECCIÓN",
+   * and "TRANSITORIOS", even if they have interleaved spaces.
+   * Matches only uppercase or capitalized keywords to avoid false positives.
+   * @param {string} text - Text to clean.
+   * @returns {string} - Cleaned text.
+   */
   cleanText (text) {
     const multipleSpacesRegex = /\s+/g
     const lineBreaksRegex = /\n/g
-    const articleKeywordRegex = /A\s*(?:R\s*T\s*[ÍI]\s*C\s*U\s*L\s*O|r\s*t\s*[íi]\s*c\s*u\s*l\s*o)/g
-    const chapterKeywordRegex = /C\s*(?:[ÁA]\s*P\s*[ÍI]\s*T\s*U\s*L\s*O|[áa]\s*p\s*[íi]\s*t\s*u\s*l\s*o)/g
-    const sectionKeywordRegex = /S\s*(?:E\s*C\s*C\s*[ÍI]\s*[ÓO]\s*N|e\s*c\s*c\s*[íi]\s*[óo]\s*n)/g
-    const transitoriosKeywordRegex = /T\s*(?:R\s*A\s*N\s*S\s*I\s*T\s*O\s*R\s*I\s*O\s*S|r\s*a\s*n\s*s\s*i\s*t\s*o\s*r\s*i\s*o\s*s)/g
+    const articleKeywordRegex =
+      /A\s*(?:R\s*T\s*[ÍI]\s*C\s*U\s*L\s*O|r\s*t\s*[íi]\s*c\s*u\s*l\s*o)/g
+    const chapterKeywordRegex =
+      /C\s*(?:[ÁA]\s*P\s*[ÍI]\s*T\s*U\s*L\s*O|[áa]\s*p\s*[íi]\s*t\s*u\s*l\s*o)/g
+    const sectionKeywordRegex =
+      /S\s*(?:E\s*C\s*C\s*[ÍI]\s*[ÓO]\s*N|e\s*c\s*c\s*[íi]\s*[óo]\s*n)/g
+    const transitoriosKeywordRegex =
+      /T\s*(?:R\s*A\s*N\s*S\s*I\s*T\s*O\s*R\s*I\s*O\s*S|r\s*a\s*n\s*s\s*i\s*t\s*o\s*r\s*i\s*o\s*s)/g
     const ellipsisTextRegex = /[^.]+\s*\.{3,}\s*/g
     const singleEllipsisRegex = /\s*\.{3,}\s*/g
     return text
@@ -56,15 +60,16 @@ class LeyArticleExtractor extends ArticleExtractor {
   }
 
   /**
- * Extracts articles from the cleaned text using regular expressions.
- * @param {string} text - Cleaned text.
- * @returns {Array} - List of article objects.
- */
+   * Extracts articles from the cleaned text using regular expressions.
+   * @param {string} text - Cleaned text.
+   * @returns {Array} - List of article objects.
+   */
   _extractArticles (text) {
-    const articlePatternString = '((?:C[ÁA]P[IÍ]TULO)\\s+\\w+|' +
-    '(?:SECCI[ÓO]N|Secci[óo]n)\\s+\\d+|' +
-    '(?:ART[ÍI]CULO|Art[íi]culo)\\s+\\d+|' +
-    '(?:TRANSITORIOS|Transitorios))'
+    const articlePatternString =
+      '((?:C[ÁA]P[IÍ]TULO)\\s+\\w+|' +
+      '(?:SECCI[ÓO]N|Secci[óo]n)\\s+\\d+|' +
+      '(?:ART[ÍI]CULO|Art[íi]culo)\\s+\\d+|' +
+      '(?:TRANSITORIOS|Transitorios))'
     const articlePattern = new RegExp(articlePatternString, 'g')
     const titleChapterRegex = /^(C[ÁA]P[IÍ]TULO)/
     const titleSectionRegex = /^(SECCI[ÓO]N|Secci[óo]n)/
@@ -78,16 +83,32 @@ class LeyArticleExtractor extends ArticleExtractor {
       const currentMatch = matches[i].trim()
       if (titleChapterRegex.test(currentMatch)) {
         if (currentArticle) articles.push(currentArticle)
-        currentArticle = this.createArticleObject(currentMatch, matches[i + 1], order++)
+        currentArticle = this.createArticleObject(
+          currentMatch,
+          matches[i + 1],
+          order++
+        )
       } else if (titleSectionRegex.test(currentMatch)) {
         if (currentArticle) articles.push(currentArticle)
-        currentArticle = this.createArticleObject(currentMatch, matches[i + 1], order++)
+        currentArticle = this.createArticleObject(
+          currentMatch,
+          matches[i + 1],
+          order++
+        )
       } else if (titleArticleRegex.test(currentMatch)) {
         if (currentArticle) articles.push(currentArticle)
-        currentArticle = this.createArticleObject(currentMatch, matches[i + 1], order++)
+        currentArticle = this.createArticleObject(
+          currentMatch,
+          matches[i + 1],
+          order++
+        )
       } else if (titleTransitoriosRegex.test(currentMatch)) {
         if (currentArticle) articles.push(currentArticle)
-        currentArticle = this.createArticleObject(currentMatch, matches[i + 1], order++)
+        currentArticle = this.createArticleObject(
+          currentMatch,
+          matches[i + 1],
+          order++
+        )
       }
     }
     if (currentArticle) articles.push(currentArticle)
@@ -95,12 +116,12 @@ class LeyArticleExtractor extends ArticleExtractor {
   }
 
   /**
- * Creates an article object with title, content, and order.
- * @param {string} title - Title of the article.
- * @param {string} content - Content of the article.
- * @param {number} order - Order of the article.
- * @returns {Object} - Article object.
- */
+   * Creates an article object with title, content, and order.
+   * @param {string} title - Title of the article.
+   * @param {string} content - Content of the article.
+   * @param {number} order - Order of the article.
+   * @returns {Object} - Article object.
+   */
   createArticleObject (title, content, order) {
     return {
       title,
@@ -110,20 +131,26 @@ class LeyArticleExtractor extends ArticleExtractor {
   }
 
   /**
- * Corrects the article using AI models.
- * @param {Object} article - The article object to correct.
- * @returns {Promise<Object>} - Corrected article object or original if correction fails.
- */
+   * Corrects the article using AI models.
+   * @param {Object} article - The article object to correct.
+   * @returns {Promise<Object>} - Corrected article object or original if correction fails.
+   */
   async correctArticle (article) {
     const prompt = this.buildPrompt(this.name, article)
     const request = {
       model: 'gpt-4o-mini',
       messages: [
-        { role: 'system', content: 'You are a virtual assistant specialized in reviewing, correcting and documenting Mexican legal articles that have been extracted from different laws, rules and regulations.' },
+        {
+          role: 'system',
+          content: 'You are a virtual assistant specialized in reviewing, correcting, and documenting Mexican legal articles extracted from various laws. Note: All laws are in Spanish, and all output must also be in Spanish.'
+        },
         { role: 'user', content: prompt }
       ],
       temperature: 0,
-      response_format: zodResponseFormat(singleArticleModelSchema, 'articles_response')
+      response_format: zodResponseFormat(
+        singleArticleModelSchema,
+        'articles_response'
+      )
     }
     const attemptRequest = async (retryCount = 0) => {
       try {
@@ -152,28 +179,38 @@ class LeyArticleExtractor extends ArticleExtractor {
   }
 
   /**
-* Builds the prompt for the AI models to process.
-* @param {string} documentName - The document name to include in the prompt.
-* @param {Object} article - The article object to include in the prompt.
-* @returns {string} - The constructed prompt.
-*/
+   * Builds the prompt for the AI models to process.
+   * @param {string} documentName - The document name to include in the prompt.
+   * @param {Object} article - The article object to include in the prompt.
+   * @returns {string} - The constructed prompt.
+   */
   buildPrompt (documentName, article) {
     return `
-  Research the content of "${article.title}" in the Mexican legal basis entitled "${documentName}". Then, help format and correct the following article:
+Analyze the content of "${article.title}" within the Mexican legal framework titled "${documentName}". Then, help format and correct the following article:
 
-  {
-    "title": "${article.title}",
-    "article": "${article.article}",
-    "order": ${article.order}
-  }
+{
+  "title": "${article.title}",
+  "article": "${article.article}",
+  "order": ${article.order}
+}
 
-  - Correct formatting issues such as unnecessary spaces, incorrect line breaks, or misaligned indentation.
-  - With the information you obtained, verify that the Article, section or Chapter is complete and coherent. If not, complete it and improve it.
-  - Ensure that all content ends with a coherent idea and a period.
-  - Complete truncated words or sentences when necessary, without altering their original meaning.
-  - Handle tables and columns carefully, preserving their original structure for readability and clarity.
-  - Articles are in Spanish; provide the corrected object in the same language.
-  - Pay special attention to article titles. Only complete them if necessary, and avoid altering their structure or changing their meaning to maintain consistency and order.
+Follow these specific instructions based on the type of content:
+
+1. **Articles**: Review and correct long paragraphs ensuring each explains a specific concept or legal provision. Divide into sections or subsections if necessary for clarity. Complete truncated words or sentences without altering their meaning.
+
+2. **Chapters and sections**: Make sure they are short and concise, containing only the grouping heading (for example, "DISPOSICIONES GENERALES") without including articles or detailed content. If you include any articles, remove them from the chapter or section.
+
+3. **Transitory Articles**: Review and correct temporary provisions. Ensure they include clear conditions such as effective dates and adaptation periods, maintaining a consistent and detailed format.
+
+4. **Others (if applicable)**: If the content does not fit the above categories, review its general coherence, structure, and format.
+
+- Correct formatting issues such as unnecessary spaces, incorrect line breaks, or misaligned indentation.
+- Verify that the content is coherent and ends with a complete idea.
+- Maintain tables and columns in their original structure for clarity and readability.
+- Return the corrected object in Spanish, respecting the original meaning of the texts.
+- Pay special attention to article titles. Only complete them if necessary, and avoid altering their structure or meaning to maintain consistency and order.
+
+
 `
   }
 }

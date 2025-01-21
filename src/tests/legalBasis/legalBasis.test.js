@@ -1959,11 +1959,12 @@ describe('Get Legal Basis By Subject And Aspects', () => {
         'The document cannot be removed because there are pending jobs for this Legal Basis'
       )
     })
-    test('Should return 409 if extractArticles is true, a document is provided, and there are pending jobs', async () => {
+    test('Should return 409 if attempting to extract articles with a new document while there are pending jobs for the Legal Basis', async () => {
       jest.spyOn(extractArticles, 'hasPendingJobs').mockResolvedValue({
         hasPendingJobs: true,
         jobId: '12345'
       })
+
       const document = Buffer.from('mock pdf content')
       const updatedData = generateLegalBasisData({
         legalName: 'Updated Legal Name with Document',
@@ -1979,6 +1980,66 @@ describe('Get Legal Basis By Subject And Aspects', () => {
           filename: 'file.pdf',
           contentType: 'application/pdf'
         })
+        .field('legalName', updatedData.legalName)
+        .field('abbreviation', updatedData.abbreviation)
+        .field('subjectId', updatedData.subjectId)
+        .field('aspectsIds', updatedData.aspectsIds)
+        .field('classification', updatedData.classification)
+        .field('jurisdiction', updatedData.jurisdiction)
+        .field('lastReform', updatedData.lastReform)
+        .field('extractArticles', updatedData.extractArticles)
+        .expect(409)
+        .expect('Content-Type', /application\/json/)
+
+      expect(response.body.message).toBe(
+        'A new document cannot be uploaded because there are pending jobs for this Legal Basis'
+      )
+    })
+
+    test('Should return 409 if extractArticles is true and there are pending jobs for the Legal Basis', async () => {
+      jest.spyOn(extractArticles, 'hasPendingJobs').mockResolvedValue({
+        hasPendingJobs: true,
+        jobId: '12345'
+      })
+
+      const legalBasisData = generateLegalBasisData({
+        legalName: 'Legal Basis with Document',
+        subjectId: String(createdSubjectId),
+        aspectsIds: JSON.stringify(createdAspectIds),
+        extractArticles: 'true'
+      })
+
+      const document = Buffer.from('mock pdf content')
+      const creationResponse = await api
+        .post('/api/legalBasis')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .attach('document', document, {
+          filename: 'file.pdf',
+          contentType: 'application/pdf'
+        })
+        .field('legalName', legalBasisData.legalName)
+        .field('abbreviation', legalBasisData.abbreviation)
+        .field('subjectId', legalBasisData.subjectId)
+        .field('aspectsIds', legalBasisData.aspectsIds)
+        .field('classification', legalBasisData.classification)
+        .field('jurisdiction', legalBasisData.jurisdiction)
+        .field('lastReform', legalBasisData.lastReform)
+        .field('extractArticles', legalBasisData.extractArticles)
+        .expect(201)
+        .expect('Content-Type', /application\/json/)
+
+      const createdLegalBasis = creationResponse.body.legalBasis
+
+      const updatedData = generateLegalBasisData({
+        legalName: 'Updated Legal Name',
+        subjectId: String(createdSubjectId),
+        aspectsIds: JSON.stringify(createdAspectIds),
+        extractArticles: 'true'
+      })
+
+      const response = await api
+        .patch(`/api/legalBasis/${createdLegalBasis.id}`)
+        .set('Authorization', `Bearer ${tokenAdmin}`)
         .field('legalName', updatedData.legalName)
         .field('abbreviation', updatedData.abbreviation)
         .field('subjectId', updatedData.subjectId)
