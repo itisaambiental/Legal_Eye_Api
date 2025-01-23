@@ -1,15 +1,18 @@
 import ErrorUtils from '../../../utils/Error.js'
 import articlesQueue from '../../../workers/articlesWorker.js'
+import QueueService from '../../queue/Queue.service.js'
 import LegalBasisRepository from '../../../repositories/LegalBasis.repository.js'
+
 /**
  * Service class for handling extract Articles Jobs operations.
  */
-class extractArticles {
-/**
- * Fetch the job from the queue and return the job state.
- * @param {string} jobId - The job ID.
- * @returns {Object} - The job state and relevant data.
- */
+class extractArticlesService {
+  /**
+   * Fetch the job from the queue and return the job state.
+   * @param {string} jobId - The job ID.
+   * @returns {Promise<Object>} - The job state and relevant data.
+   * @throws {ErrorUtils} - If an error occurs while retrieving the job state.
+   */
   static async getStatusJob (jobId) {
     try {
       const job = await articlesQueue.getJob(jobId)
@@ -19,51 +22,35 @@ class extractArticles {
           data: { message: 'Job not found' }
         }
       }
-      const state = await job.getState()
-      const response = {
-        waiting: { message: 'The job is waiting to be processed' },
-        active: { message: 'Job is still processing', jobProgress: job.progress() },
-        completed: { message: 'Job completed successfully', jobProgress: job.progress() },
-        failed: { message: 'Job failed', error: job.failedReason || 'Unknown error' },
-        delayed: { message: 'Job is delayed and will be processed later' },
-        paused: { message: 'Job is paused and will be resumed once unpaused' },
-        stuck: { message: 'Job is stuck and cannot proceed' },
-        default: { message: 'Job is in an unknown state' }
-      }
-      const { message, ...additionalData } = response[state] || response.default
-      return {
-        status: 200,
-        data: {
-          message,
-          ...additionalData
-        }
-      }
+      const response = await QueueService.getJobState(job)
+      return response
     } catch (error) {
-      throw new ErrorUtils(500, 'Failed to retrieve status records for job', [{ jobId }])
+      if (error instanceof ErrorUtils) {
+        throw error
+      }
+      throw new ErrorUtils(500, 'Failed to retrieve status records for job', [
+        { jobId }
+      ])
     }
   }
 
   /**
- * Checks if there are pending jobs in the articlesQueue for a given legalBasisId.
- * If jobs exist, returns the jobId; otherwise, returns null.
- *
- * @param {number} legalBasisId - The ID of the legal basis to check.
- * @returns {Promise<{ hasPendingJobs: boolean, jobId: string | null }>}
- * An object containing:
- * - `hasPendingJobs`: Boolean indicating if there are pending jobs for the given legalBasisId.
- * - `jobId`: The ID of the job if it exists, otherwise null.
- * @throws {ErrorUtils} - If an error occurs while checking the articlesQueue.
- */
+   * Checks if there are pending jobs in the articlesQueue for a given legalBasisId.
+   * If jobs exist, returns the jobId; otherwise, returns null.
+   *
+   * @param {number} legalBasisId - The ID of the legal basis to check.
+   * @returns {Promise<{ hasPendingJobs: boolean, jobId: string | null }>}
+   * @throws {ErrorUtils} - If an error occurs while checking the articlesQueue.
+   */
   static async hasPendingJobs (legalBasisId) {
     try {
       const legalBase = await LegalBasisRepository.findById(legalBasisId)
       if (!legalBase) {
         throw new ErrorUtils(404, 'LegalBasis not found')
       }
-      const existingJobs = await articlesQueue.getJobs(['waiting', 'paused', 'active', 'delayed'])
-      const jobMap = new Map(
-        existingJobs.map(job => [Number(job.data.legalBasisId), job])
-      )
+      const statesToCheck = ['waiting', 'paused', 'active', 'delayed']
+      const jobs = await QueueService.getJobsByStates(articlesQueue, statesToCheck)
+      const jobMap = QueueService.mapJobsById(jobs)
       const job = jobMap.get(Number(legalBasisId))
       if (job) {
         return { hasPendingJobs: true, jobId: job.id }
@@ -73,9 +60,31 @@ class extractArticles {
       if (error instanceof ErrorUtils) {
         throw error
       }
-      throw new ErrorUtils(500, 'Failed to check pending jobs')
+      throw new ErrorUtils(500, 'Failed to check pending jobs', [{ legalBasisId }])
+    }
+  }
+
+  /**
+   * Cancels a job by its ID.
+   * @param {string} jobId - The ID of the job to cancel.
+   * @returns {Promise<boolean>} - True if the job was successfully canceled.
+   * @throws {ErrorUtils} - If the job cannot be canceled.
+   */
+  static async cancelJob (jobId) {
+    try {
+      const job = await articlesQueue.getJob(jobId)
+      if (!job) {
+        throw new ErrorUtils(404, 'Job not found')
+      }
+      const success = await QueueService.cancelJob(job)
+      return success
+    } catch (error) {
+      if (error instanceof ErrorUtils) {
+        throw error
+      }
+      throw new ErrorUtils(500, 'Failed to cancel job')
     }
   }
 }
 
-export default extractArticles
+export default extractArticlesService

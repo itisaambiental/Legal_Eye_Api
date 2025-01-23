@@ -4,7 +4,9 @@ import UserRepository from '../../repositories/User.repository.js'
 import SubjectsRepository from '../../repositories/Subject.repository.js'
 import LegalBasisRepository from '../../repositories/LegalBasis.repository.js'
 import AspectsRepository from '../../repositories/Aspects.repository.js'
-import extractArticles from '../../services/articles/extractArticles/extractArticles.service.js'
+import extractArticlesService from '../../services/articles/extractArticles/extractArticles.service.js'
+import generateLegalBasisData from '../../utils/generateLegalBasisData.js'
+import articlesQueue from '../../queues/articlesQueue.js'
 
 import {
   ADMIN_PASSWORD_TEST,
@@ -55,8 +57,9 @@ beforeAll(async () => {
   }
 })
 
-afterEach(() => {
+afterEach(async () => {
   jest.restoreAllMocks()
+  await LegalBasisRepository.deleteAll()
 })
 
 describe('Getting job states', () => {
@@ -64,17 +67,24 @@ describe('Getting job states', () => {
   const jobStates = [
     { state: 'waiting', message: 'The job is waiting to be processed' },
     { state: 'active', message: 'Job is still processing', progress: 60 },
-    { state: 'completed', message: 'Job completed successfully', progress: 100 },
+    {
+      state: 'completed',
+      message: 'Job completed successfully',
+      progress: 100
+    },
     { state: 'failed', message: 'Job failed', error: 'An error occurred' },
     { state: 'delayed', message: 'Job is delayed and will be processed later' },
-    { state: 'paused', message: 'Job is paused and will be resumed once unpaused' },
+    {
+      state: 'paused',
+      message: 'Job is paused and will be resumed once unpaused'
+    },
     { state: 'stuck', message: 'Job is stuck and cannot proceed' },
     { state: 'unknown', message: 'Job is in an unknown state' }
   ]
   test.each(jobStates)(
     'Should return correct response for job state: $state',
     async ({ message, progress, error }) => {
-      jest.spyOn(extractArticles, 'getStatusJob').mockResolvedValue({
+      jest.spyOn(extractArticlesService, 'getStatusJob').mockResolvedValue({
         status: 200,
         data: {
           message,
@@ -99,7 +109,7 @@ describe('Getting job states', () => {
   )
 
   test('Should return 404 when job does not exist', async () => {
-    jest.spyOn(extractArticles, 'getStatusJob').mockResolvedValue({
+    jest.spyOn(extractArticlesService, 'getStatusJob').mockResolvedValue({
       status: 404,
       data: { message: 'Job not found' }
     })
@@ -124,16 +134,11 @@ describe('Getting job states', () => {
 describe('Getting job state by Legal Basis ID', () => {
   beforeAll(async () => {
     const document = Buffer.from('mock pdf content')
-    const legalBasisData = {
-      legalName: 'Normativa con Documento',
-      abbreviation: 'DocTest',
+    const legalBasisData = generateLegalBasisData({
       subjectId: String(createdSubjectId),
       aspectsIds: JSON.stringify(createdAspectIds),
-      classification: 'Reglamento',
-      jurisdiction: 'Federal',
-      lastReform: '01-01-2024',
       extractArticles: 'true'
-    }
+    })
     const response = await api
       .post('/api/legalBasis')
       .set('Authorization', `Bearer ${tokenAdmin}`)
@@ -156,7 +161,7 @@ describe('Getting job state by Legal Basis ID', () => {
   })
 
   test('Should return hasPendingJobs = true with jobId', async () => {
-    jest.spyOn(extractArticles, 'hasPendingJobs').mockResolvedValue({
+    jest.spyOn(extractArticlesService, 'hasPendingJobs').mockResolvedValue({
       hasPendingJobs: true,
       jobId: '12345'
     })
@@ -171,7 +176,7 @@ describe('Getting job state by Legal Basis ID', () => {
   })
 
   test('Should return hasPendingJobs = false with jobId null', async () => {
-    jest.spyOn(extractArticles, 'hasPendingJobs').mockResolvedValue({
+    jest.spyOn(extractArticlesService, 'hasPendingJobs').mockResolvedValue({
       hasPendingJobs: false,
       jobId: null
     })
@@ -197,6 +202,117 @@ describe('Getting job state by Legal Basis ID', () => {
   test('Should return 401 if user is unauthorized', async () => {
     const response = await api
       .get(`/api/jobs/articles/legalBasis/${createdLegalBasis.id}`)
+      .expect(401)
+      .expect('Content-Type', /application\/json/)
+
+    expect(response.body.error).toMatch(/token missing or invalid/i)
+  })
+})
+
+describe('Cancel job', () => {
+  test('Should cancel a job in active state successfully', async () => {
+    const jobId = '12345'
+    const mockJob = {
+      id: jobId,
+      moveToFailed: jest.fn().mockResolvedValue(true),
+      isActive: jest.fn().mockResolvedValue(true),
+      isCompleted: jest.fn().mockResolvedValue(false),
+      isFailed: jest.fn().mockResolvedValue(false)
+    }
+
+    jest.spyOn(articlesQueue, 'getJob').mockResolvedValue(mockJob)
+
+    await api
+      .delete(`/api/jobs/articles/${jobId}`)
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .expect(204)
+
+    expect(mockJob.moveToFailed).toHaveBeenCalledWith(
+      { message: 'Job was canceled' },
+      true
+    )
+  })
+
+  test.each([
+    { state: 'waiting', description: 'Job is in waiting state' },
+    { state: 'paused', description: 'Job is paused' },
+    { state: 'delayed', description: 'Job is delayed' }
+  ])(
+    'Should remove a job successfully if in $state state ($description)',
+    async ({ state }) => {
+      const jobId = '12345'
+
+      const mockJob = {
+        id: jobId,
+        isActive: jest.fn().mockResolvedValue(false),
+        isCompleted: jest.fn().mockResolvedValue(false),
+        isFailed: jest.fn().mockResolvedValue(false),
+        remove: jest.fn().mockResolvedValue(true),
+        getState: jest.fn().mockResolvedValue(state)
+      }
+
+      jest.spyOn(articlesQueue, 'getJob').mockResolvedValue(mockJob)
+
+      await api
+        .delete(`/api/jobs/articles/${jobId}`)
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .expect(204)
+
+      expect(mockJob.remove).toHaveBeenCalled()
+    }
+  )
+
+  test.each([
+    { state: 'completed', description: 'Job is already completed' },
+    { state: 'failed', description: 'Job has already failed' }
+  ])(
+    'Should return 400 if the job is in $state state ($description)',
+    async ({ state }) => {
+      const jobId = '12345'
+
+      const mockJob = {
+        id: jobId,
+        isActive: jest.fn().mockResolvedValue(false),
+        isCompleted: jest.fn().mockResolvedValue(state === 'completed'),
+        isFailed: jest.fn().mockResolvedValue(state === 'failed'),
+        remove: jest.fn()
+      }
+
+      jest.spyOn(articlesQueue, 'getJob').mockResolvedValue(mockJob)
+
+      const response = await api
+        .delete(`/api/jobs/articles/${jobId}`)
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .expect(400)
+        .expect('Content-Type', /application\/json/)
+
+      expect(response.body.message).toBe(
+        `Job cannot be canceled. Jobs in '${state}' state cannot be modified.`
+      )
+
+      expect(mockJob.remove).not.toHaveBeenCalled()
+    }
+  )
+
+  test('Should return 404 if the job does not exist', async () => {
+    const nonExistentJobId = 'non-existent-job'
+
+    jest.spyOn(articlesQueue, 'getJob').mockResolvedValue(null)
+
+    const response = await api
+      .delete(`/api/jobs/articles/${nonExistentJobId}`)
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .expect(404)
+      .expect('Content-Type', /application\/json/)
+
+    expect(response.body.message).toBe('Job not found')
+  })
+
+  test('Should return 401 if the user is unauthorized', async () => {
+    const jobId = '12345'
+
+    const response = await api
+      .delete(`/api/jobs/articles/${jobId}`)
       .expect(401)
       .expect('Content-Type', /application\/json/)
 

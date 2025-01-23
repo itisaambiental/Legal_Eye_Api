@@ -5,7 +5,7 @@
 
 import { Router } from 'express'
 import UserExtractor from '../middleware/access_token.js'
-import { getStatusJob, checkLegalBasisJobs } from '../controllers/extractArticles.controller.js'
+import { getStatusJob, checkLegalBasisJobs, cancelJob } from '../controllers/extractArticles.controller.js'
 
 const router = Router()
 
@@ -36,5 +36,15 @@ router.get('/jobs/articles/:jobId', UserExtractor, getStatusJob)
  * - `jobId`: String representing the job's ID if a job exists, or null if no jobs exist.
  */
 router.get('/jobs/articles/legalBasis/:legalBasisId', UserExtractor, checkLegalBasisJobs)
+
+/**
+ * Cancels a job by its ID.
+ * @method DELETE
+ * @path /jobs/articles/:jobId
+ * @description Cancels a job by its ID. Jobs in 'completed' or 'failed' states cannot be canceled.
+ * @param {string} jobId - The ID of the job to be canceled.
+ * @middlewares UserExtractor - Middleware to ensure that the user is authorized.
+ */
+router.delete('/jobs/articles/:jobId', UserExtractor, cancelJob)
 
 export default router
