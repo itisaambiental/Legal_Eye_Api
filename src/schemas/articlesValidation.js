@@ -15,9 +15,8 @@ const singleArticleSchema = z.object({
 
   /**
    * The content of the article.
-   * Must be a non-empty string.
    */
-  article: z.string().min(1, 'Article content must be a non-empty string'),
+  article: z.string(),
 
   /**
    * The order of the article.

@@ -142,7 +142,8 @@ class LeyArticleExtractor extends ArticleExtractor {
       messages: [
         {
           role: 'system',
-          content: 'You are a virtual assistant specialized in reviewing, correcting, and documenting Mexican legal articles extracted from various laws. Note: All laws are in Spanish, and all output must also be in Spanish.'
+          content:
+            'You are a virtual assistant specialized in reviewing, correcting, and documenting Mexican legal articles extracted from various laws. Note: All laws are in Spanish, and all output must also be in Spanish.'
         },
         { role: 'user', content: prompt }
       ],
@@ -179,14 +180,14 @@ class LeyArticleExtractor extends ArticleExtractor {
   }
 
   /**
-   * Builds the prompt for the AI models to process.
-   * @param {string} documentName - The document name to include in the prompt.
-   * @param {Object} article - The article object to include in the prompt.
-   * @returns {string} - The constructed prompt.
-   */
+ * Builds the prompt for the AI models to process.
+ * @param {string} documentName - The document name to include in the prompt.
+ * @param {Object} article - The article object to include in the prompt.
+ * @returns {string} - The constructed prompt with examples in Spanish.
+ */
   buildPrompt (documentName, article) {
     return `
-Analyze the content of "${article.title}" within the Mexican legal framework titled "${documentName}". Then, help format and correct the following article:
+Analyze the content of "${article.title}" within the Mexican legal basis titled "${documentName}". Then, help format and correct the following article using professional HTML structure and styles:
 
 {
   "title": "${article.title}",
@@ -194,24 +195,101 @@ Analyze the content of "${article.title}" within the Mexican legal framework tit
   "order": ${article.order}
 }
 
-Follow these specific instructions based on the type of content:
+### Instructions:
 
-1. **Articles**: Review and correct long paragraphs ensuring each explains a specific concept or legal provision. Divide into sections or subsections if necessary for clarity. Complete truncated words or sentences without altering their meaning.
+1. **Title**: 
+   - The title field should only state the article, section, or chapter number.
+   - Ensure that titles are concise and formatted consistently.
+   - Do not use HTML tags in titles.
 
-2. **Chapters and sections**: Make sure they are short and concise, containing only the grouping heading (for example, "DISPOSICIONES GENERALES" "DE LA NATURALEZA Y OBJETO") without including articles or detailed content. If you include any articles, remove them from the chapter or section.
+  #### Examples (in Spanish):
+   - Artículo 1, Sección 2, Capítulo 3
+   - Artículo I - Artículo II, Sección III, Capítulo IV
+   - Artículo 1 - Artículo 2, Sección 3, Capítulo 4
+   - Capítulo Tercero, Sección Cuarta, Artículo Primero
 
-3. **Transitory Articles**: Review and correct temporary provisions. Ensure they include clear conditions such as effective dates and adaptation periods, maintaining a consistent and detailed format.
+  **Output (Unformatted HTML):**  
+   // Titles should not have HTML tags.
+   - Artículo 1, Sección 2, Capítulo 3
+   - Artículo I - Artículo II, Sección III, Capítulo IV
+   - Artículo 1 - Artículo 2, Sección 3, Capítulo 4
+   - Capítulo Tercero, Sección Cuarta, Artículo Primero
 
-4. **Others (if applicable)**: If the content does not fit the above categories, review its general coherence, structure, and format.
+2. **Articles**:
+   - Review and correct long paragraphs, ensuring each explains a specific concept or legal provision.
+   - Divide content into sections or subsections for clarity, using appropriate HTML tags:
+     - <h2>, <h3> for headings
+     - <p> for paragraphs
+     - <ul> and <li> for lists
+   - Use <b> for emphasis, <i> for additional context, and <span> for inline styles where necessary.
+   - Complete truncated words or sentences without altering their meaning.
 
-- Correct formatting issues such as unnecessary spaces, incorrect line breaks, or misaligned indentation.
-- Verify that the content is coherent and ends with a complete idea.
-- Maintain tables and columns in their original structure for clarity and readability.
-- Return the corrected object in Spanish, respecting the original meaning of the texts.
-- Pay special attention to article titles. Only complete them if necessary, and avoid altering their structure or meaning to maintain consistency and order.
+  #### Example (in Spanish):
+   **title:** ARTÍCULO 1 
+   **article:** La Secretaría podrá establecer una vigencia en las autorizaciones que ésta emita en materia de impacto ambiental y, en su caso, de riesgo ambiental. En tales casos, el promovente deberá tramitar la renovación correspondiente conforme a los criterios que la Secretaría determine.
+   **order:** 1
 
+  **Article Output (Formatted in HTML):**  
+   **title:** ARTÍCULO 1   // Titles should not have HTML tags.
+   **article:** <p>La Secretaría podrá establecer una <b>vigencia</b> en las autorizaciones que ésta emita en materia de <i>impacto ambiental</i> y, en su caso, de riesgo ambiental.</p>  
+   <p>En tales casos, el promovente deberá tramitar la renovación correspondiente conforme a los criterios que la Secretaría determine.</p>
+   **order:** 1
 
-`
+3. **Chapters and Sections**:
+   - Ensure headings are concise and formatted with appropriate HTML tags such as <h1>, <h2>, or <h3>.
+   - Make sure they are short and concise, containing only the grouping heading without including articles or detailed content. If you include any articles, remove them from the chapter or section.
+
+  #### Example (in Spanish):
+   **title:** CAPÍTULO TERCERO  
+   **article:** DEL COMITÉ ESTATAL DE EMERGENCIAS Y DESASTRES. La Ley del Agua para el Estado de Puebla tiene como finalidad regular el uso, conservación y protección del agua, asegurando su disponibilidad y calidad para las generaciones presentes y futuras.
+   **order:** 3
+
+  **Output (Formatted in HTML):**  
+  **title:** CAPÍTULO TERCERO   // Titles should not have HTML tags.
+   **title:** <h2>DEL COMITÉ ESTATAL DE EMERGENCIAS Y DESASTRES</h2> //Remove the article or any additional information from the chapter or section.
+   **order:** 3
+
+   #### Example (in Spanish):
+   **title:** SECCIÓN PRIMERA   
+   **article:** DISPOSICIONES COMUNES   
+   **order:** 6
+
+  **Output (Formatted in HTML):**  
+  **title:** SECCIÓN PRIMERA    // Titles should not have HTML tags.
+   **title:** <h2>DISPOSICIONES COMUNES</h2>
+   **order:** 6
+
+4. **Transitory Provisions**:
+   - Format temporary provisions clearly, specifying effective dates and adaptation periods.
+   - Use <table> tags to organize conditions, dates, and timelines when needed.
+
+   #### Example (in Spanish):
+    **title:** TRANSITORIOS  
+    **article:**  
+      PRIMERO. El presente Decreto entrará en vigor al día siguiente de su publicación en el Periódico Oficial del Estado.  
+      SEGUNDO. Se derogan todas las disposiciones que se opongan al presente Decreto.  
+    **order:** 200
+
+  **Output (Formatted in HTML):**
+    **title:** TRANSITORIOS   // Titles should not have HTML tags.
+    **article:**  
+     <p><b>PRIMERO.</b> El presente Decreto entrará en vigor al día siguiente de su publicación en el Periódico Oficial del Estado.</p>  
+     <p><b>SEGUNDO.</b> Se derogan todas las disposiciones que se opongan al presente Decreto.</p>  
+    **order:** 200
+
+5. **Others (if applicable)**:
+   - Review for general coherence, structure, and formatting.
+   - Apply HTML styles to maintain clarity, readability, and a professional appearance.
+
+### Additional Formatting Guidelines:
+
+- Use consistent and professional formatting, such as proper indentation for nested elements.
+- Respect spaces, punctuation (e.g., periods, hyphens), and line breaks for clarity.
+- Ensure all text ends with complete ideas.
+- Maintain any existing tables or columns using <table>, <thead>, <tbody>, and <tr> tags.
+- Use semantic HTML wherever possible to improve readability and structure.
+- Return the corrected object in **Spanish**, preserving the original meaning of the text.
+  `
   }
 }
 

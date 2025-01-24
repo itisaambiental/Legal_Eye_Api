@@ -5,6 +5,9 @@ import DocumentService from '../services/files/Document.service.js'
 import LegalBasisRepository from '../repositories/LegalBasis.repository.js'
 import ArticlesService from '../services/articles/Articles.service.js'
 import FileService from '../services/files/File.service.js'
+import { CONCURRENCY_EXTRACT_ARTICLES } from '../config/variables.config.js'
+
+const concurrency = CONCURRENCY_EXTRACT_ARTICLES || 1
 
 /**
  * Worker for processing articles jobs from the articles queue.
@@ -17,7 +20,7 @@ import FileService from '../services/files/File.service.js'
  * @param {Function} done - Callback function to signal job completion.
  * @throws {ErrorUtils} - Throws an error if any step in the job processing fails.
  */
-articlesQueue.process(async (job, done) => {
+articlesQueue.process(concurrency, async (job, done) => {
   const { legalBasisId } = job.data
   try {
     const legalBase = await LegalBasisRepository.findById(legalBasisId)

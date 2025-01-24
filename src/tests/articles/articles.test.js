@@ -117,14 +117,17 @@ describe('Create an article', () => {
 
     expect(response.body.error).toMatch(/token missing or invalid/i)
   })
-  test('Should return 400 if required fields are missing', async () => {
+
+  test('Should return 400 if required fields are missing or invalid', async () => {
     const invalidArticleCases = [
       { article: 'Content without title or order' },
       { title: 'Title without content or order' },
       { title: 'Title', article: 'Content', order: 0 },
       { title: '', article: 'Content', order: 1 },
-      { title: 'Title', article: '', order: 1 },
-      { title: 'Title', article: 'Content' }
+      { title: '', order: 1 },
+      { order: 1 },
+      { title: 'Title' },
+      {}
     ]
 
     for (const invalidArticle of invalidArticleCases) {

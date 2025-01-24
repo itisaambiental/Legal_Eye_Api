@@ -127,6 +127,7 @@ CREATE TABLE article (
     legal_basis_id INT NOT NULL,
     article_name LONGTEXT,
     description LONGTEXT,
+    -- clean_description LONGTEXT,
     article_order INT,
     FOREIGN KEY (legal_basis_id) REFERENCES legal_basis(id) ON DELETE CASCADE
 );
