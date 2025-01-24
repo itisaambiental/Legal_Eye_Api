@@ -30,6 +30,7 @@ class EmailService {
       const info = await transporter.sendMail(mailOptions)
       return info
     } catch (error) {
+      console.error(error)
       throw new ErrorUtils(500, 'Error sending email')
     }
   }
