@@ -7,7 +7,7 @@ import ArticlesService from '../services/articles/Articles.service.js'
 import FileService from '../services/files/File.service.js'
 import { CONCURRENCY_EXTRACT_ARTICLES } from '../config/variables.config.js'
 
-const concurrency = CONCURRENCY_EXTRACT_ARTICLES || 1
+const concurrency = Number(CONCURRENCY_EXTRACT_ARTICLES || 1)
 
 /**
  * Worker for processing articles jobs from the articles queue.

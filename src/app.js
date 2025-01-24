@@ -13,7 +13,7 @@ import extractArticlesRoutes from './routes/extractArticles.routes.js'
 import { NODE_ENV } from './config/variables.config.js'
 /**
  * Configure the Express application.
- * @type {Express}
+ * @type {import('express').Application}
  */
 const app = express()
 
