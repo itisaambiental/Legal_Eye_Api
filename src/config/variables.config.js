@@ -13,6 +13,7 @@ dotenv.config()
  */
 export const {
   PORT,
+  APP_URL,
   JWT_SECRET,
   JWT_EXPIRATION,
   DB_PORT,

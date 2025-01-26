@@ -10,7 +10,7 @@ import AspectsRoutes from './routes/Aspects.routes.js'
 import LegalBasisRoutes from './routes/LegalBasis.routes.js'
 import ArticlesRoutes from './routes/Articles.routes.js'
 import extractArticlesRoutes from './routes/extractArticles.routes.js'
-import { NODE_ENV } from './config/variables.config.js'
+import { NODE_ENV, APP_URL } from './config/variables.config.js'
 /**
  * Configure the Express application.
  * @type {import('express').Application}
@@ -24,7 +24,7 @@ const app = express()
 const corsOptions =
   NODE_ENV === 'production'
     ? {
-        origin: 'https://acmsuite.isaambiental.com'
+        origin: APP_URL
       }
     : {}
 
