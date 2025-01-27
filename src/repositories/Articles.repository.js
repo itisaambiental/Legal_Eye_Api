@@ -7,30 +7,36 @@ import Article from '../models/Article.model.js'
  */
 class ArticlesRepository {
   /**
-   * Inserts a article associated with a legal basis into the database.
-   * @param {number} legalBasisId - The ID of the legal basis.
-   * @param {Object} article - The article to insert.
-   * @param {string} article.title - The title of the article.
-   * @param {string} article.article - The content of the article.
-   * @param {number} article.order - The order of the article.
-   * @returns {Promise<Article>} - Returns the created Article instance.
-   * @throws {ErrorUtils} - If an error occurs during insertion.
-   */
+ * Inserts an article associated with a legal basis into the database.
+ *
+ * This function stores both the HTML content and its plain text equivalent
+ * for efficient searches and display purposes.
+ *
+ * @param {number} legalBasisId - The ID of the legal basis to associate the article with.
+ * @param {Object} article - The article to insert.
+ * @param {string} article.title - The title of the article.
+ * @param {string} article.article - The HTML content of the article.
+ * @param {string} article.plainArticle - The plain text equivalent of the article content.
+ * @param {number} article.order - The order of the article.
+ * @returns {Promise<Article>} - Returns the created Article instance.
+ * @throws {ErrorUtils} - If an error occurs during insertion.
+ */
   static async create (legalBasisId, article) {
     const query = `
-      INSERT INTO article (legal_basis_id, article_name, description, article_order)
-      VALUES (?, ?, ?, ?)
-    `
+    INSERT INTO article (legal_basis_id, article_name, description, plain_description, article_order)
+    VALUES (?, ?, ?, ?, ?)
+  `
     const values = [
       legalBasisId,
       article.title,
       article.article,
+      article.plainArticle,
       article.order
     ]
     try {
       const [result] = await pool.query(query, values)
-      const article = await this.findById(result.insertId)
-      return article
+      const createdArticle = await this.findById(result.insertId)
+      return createdArticle
     } catch (error) {
       console.error('Error creating article:', error.message)
       throw new ErrorUtils(500, 'Error creating article in the database')
@@ -38,32 +44,38 @@ class ArticlesRepository {
   }
 
   /**
-   * Inserts multiple articles associated with a legal basis into the database.
-   * @param {number} legalBasisId - The ID of the legal basis.
-   * @param {Array<Object>} articles - The list of articles to insert.
-   * @param {string} articles[].title - The title of the article.
-   * @param {string} articles[].article - The content of the article.
-   * @param {number} articles[].order - The order of the article.
-   * @returns {Promise<boolean>} - Returns true if insertion is successful, false otherwise.
-   * @throws {ErrorUtils} - If an error occurs during insertion.
-   */
+ * Inserts multiple articles associated with a legal basis into the database.
+ *
+ * This function stores both the HTML content and its plain text equivalent
+ * for efficient searches and display purposes.
+ *
+ * @param {number} legalBasisId - The ID of the legal basis.
+ * @param {Array<Object>} articles - The list of articles to insert.
+ * @param {string} articles[].title - The title of the article.
+ * @param {string} articles[].article - The HTML content of the article.
+ * @param {string} articles[].plainArticle - The plain text equivalent of the article content.
+ * @param {number} articles[].order - The order of the article.
+ * @returns {Promise<boolean>} - Returns true if insertion is successful, false otherwise.
+ * @throws {ErrorUtils} - If an error occurs during insertion.
+ */
   static async createMany (legalBasisId, articles) {
     if (articles.length === 0) {
       return false
     }
     const query = `
-      INSERT INTO article (legal_basis_id, article_name, description, article_order)
-      VALUES ?
-    `
+    INSERT INTO article (legal_basis_id, article_name, description, plain_description, article_order)
+    VALUES ?
+  `
     const values = articles.map((article) => [
       legalBasisId,
       article.title,
       article.article,
+      article.plainArticle,
       article.order
     ])
     try {
-      const [insertResult] = await pool.query(query, [values])
-      if (insertResult.affectedRows !== articles.length) {
+      const [result] = await pool.query(query, [values])
+      if (result.affectedRows !== articles.length) {
         return false
       }
       return true
@@ -179,7 +191,7 @@ class ArticlesRepository {
  */
   static async findByName (legalBasisId, articleName) {
     const query = `
-    SELECT id, legal_basis_id, article_name, description, article_order
+    SELECT id, legal_basis_id, article_name, description, plain_description, article_order
     FROM article
     WHERE legal_basis_id = ? AND article_name LIKE ?
     ORDER BY article_order
@@ -204,23 +216,42 @@ class ArticlesRepository {
   }
 
   /**
- * Retrieves articles by a partial match in their description for a specific legal basis from the database.
+ * Retrieves articles by a partial or flexible match in their description for a specific legal basis from the database.
  * @param {number} legalBasisId - The ID of the legal basis to filter articles by.
  * @param {string} description - The description or part of the description to search for.
  * @returns {Promise<Array<Article|null>>} - A list of Article instances matching the description for the given legal basis.
  * @throws {ErrorUtils} - If an error occurs during retrieval.
  */
   static async findByDescription (legalBasisId, description) {
-    const query = `
-    SELECT id, legal_basis_id, article_name, description, article_order
-    FROM article
-    WHERE legal_basis_id = ? AND description LIKE ?
-    ORDER BY article_order
-  `
     try {
-      const [rows] = await pool.query(query, [legalBasisId, `%${description}%`])
-      if (rows.length === 0) return null
-      return rows.map(
+      const likeQuery = `
+      SELECT id, legal_basis_id, article_name, description, article_order
+      FROM article
+      WHERE legal_basis_id = ? 
+        AND plain_description LIKE ?
+    `
+      const [rows] = await pool.query(likeQuery, [legalBasisId, `%${description}%`])
+      if (rows.length > 0) {
+        return rows.map(
+          (row) =>
+            new Article(
+              row.id,
+              row.legal_basis_id,
+              row.article_name,
+              row.description,
+              row.article_order
+            )
+        )
+      }
+      const matchQuery = `
+      SELECT id, legal_basis_id, article_name, description, article_order
+      FROM article
+      WHERE legal_basis_id = ?
+        AND MATCH(plain_description) AGAINST(? IN BOOLEAN MODE)
+    `
+      const [result] = await pool.query(matchQuery, [legalBasisId, `%${description}%`])
+      if (result.length === 0) return null
+      return result.map(
         (row) =>
           new Article(
             row.id,
@@ -242,6 +273,7 @@ class ArticlesRepository {
  * @param {Object} article - The updated article data.
  * @param {string|null} article.title - The new title of the article, or null to keep the current title.
  * @param {string|null} article.article - The new content of the article, or null to keep the current content.
+ * @param {string|null} article.plainArticle - The plain text equivalent of the article content.
  * @param {number|null} article.order - The new order of the article, or null to keep the current order.
  * @returns {Promise<boolean|Article>} - Returns the updated Article instance if successful, false otherwise.
  * @throws {ErrorUtils} - If an error occurs during update.
@@ -252,10 +284,11 @@ class ArticlesRepository {
     SET 
       article_name = IFNULL(?, article_name),
       description = IFNULL(?, description),
+      plain_description = IFNULL(?, plain_description),
       article_order = IFNULL(?, article_order)
     WHERE id = ?
   `
-    const values = [article.title, article.article, article.order, id]
+    const values = [article.title, article.article, article.plainArticle, article.order, id]
     try {
       const [rows] = await pool.query(query, values)
       if (rows.affectedRows === 0) {

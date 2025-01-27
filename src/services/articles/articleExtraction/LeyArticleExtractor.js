@@ -2,16 +2,13 @@ import ArticleExtractor from './ArticleExtractor.js'
 import openai from '../../../config/openapi.config.js'
 import { singleArticleModelSchema } from '../../../schemas/articlesValidation.js'
 import { zodResponseFormat } from 'openai/helpers/zod'
+import { convert } from 'html-to-text'
 /**
- * Class extending ArticleExtractor to extract articles from legal texts.
+ * Class extending ArticleExtractor to extract articles from laws texts.
  * Processes the text, cleans inconsistent formats, and extracts articles,
  * chapters, sections, and transitory provisions in a structured manner.
  */
 class LeyArticleExtractor extends ArticleExtractor {
-  /**
-   * Extracts and corrects articles from the text after cleaning it.
-   * @returns {Promise<Array>} - List of formatted articles.
-   */
   async extractArticles () {
     const text = this.cleanText(this.text)
     const articles = this._extractArticles(text)
@@ -20,6 +17,7 @@ class LeyArticleExtractor extends ArticleExtractor {
     let currentProgress = 0
     for (const article of articles) {
       const correctedArticle = await this.correctArticle(article)
+      correctedArticle.plainArticle = convert(correctedArticle.article)
       formatArticles.push(correctedArticle)
       currentProgress += 1
       this.updateProgress(currentProgress, totalArticles)
@@ -27,14 +25,6 @@ class LeyArticleExtractor extends ArticleExtractor {
     return this.formatArticles(formatArticles)
   }
 
-  /**
-   * Cleans the input text by normalizing spaces, removing line breaks,
-   * and standardizing keywords like "ARTÍCULO", "CAPÍTULO", "SECCIÓN",
-   * and "TRANSITORIOS", even if they have interleaved spaces.
-   * Matches only uppercase or capitalized keywords to avoid false positives.
-   * @param {string} text - Text to clean.
-   * @returns {string} - Cleaned text.
-   */
   cleanText (text) {
     const multipleSpacesRegex = /\s+/g
     const lineBreaksRegex = /\n/g
@@ -59,11 +49,6 @@ class LeyArticleExtractor extends ArticleExtractor {
       .replace(singleEllipsisRegex, '')
   }
 
-  /**
-   * Extracts articles from the cleaned text using regular expressions.
-   * @param {string} text - Cleaned text.
-   * @returns {Array} - List of article objects.
-   */
   _extractArticles (text) {
     const articlePatternString =
       '((?:C[ÁA]P[IÍ]TULO)\\s+\\w+|' +
@@ -115,26 +100,15 @@ class LeyArticleExtractor extends ArticleExtractor {
     return articles
   }
 
-  /**
-   * Creates an article object with title, content, and order.
-   * @param {string} title - Title of the article.
-   * @param {string} content - Content of the article.
-   * @param {number} order - Order of the article.
-   * @returns {Object} - Article object.
-   */
   createArticleObject (title, content, order) {
     return {
       title,
       article: content ? content.trim() : '',
+      plainArticle: '',
       order
     }
   }
 
-  /**
-   * Corrects the article using AI models.
-   * @param {Object} article - The article object to correct.
-   * @returns {Promise<Object>} - Corrected article object or original if correction fails.
-   */
   async correctArticle (article) {
     const prompt = this.buildPrompt(this.name, article)
     const request = {
@@ -179,12 +153,6 @@ class LeyArticleExtractor extends ArticleExtractor {
     return attemptRequest()
   }
 
-  /**
- * Builds the prompt for the AI models to process.
- * @param {string} documentName - The document name to include in the prompt.
- * @param {Object} article - The article object to include in the prompt.
- * @returns {string} - The constructed prompt with examples in Spanish.
- */
   buildPrompt (documentName, article) {
     return `
 Analyze the content of "${article.title}" within the Mexican legal basis titled "${documentName}". Then, help format and correct the following article using professional HTML structure and styles:
@@ -192,12 +160,17 @@ Analyze the content of "${article.title}" within the Mexican legal basis titled 
 {
   "title": "${article.title}",
   "article": "${article.article}",
+  "plainArticle": "${article.plainArticle}",
   "order": ${article.order}
 }
 
 ### Instructions:
 
-1. **Title**: 
+1. **plainArticle**:
+   - The "plainArticle" field must always remain as an empty string ("").
+   - Do not modify or populate this field with any content.
+
+2. **Title**: 
    - The title field should only state the article, section, or chapter number.
    - Ensure that titles are concise and formatted consistently.
    - Do not use HTML tags in titles.
@@ -215,7 +188,7 @@ Analyze the content of "${article.title}" within the Mexican legal basis titled 
    - Artículo 1 - Artículo 2, Sección 3, Capítulo 4
    - Capítulo Tercero, Sección Cuarta, Artículo Primero
 
-2. **Articles**:
+3. **Articles**:
    - Review and correct long paragraphs, ensuring each explains a specific concept or legal provision.
    - Divide content into sections or subsections for clarity, using appropriate HTML tags:
      - <h2>, <h3> for headings
@@ -235,7 +208,7 @@ Analyze the content of "${article.title}" within the Mexican legal basis titled 
    <p>En tales casos, el promovente deberá tramitar la renovación correspondiente conforme a los criterios que la Secretaría determine.</p>
    **order:** 1
 
-3. **Chapters and Sections**:
+4. **Chapters and Sections**:
    - Ensure headings are concise and formatted with appropriate HTML tags such as <h1>, <h2>, or <h3>.
    - Make sure they are short and concise, containing only the grouping heading without including articles or detailed content. If you include any articles, remove them from the chapter or section.
 
@@ -259,7 +232,7 @@ Analyze the content of "${article.title}" within the Mexican legal basis titled 
    **title:** <h2>DISPOSICIONES COMUNES</h2>
    **order:** 6
 
-4. **Transitory Provisions**:
+5. **Transitory Provisions**:
    - Format temporary provisions clearly, specifying effective dates and adaptation periods.
    - Use <table> tags to organize conditions, dates, and timelines when needed.
 
@@ -277,7 +250,7 @@ Analyze the content of "${article.title}" within the Mexican legal basis titled 
      <p><b>SEGUNDO.</b> Se derogan todas las disposiciones que se opongan al presente Decreto.</p>  
     **order:** 200
 
-5. **Others (if applicable)**:
+6. **Others (if applicable)**:
    - Review for general coherence, structure, and formatting.
    - Apply HTML styles to maintain clarity, readability, and a professional appearance.
 

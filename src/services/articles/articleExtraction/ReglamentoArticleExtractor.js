@@ -2,16 +2,13 @@ import ArticleExtractor from './ArticleExtractor.js'
 import openai from '../../../config/openapi.config.js'
 import { singleArticleModelSchema } from '../../../schemas/articlesValidation.js'
 import { zodResponseFormat } from 'openai/helpers/zod'
+import { convert } from 'html-to-text'
 /**
- * Class extending ArticleExtractor to extract and correct articles from legal texts.
+ * Class extending ArticleExtractor to extract and correct articles from regulations texts.
  * It processes the text, cleans inconsistent formats, and extracts articles,
  * chapters, sections, and transitory provisions in a structured manner.
  */
 class ReglamentoArticleExtractor extends ArticleExtractor {
-  /**
-   * Extracts and corrects articles from the text after cleaning it.
-   * @returns {Promise<Array>} - List of formatted articles.
-   */
   async extractArticles () {
     const text = this.cleanText(this.text)
     const articles = this._extractArticles(text)
@@ -20,6 +17,7 @@ class ReglamentoArticleExtractor extends ArticleExtractor {
     let currentProgress = 0
     for (const article of articles) {
       const correctedArticle = await this.correctArticle(article)
+      correctedArticle.plainArticle = convert(correctedArticle.article)
       formatArticles.push(correctedArticle)
       currentProgress += 1
       this.updateProgress(currentProgress, totalArticles)
@@ -27,21 +25,17 @@ class ReglamentoArticleExtractor extends ArticleExtractor {
     return this.formatArticles(formatArticles)
   }
 
-  /**
-* Cleans the input text by normalizing spaces, removing line breaks,
-* and standardizing keywords like "ARTÍCULO", "CAPÍTULO", "SECCIÓN",
-* and "TRANSITORIOS", even if they have interleaved spaces.
-* Matches only uppercase or capitalized keywords to avoid false positives.
-* @param {string} text - Text to clean.
-* @returns {string} - Cleaned text.
-*/
   cleanText (text) {
     const multipleSpacesRegex = /\s+/g
     const lineBreaksRegex = /\n/g
-    const articleKeywordRegex = /A\s*(?:R\s*T\s*[ÍI]\s*C\s*U\s*L\s*O|r\s*t\s*[íi]\s*c\s*u\s*l\s*o)/g
-    const chapterKeywordRegex = /C\s*(?:[ÁA]\s*P\s*[ÍI]\s*T\s*U\s*L\s*O|[áa]\s*p\s*[íi]\s*t\s*u\s*l\s*o)/g
-    const sectionKeywordRegex = /S\s*(?:E\s*C\s*C\s*[ÍI]\s*[ÓO]\s*N|e\s*c\s*c\s*[íi]\s*[óo]\s*n)/g
-    const transitoriosKeywordRegex = /T\s*(?:R\s*A\s*N\s*S\s*I\s*T\s*O\s*R\s*I\s*O\s*S|r\s*a\s*n\s*s\s*i\s*t\s*o\s*r\s*i\s*o\s*s)/g
+    const articleKeywordRegex =
+      /A\s*(?:R\s*T\s*[ÍI]\s*C\s*U\s*L\s*O|r\s*t\s*[íi]\s*c\s*u\s*l\s*o)/g
+    const chapterKeywordRegex =
+      /C\s*(?:[ÁA]\s*P\s*[ÍI]\s*T\s*U\s*L\s*O|[áa]\s*p\s*[íi]\s*t\s*u\s*l\s*o)/g
+    const sectionKeywordRegex =
+      /S\s*(?:E\s*C\s*C\s*[ÍI]\s*[ÓO]\s*N|e\s*c\s*c\s*[íi]\s*[óo]\s*n)/g
+    const transitoriosKeywordRegex =
+      /T\s*(?:R\s*A\s*N\s*S\s*I\s*T\s*O\s*R\s*I\s*O\s*S|r\s*a\s*n\s*s\s*i\s*t\s*o\s*r\s*i\s*o\s*s)/g
     const ellipsisTextRegex = /[^.]+\s*\.{3,}\s*/g
     const singleEllipsisRegex = /\s*\.{3,}\s*/g
     return text
@@ -55,16 +49,12 @@ class ReglamentoArticleExtractor extends ArticleExtractor {
       .replace(singleEllipsisRegex, '')
   }
 
-  /**
-* Extracts articles from the cleaned text using regular expressions.
-* @param {string} text - Cleaned text.
-* @returns {Array} - List of article objects.
-*/
   _extractArticles (text) {
-    const articlePatternString = '((?:C[ÁA]P[IÍ]TULO)\\s+\\w+|' +
-  '(?:SECCI[ÓO]N|Secci[óo]n)\\s+\\d+|' +
-  '(?:ART[ÍI]CULO|Art[íi]culo)\\s+\\d+|' +
-  '(?:TRANSITORIOS|Transitorios))'
+    const articlePatternString =
+      '((?:C[ÁA]P[IÍ]TULO)\\s+\\w+|' +
+      '(?:SECCI[ÓO]N|Secci[óo]n)\\s+\\d+|' +
+      '(?:ART[ÍI]CULO|Art[íi]culo)\\s+\\d+|' +
+      '(?:TRANSITORIOS|Transitorios))'
     const articlePattern = new RegExp(articlePatternString, 'g')
     const titleChapterRegex = /^(C[ÁA]P[IÍ]TULO)/
     const titleSectionRegex = /^(SECCI[ÓO]N|Secci[óo]n)/
@@ -78,42 +68,47 @@ class ReglamentoArticleExtractor extends ArticleExtractor {
       const currentMatch = matches[i].trim()
       if (titleChapterRegex.test(currentMatch)) {
         if (currentArticle) articles.push(currentArticle)
-        currentArticle = this.createArticleObject(currentMatch, matches[i + 1], order++)
+        currentArticle = this.createArticleObject(
+          currentMatch,
+          matches[i + 1],
+          order++
+        )
       } else if (titleSectionRegex.test(currentMatch)) {
         if (currentArticle) articles.push(currentArticle)
-        currentArticle = this.createArticleObject(currentMatch, matches[i + 1], order++)
+        currentArticle = this.createArticleObject(
+          currentMatch,
+          matches[i + 1],
+          order++
+        )
       } else if (titleArticleRegex.test(currentMatch)) {
         if (currentArticle) articles.push(currentArticle)
-        currentArticle = this.createArticleObject(currentMatch, matches[i + 1], order++)
+        currentArticle = this.createArticleObject(
+          currentMatch,
+          matches[i + 1],
+          order++
+        )
       } else if (titleTransitoriosRegex.test(currentMatch)) {
         if (currentArticle) articles.push(currentArticle)
-        currentArticle = this.createArticleObject(currentMatch, matches[i + 1], order++)
+        currentArticle = this.createArticleObject(
+          currentMatch,
+          matches[i + 1],
+          order++
+        )
       }
     }
     if (currentArticle) articles.push(currentArticle)
     return articles
   }
 
-  /**
-* Creates an article object with title, content, and order.
-* @param {string} title - Title of the article.
-* @param {string} content - Content of the article.
-* @param {number} order - Order of the article.
-* @returns {Object} - Article object.
-*/
   createArticleObject (title, content, order) {
     return {
       title,
       article: content ? content.trim() : '',
+      plainArticle: '',
       order
     }
   }
 
-  /**
-* Corrects the article using AI models.
-* @param {Object} article - The article object to correct.
-* @returns {Promise<Object>} - Corrected article object or original if correction fails.
-*/
   async correctArticle (article) {
     const prompt = this.buildPrompt(this.name, article)
     const request = {
@@ -121,12 +116,16 @@ class ReglamentoArticleExtractor extends ArticleExtractor {
       messages: [
         {
           role: 'system',
-          content: 'You are a virtual assistant specialized in reviewing, correcting, and documenting Mexican legal articles extracted from various regulations. Note: All regulations are in Spanish, and all output must also be in Spanish.'
+          content:
+            'You are a virtual assistant specialized in reviewing, correcting, and documenting Mexican legal articles extracted from various regulations. Note: All regulations are in Spanish, and all output must also be in Spanish.'
         },
         { role: 'user', content: prompt }
       ],
       temperature: 0,
-      response_format: zodResponseFormat(singleArticleModelSchema, 'articles_response')
+      response_format: zodResponseFormat(
+        singleArticleModelSchema,
+        'articles_response'
+      )
     }
     const attemptRequest = async (retryCount = 0) => {
       try {
@@ -150,15 +149,10 @@ class ReglamentoArticleExtractor extends ArticleExtractor {
         return article
       }
     }
+
     return attemptRequest()
   }
 
-  /**
- * Builds the prompt for the AI models to process.
- * @param {string} documentName - The document name to include in the prompt.
- * @param {Object} article - The article object to include in the prompt.
- * @returns {string} - The constructed prompt with examples in Spanish.
- */
   buildPrompt (documentName, article) {
     return `
 Analyze the content of "${article.title}" within the Mexican legal basis titled "${documentName}". Then, help format and correct the following article using professional HTML structure and styles:
@@ -166,10 +160,15 @@ Analyze the content of "${article.title}" within the Mexican legal basis titled 
 {
   "title": "${article.title}",
   "article": "${article.article}",
+  "plainArticle": "${article.plainArticle}",
   "order": ${article.order}
 }
 
 ### Instructions:
+
+1. **plainArticle**:
+   - The "plainArticle" field must always remain as an empty string ("").
+   - Do not modify or populate this field with any content.
 
 1. **Title**: 
    - The title field should only state the article, section, or chapter number.

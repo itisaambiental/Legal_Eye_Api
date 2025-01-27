@@ -22,7 +22,6 @@ emailQueue.process(async (job, done) => {
     await EmailService.sendEmail({ to, subject, text })
     done()
   } catch (error) {
-    console.error(error)
     done(error)
   }
 })

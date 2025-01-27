@@ -14,6 +14,7 @@ class DocumentService {
    * Initializes the OCR worker if it hasn't been initialized yet.
    * Sets up the worker to recognize English and Spanish languages.
    * @throws {ErrorUtils} If the worker fails to initialize.
+   * @returns {Promise<void>} Resolves when the worker is initialized.
    */
   static async initializeWorker () {
     if (!this.worker) {
@@ -29,6 +30,7 @@ class DocumentService {
    * Terminates the OCR worker if it exists.
    * Cleans up resources used by the worker.
    * @throws {ErrorUtils} If the worker fails to terminate.
+   * @returns {Promise<void>} Resolves when the worker is terminated.
    */
   static async terminateWorker () {
     if (this.worker) {
@@ -43,13 +45,20 @@ class DocumentService {
   }
 
   /**
+   * @typedef {Object} ProcessResult
+   * @property {boolean} success - Indicates if the processing was successful.
+   * @property {string} [data] - Extracted text content (present only if successful).
+   * @property {string} [error] - Error message (present only if unsuccessful).
+   */
+
+  /**
    * Processes the provided document, extracting text content.
    * Supports PDF, PNG, JPG, and JPEG file types.
    * @param {Object} params - Parameters object.
    * @param {Object} params.document - The document to process.
    * @param {Buffer} params.document.buffer - The file buffer.
    * @param {string} params.document.mimetype - The MIME type of the file.
-   * @returns {Promise<Object>} - An object containing success status and data or error message.
+   * @returns {Promise<ProcessResult>} - An object containing success status, data (text), or an error message.
    */
   static async process ({ document }) {
     try {
@@ -79,11 +88,11 @@ class DocumentService {
   }
 
   /**
- * Extracts text content from a PDF buffer using pdf-parse-new.
- * @param {Buffer} buffer - The PDF file buffer.
- * @returns {Promise<string>} - The extracted text content.
- * @throws {ErrorUtils} If an error occurs during PDF parsing.
- */
+   * Extracts text content from a PDF buffer using pdf-parse-new.
+   * @param {Buffer} buffer - The PDF file buffer.
+   * @returns {Promise<string>} - The extracted text content.
+   * @throws {ErrorUtils} If an error occurs during PDF parsing.
+   */
   static async extractTextFromPDF (buffer) {
     const options = {
       verbosityLevel: 0
@@ -98,11 +107,11 @@ class DocumentService {
   }
 
   /**
- * Extracts text content from an image buffer using Tesseract.js.
- * @param {Buffer} buffer - The image file buffer.
- * @returns {Promise<string>} - The extracted text content.
- * @throws {ErrorUtils} If an error occurs during image processing.
- */
+   * Extracts text content from an image buffer using Tesseract.js.
+   * @param {Buffer} buffer - The image file buffer.
+   * @returns {Promise<string>} - The extracted text content.
+   * @throws {ErrorUtils} If an error occurs during image processing.
+   */
   static async extractTextFromImage (buffer) {
     return this.worker.recognize(buffer)
       .then(({ data }) => data.text)

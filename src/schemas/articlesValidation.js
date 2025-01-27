@@ -16,7 +16,13 @@ const singleArticleSchema = z.object({
   /**
    * The content of the article.
    */
-  article: z.string(),
+  article: z.string().optional(),
+
+  /**
+   * The plain content of the article.
+   * Must be a string.
+   */
+  plainArticle: z.string().optional().default(''),
 
   /**
    * The order of the article.
@@ -56,6 +62,12 @@ const singleArticleModelSchema = z.object({
    * Must be a string.
    */
   article: z.string(),
+
+  /**
+   * The plain content of the article.
+   * Must always be an empty string.
+   */
+  plainArticle: z.literal(''),
 
   /**
    * The order of the article.

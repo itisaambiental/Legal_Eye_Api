@@ -6,7 +6,7 @@
  */
 
 import nodemailer from 'nodemailer'
-import { NODE_ENV, AWS_USER_EMAIL, EMAIL_PASS } from './variables.config.js'
+import { NODE_ENV, EMAIL_HOST, AWS_USER_EMAIL, EMAIL_PASS } from './variables.config.js'
 
 /**
  * Determine if the environment is development or test.
@@ -20,7 +20,7 @@ const isDevelopmentOrTest = NODE_ENV === 'development' || NODE_ENV === 'test'
  * @type {object}
  */
 const transporterConfig = {
-  host: 'email-smtp.us-east-1.amazonaws.com',
+  host: EMAIL_HOST,
   port: isDevelopmentOrTest ? 587 : 465,
   secure: !isDevelopmentOrTest,
   auth: {

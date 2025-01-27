@@ -6,7 +6,7 @@ import {
 } from '../../schemas/articlesValidation.js'
 import ErrorUtils from '../../utils/Error.js'
 import { z } from 'zod'
-
+import { convert } from 'html-to-text'
 /**
  * Service class for handling Article operations.
  */
@@ -29,9 +29,15 @@ class ArticlesService {
       if (!legalBase) {
         throw new ErrorUtils(404, 'LegalBasis not found')
       }
+      const plainArticle = parsedArticle.article
+        ? convert(parsedArticle.article)
+        : null
       const createdArticle = await ArticlesRepository.create(
         legalBasisId,
-        parsedArticle
+        {
+          ...parsedArticle,
+          plainArticle
+        }
       )
       return createdArticle
     } catch (error) {
@@ -56,6 +62,7 @@ class ArticlesService {
    * @param {Array<Object>} articles - The list of articles to insert.
    * @param {string} articles[].title - The title of the article.
    * @param {string} articles[].article - The content of the article.
+   * @param {string} articles[].plainArticle - The plain text equivalent of the article content.
    * @param {number} articles[].order - The order of the article.
    * @returns {Promise<boolean>} - Returns true if insertion is successful, false otherwise.
    * @throws {ErrorUtils} - If an error occurs during validation or insertion.
@@ -210,10 +217,13 @@ class ArticlesService {
       if (!existingArticle) {
         throw new ErrorUtils(404, 'Article not found')
       }
-      const updatedArticle = await ArticlesRepository.updateById(
-        id,
-        parsedArticle
-      )
+      const plainArticle = parsedArticle.article
+        ? convert(parsedArticle.article)
+        : null
+      const updatedArticle = await ArticlesRepository.updateById(id, {
+        ...parsedArticle,
+        plainArticle
+      })
       if (!updatedArticle) {
         throw new ErrorUtils(500, 'Article not found')
       }
