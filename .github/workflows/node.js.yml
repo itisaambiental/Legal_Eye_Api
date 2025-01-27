@@ -59,16 +59,16 @@ jobs:
       - name: Show date and time
         run: date
 
-      - name: Send email notification
-        if: success()
-        uses: dawidd6/action-send-mail@v3
-        with:
-          connection_url: smtp://${{ secrets.SMTP_USER }}:${{ secrets.SMTP_PASSWORD }}@${{ secrets.SMTP_SERVER }}:${{ secrets.SMTP_PORT }}
-          subject: 'CI Notification: All Tests Passed'
-          to: ${{ secrets.NOTIFICATION_EMAIL }} 
-          from: ${{ secrets.GITHUB_TOKEN }}
-          body: |
-            All tests have passed successfully in the LegalEye API REST CI workflow.
+      # - name: Send email notification
+      #   if: success()
+      #   uses: dawidd6/action-send-mail@v3
+      #   with:
+      #     connection_url: smtp://${{ secrets.SMTP_USER }}:${{ secrets.SMTP_PASSWORD }}@${{ secrets.SMTP_SERVER }}:${{ secrets.SMTP_PORT }}
+      #     subject: 'CI Notification: All Tests Passed'
+      #     to: ${{ secrets.NOTIFICATION_EMAIL }} 
+      #     from: ${{ secrets.GITHUB_TOKEN }}
+      #     body: |
+      #       All tests have passed successfully in the LegalEye API REST CI workflow.
 
     concurrency:
       group: "ci-${{ github.ref }}"
