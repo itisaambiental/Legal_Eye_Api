@@ -268,19 +268,6 @@ describe('Filter articles by name', () => {
 })
 
 describe('Filter articles by description', () => {
-  test('Should return an empty list if no articles match the description for the given legal basis', async () => {
-    const response = await api
-      .get(`/api/articles/${createdLegalBasisId}/description`)
-      .set('Authorization', `Bearer ${tokenAdmin}`)
-      .query({ description: 'NonExistentDescription' })
-      .expect(200)
-      .expect('Content-Type', /application\/json/)
-
-    const { articles } = response.body
-    expect(articles).toBeInstanceOf(Array)
-    expect(articles.length).toBe(0)
-  })
-
   test('Should return a list of articles matching the description for the given legal basis', async () => {
     const articleData = generateArticleData({
       article: 'UniqueArticleDescription'

@@ -120,8 +120,20 @@ CREATE TABLE legal_basis (
 -- - id: Unique identifier for each article, auto-incremented.
 -- - legal_basis_id: Foreign key referencing the 'legal_basis' table.
 -- - article_name: Name of the article.
--- - description: Description of the article, optional.
+-- - description: Detailed description of the article, optional.
+-- - plain_description: Simplified, searchable plain-text version of the article's description.
 -- - article_order: Order of the article within the legal document.
+-- Indices:
+-- - FULLTEXT(plain_description): 
+--   This index enables advanced text searches on the 'plain_description' column. 
+--   It allows the use of the `MATCH ... AGAINST` clause in queries to:
+--     - Perform full-text searches on the 'plain_description' column.
+--     - Retrieve rows based on their textual relevance to the search terms.
+--     - Support flexible searches with natural language or boolean query modes.
+--   The `FULLTEXT` index significantly improves the performance of text searches
+--   compared to using operators like `LIKE`.
+-- Constraints:
+-- - FOREIGN KEY (legal_basis_id): Ensures referential integrity by linking each article to a corresponding entry in the 'legal_basis' table. Deletes are cascaded.
 CREATE TABLE article (
     id INT AUTO_INCREMENT PRIMARY KEY,
     legal_basis_id INT NOT NULL,
@@ -131,6 +143,9 @@ CREATE TABLE article (
     article_order INT,
     FOREIGN KEY (legal_basis_id) REFERENCES legal_basis(id) ON DELETE CASCADE
 );
+
+ALTER TABLE article ADD FULLTEXT(plain_description);
+
 
 -- Table: legal_basis_subject_aspect
 -- This table establishes a many-to-many relationship between 'legal_basis', 'subjects', and 'aspects'.
