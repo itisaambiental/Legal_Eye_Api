@@ -1,5 +1,3 @@
-// routes/User.routes.js
-
 /**
  * Routes module for subject-related operations.
  * Defines the API endpoints for subject management.
@@ -15,7 +13,7 @@ import {
   deleteSubject,
   deleteSubjectsBatch
 } from '../controllers/Subject.controller.js'
-import UserExtractor from '../middleware/access_token.js'
+import UserExtractor from '../middlewares/access_token.js'
 
 /**
  * SubjectRouter

@@ -1,5 +1,3 @@
-// routes/Aspect.routes.js
-
 /**
  * Routes module for aspect-related operations.
  * Defines the API endpoints for aspect management within subjects.
@@ -15,7 +13,7 @@ import {
   deleteAspect,
   deleteAspectsBatch
 } from '../controllers/Aspects.controller.js'
-import UserExtractor from '../middleware/access_token.js'
+import UserExtractor from '../middlewares/access_token.js'
 
 /**
  * AspectRouter
