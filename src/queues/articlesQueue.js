@@ -8,7 +8,7 @@ import { redisConfig } from '../config/redis.config.js'
 
 /**
  * The Article queue for processing articles sending jobs.
- * @type {Queue}
+ * @type {import('bull').Queue}
  */
 const articlesQueue = new Queue('articlesQueue', {
   redis: redisConfig,
