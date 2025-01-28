@@ -35,8 +35,6 @@
 
 A continuación se detalla la estructura del proyecto:
 
-Copy
-
 ```
 .
 ├── src/                   # Código fuente del proyecto
@@ -148,7 +146,7 @@ Copy
 
 ## Pruebas
 
-Para ejecutar las pruebas:
+Para ejecutar las pruebas (configuradas con Jest):
 
 ```
 npm test
