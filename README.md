@@ -1,4 +1,3 @@
-
 # Legal Eye API (ISA AMBIENTAL)
 
 **Legal Eye API** es una API REST desarrollada en **Node.js** y  **Express** . Este documento proporciona una guía rápida para configurar, ejecutar y entender el proyecto.
@@ -43,7 +42,7 @@ A continuación se detalla la estructura del proyecto:
 │   ├── config/            # Configuraciones globales (base de datos, variables de entorno, etc.)
 │   ├── controllers/       # Controladores para manejar la lógica de las rutas
 │   ├── database/          # Esquema de la base de datos
-│   ├── middlewares/       # Middlewares
+│   ├── middlewares/       # Middlewares para la aplicación
 │   ├── models/            # Modelos de datos
 │   ├── queues/            # Configuración y manejo de colas (si aplica)
 │   ├── repositories/      # Capa de acceso a datos (interacción con la base de datos)
@@ -146,7 +145,7 @@ A continuación se detalla la estructura del proyecto:
 
 ## Pruebas
 
-Para ejecutar las pruebas (configuradas con Jest):
+Para ejecutar las pruebas:
 
 ```
 npm test
