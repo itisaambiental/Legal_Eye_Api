@@ -143,6 +143,7 @@ CREATE TABLE article (
     article_order INT,
     FOREIGN KEY (legal_basis_id) REFERENCES legal_basis(id) ON DELETE CASCADE
 );
+
 ALTER TABLE article ADD FULLTEXT(plain_description);
 
 -- Table: legal_basis_subject_aspect

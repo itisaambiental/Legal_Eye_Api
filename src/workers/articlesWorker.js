@@ -9,7 +9,7 @@ import { CONCURRENCY_EXTRACT_ARTICLES } from '../config/variables.config.js'
 /**
  Maximum number of asynchronous operations possible in parallel
   */
-const concurrency = Number(CONCURRENCY_EXTRACT_ARTICLES || 1)
+const CONCURRENCY = Number(CONCURRENCY_EXTRACT_ARTICLES || 1)
 
 /**
  * Worker for processing articles jobs from the articles queue.
@@ -20,7 +20,7 @@ const concurrency = Number(CONCURRENCY_EXTRACT_ARTICLES || 1)
  * @param {import('bull').ProcessCallbackFunction} done - Callback function to signal job completion.
  * @throws {ErrorUtils} - Throws an error if any step in the job processing fails.
  */
-articlesQueue.process(concurrency, async (job, done) => {
+articlesQueue.process(CONCURRENCY, async (job, done) => {
   const { legalBasisId } = job.data
   try {
     const currentJob = await articlesQueue.getJob(job.id)
