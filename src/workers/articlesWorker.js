@@ -6,7 +6,9 @@ import LegalBasisRepository from '../repositories/LegalBasis.repository.js'
 import ArticlesService from '../services/articles/Articles.service.js'
 import FileService from '../services/files/File.service.js'
 import { CONCURRENCY_EXTRACT_ARTICLES } from '../config/variables.config.js'
-
+/**
+ Maximum number of asynchronous operations possible in parallel
+  */
 const concurrency = Number(CONCURRENCY_EXTRACT_ARTICLES || 1)
 
 /**
@@ -14,15 +16,20 @@ const concurrency = Number(CONCURRENCY_EXTRACT_ARTICLES || 1)
  * Listens to the articles queue and processes the articles data.
  * Handles the extraction and insertion of articles from a legal basis document.
  *
- * @param {Object} job - The job object containing data to be processed.
- * @param {Object} job.data - The data for the job.
- * @param {number} job.data.legalBasisId - The ID of the legal basis to process.
- * @param {Function} done - Callback function to signal job completion.
+ * @param {import('bull').Job} job - The job object containing data to be processed.
+ * @param {import('bull').ProcessCallbackFunction} done - Callback function to signal job completion.
  * @throws {ErrorUtils} - Throws an error if any step in the job processing fails.
  */
 articlesQueue.process(concurrency, async (job, done) => {
   const { legalBasisId } = job.data
   try {
+    const currentJob = await articlesQueue.getJob(job.id)
+    if (!currentJob) {
+      return done(new ErrorUtils(404, 'Job not found'))
+    }
+    if (await currentJob.isFailed()) {
+      return done(new ErrorUtils(500, currentJob.failedReason || 'Unknown error'))
+    }
     const legalBase = await LegalBasisRepository.findById(legalBasisId)
     if (!legalBase) {
       return done(new ErrorUtils(404, 'LegalBasis not found'))
@@ -51,6 +58,9 @@ articlesQueue.process(concurrency, async (job, done) => {
     const extractedArticles = await extractor.extractArticles()
     if (!extractedArticles || extractedArticles.length === 0) {
       return done(new ErrorUtils(500, 'Article Processing Error'))
+    }
+    if (await currentJob.isFailed()) {
+      return done(new ErrorUtils(500, currentJob.failedReason || 'Unknown error'))
     }
     const insertionSuccess = await ArticlesService.createMany(
       legalBase.id,

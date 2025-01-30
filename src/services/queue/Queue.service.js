@@ -107,6 +107,7 @@ class QueueService {
       if (isActive) {
         await job.moveToFailed({ message: 'Job was canceled' }, true)
       } else {
+        await job.discard()
         await job.remove()
       }
       return true
@@ -115,34 +116,6 @@ class QueueService {
         throw error
       }
       throw new ErrorUtils(500, 'Failed to cancel job')
-    }
-  }
-
-  /**
- * Removes a job from the queue.
- * Can handle jobs in 'waiting', 'delayed', or 'paused' states.
- * Jobs in 'completed' or 'failed' states cannot be removed.
- * @param {import('bull').Job} job - The Bull job instance.
- * @returns {Promise<boolean>} - True if the job was successfully removed.
- * @throws {ErrorUtils} - If the job cannot be removed.
- */
-  static async removeJob (job) {
-    try {
-      const isCompleted = await job.getState()
-      const isFailed = await job.isFailed()
-      if (isCompleted || isFailed) {
-        throw new ErrorUtils(
-          400,
-          "Job cannot be removed. Jobs in 'completed' or 'failed' states cannot be removed."
-        )
-      }
-      await job.remove()
-      return true
-    } catch (error) {
-      if (error instanceof ErrorUtils) {
-        throw error
-      }
-      throw new ErrorUtils(500, 'Failed to remove job')
     }
   }
 
