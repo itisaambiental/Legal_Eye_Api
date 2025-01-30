@@ -248,6 +248,7 @@ describe('Cancel job', () => {
         isCompleted: jest.fn().mockResolvedValue(false),
         isFailed: jest.fn().mockResolvedValue(false),
         remove: jest.fn().mockResolvedValue(true),
+        discard: jest.fn().mockResolvedValue(true),
         getState: jest.fn().mockResolvedValue(state)
       }
 
