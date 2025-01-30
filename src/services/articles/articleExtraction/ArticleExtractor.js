@@ -15,7 +15,7 @@ class ArticleExtractor {
    * Constructs an instance of ArticleExtractor.
    * @param {string} name - The name of the document.
    * @param {string} text - The text from which to extract articles.
-   * @param {Object} job - The Bull job object used for progress tracking.
+   * @param {import("bull").Job} job - The Bull job object used for progress tracking.
    */
   constructor (name, text, job) {
     if (this.constructor === ArticleExtractor) {
