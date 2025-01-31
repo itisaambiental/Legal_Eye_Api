@@ -161,3 +161,57 @@ CREATE TABLE legal_basis_subject_aspect (
     FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE RESTRICT,  
     FOREIGN KEY (aspect_id) REFERENCES aspects(id) ON DELETE RESTRICT
 );
+
+-- Table: requirements
+-- Defines the legal requirements associated with subjects and aspects.
+CREATE TABLE requirements (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    subject_id INT NOT NULL,
+    aspect_id INT NOT NULL,
+    requirement_number INT NOT NULL,
+    requirement_name VARCHAR(255) NOT NULL,
+    mandatory_description LONGTEXT NOT NULL,
+    complementary_description LONGTEXT NOT NULL,
+    mandatory_sentences LONGTEXT NOT NULL,
+    complementary_sentences LONGTEXT NOT NULL,
+    mandatory_keywords LONGTEXT NOT NULL,
+    complementary_keywords LONGTEXT NOT NULL,
+    condition_description VARCHAR(255) NOT NULL,
+    evidence_type VARCHAR(255) NOT NULL,
+    specific_document VARCHAR(255),
+    UNIQUE (subject_id, aspect_id, requirement_name),
+    FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE CASCADE,
+    FOREIGN KEY (aspect_id) REFERENCES aspects(id) ON DELETE CASCADE
+);
+
+-- Table: analysis
+-- Stores records of compliance analyses conducted based on legal requirements.
+CREATE TABLE analysis (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    requirement_id INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (requirement_id) REFERENCES requirements(id) ON DELETE CASCADE
+);
+
+-- Table: analysis_legal_basis
+-- Links each analysis to the legal bases used in the evaluation.
+CREATE TABLE analysis_legal_basis (
+    analysis_id INT NOT NULL,
+    legal_basis_id INT NOT NULL,
+    PRIMARY KEY (analysis_id, legal_basis_id),
+    FOREIGN KEY (analysis_id) REFERENCES analysis(id) ON DELETE CASCADE,
+    FOREIGN KEY (legal_basis_id) REFERENCES legal_basis(id) ON DELETE CASCADE
+);
+
+-- Table: analysis_articles
+-- Records the articles evaluated in an analysis, marking them as obligatory or complementary.
+CREATE TABLE analysis_articles (
+    analysis_id INT NOT NULL,
+    legal_basis_id INT NOT NULL,
+    article_id INT NOT NULL,
+    classification ENUM('Obligatory', 'Complementary') NOT NULL,
+    PRIMARY KEY (analysis_id, legal_basis_id, article_id),
+    FOREIGN KEY (analysis_id) REFERENCES analysis(id) ON DELETE CASCADE,
+    FOREIGN KEY (legal_basis_id) REFERENCES legal_basis(id) ON DELETE CASCADE,
+    FOREIGN KEY (article_id) REFERENCES article(id) ON DELETE CASCADE
+);

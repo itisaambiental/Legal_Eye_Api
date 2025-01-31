@@ -12,7 +12,7 @@ class ArticleExtractorFactory {
    * @param {string} classification - The type of document classification (e.g., 'Ley', 'Reglamento').
    * @param {string} name - The name of the document.
    * @param {string} text - The text from which to extract articles.
-   * @param {Object} job - The Bull job object used for progress tracking.
+   * @param {import('bull').Job} job - The Bull job object used for progress tracking.
    * @returns {import('./ArticleExtractor.js').default|null} - An instance of a subclass of ArticleExtractor or null if the classification is invalid.
    */
   static getExtractor (classification, name, text, job) {

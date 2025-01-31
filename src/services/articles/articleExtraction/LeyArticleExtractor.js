@@ -3,6 +3,7 @@ import openai from '../../../config/openapi.config.js'
 import { singleArticleModelSchema } from '../../../schemas/articlesValidation.js'
 import { zodResponseFormat } from 'openai/helpers/zod'
 import { convert } from 'html-to-text'
+import ErrorUtils from '../../../utils/Error.js'
 /**
  * Class extending ArticleExtractor to extract articles from laws texts.
  * Processes the text, cleans inconsistent formats, and extracts articles,
@@ -16,6 +17,9 @@ class LeyArticleExtractor extends ArticleExtractor {
     const formatArticles = []
     let currentProgress = 0
     for (const article of articles) {
+      if (await this.job.isFailed()) {
+        throw new ErrorUtils(500, 'Job was canceled')
+      }
       const correctedArticle = await this.correctArticle(article)
       correctedArticle.plainArticle = convert(correctedArticle.article)
       formatArticles.push(correctedArticle)

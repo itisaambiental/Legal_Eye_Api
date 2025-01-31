@@ -28,7 +28,7 @@ articlesQueue.process(CONCURRENCY, async (job, done) => {
       return done(new ErrorUtils(404, 'Job not found'))
     }
     if (await currentJob.isFailed()) {
-      return done(new ErrorUtils(500, currentJob.failedReason || 'Unknown error'))
+      return done(new ErrorUtils(500, 'Job was canceled'))
     }
     const legalBase = await LegalBasisRepository.findById(legalBasisId)
     if (!legalBase) {
@@ -50,7 +50,7 @@ articlesQueue.process(CONCURRENCY, async (job, done) => {
       legalBase.classification,
       legalBase.legal_name,
       data,
-      job
+      currentJob
     )
     if (!extractor) {
       return done(new ErrorUtils(400, 'Invalid Classification'))
@@ -60,7 +60,7 @@ articlesQueue.process(CONCURRENCY, async (job, done) => {
       return done(new ErrorUtils(500, 'Article Processing Error'))
     }
     if (await currentJob.isFailed()) {
-      return done(new ErrorUtils(500, currentJob.failedReason || 'Unknown error'))
+      return done(new ErrorUtils(500, 'Job was canceled'))
     }
     const insertionSuccess = await ArticlesService.createMany(
       legalBase.id,
@@ -71,6 +71,7 @@ articlesQueue.process(CONCURRENCY, async (job, done) => {
     }
     done(null)
   } catch (error) {
+    console.log(error)
     if (error instanceof ErrorUtils) {
       return done(error)
     }
