@@ -82,32 +82,32 @@ class LegalBasisService {
    */
   static async create (legalBasis, document) {
     try {
-      const parsedData = legalBasisSchema.parse({
+      const parsedlegalBasis = legalBasisSchema.parse({
         ...legalBasis,
         document
       })
       const legalBasisExists = await LegalBasisRepository.existsByLegalName(
-        parsedData.legalName
+        parsedlegalBasis.legalName
       )
       if (legalBasisExists) {
         throw new ErrorUtils(409, 'LegalBasis already exists')
       }
       const subjectExists = await SubjectsRepository.findById(
-        parsedData.subjectId
+        parsedlegalBasis.subjectId
       )
       if (!subjectExists) {
         throw new ErrorUtils(404, 'Subject not found')
       }
       const validAspectIds = await AspectsRepository.findByIds(
-        parsedData.aspectsIds
+        parsedlegalBasis.aspectsIds
       )
-      if (validAspectIds.length !== parsedData.aspectsIds.length) {
-        const notFoundIds = parsedData.aspectsIds.filter(
+      if (validAspectIds.length !== parsedlegalBasis.aspectsIds.length) {
+        const notFoundIds = parsedlegalBasis.aspectsIds.filter(
           (id) => !validAspectIds.includes(id)
         )
         throw new ErrorUtils(404, 'Aspects not found for IDs', { notFoundIds })
       }
-      if (parsedData.extractArticles && !document) {
+      if (parsedlegalBasis.extractArticles && !document) {
         throw new ErrorUtils(
           400,
           'A document must be provided if extractArticles is true'
@@ -122,7 +122,7 @@ class LegalBasisService {
         documentKey = uploadResponse.uniqueFileName
       }
       const legalBasisData = {
-        ...parsedData,
+        ...parsedlegalBasis,
         url: documentKey
       }
       const createdLegalBasis = await LegalBasisRepository.create(
@@ -132,7 +132,7 @@ class LegalBasisService {
       let jobId = null
       if (documentKey) {
         documentUrl = await FileService.getFile(documentKey)
-        if (parsedData.extractArticles) {
+        if (parsedlegalBasis.extractArticles) {
           const job = await articlesQueue.add({
             legalBasisId: createdLegalBasis.id
           })
@@ -818,7 +818,7 @@ class LegalBasisService {
    */
   static async updateById (legalBasisId, legalBasis, document) {
     try {
-      const parsedData = legalBasisSchema.parse({ ...legalBasis, document })
+      const parsedlegalBasis = legalBasisSchema.parse({ ...legalBasis, document })
       const existingLegalBasis = await LegalBasisRepository.findById(
         legalBasisId
       )
@@ -827,28 +827,28 @@ class LegalBasisService {
       }
       const legalBasisExists =
         await LegalBasisRepository.existsByLegalNameExcludingId(
-          parsedData.legalName,
+          parsedlegalBasis.legalName,
           legalBasisId
         )
       if (legalBasisExists) {
         throw new ErrorUtils(409, 'LegalBasis already exists')
       }
       const subjectExists = await SubjectsRepository.findById(
-        parsedData.subjectId
+        parsedlegalBasis.subjectId
       )
       if (!subjectExists) {
         throw new ErrorUtils(404, 'Subject not found')
       }
       const validAspectIds = await AspectsRepository.findByIds(
-        parsedData.aspectsIds
+        parsedlegalBasis.aspectsIds
       )
-      if (validAspectIds.length !== parsedData.aspectsIds.length) {
-        const notFoundIds = parsedData.aspectsIds.filter(
+      if (validAspectIds.length !== parsedlegalBasis.aspectsIds.length) {
+        const notFoundIds = parsedlegalBasis.aspectsIds.filter(
           (id) => !validAspectIds.includes(id)
         )
         throw new ErrorUtils(404, 'Aspects not found for IDs', { notFoundIds })
       }
-      if (parsedData.removeDocument && document) {
+      if (parsedlegalBasis.removeDocument && document) {
         throw new ErrorUtils(
           400,
           'Cannot provide a document if removeDocument is true'
@@ -857,7 +857,7 @@ class LegalBasisService {
       const { hasPendingJobs } = await extractArticles.hasPendingJobs(
         legalBasisId
       )
-      if (parsedData.removeDocument && hasPendingJobs) {
+      if (parsedlegalBasis.removeDocument && hasPendingJobs) {
         throw new ErrorUtils(
           409,
           'The document cannot be removed because there are pending jobs for this Legal Basis'
@@ -869,7 +869,7 @@ class LegalBasisService {
           'A new document cannot be uploaded because there are pending jobs for this Legal Basis'
         )
       }
-      if (parsedData.extractArticles) {
+      if (parsedlegalBasis.extractArticles) {
         if (!document && !existingLegalBasis.url) {
           throw new ErrorUtils(
             400,
@@ -884,7 +884,7 @@ class LegalBasisService {
         }
       }
       let documentKey = existingLegalBasis.url
-      if (document && !parsedData.removeDocument) {
+      if (document && !parsedlegalBasis.removeDocument) {
         const uploadResponse = await FileService.uploadFile(document)
         if (uploadResponse.response.$metadata.httpStatusCode === 200) {
           if (existingLegalBasis.url) {
@@ -894,14 +894,14 @@ class LegalBasisService {
         } else {
           throw new ErrorUtils(500, 'File Upload Error')
         }
-      } else if (!document && parsedData.removeDocument) {
+      } else if (!document && parsedlegalBasis.removeDocument) {
         if (existingLegalBasis.url) {
           await FileService.deleteFile(existingLegalBasis.url)
         }
         documentKey = null
       }
       const updatedLegalBasisData = {
-        ...parsedData,
+        ...parsedlegalBasis,
         url: documentKey
       }
       const updatedLegalBasis = await LegalBasisRepository.update(
@@ -915,7 +915,7 @@ class LegalBasisService {
       let jobId = null
       if (documentKey) {
         documentUrl = await FileService.getFile(documentKey)
-        if (parsedData.extractArticles) {
+        if (parsedlegalBasis.extractArticles) {
           const job = await articlesQueue.add({
             legalBasisId: updatedLegalBasis.id
           })
