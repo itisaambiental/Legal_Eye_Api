@@ -1,11 +1,8 @@
-// loginSchema.js
-
 import { z } from 'zod'
 
 /**
  * Zod validation schema for user login.
  * Ensures that the login data meets the format requirements.
- * @type {z}
  */
 const loginSchema = z.object({
   /**
@@ -18,7 +15,9 @@ const loginSchema = z.object({
    * User's password.
    * Must be at least 12 characters long.
    */
-  password: z.string().min(12, { message: 'Password must be at least 12 characters' })
+  password: z
+    .string()
+    .min(12, { message: 'Password must be at least 12 characters' })
 })
 
 export default loginSchema

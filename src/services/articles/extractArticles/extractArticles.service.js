@@ -10,7 +10,7 @@ class extractArticlesService {
   /**
    * Fetch the job from the queue and return the job state.
    * @param {string} jobId - The job ID.
-   * @returns {Promise<Object>} - The job state and relevant data.
+   * @returns {Promise<import('../../queue/Queue.service.js').JobStateResponse>} - The job state and relevant data.
    * @throws {ErrorUtils} - If an error occurs while retrieving the job state.
    */
   static async getStatusJob (jobId) {

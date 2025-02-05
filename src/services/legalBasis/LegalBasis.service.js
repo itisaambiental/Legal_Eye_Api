@@ -1,6 +1,6 @@
 import LegalBasisRepository from '../../repositories/LegalBasis.repository.js'
 import articlesQueue from '../../workers/articlesWorker.js'
-import legalBasisSchema from '../../schemas/legalBasisValidation.js'
+import legalBasisSchema from '../../schemas/legalBasis.schema.js'
 import SubjectsRepository from '../../repositories/Subject.repository.js'
 import AspectsRepository from '../../repositories/Aspects.repository.js'
 import extractArticles from '../articles/extractArticles/extractArticles.service.js'
@@ -13,46 +13,105 @@ import { es } from 'date-fns/locale'
  * Service class for handling Legal Basis operations.
  */
 class LegalBasisService {
-/**
- * Creates a new Legal Basis entry.
- * @param {Object} data - Parameters for creating a legal basis.
- * @param {string} data.legalName - The name of the legal basis.
- * @param {string} data.abbreviation - The abbreviation of the legal basis.
- * @param {string} data.subject - The subject of the legal basis.
- * @param {string} data.aspects - The aspects associated with the legal basis.
- * @param {string} data.classification - The classification of the legal basis.
- * @param {string} data.jurisdiction - The jurisdiction of the legal basis.
- * @param {string} [data.state] - The state associated with the legal basis.
- * @param {string} [data.municipality] - The municipality associated with the legal basis.
- * @param {string} data.lastReform - The date of the last reform.
- * @param {string} data.extractArticles - The flag to determine whether to extract articles from the document.
- * @param {Object} [document] - The document to process (optional).
- * @returns {Promise<Object>} - An object containing the created `legalBasis` and the optional `jobId` (which may be null).
- * @property {legalBasis} legalBasis - The created legal basis object.
- * @property {string|null} jobId - The job ID if a job was created, or `null` if no job was created.
- * @throws {ErrorUtils} - If an error occurs during the creation validation.
- */
-  static async create (data, document) {
+  /**
+   * @typedef {Object} LegalBasis
+   * @property {number|string} id - The unique identifier of the legal basis.
+   * @property {string} legal_name - The name of the legal basis.
+   * @property {string} subject - The subject associated with the legal basis.
+   * @property {string} aspects - The aspects related to the legal basis.
+   * @property {string} classification - The classification of the legal basis.
+   * @property {string} jurisdiction - The jurisdiction of the legal basis.
+   * @property {string} state - The state associated with the legal basis.
+   * @property {string} municipality - The municipality associated with the legal basis.
+   * @property {string|null} last_reform - The date of the last reform formatted as "dd-MM-yyyy", or null.
+   * @property {string} abbreviation - The abbreviation of the legal basis.
+   * @property {string|null} url - The URL of the document, or null if not provided.
+   * @property {string|null} fileKey - The unique key of the document, or null if not provided.
+   */
+
+  /**
+   * @typedef {Object} CreatedLegalBasis
+   * @property {string|number|null} jobId - The ID of the article extraction job, if created; otherwise, null.
+   * @property {Object} legalBasis - The object containing the created legal basis information.
+   * @property {string|number} legalBasis.id - The unique identifier of the legal basis.
+   * @property {string} legalBasis.legalName - The legal basis name.
+   * @property {string} legalBasis.abbreviation - The legal basis abbreviation.
+   * @property {string} legalBasis.subject - The subject associated with the legal basis.
+   * @property {string} legalBasis.aspects - The aspects associated with the legal basis.
+   * @property {string} legalBasis.classification - The legal basis classification.
+   * @property {string} [legalBasis.state] - The state, if applicable.
+   * @property {string} [legalBasis.municipality] - The municipality, if applicable.
+   * @property {string|null} legalBasis.last_reform - The date of the last reform formatted as "dd-MM-yyyy", or null.
+   * @property {string|null} legalBasis.url - The URL of the uploaded document, or null if not provided.
+   * @property {string|null} legalBasis.fileKey - The unique key of the document, or null if not uploaded.
+   */
+
+  /**
+   * @typedef {Object} UpdatedLegalBasis
+   * @property {string|number|null} jobId - The ID of the article extraction job, if initiated; otherwise, null.
+   * @property {Object} legalBasis - The object containing the updated legal basis data.
+   * @property {number|string} legalBasis.id - The unique identifier of the legal basis.
+   * @property {string} legalBasis.legalName - The updated legal basis name.
+   * @property {string} legalBasis.abbreviation - The updated legal basis abbreviation.
+   * @property {string} legalBasis.subject - The subject associated with the legal basis.
+   * @property {string} legalBasis.aspects - The aspects associated with the legal basis.
+   * @property {string} legalBasis.classification - The updated legal basis classification.
+   * @property {string} [legalBasis.state] - The updated state, if applicable.
+   * @property {string} [legalBasis.municipality] - The updated municipality, if applicable.
+   * @property {string|null} legalBasis.last_reform - The date of the last reform formatted as "dd-MM-yyyy", or null.
+   * @property {string|null} legalBasis.url - The URL of the updated document, or null if not provided.
+   * @property {string|null} legalBasis.fileKey - The unique key of the updated document, or null.
+   */
+  /**
+   * Creates a new legal basis entry.
+   *
+   * @param {Object} legalBasis - Parameters for creating a legal basis.
+   * @param {string} legalBasis.legalName - The legal basis name.
+   * @param {string} legalBasis.abbreviation - The legal basis abbreviation.
+   * @param {string} legalBasis.subjectId - The legal basis subject ID.
+   * @param {string} legalBasis.aspectsIds - The aspects Ids associated with the legal basis.
+   * @param {string} legalBasis.classification - The legal basis classification.
+   * @param {string} legalBasis.jurisdiction - The jurisdiction of the legal basis.
+   * @param {string} [legalBasis.state] - The state associated with the legal basis.
+   * @param {string} [legalBasis.municipality] - The municipality associated with the legal basis.
+   * @param {string} legalBasis.lastReform - The date of the last reform.
+   * @param {string} legalBasis.extractArticles - Indicator whether to extract articles from the document.
+   * @param {Express.Multer.File} [document] - The document to process (optional).
+   * @returns {Promise<CreatedLegalBasis>} A promise that resolves with an object containing the jobId (if applicable) and the created legal basis data.
+   * @throws {ErrorUtils} If an error occurs during validation or creation.
+   */
+  static async create (legalBasis, document) {
     try {
       const parsedData = legalBasisSchema.parse({
-        ...data,
+        ...legalBasis,
         document
       })
-      const legalBasisExists = await LegalBasisRepository.existsByLegalName(parsedData.legalName)
+      const legalBasisExists = await LegalBasisRepository.existsByLegalName(
+        parsedData.legalName
+      )
       if (legalBasisExists) {
         throw new ErrorUtils(409, 'LegalBasis already exists')
       }
-      const subjectExists = await SubjectsRepository.findById(parsedData.subjectId)
+      const subjectExists = await SubjectsRepository.findById(
+        parsedData.subjectId
+      )
       if (!subjectExists) {
         throw new ErrorUtils(404, 'Subject not found')
       }
-      const validAspectIds = await AspectsRepository.findByIds(parsedData.aspectsIds)
+      const validAspectIds = await AspectsRepository.findByIds(
+        parsedData.aspectsIds
+      )
       if (validAspectIds.length !== parsedData.aspectsIds.length) {
-        const notFoundIds = parsedData.aspectsIds.filter(id => !validAspectIds.includes(id))
+        const notFoundIds = parsedData.aspectsIds.filter(
+          (id) => !validAspectIds.includes(id)
+        )
         throw new ErrorUtils(404, 'Aspects not found for IDs', { notFoundIds })
       }
       if (parsedData.extractArticles && !document) {
-        throw new ErrorUtils(400, 'A document must be provided if extractArticles is true')
+        throw new ErrorUtils(
+          400,
+          'A document must be provided if extractArticles is true'
+        )
       }
       let documentKey = null
       if (document) {
@@ -66,7 +125,9 @@ class LegalBasisService {
         ...parsedData,
         url: documentKey
       }
-      const createdLegalBasis = await LegalBasisRepository.create(legalBasisData)
+      const createdLegalBasis = await LegalBasisRepository.create(
+        legalBasisData
+      )
       let documentUrl = null
       let jobId = null
       if (documentKey) {
@@ -80,7 +141,11 @@ class LegalBasisService {
       }
       let formattedLastReform = null
       if (createdLegalBasis.lastReform) {
-        formattedLastReform = format(new Date(createdLegalBasis.lastReform), 'dd-MM-yyyy', { locale: es })
+        formattedLastReform = format(
+          new Date(createdLegalBasis.lastReform),
+          'dd-MM-yyyy',
+          { locale: es }
+        )
       }
       const { lastReform, ...legalBases } = createdLegalBasis
       return {
@@ -109,7 +174,7 @@ class LegalBasisService {
 
   /**
    * Retrieves all legal basis entries from the database.
-   * @returns {Promise<Array<Object>>} - A list of all legal basis entries.
+   * @returns {Promise<Array<LegalBasis>>} - A list of all legal basis entries.
    * @throws {ErrorUtils} - If an error occurs during retrieval.
    */
   static async getAll () {
@@ -118,30 +183,36 @@ class LegalBasisService {
       if (!legalBasis) {
         return []
       }
-      const legalBases = await Promise.all(legalBasis.map(async (legalBasis) => {
-        let documentUrl = null
-        if (legalBasis.url) {
-          documentUrl = await FileService.getFile(legalBasis.url)
-        }
-        let formattedLastReform = null
-        if (legalBasis.lastReform) {
-          formattedLastReform = format(new Date(legalBasis.lastReform), 'dd-MM-yyyy', { locale: es })
-        }
-        return {
-          id: legalBasis.id,
-          legal_name: legalBasis.legal_name,
-          subject: legalBasis.subject,
-          aspects: legalBasis.aspects,
-          classification: legalBasis.classification,
-          jurisdiction: legalBasis.jurisdiction,
-          state: legalBasis.state,
-          municipality: legalBasis.municipality,
-          last_reform: formattedLastReform,
-          abbreviation: legalBasis.abbreviation,
-          url: documentUrl,
-          fileKey: legalBasis.url
-        }
-      }))
+      const legalBases = await Promise.all(
+        legalBasis.map(async (legalBasis) => {
+          let documentUrl = null
+          if (legalBasis.url) {
+            documentUrl = await FileService.getFile(legalBasis.url)
+          }
+          let formattedLastReform = null
+          if (legalBasis.lastReform) {
+            formattedLastReform = format(
+              new Date(legalBasis.lastReform),
+              'dd-MM-yyyy',
+              { locale: es }
+            )
+          }
+          return {
+            id: legalBasis.id,
+            legal_name: legalBasis.legal_name,
+            subject: legalBasis.subject,
+            aspects: legalBasis.aspects,
+            classification: legalBasis.classification,
+            jurisdiction: legalBasis.jurisdiction,
+            state: legalBasis.state,
+            municipality: legalBasis.municipality,
+            last_reform: formattedLastReform,
+            abbreviation: legalBasis.abbreviation,
+            url: documentUrl,
+            fileKey: legalBasis.url
+          }
+        })
+      )
 
       return legalBases
     } catch (error) {
@@ -155,7 +226,7 @@ class LegalBasisService {
   /**
    * Retrieves a legal basis entry by its ID.
    * @param {number} id - The ID of the legal basis to retrieve.
-   * @returns {Promise<Object>} - The legal basis entry.
+   * @returns {Promise<LegalBasis>} - The legal basis entry.
    * @throws {ErrorUtils} - If an error occurs during retrieval.
    */
   static async getById (id) {
@@ -170,7 +241,11 @@ class LegalBasisService {
       }
       let formattedLastReform = null
       if (legalBase.lastReform) {
-        formattedLastReform = format(new Date(legalBase.lastReform), 'dd-MM-yyyy', { locale: es })
+        formattedLastReform = format(
+          new Date(legalBase.lastReform),
+          'dd-MM-yyyy',
+          { locale: es }
+        )
       }
       return {
         id: legalBase.id,
@@ -195,400 +270,72 @@ class LegalBasisService {
   }
 
   /**
- * Retrieves all legal basis entries by name.
- * @param {string} legalName - The name or part of the name of the legal basis to retrieve.
- * @returns {Promise<Array<Object>>} - A list of legal basis entries matching the name.
- * @throws {ErrorUtils} - If an error occurs during retrieval.
- */
+   * Retrieves all legal basis entries by name.
+   * @param {string} legalName - The name or part of the name of the legal basis to retrieve.
+   * @returns {Promise<Array<LegalBasis>>} - A list of legal basis entries matching the name.
+   * @throws {ErrorUtils} - If an error occurs during retrieval.
+   */
   static async getByName (legalName) {
     try {
       const legalBasis = await LegalBasisRepository.findByName(legalName)
       if (!legalBasis) {
         return []
       }
-      const legalBases = await Promise.all(legalBasis.map(async (legalBase) => {
-        let documentUrl = null
-        if (legalBase.url) {
-          documentUrl = await FileService.getFile(legalBase.url)
-        }
+      const legalBases = await Promise.all(
+        legalBasis.map(async (legalBase) => {
+          let documentUrl = null
+          if (legalBase.url) {
+            documentUrl = await FileService.getFile(legalBase.url)
+          }
 
-        let formattedLastReform = null
-        if (legalBase.lastReform) {
-          formattedLastReform = format(new Date(legalBase.lastReform), 'dd-MM-yyyy', { locale: es })
-        }
+          let formattedLastReform = null
+          if (legalBase.lastReform) {
+            formattedLastReform = format(
+              new Date(legalBase.lastReform),
+              'dd-MM-yyyy',
+              { locale: es }
+            )
+          }
 
-        return {
-          id: legalBase.id,
-          legal_name: legalBase.legal_name,
-          subject: legalBase.subject,
-          aspects: legalBase.aspects,
-          classification: legalBase.classification,
-          jurisdiction: legalBase.jurisdiction,
-          state: legalBase.state,
-          municipality: legalBase.municipality,
-          last_reform: formattedLastReform,
-          abbreviation: legalBase.abbreviation,
-          url: documentUrl,
-          fileKey: legalBase.url
-        }
-      }))
+          return {
+            id: legalBase.id,
+            legal_name: legalBase.legal_name,
+            subject: legalBase.subject,
+            aspects: legalBase.aspects,
+            classification: legalBase.classification,
+            jurisdiction: legalBase.jurisdiction,
+            state: legalBase.state,
+            municipality: legalBase.municipality,
+            last_reform: formattedLastReform,
+            abbreviation: legalBase.abbreviation,
+            url: documentUrl,
+            fileKey: legalBase.url
+          }
+        })
+      )
       return legalBases
     } catch (error) {
       if (error instanceof ErrorUtils) {
         throw error
       }
-      throw new ErrorUtils(500, 'Failed to retrieve legal basis records by name')
+      throw new ErrorUtils(
+        500,
+        'Failed to retrieve legal basis records by name'
+      )
     }
   }
 
   /**
    * Retrieves all legal basis entry by abbreviation.
    * @param {string} abbreviation - The abbreviation or part of the abbreviation of the legal basis to retrieve.
-   * @returns {Promise<Array<Object>>} - A list of legal basis entries matching the abbreviation.
+   * @returns {Promise<Array<LegalBasis>>} - A list of legal basis entries matching the abbreviation.
    * @throws {ErrorUtils} - If an error occurs during retrieval.
    */
   static async getByAbbreviation (abbreviation) {
     try {
-      const legalBasis = await LegalBasisRepository.findByAbbreviation(abbreviation)
-      if (!legalBasis) {
-        return []
-      }
-      const legalBases = await Promise.all(legalBasis.map(async (legalBasis) => {
-        let documentUrl = null
-        if (legalBasis.url) {
-          documentUrl = await FileService.getFile(legalBasis.url)
-        }
-        let formattedLastReform = null
-        if (legalBasis.lastReform) {
-          formattedLastReform = format(new Date(legalBasis.lastReform), 'dd-MM-yyyy', { locale: es })
-        }
-        return {
-          id: legalBasis.id,
-          legal_name: legalBasis.legal_name,
-          subject: legalBasis.subject,
-          aspects: legalBasis.aspects,
-          classification: legalBasis.classification,
-          jurisdiction: legalBasis.jurisdiction,
-          state: legalBasis.state,
-          municipality: legalBasis.municipality,
-          last_reform: formattedLastReform,
-          abbreviation: legalBasis.abbreviation,
-          url: documentUrl,
-          fileKey: legalBasis.url
-        }
-      }))
-      return legalBases
-    } catch (error) {
-      if (error instanceof ErrorUtils) {
-        throw error
-      }
-      throw new ErrorUtils(500, 'Failed to retrieve legal basis record by abbreviation')
-    }
-  }
-
-  /**
- * Retrieves all legal basis entries by their classification.
- * @param {string} classification - The classification of the legal basis to retrieve.
- * @returns {Promise<Array<Object>>} - A list of legal basis entries.
- * @throws {ErrorUtils} - If an error occurs during retrieval.
- */
-  static async getByClassification (classification) {
-    try {
-      const legalBasis = await LegalBasisRepository.findByClassification(classification)
-      if (!legalBasis) {
-        return []
-      }
-      const legalBases = await Promise.all(legalBasis.map(async (legalBasis) => {
-        let documentUrl = null
-        if (legalBasis.url) {
-          documentUrl = await FileService.getFile(legalBasis.url)
-        }
-        let formattedLastReform = null
-        if (legalBasis.lastReform) {
-          formattedLastReform = format(new Date(legalBasis.lastReform), 'dd-MM-yyyy', { locale: es })
-        }
-        return {
-          id: legalBasis.id,
-          legal_name: legalBasis.legal_name,
-          subject: legalBasis.subject,
-          aspects: legalBasis.aspects,
-          classification: legalBasis.classification,
-          jurisdiction: legalBasis.jurisdiction,
-          state: legalBasis.state,
-          municipality: legalBasis.municipality,
-          last_reform: formattedLastReform,
-          abbreviation: legalBasis.abbreviation,
-          url: documentUrl,
-          fileKey: legalBasis.url
-        }
-      }))
-
-      return legalBases
-    } catch (error) {
-      if (error instanceof ErrorUtils) {
-        throw error
-      }
-      throw new ErrorUtils(500, 'Failed to retrieve legal basis records by classification')
-    }
-  }
-
-  /**
- * Retrieves legal basis entries filtered by jurisdiction.
- * @param {string} jurisdiction - The jurisdiction to filter by.
- * @returns {Promise<Array<Object>>} - A list of legal basis entries.
- * @throws {ErrorUtils} - If an error occurs during retrieval.
- */
-  static async getByJurisdiction (jurisdiction) {
-    try {
-      const legalBasis = await LegalBasisRepository.findByJurisdiction(jurisdiction)
-      if (!legalBasis) {
-        return []
-      }
-      const legalBases = await Promise.all(legalBasis.map(async (legalBasis) => {
-        let documentUrl = null
-        if (legalBasis.url) {
-          documentUrl = await FileService.getFile(legalBasis.url)
-        }
-        let formattedLastReform = null
-        if (legalBasis.lastReform) {
-          formattedLastReform = format(new Date(legalBasis.lastReform), 'dd-MM-yyyy', { locale: es })
-        }
-        return {
-          id: legalBasis.id,
-          legal_name: legalBasis.legal_name,
-          subject: legalBasis.subject,
-          aspects: legalBasis.aspects,
-          classification: legalBasis.classification,
-          jurisdiction: legalBasis.jurisdiction,
-          state: legalBasis.state,
-          municipality: legalBasis.municipality,
-          last_reform: formattedLastReform,
-          abbreviation: legalBasis.abbreviation,
-          url: documentUrl,
-          fileKey: legalBasis.url
-        }
-      }))
-      return legalBases
-    } catch (error) {
-      if (error instanceof ErrorUtils) {
-        throw error
-      }
-      throw new ErrorUtils(500, 'Failed to retrieve legal basis records by jurisdiction')
-    }
-  }
-
-  /**
- * Retrieves legal basis entries filtered by state.
- * @param {string} state - The state to filter by.
- * @returns {Promise<Array<Object>>} - A list of legal basis entries.
- * @throws {ErrorUtils} - If an error occurs during retrieval.
- */
-  static async getByState (state) {
-    try {
-      const legalBasis = await LegalBasisRepository.findByState(state)
-      if (!legalBasis) {
-        return []
-      }
-      const legalBases = await Promise.all(legalBasis.map(async (legalBasis) => {
-        let documentUrl = null
-        if (legalBasis.url) {
-          documentUrl = await FileService.getFile(legalBasis.url)
-        }
-        let formattedLastReform = null
-        if (legalBasis.lastReform) {
-          formattedLastReform = format(new Date(legalBasis.lastReform), 'dd-MM-yyyy', { locale: es })
-        }
-        return {
-          id: legalBasis.id,
-          legal_name: legalBasis.legal_name,
-          subject: legalBasis.subject,
-          aspects: legalBasis.aspects,
-          classification: legalBasis.classification,
-          jurisdiction: legalBasis.jurisdiction,
-          state: legalBasis.state,
-          municipality: legalBasis.municipality,
-          last_reform: formattedLastReform,
-          abbreviation: legalBasis.abbreviation,
-          url: documentUrl,
-          fileKey: legalBasis.url
-        }
-      }))
-
-      return legalBases
-    } catch (error) {
-      if (error instanceof ErrorUtils) {
-        throw error
-      }
-      throw new ErrorUtils(500, 'Failed to retrieve legal basis records by state')
-    }
-  }
-
-  /**
- * Retrieves legal basis entries filtered by state and optionally by municipalities.
- * @param {string} state - The state to filter by.
- * @param {Array<string>} [municipalities] - An array of municipalities to filter by (optional).
- * @returns {Promise<Array<Object>>} - A list of legal basis entries.
- * @throws {ErrorUtils} - If an error occurs during retrieval.
- */
-  static async getByStateAndMunicipalities (state, municipalities = []) {
-    try {
-      const legalBasis = await LegalBasisRepository.findByStateAndMunicipalities(state, municipalities)
-      if (!legalBasis) {
-        return []
-      }
-      const legalBases = await Promise.all(legalBasis.map(async (legalBasis) => {
-        let documentUrl = null
-        if (legalBasis.url) {
-          documentUrl = await FileService.getFile(legalBasis.url)
-        }
-        let formattedLastReform = null
-        if (legalBasis.lastReform) {
-          formattedLastReform = format(new Date(legalBasis.lastReform), 'dd-MM-yyyy', { locale: es })
-        }
-        return {
-          id: legalBasis.id,
-          legal_name: legalBasis.legal_name,
-          subject: legalBasis.subject,
-          aspects: legalBasis.aspects,
-          classification: legalBasis.classification,
-          jurisdiction: legalBasis.jurisdiction,
-          state: legalBasis.state,
-          municipality: legalBasis.municipality,
-          last_reform: formattedLastReform,
-          abbreviation: legalBasis.abbreviation,
-          url: documentUrl,
-          fileKey: legalBasis.url
-        }
-      }))
-
-      return legalBases
-    } catch (error) {
-      if (error instanceof ErrorUtils) {
-        throw error
-      }
-      throw new ErrorUtils(500, 'Failed to retrieve legal basis records by state and municipalities')
-    }
-  }
-
-  /**
- * Retrieves legal basis entries filtered by a specific subject.
- * @param {number} subjectId - The subject ID to filter by.
- * @returns {Promise<Array<Object>>} - A list of legal basis entries.
- * @throws {ErrorUtils} - If an error occurs during retrieval.
- */
-  static async getBySubject (subjectId) {
-    try {
-      const subject = await SubjectsRepository.findById(subjectId)
-      if (!subject) {
-        throw new ErrorUtils(404, 'Subject not found')
-      }
-      const legalBasis = await LegalBasisRepository.findBySubject(subjectId)
-      if (!legalBasis) {
-        return []
-      }
-      const legalBases = await Promise.all(legalBasis.map(async (legalBasis) => {
-        let documentUrl = null
-        if (legalBasis.url) {
-          documentUrl = await FileService.getFile(legalBasis.url)
-        }
-        let formattedLastReform = null
-        if (legalBasis.lastReform) {
-          formattedLastReform = format(new Date(legalBasis.lastReform), 'dd-MM-yyyy', { locale: es })
-        }
-        return {
-          id: legalBasis.id,
-          legal_name: legalBasis.legal_name,
-          subject: legalBasis.subject,
-          aspects: legalBasis.aspects,
-          classification: legalBasis.classification,
-          jurisdiction: legalBasis.jurisdiction,
-          state: legalBasis.state,
-          municipality: legalBasis.municipality,
-          last_reform: formattedLastReform,
-          abbreviation: legalBasis.abbreviation,
-          url: documentUrl,
-          fileKey: legalBasis.url
-        }
-      }))
-      return legalBases
-    } catch (error) {
-      if (error instanceof ErrorUtils) {
-        throw error
-      }
-      throw new ErrorUtils(500, 'Failed to retrieve legal basis records by subject')
-    }
-  }
-
-  /**
- * Retrieves legal basis entries filtered by a specific subject and optionally by aspects.
- * @param {number} subjectId - The subject ID to filter by.
- * @param {Array<number>} [aspectIds] - Optional array of aspect IDs to further filter by.
- * @returns {Promise<Array<Object>>} - A list of legal basis entries.
- * @throws {ErrorUtils} - If an error occurs during retrieval.
- */
-  static async getBySubjectAndAspects (subjectId, aspectIds = []) {
-    try {
-      const subject = await SubjectsRepository.findById(subjectId)
-      if (!subject) {
-        throw new ErrorUtils(404, 'Subject not found')
-      }
-      const existingAspects = await AspectsRepository.findByIds(aspectIds)
-      if (existingAspects.length !== aspectIds.length) {
-        const notFoundIds = aspectIds.filter(
-          id => !existingAspects.some(aspect => aspect.id === id))
-        throw new ErrorUtils(404, 'Aspects not found for IDs', { notFoundIds })
-      }
-      const legalBasis = await LegalBasisRepository.findBySubjectAndAspects(subjectId, aspectIds)
-      if (!legalBasis) {
-        return []
-      }
-      const legalBases = await Promise.all(legalBasis.map(async (legalBasis) => {
-        let documentUrl = null
-        if (legalBasis.url) {
-          documentUrl = await FileService.getFile(legalBasis.url)
-        }
-        let formattedLastReform = null
-        if (legalBasis.lastReform) {
-          formattedLastReform = format(new Date(legalBasis.lastReform), 'dd-MM-yyyy', { locale: es })
-        }
-        return {
-          id: legalBasis.id,
-          legal_name: legalBasis.legal_name,
-          subject: legalBasis.subject,
-          aspects: legalBasis.aspects,
-          classification: legalBasis.classification,
-          jurisdiction: legalBasis.jurisdiction,
-          state: legalBasis.state,
-          municipality: legalBasis.municipality,
-          last_reform: formattedLastReform,
-          abbreviation: legalBasis.abbreviation,
-          url: documentUrl,
-          fileKey: legalBasis.url
-        }
-      }))
-
-      return legalBases
-    } catch (error) {
-      if (error instanceof ErrorUtils) {
-        throw error
-      }
-      throw new ErrorUtils(500, 'Failed to retrieve legal basis records by subject and aspects')
-    }
-  }
-
-  /**
- * Retrieves legal basis entries filtered by a date range for the last_reform.
- * Both 'from' and 'to' are optional. If provided, they can be in 'YYYY-MM-DD' or 'DD-MM-YYYY'.
- *
- * @function getByLastReform
- * @param {Date} [from] - Start date.
- * @param {Date} [to] - End date.
- * @returns {Promise<Array<Object>>} - A list of legal basis entries filtered by the date range.
- * @throws {ErrorUtils} - If an error occurs during retrieval or date validation.
- */
-  static async getByLastReform (from, to) {
-    try {
-      const legalBasis = await LegalBasisRepository.findByLastReform(from, to)
+      const legalBasis = await LegalBasisRepository.findByAbbreviation(
+        abbreviation
+      )
       if (!legalBasis) {
         return []
       }
@@ -600,7 +347,67 @@ class LegalBasisService {
           }
           let formattedLastReform = null
           if (legalBasis.lastReform) {
-            formattedLastReform = format(new Date(legalBasis.lastReform), 'dd-MM-yyyy', { locale: es })
+            formattedLastReform = format(
+              new Date(legalBasis.lastReform),
+              'dd-MM-yyyy',
+              { locale: es }
+            )
+          }
+          return {
+            id: legalBasis.id,
+            legal_name: legalBasis.legal_name,
+            subject: legalBasis.subject,
+            aspects: legalBasis.aspects,
+            classification: legalBasis.classification,
+            jurisdiction: legalBasis.jurisdiction,
+            state: legalBasis.state,
+            municipality: legalBasis.municipality,
+            last_reform: formattedLastReform,
+            abbreviation: legalBasis.abbreviation,
+            url: documentUrl,
+            fileKey: legalBasis.url
+          }
+        })
+      )
+      return legalBases
+    } catch (error) {
+      if (error instanceof ErrorUtils) {
+        throw error
+      }
+      throw new ErrorUtils(
+        500,
+        'Failed to retrieve legal basis record by abbreviation'
+      )
+    }
+  }
+
+  /**
+   * Retrieves all legal basis entries by their classification.
+   * @param {string} classification - The classification of the legal basis to retrieve.
+   * @returns {Promise<Array<LegalBasis>>} - A list of legal basis entries.
+   * @throws {ErrorUtils} - If an error occurs during retrieval.
+   */
+  static async getByClassification (classification) {
+    try {
+      const legalBasis = await LegalBasisRepository.findByClassification(
+        classification
+      )
+      if (!legalBasis) {
+        return []
+      }
+      const legalBases = await Promise.all(
+        legalBasis.map(async (legalBasis) => {
+          let documentUrl = null
+          if (legalBasis.url) {
+            documentUrl = await FileService.getFile(legalBasis.url)
+          }
+          let formattedLastReform = null
+          if (legalBasis.lastReform) {
+            formattedLastReform = format(
+              new Date(legalBasis.lastReform),
+              'dd-MM-yyyy',
+              { locale: es }
+            )
           }
           return {
             id: legalBasis.id,
@@ -624,67 +431,456 @@ class LegalBasisService {
       if (error instanceof ErrorUtils) {
         throw error
       }
-      throw new ErrorUtils(500, 'Failed to retrieve legal basis records by last reform range')
+      throw new ErrorUtils(
+        500,
+        'Failed to retrieve legal basis records by classification'
+      )
     }
   }
 
   /**
- * Updates an existing Legal Basis entry.
- * @param {number} legalBasisId - The ID of the legal basis to update.
- * @param {Object} data - Parameters for updating the legal basis.
- * @param {string} [data.legalName] - The new name of the legal basis.
- * @param {string} [data.abbreviation] - The new abbreviation of the legal basis.
- * @param {number} [data.subjectId] - The new ID of the subject associated with the legal basis.
- * @param {Array<number>} [data.aspectsIds] - The new IDs of the aspects to associate with the legal basis.
- * @param {string} [data.classification] - The new classification of the legal basis.
- * @param {string} [data.jurisdiction] - The new jurisdiction of the legal basis.
- * @param {string} [data.state] - The new state associated with the legal basis.
- * @param {string} [data.municipality] - The new municipality associated with the legal basis.
- * @param {string} [data.lastReform] - The new date of the last reform.
- * @param {string} [data.extractArticles] - The flag to determine whether to extract articles from the document.
- * @param {string} [data.removeDocument] - The flag to determine whether the document should be deleted.
- * @param {Object} [document] - The new document to process (optional).
- * @returns {Promise<Object>} - An object containing the created `legalBasis` and the optional `jobId` (which may be null).
- * @property {legalBasis} legalBasis - The created legal basis object.
- * @property {string|null} jobId - The job ID if a job was created, or `null` if no job was created.
- * @throws {ErrorUtils} - If an error occurs during the update validation or processing.
- */
-  static async updateById (legalBasisId, data, document) {
+   * Retrieves legal basis entries filtered by jurisdiction.
+   * @param {string} jurisdiction - The jurisdiction to filter by.
+   * @returns {Promise<Array<LegalBasis>>} - A list of legal basis entries.
+   * @throws {ErrorUtils} - If an error occurs during retrieval.
+   */
+  static async getByJurisdiction (jurisdiction) {
     try {
-      const parsedData = legalBasisSchema.parse({ ...data, document })
-      const existingLegalBasis = await LegalBasisRepository.findById(legalBasisId)
+      const legalBasis = await LegalBasisRepository.findByJurisdiction(
+        jurisdiction
+      )
+      if (!legalBasis) {
+        return []
+      }
+      const legalBases = await Promise.all(
+        legalBasis.map(async (legalBasis) => {
+          let documentUrl = null
+          if (legalBasis.url) {
+            documentUrl = await FileService.getFile(legalBasis.url)
+          }
+          let formattedLastReform = null
+          if (legalBasis.lastReform) {
+            formattedLastReform = format(
+              new Date(legalBasis.lastReform),
+              'dd-MM-yyyy',
+              { locale: es }
+            )
+          }
+          return {
+            id: legalBasis.id,
+            legal_name: legalBasis.legal_name,
+            subject: legalBasis.subject,
+            aspects: legalBasis.aspects,
+            classification: legalBasis.classification,
+            jurisdiction: legalBasis.jurisdiction,
+            state: legalBasis.state,
+            municipality: legalBasis.municipality,
+            last_reform: formattedLastReform,
+            abbreviation: legalBasis.abbreviation,
+            url: documentUrl,
+            fileKey: legalBasis.url
+          }
+        })
+      )
+      return legalBases
+    } catch (error) {
+      if (error instanceof ErrorUtils) {
+        throw error
+      }
+      throw new ErrorUtils(
+        500,
+        'Failed to retrieve legal basis records by jurisdiction'
+      )
+    }
+  }
+
+  /**
+   * Retrieves legal basis entries filtered by state.
+   * @param {string} state - The state to filter by.
+   * @returns {Promise<Array<LegalBasis>>} - A list of legal basis entries.
+   * @throws {ErrorUtils} - If an error occurs during retrieval.
+   */
+  static async getByState (state) {
+    try {
+      const legalBasis = await LegalBasisRepository.findByState(state)
+      if (!legalBasis) {
+        return []
+      }
+      const legalBases = await Promise.all(
+        legalBasis.map(async (legalBasis) => {
+          let documentUrl = null
+          if (legalBasis.url) {
+            documentUrl = await FileService.getFile(legalBasis.url)
+          }
+          let formattedLastReform = null
+          if (legalBasis.lastReform) {
+            formattedLastReform = format(
+              new Date(legalBasis.lastReform),
+              'dd-MM-yyyy',
+              { locale: es }
+            )
+          }
+          return {
+            id: legalBasis.id,
+            legal_name: legalBasis.legal_name,
+            subject: legalBasis.subject,
+            aspects: legalBasis.aspects,
+            classification: legalBasis.classification,
+            jurisdiction: legalBasis.jurisdiction,
+            state: legalBasis.state,
+            municipality: legalBasis.municipality,
+            last_reform: formattedLastReform,
+            abbreviation: legalBasis.abbreviation,
+            url: documentUrl,
+            fileKey: legalBasis.url
+          }
+        })
+      )
+
+      return legalBases
+    } catch (error) {
+      if (error instanceof ErrorUtils) {
+        throw error
+      }
+      throw new ErrorUtils(
+        500,
+        'Failed to retrieve legal basis records by state'
+      )
+    }
+  }
+
+  /**
+   * Retrieves legal basis entries filtered by state and optionally by municipalities.
+   * @param {string} state - The state to filter by.
+   * @param {Array<string>} [municipalities] - An array of municipalities to filter by (optional).
+   * @returns {Promise<Array<LegalBasis>>} - A list of legal basis entries.
+   * @throws {ErrorUtils} - If an error occurs during retrieval.
+   */
+  static async getByStateAndMunicipalities (state, municipalities = []) {
+    try {
+      const legalBasis =
+        await LegalBasisRepository.findByStateAndMunicipalities(
+          state,
+          municipalities
+        )
+      if (!legalBasis) {
+        return []
+      }
+      const legalBases = await Promise.all(
+        legalBasis.map(async (legalBasis) => {
+          let documentUrl = null
+          if (legalBasis.url) {
+            documentUrl = await FileService.getFile(legalBasis.url)
+          }
+          let formattedLastReform = null
+          if (legalBasis.lastReform) {
+            formattedLastReform = format(
+              new Date(legalBasis.lastReform),
+              'dd-MM-yyyy',
+              { locale: es }
+            )
+          }
+          return {
+            id: legalBasis.id,
+            legal_name: legalBasis.legal_name,
+            subject: legalBasis.subject,
+            aspects: legalBasis.aspects,
+            classification: legalBasis.classification,
+            jurisdiction: legalBasis.jurisdiction,
+            state: legalBasis.state,
+            municipality: legalBasis.municipality,
+            last_reform: formattedLastReform,
+            abbreviation: legalBasis.abbreviation,
+            url: documentUrl,
+            fileKey: legalBasis.url
+          }
+        })
+      )
+
+      return legalBases
+    } catch (error) {
+      if (error instanceof ErrorUtils) {
+        throw error
+      }
+      throw new ErrorUtils(
+        500,
+        'Failed to retrieve legal basis records by state and municipalities'
+      )
+    }
+  }
+
+  /**
+   * Retrieves legal basis entries filtered by a specific subject.
+   * @param {number} subjectId - The subject ID to filter by.
+   * @returns {Promise<Array<LegalBasis>>} - A list of legal basis entries.
+   * @throws {ErrorUtils} - If an error occurs during retrieval.
+   */
+  static async getBySubject (subjectId) {
+    try {
+      const subject = await SubjectsRepository.findById(subjectId)
+      if (!subject) {
+        throw new ErrorUtils(404, 'Subject not found')
+      }
+      const legalBasis = await LegalBasisRepository.findBySubject(subjectId)
+      if (!legalBasis) {
+        return []
+      }
+      const legalBases = await Promise.all(
+        legalBasis.map(async (legalBasis) => {
+          let documentUrl = null
+          if (legalBasis.url) {
+            documentUrl = await FileService.getFile(legalBasis.url)
+          }
+          let formattedLastReform = null
+          if (legalBasis.lastReform) {
+            formattedLastReform = format(
+              new Date(legalBasis.lastReform),
+              'dd-MM-yyyy',
+              { locale: es }
+            )
+          }
+          return {
+            id: legalBasis.id,
+            legal_name: legalBasis.legal_name,
+            subject: legalBasis.subject,
+            aspects: legalBasis.aspects,
+            classification: legalBasis.classification,
+            jurisdiction: legalBasis.jurisdiction,
+            state: legalBasis.state,
+            municipality: legalBasis.municipality,
+            last_reform: formattedLastReform,
+            abbreviation: legalBasis.abbreviation,
+            url: documentUrl,
+            fileKey: legalBasis.url
+          }
+        })
+      )
+      return legalBases
+    } catch (error) {
+      if (error instanceof ErrorUtils) {
+        throw error
+      }
+      throw new ErrorUtils(
+        500,
+        'Failed to retrieve legal basis records by subject'
+      )
+    }
+  }
+
+  /**
+   * Retrieves legal basis entries filtered by a specific subject and optionally by aspects.
+   * @param {number} subjectId - The subject ID to filter by.
+   * @param {Array<number>} [aspectIds] - Optional array of aspect IDs to further filter by.
+   * @returns {Promise<Array<LegalBasis>>} - A list of legal basis entries.
+   * @throws {ErrorUtils} - If an error occurs during retrieval.
+   */
+  static async getBySubjectAndAspects (subjectId, aspectIds = []) {
+    try {
+      const subject = await SubjectsRepository.findById(subjectId)
+      if (!subject) {
+        throw new ErrorUtils(404, 'Subject not found')
+      }
+      const existingAspects = await AspectsRepository.findByIds(aspectIds)
+      if (existingAspects.length !== aspectIds.length) {
+        const notFoundIds = aspectIds.filter(
+          (id) => !existingAspects.some((aspect) => aspect.id === id)
+        )
+        throw new ErrorUtils(404, 'Aspects not found for IDs', { notFoundIds })
+      }
+      const legalBasis = await LegalBasisRepository.findBySubjectAndAspects(
+        subjectId,
+        aspectIds
+      )
+      if (!legalBasis) {
+        return []
+      }
+      const legalBases = await Promise.all(
+        legalBasis.map(async (legalBasis) => {
+          let documentUrl = null
+          if (legalBasis.url) {
+            documentUrl = await FileService.getFile(legalBasis.url)
+          }
+          let formattedLastReform = null
+          if (legalBasis.lastReform) {
+            formattedLastReform = format(
+              new Date(legalBasis.lastReform),
+              'dd-MM-yyyy',
+              { locale: es }
+            )
+          }
+          return {
+            id: legalBasis.id,
+            legal_name: legalBasis.legal_name,
+            subject: legalBasis.subject,
+            aspects: legalBasis.aspects,
+            classification: legalBasis.classification,
+            jurisdiction: legalBasis.jurisdiction,
+            state: legalBasis.state,
+            municipality: legalBasis.municipality,
+            last_reform: formattedLastReform,
+            abbreviation: legalBasis.abbreviation,
+            url: documentUrl,
+            fileKey: legalBasis.url
+          }
+        })
+      )
+
+      return legalBases
+    } catch (error) {
+      if (error instanceof ErrorUtils) {
+        throw error
+      }
+      throw new ErrorUtils(
+        500,
+        'Failed to retrieve legal basis records by subject and aspects'
+      )
+    }
+  }
+
+  /**
+   * Retrieves legal basis entries filtered by a date range for the last_reform.
+   * Both 'from' and 'to' are optional. If provided, they can be in 'YYYY-MM-DD' or 'DD-MM-YYYY'.
+   *
+   * @function getByLastReform
+   * @param {Date} [from] - Start date.
+   * @param {Date} [to] - End date.
+   * @returns {Promise<Array<LegalBasis>>} - A list of legal basis entries filtered by the date range.
+   * @throws {ErrorUtils} - If an error occurs during retrieval or date validation.
+   */
+  static async getByLastReform (from, to) {
+    try {
+      const legalBasis = await LegalBasisRepository.findByLastReform(from, to)
+      if (!legalBasis) {
+        return []
+      }
+      const legalBases = await Promise.all(
+        legalBasis.map(async (legalBasis) => {
+          let documentUrl = null
+          if (legalBasis.url) {
+            documentUrl = await FileService.getFile(legalBasis.url)
+          }
+          let formattedLastReform = null
+          if (legalBasis.lastReform) {
+            formattedLastReform = format(
+              new Date(legalBasis.lastReform),
+              'dd-MM-yyyy',
+              { locale: es }
+            )
+          }
+          return {
+            id: legalBasis.id,
+            legal_name: legalBasis.legal_name,
+            subject: legalBasis.subject,
+            aspects: legalBasis.aspects,
+            classification: legalBasis.classification,
+            jurisdiction: legalBasis.jurisdiction,
+            state: legalBasis.state,
+            municipality: legalBasis.municipality,
+            last_reform: formattedLastReform,
+            abbreviation: legalBasis.abbreviation,
+            url: documentUrl,
+            fileKey: legalBasis.url
+          }
+        })
+      )
+
+      return legalBases
+    } catch (error) {
+      if (error instanceof ErrorUtils) {
+        throw error
+      }
+      throw new ErrorUtils(
+        500,
+        'Failed to retrieve legal basis records by last reform range'
+      )
+    }
+  }
+
+  /**
+   * Updates an existing legal basis entry.
+   *
+   * @param {number} legalBasisId - The ID of the legal basis to update.
+   * @param {Object} legalBasis - Parameters for creating a legal basis.
+   * @param {string} legalBasis.legalName - The legal basis name.
+   * @param {string} legalBasis.abbreviation - The legal basis abbreviation.
+   * @param {string} legalBasis.subjectId - The legal basis subject ID.
+   * @param {string} legalBasis.aspectsIds - The aspects Ids associated with the legal basis.
+   * @param {string} legalBasis.classification - The legal basis classification.
+   * @param {string} legalBasis.jurisdiction - The jurisdiction of the legal basis.
+   * @param {string} [legalBasis.state] - The state associated with the legal basis.
+   * @param {string} [legalBasis.municipality] - The municipality associated with the legal basis.
+   * @param {string} legalBasis.lastReform - The date of the last reform.
+   * @param {string} legalBasis.extractArticles - Indicator whether to extract articles from the document.
+   * @param {string} [legalBasis.removeDocument] - The flag to determine whether the document should be deleted.
+   * @param {Express.Multer.File} [document] - The document to process (optional).
+   * @returns {Promise<UpdatedLegalBasis>} A promise that resolves with an object containing the jobId (if an extraction job is initiated) and the updated legal basis data.
+   * @throws {ErrorUtils} If an error occurs during validation or update processing.
+   */
+  static async updateById (legalBasisId, legalBasis, document) {
+    try {
+      const parsedData = legalBasisSchema.parse({ ...legalBasis, document })
+      const existingLegalBasis = await LegalBasisRepository.findById(
+        legalBasisId
+      )
       if (!existingLegalBasis) {
         throw new ErrorUtils(404, 'LegalBasis not found')
       }
-      const legalBasisExists = await LegalBasisRepository.existsByLegalNameExcludingId(parsedData.legalName, legalBasisId)
+      const legalBasisExists =
+        await LegalBasisRepository.existsByLegalNameExcludingId(
+          parsedData.legalName,
+          legalBasisId
+        )
       if (legalBasisExists) {
         throw new ErrorUtils(409, 'LegalBasis already exists')
       }
-      const subjectExists = await SubjectsRepository.findById(parsedData.subjectId)
+      const subjectExists = await SubjectsRepository.findById(
+        parsedData.subjectId
+      )
       if (!subjectExists) {
         throw new ErrorUtils(404, 'Subject not found')
       }
-      const validAspectIds = await AspectsRepository.findByIds(parsedData.aspectsIds)
+      const validAspectIds = await AspectsRepository.findByIds(
+        parsedData.aspectsIds
+      )
       if (validAspectIds.length !== parsedData.aspectsIds.length) {
-        const notFoundIds = parsedData.aspectsIds.filter(id => !validAspectIds.includes(id))
+        const notFoundIds = parsedData.aspectsIds.filter(
+          (id) => !validAspectIds.includes(id)
+        )
         throw new ErrorUtils(404, 'Aspects not found for IDs', { notFoundIds })
       }
       if (parsedData.removeDocument && document) {
-        throw new ErrorUtils(400, 'Cannot provide a document if removeDocument is true')
+        throw new ErrorUtils(
+          400,
+          'Cannot provide a document if removeDocument is true'
+        )
       }
-      const { hasPendingJobs } = await extractArticles.hasPendingJobs(legalBasisId)
+      const { hasPendingJobs } = await extractArticles.hasPendingJobs(
+        legalBasisId
+      )
       if (parsedData.removeDocument && hasPendingJobs) {
-        throw new ErrorUtils(409, 'The document cannot be removed because there are pending jobs for this Legal Basis')
+        throw new ErrorUtils(
+          409,
+          'The document cannot be removed because there are pending jobs for this Legal Basis'
+        )
       }
       if (hasPendingJobs && document) {
-        throw new ErrorUtils(409, 'A new document cannot be uploaded because there are pending jobs for this Legal Basis')
+        throw new ErrorUtils(
+          409,
+          'A new document cannot be uploaded because there are pending jobs for this Legal Basis'
+        )
       }
       if (parsedData.extractArticles) {
         if (!document && !existingLegalBasis.url) {
-          throw new ErrorUtils(400, 'A document must be provided if extractArticles is true')
+          throw new ErrorUtils(
+            400,
+            'A document must be provided if extractArticles is true'
+          )
         }
         if (hasPendingJobs) {
-          throw new ErrorUtils(409, 'Articles cannot be extracted because there is already a process that does so')
+          throw new ErrorUtils(
+            409,
+            'Articles cannot be extracted because there is already a process that does so'
+          )
         }
       }
       let documentKey = existingLegalBasis.url
@@ -708,7 +904,10 @@ class LegalBasisService {
         ...parsedData,
         url: documentKey
       }
-      const updatedLegalBasis = await LegalBasisRepository.update(legalBasisId, updatedLegalBasisData)
+      const updatedLegalBasis = await LegalBasisRepository.update(
+        legalBasisId,
+        updatedLegalBasisData
+      )
       if (!updatedLegalBasis) {
         throw new ErrorUtils(404, 'LegalBasis not found')
       }
@@ -717,12 +916,16 @@ class LegalBasisService {
       if (documentKey) {
         documentUrl = await FileService.getFile(documentKey)
         if (parsedData.extractArticles) {
-          const job = await articlesQueue.add({ legalBasisId: updatedLegalBasis.id })
+          const job = await articlesQueue.add({
+            legalBasisId: updatedLegalBasis.id
+          })
           jobId = job.id
         }
       }
       const formattedLastReform = updatedLegalBasis.lastReform
-        ? format(new Date(updatedLegalBasis.lastReform), 'dd-MM-yyyy', { locale: es })
+        ? format(new Date(updatedLegalBasis.lastReform), 'dd-MM-yyyy', {
+          locale: es
+        })
         : null
       const { lastReform, ...legalBases } = updatedLegalBasis
       return {
@@ -736,7 +939,7 @@ class LegalBasisService {
       }
     } catch (error) {
       if (error instanceof z.ZodError) {
-        const validationErrors = error.errors.map(e => ({
+        const validationErrors = error.errors.map((e) => ({
           field: e.path[0],
           message: e.message
         }))
@@ -750,18 +953,20 @@ class LegalBasisService {
   }
 
   /**
- * Deletes a Legal base by ID.
- * @param {number} legalBasisId - The ID of the Legal base to delete.
- * @returns {Promise<Object>} - Success message if Legal base was deleted.
- * @throws {ErrorUtils} - If an error occurs during deletion.
- */
+   * Deletes a Legal base by ID.
+   * @param {number} legalBasisId - The ID of the Legal base to delete.
+   * @returns {Promise<{ success: boolean }>} - An object indicating the deletion was successful.
+   * @throws {ErrorUtils} - If an error occurs during deletion.
+   */
   static async deleteById (legalBasisId) {
     try {
       const legalBasis = await LegalBasisRepository.findById(legalBasisId)
       if (!legalBasis) {
         throw new ErrorUtils(404, 'LegalBasis not found')
       }
-      const { hasPendingJobs } = await extractArticles.hasPendingJobs(legalBasisId)
+      const { hasPendingJobs } = await extractArticles.hasPendingJobs(
+        legalBasisId
+      )
       if (hasPendingJobs) {
         throw new ErrorUtils(409, 'Cannot delete LegalBasis with pending jobs')
       }
@@ -782,23 +987,27 @@ class LegalBasisService {
   }
 
   /**
- * Deletes multiple Legal Basis records by their IDs.
- * @param {Array<number>} legalBasisIds - An array of IDs of the Legal Basis records to delete.
- * @returns {Promise<Object>} - Success message if Legal Basis records were deleted.
- * @throws {ErrorUtils} - If any error occurs during the deletion process.
- */
+   * Deletes multiple Legal Basis records by their IDs.
+   * @param {Array<number>} legalBasisIds - An array of IDs of the Legal Basis records to delete.
+   * @returns {Promise<{ success: boolean }>} - An object indicating the deletion was successful.
+   * @throws {ErrorUtils} - If any error occurs during the deletion process.
+   */
   static async deleteBatch (legalBasisIds) {
     try {
       const legalBasis = await LegalBasisRepository.findByIds(legalBasisIds)
       if (legalBasis.length !== legalBasisIds.length) {
         const notFoundIds = legalBasisIds.filter(
-          id => !legalBasis.some(legalBase => legalBase.id === id)
+          (id) => !legalBasis.some((legalBase) => legalBase.id === id)
         )
-        throw new ErrorUtils(404, 'LegalBasis not found for IDs', { notFoundIds })
+        throw new ErrorUtils(404, 'LegalBasis not found for IDs', {
+          notFoundIds
+        })
       }
       const pendingJobs = []
       for (const legalBase of legalBasis) {
-        const { hasPendingJobs } = await extractArticles.hasPendingJobs(legalBase.id)
+        const { hasPendingJobs } = await extractArticles.hasPendingJobs(
+          legalBase.id
+        )
         if (hasPendingJobs) {
           pendingJobs.push({
             id: legalBase.id,
@@ -807,16 +1016,22 @@ class LegalBasisService {
         }
       }
       if (pendingJobs.length > 0) {
-        throw new ErrorUtils(409, 'Cannot delete Legal Bases with pending jobs', {
-          LegalBases: pendingJobs
-        })
+        throw new ErrorUtils(
+          409,
+          'Cannot delete Legal Bases with pending jobs',
+          {
+            LegalBases: pendingJobs
+          }
+        )
       }
       for (const legalBase of legalBasis) {
         if (legalBase.url) {
           await FileService.deleteFile(legalBase.url)
         }
       }
-      const LegalBasisDeleted = await LegalBasisRepository.deleteBatch(legalBasisIds)
+      const LegalBasisDeleted = await LegalBasisRepository.deleteBatch(
+        legalBasisIds
+      )
       if (!LegalBasisDeleted) {
         throw new ErrorUtils(500, 'LegalBasis not found')
       }
@@ -825,23 +1040,26 @@ class LegalBasisService {
       if (error instanceof ErrorUtils) {
         throw error
       }
-      throw new ErrorUtils(500, 'Unexpected error during batch Legal Basis deletion')
+      throw new ErrorUtils(
+        500,
+        'Unexpected error during batch Legal Basis deletion'
+      )
     }
   }
 
   /**
- * Retrieves all unique classification values.
- * @function getClassifications
- * @returns {Promise<Array<{classification_name: string}>>}
- * @throws {ErrorUtils} -  If any error occurs during the fetching process.
- */
+   * Retrieves all unique classification values.
+   * @function getClassifications
+   * @returns {Promise<Array<{classification_name: string}>>}
+   * @throws {ErrorUtils} -  If any error occurs during the fetching process.
+   */
   static async getClassifications () {
     try {
       const classifications = await LegalBasisRepository.findClassifications()
       if (!classifications) {
         return []
       }
-      const classificationsData = classifications.map(classification => ({
+      const classificationsData = classifications.map((classification) => ({
         classification_name: classification
       }))
       return classificationsData
@@ -849,23 +1067,26 @@ class LegalBasisService {
       if (error instanceof ErrorUtils) {
         throw error
       }
-      throw new ErrorUtils(500, 'Unexpected error during fetching distinct classifications')
+      throw new ErrorUtils(
+        500,
+        'Unexpected error during fetching distinct classifications'
+      )
     }
-  };
+  }
 
   /**
- * Retrieves all unique jurisdiction values.
- * @function getJurisdictions
- * @returns {Promise<Array<{jurisdiction_name: string}>>}
- * @throws {ErrorUtils} - If any error occurs during the fetching process.
- */
+   * Retrieves all unique jurisdiction values.
+   * @function getJurisdictions
+   * @returns {Promise<Array<{jurisdiction_name: string}>>}
+   * @throws {ErrorUtils} - If any error occurs during the fetching process.
+   */
   static async getJurisdictions () {
     try {
       const jurisdictions = await LegalBasisRepository.findJurisdictions()
       if (!jurisdictions) {
         return []
       }
-      const jurisdictionsData = jurisdictions.map(jurisdiction => ({
+      const jurisdictionsData = jurisdictions.map((jurisdiction) => ({
         jurisdiction_name: jurisdiction
       }))
       return jurisdictionsData
@@ -873,7 +1094,10 @@ class LegalBasisService {
       if (error instanceof ErrorUtils) {
         throw error
       }
-      throw new ErrorUtils(500, 'Unexpected error during fetching distinct jurisdictions')
+      throw new ErrorUtils(
+        500,
+        'Unexpected error during fetching distinct jurisdictions'
+      )
     }
   }
 }

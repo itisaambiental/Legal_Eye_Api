@@ -4,7 +4,6 @@ import { z } from 'zod'
  * Zod validation schema for a single article.
  * Ensures that the input data meets the requirements for inserting a single article.
  * This schema is used for validation on the backend.
- * @type {z.ZodSchema}
  */
 const singleArticleSchema = z.object({
   /**
@@ -39,7 +38,6 @@ const singleArticleSchema = z.object({
 /**
  * Zod validation schema for an array of articles.
  * Ensures that the array contains at least one article and that each article follows the singleArticleSchema.
- * @type {z.ZodSchema}
  */
 const articlesSchema = z
   .array(singleArticleSchema)
@@ -48,7 +46,6 @@ const articlesSchema = z
 /**
  * Simplified Zod schema for a single article.
  * This schema is designed for OpenAI models compatibility.
- * @type {z.ZodSchema}
  */
 const singleArticleModelSchema = z.object({
   /**

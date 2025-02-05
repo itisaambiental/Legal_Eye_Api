@@ -1,7 +1,7 @@
 import LegalBasisService from '../services/legalBasis/LegalBasis.service.js'
 import ErrorUtils from '../utils/Error.js'
 import UserService from '../services/users/User.service.js'
-import validateDate from '../schemas/dateValidation.js'
+import validateDate from '../utils/validateDate.js'
 
 /**
  * Controller for legal basis operations.

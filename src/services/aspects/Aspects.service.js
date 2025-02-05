@@ -1,7 +1,7 @@
 import AspectsRepository from '../../repositories/Aspects.repository.js'
 import SubjectsRepository from '../../repositories/Subject.repository.js'
 import ErrorUtils from '../../utils/Error.js'
-import aspectSchema from '../../schemas/aspectValidation.js'
+import aspectSchema from '../../schemas/aspect.schema.js'
 import { z } from 'zod'
 
 /**

@@ -122,7 +122,7 @@ class QueueService {
   /**
    * Maps jobs to a structured format for easier processing.
    * @param {Array<import('bull').Job>} jobs - Array of Bull job instances.
-   * @returns {Map<number, Object>} - Map of jobs keyed by their legalBasisId (or other unique ID).
+   * @returns {Map<number, import('bull').Job>} - Map of jobs keyed by their legalBasisId (or other unique ID).
    */
   static mapJobsById (jobs) {
     try {

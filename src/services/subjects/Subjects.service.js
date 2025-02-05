@@ -1,6 +1,6 @@
 import SubjectsRepository from '../../repositories/Subject.repository.js'
 import ErrorUtils from '../../utils/Error.js'
-import subjectSchema from '../../schemas/subjectValidation.js'
+import subjectSchema from '../../schemas/subject.schema.js'
 import { z } from 'zod'
 
 /**

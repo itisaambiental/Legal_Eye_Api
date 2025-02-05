@@ -3,7 +3,7 @@ import LegalBasisRepository from '../../repositories/LegalBasis.repository.js'
 import {
   singleArticleSchema,
   articlesSchema
-} from '../../schemas/articlesValidation.js'
+} from '../../schemas/article.schema.js'
 import ErrorUtils from '../../utils/Error.js'
 import { z } from 'zod'
 import { convert } from 'html-to-text'

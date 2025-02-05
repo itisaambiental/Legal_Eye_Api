@@ -1,6 +1,6 @@
 import ArticleExtractor from './ArticleExtractor.js'
 import openai from '../../../config/openapi.config.js'
-import { singleArticleModelSchema } from '../../../schemas/articlesValidation.js'
+import { singleArticleModelSchema } from '../../../schemas/article.schema.js'
 import { zodResponseFormat } from 'openai/helpers/zod'
 import { convert } from 'html-to-text'
 import ErrorUtils from '../../../utils/Error.js'

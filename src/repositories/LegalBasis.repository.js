@@ -10,21 +10,21 @@ import ErrorUtils from '../utils/Error.js'
 class LegalBasisRepository {
   /**
    * Creates a new legal basis record in the database and associates it with subjects and aspects.
-   * @param {Object} data - The data for the legal basis.
-   * @param {string} data.legalName - The name of the legal basis.
-   * @param {string} data.abbreviation - The abbreviation of the legal basis.
-   * @param {number} data.subjectId - The ID of the subject associated with the legal basis.
-   * @param {Array<number>} data.aspectsIds - The IDs of the aspects to associate with the legal basis.
-   * @param {string} data.classification - The classification of the legal basis.
-   * @param {string} data.jurisdiction - The jurisdiction of the legal basis.
-   * @param {string} [data.state] - The state associated with the legal basis.
-   * @param {string} [data.municipality] - The municipality associated with the legal basis.
-   * @param {Date} data.lastReform - The date of the last reform.
-   * @param {string} [data.url] - The URL of the legal basis document.
+   * @param {Object} legalBasis - The data for the legal basis.
+   * @param {string} legalBasis.legalName - The name of the legal basis.
+   * @param {string} legalBasis.abbreviation - The abbreviation of the legal basis.
+   * @param {number} legalBasis.subjectId - The ID of the subject associated with the legal basis.
+   * @param {Array<number>} legalBasis.aspectsIds - The IDs of the aspects to associate with the legal basis.
+   * @param {string} legalBasis.classification - The classification of the legal basis.
+   * @param {string} legalBasis.jurisdiction - The jurisdiction of the legal basis.
+   * @param {string} [legalBasis.state] - The state associated with the legal basis.
+   * @param {string} [legalBasis.municipality] - The municipality associated with the legal basis.
+   * @param {Date} legalBasis.lastReform - The date of the last reform.
+   * @param {string} [legalBasis.url] - The URL of the legal basis document.
    * @returns {Promise<LegalBasis>} - The new LegalBasis.
    * @throws {ErrorUtils} - If an error occurs during insertion.
    */
-  static async create (data) {
+  static async create (legalBasis) {
     const {
       legalName,
       abbreviation,
@@ -36,13 +36,12 @@ class LegalBasisRepository {
       municipality,
       lastReform,
       url
-    } = data
+    } = legalBasis
 
     const insertLegalBasisQuery = `
       INSERT INTO legal_basis (legal_name, abbreviation, classification, jurisdiction, state, municipality, last_reform, url, subject_id) 
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `
-
     try {
       const [result] = await pool.query(insertLegalBasisQuery, [
         legalName,
@@ -1151,21 +1150,21 @@ class LegalBasisRepository {
   /**
    * Updates a legal basis record in the database
    * @param {number} legalBasisId - The ID of the legal basis to update.
-   * @param {Object} data - The data to update for the legal basis.
-   * @param {string} [data.legalName] - The new name of the legal basis.
-   * @param {string} [data.abbreviation] - The new abbreviation of the legal basis.
-   * @param {number} [data.subjectId] - The new ID of the subject associated with the legal basis.
-   * @param {Array<number>} [data.aspectsIds] - The new IDs of the aspects to associate with the legal basis.
-   * @param {string} [data.classification] - The new classification of the legal basis.
-   * @param {string} [data.jurisdiction] - The new jurisdiction of the legal basis.
-   * @param {string} [data.state] - The new state associated with the legal basis.
-   * @param {string} [data.municipality] - The new municipality associated with the legal basis.
-   * @param {Date} [data.lastReform] - The new date of the last reform.
-   * @param {string} [data.url] - The new URL of the legal basis document.
+     * @param {Object} legalBasis - The data for the legal basis.
+   * @param {string} legalBasis.legalName - The name of the legal basis.
+   * @param {string} legalBasis.abbreviation - The abbreviation of the legal basis.
+   * @param {number} legalBasis.subjectId - The ID of the subject associated with the legal basis.
+   * @param {Array<number>} legalBasis.aspectsIds - The IDs of the aspects to associate with the legal basis.
+   * @param {string} legalBasis.classification - The classification of the legal basis.
+   * @param {string} legalBasis.jurisdiction - The jurisdiction of the legal basis.
+   * @param {string} [legalBasis.state] - The state associated with the legal basis.
+   * @param {string} [legalBasis.municipality] - The municipality associated with the legal basis.
+   * @param {Date} legalBasis.lastReform - The date of the last reform.
+   * @param {string} [legalBasis.url] - The URL of the legal basis document.
    * @returns {Promise<LegalBasis|null>} - The updated LegalBasis.
    * @throws {ErrorUtils} - If an error occurs during update.
    */
-  static async update (legalBasisId, data) {
+  static async update (legalBasisId, legalBasis) {
     const {
       legalName,
       abbreviation,
@@ -1177,7 +1176,7 @@ class LegalBasisRepository {
       municipality,
       lastReform,
       url
-    } = data
+    } = legalBasis
     const updateLegalBasisQuery = `
     UPDATE legal_basis
     SET 
