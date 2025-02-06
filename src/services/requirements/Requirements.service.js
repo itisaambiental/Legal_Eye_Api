@@ -254,6 +254,398 @@ class RequirementService {
       )
     }
   }
+
+  /**
+   * Retrieves requirements by a flexible full-text match in their mandatory description.
+   * @param {string} description - The description or part of the description to search for.
+   * @returns {Promise<Array<Requirement>>} - A list of requirements matching the description.
+   * @throws {ErrorUtils} - If an error occurs during retrieval.
+   */
+  static async getByMandatoryDescription (description) {
+    try {
+      const requirements =
+        await RequirementRepository.findByMandatoryDescription(description)
+      if (!requirements) {
+        return []
+      }
+      return requirements
+    } catch (error) {
+      if (error instanceof ErrorUtils) {
+        throw error
+      }
+      throw new ErrorUtils(
+        500,
+        'Failed to retrieve requirements by mandatory description'
+      )
+    }
+  }
+
+  /**
+   * Retrieves requirements by a flexible full-text match in their complementary description.
+   * @param {string} description - The description or part of the description to search for.
+   * @returns {Promise<Array<Requirement>>} - A list of requirements matching the complementary description.
+   * @throws {ErrorUtils} - If an error occurs during retrieval.
+   */
+  static async getByComplementaryDescription (description) {
+    try {
+      const requirements =
+        await RequirementRepository.findByComplementaryDescription(description)
+      if (!requirements) {
+        return []
+      }
+      return requirements
+    } catch (error) {
+      if (error instanceof ErrorUtils) {
+        throw error
+      }
+      throw new ErrorUtils(
+        500,
+        'Failed to retrieve requirements by complementary description'
+      )
+    }
+  }
+
+  /**
+   * Retrieves requirements by a flexible full-text match in their mandatory sentences.
+   * @param {string} sentence - The sentence or part of the sentence to search for.
+   * @returns {Promise<Array<Requirement>>} - A list of requirements matching the mandatory sentence.
+   * @throws {ErrorUtils} - If an error occurs during retrieval.
+   */
+  static async getByMandatorySentences (sentence) {
+    try {
+      const requirements = await RequirementRepository.findByMandatorySentences(
+        sentence
+      )
+      if (!requirements) {
+        return []
+      }
+      return requirements
+    } catch (error) {
+      if (error instanceof ErrorUtils) {
+        throw error
+      }
+      throw new ErrorUtils(
+        500,
+        'Failed to retrieve requirements by mandatory sentences'
+      )
+    }
+  }
+
+  /**
+   * Retrieves requirements by a flexible full-text match in their complementary sentences.
+   * @param {string} sentence - The sentence or part of the sentence to search for.
+   * @returns {Promise<Array<Requirement>>} - A list of requirements matching the complementary sentence.
+   * @throws {ErrorUtils} - If an error occurs during retrieval.
+   */
+  static async getByComplementarySentences (sentence) {
+    try {
+      const requirements =
+        await RequirementRepository.findByComplementarySentences(sentence)
+      if (!requirements) {
+        return []
+      }
+      return requirements
+    } catch (error) {
+      if (error instanceof ErrorUtils) {
+        throw error
+      }
+      throw new ErrorUtils(
+        500,
+        'Failed to retrieve requirements by complementary sentences'
+      )
+    }
+  }
+
+  /**
+   * Retrieves requirements by a flexible full-text match in their mandatory keywords.
+   * @param {string} keyword - The keyword or part of the keyword to search for.
+   * @returns {Promise<Array<Requirement>>} - A list of requirements matching the mandatory keyword.
+   * @throws {ErrorUtils} - If an error occurs during retrieval.
+   */
+  static async getByMandatoryKeywords (keyword) {
+    try {
+      const requirements = await RequirementRepository.findByMandatoryKeywords(
+        keyword
+      )
+      if (!requirements) {
+        return []
+      }
+      return requirements
+    } catch (error) {
+      if (error instanceof ErrorUtils) {
+        throw error
+      }
+      throw new ErrorUtils(
+        500,
+        'Failed to retrieve requirements by mandatory keywords'
+      )
+    }
+  }
+
+  /**
+   * Retrieves requirements by a flexible full-text match in their complementary keywords.
+   * @param {string} keyword - The keyword or part of the keyword to search for.
+   * @returns {Promise<Array<Requirement>>} - A list of requirements matching the complementary keyword.
+   * @throws {ErrorUtils} - If an error occurs during retrieval.
+   */
+  static async getByComplementaryKeywords (keyword) {
+    try {
+      const requirements =
+        await RequirementRepository.findByComplementaryKeywords(keyword)
+      if (!requirements) {
+        return []
+      }
+      return requirements
+    } catch (error) {
+      if (error instanceof ErrorUtils) {
+        throw error
+      }
+      throw new ErrorUtils(
+        500,
+        'Failed to retrieve requirements by complementary keywords'
+      )
+    }
+  }
+
+  /**
+   * Retrieves requirements filtered by a specific condition.
+   * @param {string} condition - The condition type ('Crítica', 'Operativa', 'Recomendación', 'Pendiente') to filter by.
+   * @returns {Promise<Array<Requirement>>} - A list of Requirement instances matching the condition.
+   * @throws {ErrorUtils} - If an error occurs during retrieval.
+   */
+  static async getByCondition (condition) {
+    try {
+      const requirements = await RequirementRepository.findByCondition(
+        condition
+      )
+      if (!requirements) {
+        return []
+      }
+      return requirements
+    } catch (error) {
+      if (error instanceof ErrorUtils) {
+        throw error
+      }
+      throw new ErrorUtils(500, 'Failed to retrieve requirements by condition')
+    }
+  }
+
+  /**
+   * Retrieves requirements filtered by a specific evidence type.
+   * @param {string} evidence - The evidence type ('Trámite', 'Registro', 'Específico', 'Documento') to filter by.
+   * @returns {Promise<Array<Requirement>>} - A list of Requirement instances matching the evidence type.
+   * @throws {ErrorUtils} - If an error occurs during retrieval.
+   */
+  static async getByEvidence (evidence) {
+    try {
+      const requirements = await RequirementRepository.findByEvidence(evidence)
+      if (!requirements) {
+        return []
+      }
+      return requirements
+    } catch (error) {
+      if (error instanceof ErrorUtils) {
+        throw error
+      }
+      throw new ErrorUtils(
+        500,
+        'Failed to retrieve requirements by evidence type'
+      )
+    }
+  }
+
+  /**
+   * Retrieves requirements filtered by a specific periodicity.
+   * @param {string} periodicity - The periodicity ('Anual', '2 años', 'Por evento', 'Única vez') to filter by.
+   * @returns {Promise<Array<Requirement>>} - A list of Requirement instances matching the periodicity.
+   * @throws {ErrorUtils} - If an error occurs during retrieval.
+   */
+  static async getByPeriodicity (periodicity) {
+    try {
+      const requirements = await RequirementRepository.findByPeriodicity(
+        periodicity
+      )
+      if (!requirements) {
+        return []
+      }
+      return requirements
+    } catch (error) {
+      if (error instanceof ErrorUtils) {
+        throw error
+      }
+      throw new ErrorUtils(
+        500,
+        'Failed to retrieve requirements by periodicity'
+      )
+    }
+  }
+
+  /**
+   * Retrieves requirements filtered by a specific requirement type.
+   * @param {string} requirementType - The requirement type to filter by.
+   * @returns {Promise<Array<Requirement>>} - A list of Requirement instances matching the requirement type.
+   * @throws {ErrorUtils} - If an error occurs during retrieval.
+   */
+  static async getByRequirementType (requirementType) {
+    try {
+      const requirements = await RequirementRepository.findByRequirementType(
+        requirementType
+      )
+      if (!requirements) {
+        return []
+      }
+      return requirements
+    } catch (error) {
+      if (error instanceof ErrorUtils) {
+        throw error
+      }
+      throw new ErrorUtils(
+        500,
+        'Failed to retrieve requirements by requirement type'
+      )
+    }
+  }
+
+  /**
+   * Retrieves requirements filtered by a specific jurisdiction.
+   * @param {string} jurisdiction - The jurisdiction to filter by.
+   * @returns {Promise<Array<Requirement>>} - A list of Requirement instances matching the jurisdiction.
+   * @throws {ErrorUtils} - If an error occurs during retrieval.
+   */
+  static async getByJurisdiction (jurisdiction) {
+    try {
+      const requirements = await RequirementRepository.findByJurisdiction(
+        jurisdiction
+      )
+      if (!requirements) {
+        return []
+      }
+      return requirements
+    } catch (error) {
+      if (error instanceof ErrorUtils) {
+        throw error
+      }
+      throw new ErrorUtils(
+        500,
+        'Failed to retrieve requirements by jurisdiction'
+      )
+    }
+  }
+
+  /**
+   * Retrieves requirements filtered by a specific state.
+   * @param {string} state - The state to filter by.
+   * @returns {Promise<Array<Requirement>>} - A list of Requirement instances matching the state.
+   * @throws {ErrorUtils} - If an error occurs during retrieval.
+   */
+  static async getByState (state) {
+    try {
+      const requirements = await RequirementRepository.findByState(state)
+      if (!requirements) {
+        return []
+      }
+      return requirements
+    } catch (error) {
+      if (error instanceof ErrorUtils) {
+        throw error
+      }
+      throw new ErrorUtils(500, 'Failed to retrieve requirements by state')
+    }
+  }
+
+  /**
+   * Retrieves requirements filtered by state and optionally by municipalities.
+   * @param {string} state - The state to filter by.
+   * @param {Array<string>} [municipalities] - An array of municipalities to filter by (optional).
+   * @returns {Promise<Array<Requirement>>} - A list of Requirement instances matching the filters.
+   * @throws {ErrorUtils} - If an error occurs during retrieval.
+   */
+  static async getByStateAndMunicipalities (state, municipalities = []) {
+    try {
+      const requirements = await RequirementRepository.findByStateAndMunicipalities(state, municipalities)
+      if (!requirements) {
+        return []
+      }
+      return requirements
+    } catch (error) {
+      if (error instanceof ErrorUtils) {
+        throw error
+      }
+      throw new ErrorUtils(500, 'Failed to retrieve requirements by state and municipalities')
+    }
+  }
+
+  /**
+   * Updates an existing requirement by its ID.
+   *
+   * @param {number} requirementId - The ID of the requirement to update.
+   * @param {Object} requirement - Parameters for updating a requirement.
+   * @param {number} [requirement.subjectId] - The updated subject ID (optional).
+   * @param {number} [requirement.aspectId] - The updated aspect ID (optional).
+   * @param {string} [requirement.requirementNumber] - The updated requirement number (optional).
+   * @param {string} [requirement.requirementName] - The updated requirement name (optional).
+   * @param {string} [requirement.mandatoryDescription] - The updated mandatory description (optional).
+   * @param {string} [requirement.complementaryDescription] - The updated complementary description (optional).
+   * @param {string} [requirement.mandatorySentences] - The updated mandatory legal sentences (optional).
+   * @param {string} [requirement.complementarySentences] - The updated complementary legal sentences (optional).
+   * @param {string} [requirement.mandatoryKeywords] - The updated mandatory keywords (optional).
+   * @param {string} [requirement.complementaryKeywords] - The updated complementary keywords (optional).
+   * @param {string} [requirement.condition] - The updated condition type (optional).
+   * @param {string} [requirement.evidence] - The updated evidence type (optional).
+   * @param {string} [requirement.periodicity] - The updated periodicity (optional).
+   * @param {string} [requirement.requirementType] - The updated requirement type (optional).
+   * @param {string} [requirement.jurisdiction] - The updated jurisdiction (optional).
+   * @param {string} [requirement.state] - The updated state (optional).
+   * @param {string} [requirement.municipality] - The updated municipality (optional).
+   * @returns {Promise<Requirement>} - The updated requirement.
+   * @throws {ErrorUtils} - If an error occurs during validation or update.
+   */
+  static async updateById (requirementId, requirement) {
+    try {
+      const parsedRequirement = requirementSchema.parse(requirement)
+      const existingRequirement = await RequirementRepository.findById(requirementId)
+      if (!existingRequirement) {
+        throw new ErrorUtils(404, 'Requirement not found')
+      }
+      if (parsedRequirement.subjectId) {
+        const subjectExists = await SubjectsRepository.findById(parsedRequirement.subjectId)
+        if (!subjectExists) {
+          throw new ErrorUtils(404, 'Subject not found')
+        }
+      }
+      if (parsedRequirement.aspectId) {
+        const aspectExists = await AspectsRepository.findById(parsedRequirement.aspectId)
+        if (!aspectExists) {
+          throw new ErrorUtils(404, 'Aspect not found')
+        }
+      }
+      if (parsedRequirement.requirementName) {
+        const nameExists = await RequirementRepository.existsByNameExcludingId(
+          parsedRequirement.requirementName,
+          requirementId
+        )
+        if (nameExists) {
+          throw new ErrorUtils(409, 'Requirement name already exists')
+        }
+      }
+      const updatedRequirement = await RequirementRepository.update(requirementId, parsedRequirement)
+      return {
+        requirement: updatedRequirement
+      }
+    } catch (error) {
+      if (error instanceof ErrorUtils) {
+        throw error
+      }
+      if (error instanceof z.ZodError) {
+        const validationErrors = error.errors.map((e) => ({
+          field: e.path[0],
+          message: e.message
+        }))
+        throw new ErrorUtils(400, 'Validation failed', validationErrors)
+      }
+      throw new ErrorUtils(500, 'Unexpected error during requirement update')
+    }
+  }
 }
 
 export default RequirementService

@@ -1607,26 +1607,129 @@ class RequirementRepository {
       throw new ErrorUtils(500, 'Error retrieving requirements by state and municipalities')
     }
   }
+
+  /**
+   * Checks if a requirement with the given name exists, excluding the specified requirement ID.
+   * @param {string} requirementName - The requirement name to check for uniqueness.
+   * @param {number} requirementId - The requirement ID to exclude from the check.
+   * @returns {Promise<boolean>} - True if a requirement with the same name exists (excluding the given ID), false otherwise.
+   * @throws {ErrorUtils} - If an error occurs during the check.
+   */
+  static async existsByNameExcludingId (requirementName, requirementId) {
+    const query = `
+        SELECT 1 
+        FROM requirements 
+        WHERE requirement_name = ? AND id != ?
+        LIMIT 1
+      `
+    try {
+      const [rows] = await pool.query(query, [requirementName, requirementId])
+      return rows.length > 0
+    } catch (error) {
+      console.error('Error checking requirement name uniqueness:', error.message)
+      throw new ErrorUtils(500, 'Error checking requirement name uniqueness')
+    }
+  }
+
+  /**
+   * Updates a requirement by its ID using IFNULL to preserve existing values.
+   * @param {number} requirementId - The ID of the requirement to update.
+   * @param {Object} requirement - The requirement object containing updated values.
+   * @param {number} [requirement.subjectId] - The updated subject ID (optional).
+   * @param {number} [requirement.aspectId] - The updated aspect ID (optional).
+   * @param {string} [requirement.requirementNumber] - The updated requirement number (optional).
+   * @param {string} [requirement.requirementName] - The updated requirement name (optional).
+   * @param {string} [requirement.mandatoryDescription] - The updated mandatory description (optional).
+   * @param {string} [requirement.complementaryDescription] - The updated complementary description (optional).
+   * @param {string} [requirement.mandatorySentences] - The updated mandatory sentences (optional).
+   * @param {string} [requirement.complementarySentences] - The updated complementary sentences (optional).
+   * @param {string} [requirement.mandatoryKeywords] - The updated mandatory keywords (optional).
+   * @param {string} [requirement.complementaryKeywords] - The updated complementary keywords (optional).
+   * @param {string} [requirement.condition] - The updated condition type (optional).
+   * @param {string} [requirement.evidence] - The updated evidence type (optional).
+   * @param {string} [requirement.periodicity] - The updated periodicity (optional).
+   * @param {string} [requirement.requirementType] - The updated requirement type (optional).
+   * @param {string} [requirement.jurisdiction] - The updated jurisdiction (optional).
+   * @param {string} [requirement.state] - The updated state (optional).
+   * @param {string} [requirement.municipality] - The updated municipality (optional).
+   * @returns {Promise<Requirement>} - Returns the updated Requirement.
+   * @throws {ErrorUtils} - If an error occurs during the update.
+   */
+  static async update (requirementId, requirement) {
+    const {
+      subjectId,
+      aspectId,
+      requirementNumber,
+      requirementName,
+      mandatoryDescription,
+      complementaryDescription,
+      mandatorySentences,
+      complementarySentences,
+      mandatoryKeywords,
+      complementaryKeywords,
+      condition,
+      evidence,
+      periodicity,
+      requirementType,
+      jurisdiction,
+      state,
+      municipality
+    } = requirement
+
+    const updateRequirementQuery = `
+        UPDATE requirements SET
+          subject_id = IFNULL(?, subject_id),
+          aspect_id = IFNULL(?, aspect_id),
+          requirement_number = IFNULL(?, requirement_number),
+          requirement_name = IFNULL(?, requirement_name),
+          mandatory_description = IFNULL(?, mandatory_description),
+          complementary_description = IFNULL(?, complementary_description),
+          mandatory_sentences = IFNULL(?, mandatory_sentences),
+          complementary_sentences = IFNULL(?, complementary_sentences),
+          mandatory_keywords = IFNULL(?, mandatory_keywords),
+          complementary_keywords = IFNULL(?, complementary_keywords),
+          condition = IFNULL(?, condition),
+          evidence = IFNULL(?, evidence),
+          periodicity = IFNULL(?, periodicity),
+          requirement_type = IFNULL(?, requirement_type),
+          jurisdiction = IFNULL(?, jurisdiction),
+          state = IFNULL(?, state),
+          municipality = IFNULL(?, municipality)
+        WHERE id = ?
+      `
+
+    try {
+      await pool.query(updateRequirementQuery, [
+        subjectId,
+        aspectId,
+        requirementNumber,
+        requirementName,
+        mandatoryDescription,
+        complementaryDescription,
+        mandatorySentences,
+        complementarySentences,
+        mandatoryKeywords,
+        complementaryKeywords,
+        condition,
+        evidence,
+        periodicity,
+        requirementType,
+        jurisdiction,
+        state,
+        municipality,
+        requirementId
+      ])
+
+      const requirement = await this.findById(requirementId)
+      return requirement
+    } catch (error) {
+      console.error('Error updating requirement:', error.message)
+      throw new ErrorUtils(500, 'Error updating requirement in the database')
+    }
+  }
 }
 
 export default RequirementRepository
-
-//   /**
-//    * Checks if a requirement with the given name exists, excluding the specified requirement ID.
-//    * @param {string} requirementName - The requirement name to check for uniqueness.
-//    * @param {number} requirementId - The requirement ID to exclude from the check.
-//    * @returns {Promise<boolean>} - True if a requirement with the same name exists (excluding the given ID), false otherwise.
-//    */
-//   static async existsByNameExcludingId(requirementName, requirementId) {}
-
-//   /**
-//    * Updates a requirement by its ID using IFNULL to preserve existing values.
-//    * @param {number} id - The ID of the requirement to update.
-//    * @param {Object} updates - Object containing the fields to update.
-//    * @returns {Promise<boolean|Requirement>} - Returns true if the update is successful, false otherwise.
-//    * @throws {ErrorUtils} - If an error occurs during update.
-//    */
-//   static async updateById(id, updates) {}
 
 //   /**
 //    * Deletes a requirement by its ID.

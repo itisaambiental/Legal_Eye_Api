@@ -1432,12 +1432,9 @@ describe('Get Legal Basis By Subject And Aspects', () => {
 
   test('Should successfully retrieve legal basis by subjectId and aspects', async () => {
     const response = await api
-      .get('/api/legalBasis/aspects/subject')
+      .get(`/api/legalBasis/subject/${createdLegalBasis.subject.subject_id}/aspects`)
       .set('Authorization', `Bearer ${tokenAdmin}`)
-      .query({
-        subjectId: createdLegalBasis.subject.subject_id,
-        aspectIds: [createdAspectIds]
-      })
+      .query({ aspectIds: createdAspectIds })
       .expect(200)
       .expect('Content-Type', /application\/json/)
 
@@ -1471,12 +1468,9 @@ describe('Get Legal Basis By Subject And Aspects', () => {
   test('Should return 404 if the subjectId does not exist', async () => {
     const nonExistentSubjectId = '-1'
     const response = await api
-      .get('/api/legalBasis/aspects/subject')
+      .get(`/api/legalBasis/subject/${nonExistentSubjectId}/aspects`)
       .set('Authorization', `Bearer ${tokenAdmin}`)
-      .query({
-        subjectId: nonExistentSubjectId,
-        aspectIds: [createdAspectIds]
-      })
+      .query({ aspectIds: createdAspectIds })
       .expect(404)
       .expect('Content-Type', /application\/json/)
 
@@ -1486,12 +1480,9 @@ describe('Get Legal Basis By Subject And Aspects', () => {
   test('Should return 404 if aspects do not exist', async () => {
     const invalidAspectIds = [-1, -2]
     const response = await api
-      .get('/api/legalBasis/aspects/subject')
+      .get(`/api/legalBasis/subject/${createdLegalBasis.subject.subject_id}/aspects`)
       .set('Authorization', `Bearer ${tokenAdmin}`)
-      .query({
-        subjectId: createdLegalBasis.subject.subject_id,
-        aspectIds: [invalidAspectIds]
-      })
+      .query({ aspectIds: invalidAspectIds })
       .expect(404)
       .expect('Content-Type', /application\/json/)
 
@@ -1505,11 +1496,8 @@ describe('Get Legal Basis By Subject And Aspects', () => {
 
   test('Should return 401 if user is unauthorized', async () => {
     const response = await api
-      .get('/api/legalBasis/aspects/subject')
-      .query({
-        subjectId: createdLegalBasis.subject.subject_id,
-        aspectIds: [createdAspectIds]
-      })
+      .get(`/api/legalBasis/subject/${createdLegalBasis.subject.subject_id}/aspects`)
+      .query({ aspectIds: createdAspectIds })
       .expect(401)
       .expect('Content-Type', /application\/json/)
 

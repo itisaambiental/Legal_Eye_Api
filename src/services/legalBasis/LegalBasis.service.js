@@ -86,7 +86,7 @@ class LegalBasisService {
         ...legalBasis,
         document
       })
-      const legalBasisExists = await LegalBasisRepository.existsByLegalName(
+      const legalBasisExists = await LegalBasisRepository.existsByName(
         parsedlegalBasis.legalName
       )
       if (legalBasisExists) {
@@ -826,7 +826,7 @@ class LegalBasisService {
         throw new ErrorUtils(404, 'LegalBasis not found')
       }
       const legalBasisExists =
-        await LegalBasisRepository.existsByLegalNameExcludingId(
+        await LegalBasisRepository.existsByNameExcludingId(
           parsedlegalBasis.legalName,
           legalBasisId
         )

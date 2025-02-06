@@ -311,16 +311,17 @@ export const getLegalBasisBySubject = async (req, res) => {
  */
 export const getLegalBasisBySubjectAndAspects = async (req, res) => {
   const { userId } = req
-  let { subjectId, aspectIds } = req.query
+  const { subjectId } = req.params
+  let { aspectIds } = req.query
   try {
     const isAuthorized = await UserService.userExists(userId)
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
     aspectIds = Array.isArray(aspectIds)
-      ? aspectIds.map(id => Number(id)).filter(id => !isNaN(id))
+      ? aspectIds.map(Number).filter(Number.isInteger)
       : typeof aspectIds === 'string'
-        ? aspectIds.split(',').map(id => Number(id)).filter(id => !isNaN(id))
+        ? aspectIds.split(',').map(Number).filter(Number.isInteger)
         : []
     const legalBasis = await LegalBasisService.getBySubjectAndAspects(subjectId, aspectIds)
     return res.status(200).json({ legalBasis })

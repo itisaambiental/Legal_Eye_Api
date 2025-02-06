@@ -159,7 +159,7 @@ class LegalBasisRepository {
  * @returns {Promise<boolean>} - True if a legal basis with the same name exists, false otherwise.
  * @throws {ErrorUtils} - If an error occurs during the check.
  */
-  static async existsByLegalName (legalName) {
+  static async existsByName (legalName) {
     const query = `
     SELECT 1 
     FROM legal_basis 
@@ -1133,7 +1133,7 @@ class LegalBasisRepository {
    * @param {number} legalBasisId - The legal Basis ID to exclude from the check.
    * @returns {Promise<boolean>} - True if a legal basis with the same legal name (excluding the given ID) exists, false otherwise.
    */
-  static async existsByLegalNameExcludingId (legalName, legalBasisId) {
+  static async existsByNameExcludingId (legalName, legalBasisId) {
     const query = `
     SELECT 1 
     FROM legal_basis 
