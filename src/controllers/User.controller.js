@@ -423,11 +423,16 @@ export const verifyCode = async (req, res) => {
 export const verifyToken = async (req, res) => {
   const { token } = req.body
   if (!token) {
-    return res.status(400).send({ error: 'Token is required' })
+    return res.status(200).send({ valid: false })
   }
   try {
-    jsonwebtoken.verify(token, JWT_SECRET)
-    return res.status(200).send({ valid: true })
+    const decodedToken = jsonwebtoken.verify(token, JWT_SECRET)
+    if (!decodedToken?.userForToken?.id) {
+      return res.status(200).send({ valid: false })
+    }
+    const userId = decodedToken.userForToken.id
+    const userExists = await UserService.userExists(userId)
+    return res.status(200).send({ valid: userExists })
   } catch (error) {
     return res.status(200).send({ valid: false })
   }
