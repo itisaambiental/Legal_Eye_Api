@@ -7,7 +7,8 @@
 import { app } from './app.js'
 import { PORT } from './config/variables.config.js'
 import { initializeAdmin } from './config/init.config.js'
-const serverPort = PORT || 3000
+
+const serverPort = Number(PORT || 3000)
 
 /**
  * Variable to hold the server instance, initialized only if not in test environment.

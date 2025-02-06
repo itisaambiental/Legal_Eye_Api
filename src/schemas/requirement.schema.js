@@ -7,6 +7,29 @@ import { z } from 'zod'
 const requirementSchema = z
   .object({
     /**
+     * The subject associated with the requirement.
+     * Must be a string that can be converted to a valid number.
+     */
+    subjectId: z
+      .string()
+      .refine(
+        (val) => !isNaN(Number(val)),
+        'The subjectId must be a valid number'
+      )
+      .transform((val) => Number(val)),
+
+    /**
+    * The aspect associated with the requirement.
+    * Must be a string that can be converted to a valid number.
+    */
+    aspectId: z
+      .string()
+      .refine(
+        (val) => !isNaN(Number(val)),
+        'The aspectId must be a valid number'
+      )
+      .transform((val) => Number(val)),
+    /**
      * The unique number identifying the requirement.
      */
     requirementNumber: z
@@ -22,30 +45,6 @@ const requirementSchema = z
       .string()
       .min(1, 'The requirement name is required')
       .max(255, 'The requirement name cannot exceed 255 characters'),
-
-    /**
-     * The subject associated with the requirement.
-     * Must be a string that can be converted to a valid number.
-     */
-    subjectId: z
-      .string()
-      .refine(
-        (val) => !isNaN(Number(val)),
-        'The subjectId must be a valid number'
-      )
-      .transform((val) => Number(val)),
-
-    /**
-     * The aspect associated with the requirement.
-     * Must be a string that can be converted to a valid number.
-     */
-    aspectId: z
-      .string()
-      .refine(
-        (val) => !isNaN(Number(val)),
-        'The aspectId must be a valid number'
-      )
-      .transform((val) => Number(val)),
 
     mandatoryDescription: z
       .string()

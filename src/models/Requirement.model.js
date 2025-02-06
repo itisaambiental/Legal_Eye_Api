@@ -23,7 +23,6 @@ class Requirement {
      * @param {string} condition - The condition type ('Crítica', 'Operativa', 'Recomendación', 'Pendiente').
      * @param {string} evidence - The type of evidence ('Tramite', 'Registro', 'Específico', 'Documento').
      * @param {string} periodicity - The periodicity of the requirement ('Anual', '2 años', 'Por evento', 'Única vez').
-     * @param {string} specificDocument - A specific document related to the requirement.
      * @param {string} requirementType - The type of requirement (e.g., 'Identificación Estatal', 'Requerimiento Local').
      * @param {string} jurisdiction - The jurisdiction of the requirement ('Estatal', 'Federal', 'Local').
      * @param {string} state - The state associated with the requirement (if applicable).
@@ -44,7 +43,6 @@ class Requirement {
     condition,
     evidence,
     periodicity,
-    specificDocument,
     requirementType,
     jurisdiction,
     state,
@@ -64,7 +62,6 @@ class Requirement {
     this.condition = condition
     this.evidence = evidence
     this.periodicity = periodicity
-    this.specific_document = specificDocument
     this.requirement_type = requirementType
     this.jurisdiction = jurisdiction
     this.state = state

@@ -71,7 +71,6 @@ articlesQueue.process(CONCURRENCY, async (job, done) => {
     }
     done(null)
   } catch (error) {
-    console.log(error)
     if (error instanceof ErrorUtils) {
       return done(error)
     }

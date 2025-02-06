@@ -1,28 +1,32 @@
-// emailWorker.js
-
 import emailQueue from '../queues/emailQueue.js'
 import EmailService from '../services/email/Email.service.js'
+import ErrorUtils from '../utils/Error.js'
 
 /**
  * Worker for processing email jobs from the email queue.
  * Listens to the email queue and sends emails using the EmailService.
  * Handles successful job completion and error cases.
- * @type {process}
+ *
+ * @param {import('bull').Job} job - The job object containing data to be processed.
+ * @param {import('bull').ProcessCallbackFunction} done - Callback function to signal job completion.
+ * @throws {ErrorUtils} - Throws an error if any step in the job processing fails.
  */
 emailQueue.process(async (job, done) => {
   try {
     /**
      * Destructure the job data to get email details.
-     * @param {Object} job.data - The job data containing email details.
-     * @param {string} job.data.to - Recipient's email address.
-     * @param {string} job.data.subject - Subject of the email.
-     * @param {string} job.data.text - Content of the email.
+     * @type {import('../services/email/Email.service.js').EmailData}
      */
-    const { to, subject, text } = job.data
-    await EmailService.sendEmail({ to, subject, text })
+    const { to, subject, text, html } = job.data
+    await EmailService.sendEmail({ to, subject, text, html })
     done()
   } catch (error) {
-    done(error)
+    if (error instanceof ErrorUtils) {
+      return done(error)
+    }
+    return done(
+      new ErrorUtils(500, 'Unexpected error sending email')
+    )
   }
 })
 

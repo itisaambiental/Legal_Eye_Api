@@ -242,10 +242,13 @@ class LegalBasisRepository {
   /**
    * Retrieves multiple legal basis records by their IDs.
    * @param {Array<number>} legalBasisIds - An array of IDs of the legal bases to retrieve.
-   * @returns {Promise<LegalBasis>} - An array of legal basis records.
+   * @returns {Promise<LegalBasis[]>} - An array of legal basis records.
    * @throws {ErrorUtils} - If an error occurs during retrieval.
    */
   static async findByIds (legalBasisIds) {
+    if (legalBasisIds.length === 0) {
+      return []
+    }
     const query = `
     SELECT 
       legal_basis.id, 
@@ -993,7 +996,6 @@ class LegalBasisRepository {
           })
         }
       })
-
       const legalBasisArray = Array.from(legalBasisMap.values())
       return legalBasisArray.map(
         (legalBasis) =>

@@ -141,10 +141,9 @@ CREATE TABLE article (
     description LONGTEXT,
     plain_description LONGTEXT,
     article_order INT,
-    FOREIGN KEY (legal_basis_id) REFERENCES legal_basis(id) ON DELETE CASCADE
+    FOREIGN KEY (legal_basis_id) REFERENCES legal_basis(id) ON DELETE CASCADE,
+    FULLTEXT(plain_description)
 );
-
-ALTER TABLE article ADD FULLTEXT(plain_description);
 
 -- Table: legal_basis_subject_aspect
 -- This table establishes a many-to-many relationship between 'legal_basis', 'subjects', and 'aspects'.
@@ -193,37 +192,75 @@ CREATE TABLE requirements (
     municipality VARCHAR(255),
     UNIQUE (subject_id, aspect_id, requirement_name),
     FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE CASCADE,
-    FOREIGN KEY (aspect_id) REFERENCES aspects(id) ON DELETE CASCADE
+    FOREIGN KEY (aspect_id) REFERENCES aspects(id) ON DELETE CASCADE,
+    FULLTEXT(mandatory_description),
+    FULLTEXT(complementary_description),
+    FULLTEXT(mandatory_sentences),
+    FULLTEXT(complementary_sentences),
+    FULLTEXT(mandatory_keywords),
+    FULLTEXT(complementary_keywords)
 );
 
--- Table: analysis
--- Stores records of compliance analyses conducted based on legal requirements.
-CREATE TABLE analysis (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    requirement_id INT NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (requirement_id) REFERENCES requirements(id) ON DELETE CASCADE
-);
 
--- Table: analysis_legal_basis
--- Links each analysis to the legal bases used in the evaluation.
-CREATE TABLE analysis_legal_basis (
-    analysis_id INT NOT NULL,
-    legal_basis_id INT NOT NULL,
-    PRIMARY KEY (analysis_id, legal_basis_id),
-    FOREIGN KEY (analysis_id) REFERENCES analysis(id) ON DELETE CASCADE,
-    FOREIGN KEY (legal_basis_id) REFERENCES legal_basis(id) ON DELETE CASCADE
-);
 
--- Table: analysis_articles
--- Records the articles evaluated in an analysis, marking them as obligatory or complementary.
-CREATE TABLE analysis_articles (
-    analysis_id INT NOT NULL,
-    legal_basis_id INT NOT NULL,
-    article_id INT NOT NULL,
-    classification ENUM('Obligatory', 'Complementary') NOT NULL,
-    PRIMARY KEY (analysis_id, legal_basis_id, article_id),
-    FOREIGN KEY (analysis_id) REFERENCES analysis(id) ON DELETE CASCADE,
-    FOREIGN KEY (legal_basis_id) REFERENCES legal_basis(id) ON DELETE CASCADE,
-    FOREIGN KEY (article_id) REFERENCES article(id) ON DELETE CASCADE
-);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+-- -- Table: analysis
+-- -- Stores records of compliance analyses conducted based on legal requirements.
+-- CREATE TABLE analysis (
+--     id INT AUTO_INCREMENT PRIMARY KEY,
+--     requirement_id INT NOT NULL,
+--     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+--     FOREIGN KEY (requirement_id) REFERENCES requirements(id) ON DELETE CASCADE
+-- );
+
+-- -- Table: analysis_legal_basis
+-- -- Links each analysis to the legal bases used in the evaluation.
+-- CREATE TABLE analysis_legal_basis (
+--     analysis_id INT NOT NULL,
+--     legal_basis_id INT NOT NULL,
+--     PRIMARY KEY (analysis_id, legal_basis_id),
+--     FOREIGN KEY (analysis_id) REFERENCES analysis(id) ON DELETE CASCADE,
+--     FOREIGN KEY (legal_basis_id) REFERENCES legal_basis(id) ON DELETE CASCADE
+-- );
+
+-- -- Table: analysis_articles
+-- -- Records the articles evaluated in an analysis, marking them as obligatory or complementary.
+-- CREATE TABLE analysis_articles (
+--     analysis_id INT NOT NULL,
+--     legal_basis_id INT NOT NULL,
+--     article_id INT NOT NULL,
+--     classification ENUM('Obligatory', 'Complementary') NOT NULL,
+--     PRIMARY KEY (analysis_id, legal_basis_id, article_id),
+--     FOREIGN KEY (analysis_id) REFERENCES analysis(id) ON DELETE CASCADE,
+--     FOREIGN KEY (legal_basis_id) REFERENCES legal_basis(id) ON DELETE CASCADE,
+--     FOREIGN KEY (article_id) REFERENCES article(id) ON DELETE CASCADE
+-- );
