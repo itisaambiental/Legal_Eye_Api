@@ -176,6 +176,28 @@ class LegalBasisRepository {
   }
 
   /**
+ * Checks if a legal basis exists with the given abbreviation.
+ * @param {string} abbreviation - The abbreviation to check for existence.
+ * @returns {Promise<boolean>} - True if a legal basis with the same abbreviation exists, false otherwise.
+ * @throws {ErrorUtils} - If an error occurs during the check.
+ */
+  static async existsByAbbreviation (abbreviation) {
+    const query = `
+    SELECT 1 
+    FROM legal_basis 
+    WHERE abbreviation = ?
+    LIMIT 1
+  `
+    try {
+      const [rows] = await pool.query(query, [abbreviation])
+      return rows.length > 0
+    } catch (error) {
+      console.error('Error checking if abbreviation exists:', error.message)
+      throw new ErrorUtils(500, 'Error checking if abbreviation exists')
+    }
+  }
+
+  /**
    * Retrieves a legal basis record by its ID.
    * @param {number} legalBasisId - The ID of the legal basis to retrieve.
    * @returns {Promise<LegalBasis|null>} - The legal basis record or null if not found.
@@ -1146,6 +1168,28 @@ class LegalBasisRepository {
     } catch (error) {
       console.error('Error checking if legal basis exists:', error.message)
       throw new ErrorUtils(500, 'Error checking if legal basis exists')
+    }
+  }
+
+  /**
+ * Finds a legal basis by abbreviation, excluding the given legalBasisId.
+ * @param {string} abbreviation - The abbreviation to check for uniqueness.
+ * @param {number} legalBasisId - The legal basis ID to exclude from the check.
+ * @returns {Promise<boolean>} - True if a legal basis with the same abbreviation (excluding the given ID) exists, false otherwise.
+ */
+  static async existsByAbbreviationExcludingId (abbreviation, legalBasisId) {
+    const query = `
+    SELECT 1 
+    FROM legal_basis 
+    WHERE abbreviation = ? AND id != ?
+    LIMIT 1
+  `
+    try {
+      const [rows] = await pool.query(query, [abbreviation, legalBasisId])
+      return rows.length > 0
+    } catch (error) {
+      console.error('Error checking if legal basis abbreviation exists:', error.message)
+      throw new ErrorUtils(500, 'Error checking if legal basis abbreviation exists')
     }
   }
 

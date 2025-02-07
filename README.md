@@ -73,6 +73,7 @@ A continuación se detalla la estructura del proyecto:
    PORT=                       # Puerto en el que correrá la aplicación (ejemplo: 3000)
    JWT_SECRET=                 # Llave secreta para generar y verificar tokens JWT
    JWT_EXPIRATION=             # Tiempo de expiración de los tokens JWT (ejemplo: 7d para 7 días)
+   APP_URL=                    # URL de la aplicación frontend.
 
    # Base de Datos
    DB_PORT=                    # Puerto de conexión a la base de datos

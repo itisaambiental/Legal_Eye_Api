@@ -17,7 +17,18 @@ import validateDate from '../utils/validateDate.js'
  */
 export const createLegalBasis = async (req, res) => {
   const { userId } = req
-  const { legalName, abbreviation, subjectId, aspectsIds, classification, jurisdiction, state, municipality, lastReform, extractArticles } = req.body
+  const {
+    legalName,
+    abbreviation,
+    subjectId,
+    aspectsIds,
+    classification,
+    jurisdiction,
+    state,
+    municipality,
+    lastReform,
+    extractArticles
+  } = req.body
   const document = req.file
   try {
     const isAuthorized = await UserService.userExists(userId)
@@ -25,7 +36,18 @@ export const createLegalBasis = async (req, res) => {
       return res.status(403).json({ message: 'Unauthorized' })
     }
     const { jobId, legalBasis } = await LegalBasisService.create(
-      { legalName, abbreviation, subjectId, aspectsIds, classification, jurisdiction, state, municipality, lastReform, extractArticles },
+      {
+        legalName,
+        abbreviation,
+        subjectId,
+        aspectsIds,
+        classification,
+        jurisdiction,
+        state,
+        municipality,
+        lastReform,
+        extractArticles
+      },
       document
     )
     return res.status(201).json({ jobId, legalBasis })
@@ -166,7 +188,9 @@ export const getLegalBasisByClassification = async (req, res) => {
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-    const legalBasis = await LegalBasisService.getByClassification(classification)
+    const legalBasis = await LegalBasisService.getByClassification(
+      classification
+    )
     return res.status(200).json({ legalBasis })
   } catch (error) {
     if (error instanceof ErrorUtils) {
@@ -257,11 +281,19 @@ export const getLegalBasisByStateAndMunicipalities = async (req, res) => {
       return res.status(403).json({ message: 'Unauthorized' })
     }
     municipalities = Array.isArray(municipalities)
-      ? municipalities.map(municipality => String(municipality).trim()).filter(municipality => municipality.length > 0)
+      ? municipalities
+        .map((municipality) => String(municipality).trim())
+        .filter((municipality) => municipality.length > 0)
       : typeof municipalities === 'string'
-        ? municipalities.split(',').map(municipality => String(municipality).trim()).filter(municipality => municipality.length > 0)
+        ? municipalities
+          .split(',')
+          .map((municipality) => String(municipality).trim())
+          .filter((municipality) => municipality.length > 0)
         : []
-    const legalBasis = await LegalBasisService.getByStateAndMunicipalities(state, municipalities)
+    const legalBasis = await LegalBasisService.getByStateAndMunicipalities(
+      state,
+      municipalities
+    )
     return res.status(200).json({ legalBasis })
   } catch (error) {
     if (error instanceof ErrorUtils) {
@@ -323,7 +355,10 @@ export const getLegalBasisBySubjectAndAspects = async (req, res) => {
       : typeof aspectIds === 'string'
         ? aspectIds.split(',').map(Number).filter(Number.isInteger)
         : []
-    const legalBasis = await LegalBasisService.getBySubjectAndAspects(subjectId, aspectIds)
+    const legalBasis = await LegalBasisService.getBySubjectAndAspects(
+      subjectId,
+      aspectIds
+    )
     return res.status(200).json({ legalBasis })
   } catch (error) {
     if (error instanceof ErrorUtils) {
@@ -349,18 +384,32 @@ export const getLegalBasisByLastReform = async (req, res) => {
   const errors = []
   if (!from && !to) {
     errors.push(
-      { field: 'from', message: 'At least one of "from" or "to" must be provided' },
-      { field: 'to', message: 'At least one of "from" or "to" must be provided' }
+      {
+        field: 'from',
+        message: 'At least one of "from" or "to" must be provided'
+      },
+      {
+        field: 'to',
+        message: 'At least one of "from" or "to" must be provided'
+      }
     )
   } else if (!from) {
-    errors.push({ field: 'from', message: 'The "from" date must be provided when "to" is specified' })
+    errors.push({
+      field: 'from',
+      message: 'The "from" date must be provided when "to" is specified'
+    })
   } else if (!to) {
-    errors.push({ field: 'to', message: 'The "to" date must be provided when "from" is specified' })
+    errors.push({
+      field: 'to',
+      message: 'The "to" date must be provided when "from" is specified'
+    })
   }
   if (errors.length > 0) {
     return res.status(400).json({ message: 'Validation failed', errors })
   }
-  const { date: parsedFrom, error: fromError } = from ? validateDate(from, 'from') : {}
+  const { date: parsedFrom, error: fromError } = from
+    ? validateDate(from, 'from')
+    : {}
   const { date: parsedTo, error: toError } = to ? validateDate(to, 'to') : {}
   if (fromError) errors.push(fromError)
   if (toError) errors.push(toError)
@@ -372,7 +421,10 @@ export const getLegalBasisByLastReform = async (req, res) => {
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-    const legalBasis = await LegalBasisService.getByLastReform(parsedFrom, parsedTo)
+    const legalBasis = await LegalBasisService.getByLastReform(
+      parsedFrom,
+      parsedTo
+    )
     return res.status(200).json({ legalBasis })
   } catch (error) {
     if (error instanceof ErrorUtils) {
@@ -394,7 +446,19 @@ export const getLegalBasisByLastReform = async (req, res) => {
 export const updateLegalBasis = async (req, res) => {
   const { id } = req.params
   const { userId } = req
-  const { legalName, abbreviation, subjectId, aspectsIds, classification, jurisdiction, state, municipality, lastReform, extractArticles, removeDocument } = req.body
+  const {
+    legalName,
+    abbreviation,
+    subjectId,
+    aspectsIds,
+    classification,
+    jurisdiction,
+    state,
+    municipality,
+    lastReform,
+    extractArticles,
+    removeDocument
+  } = req.body
   const document = req.file
   try {
     const isAuthorized = await UserService.userExists(userId)
@@ -403,7 +467,19 @@ export const updateLegalBasis = async (req, res) => {
     }
     const { jobId, legalBasis } = await LegalBasisService.updateById(
       id,
-      { legalName, abbreviation, subjectId, aspectsIds, classification, jurisdiction, state, municipality, lastReform, extractArticles, removeDocument },
+      {
+        legalName,
+        abbreviation,
+        subjectId,
+        aspectsIds,
+        classification,
+        jurisdiction,
+        state,
+        municipality,
+        lastReform,
+        extractArticles,
+        removeDocument
+      },
       document
     )
     return res.status(200).json({
@@ -463,7 +539,11 @@ export const deleteLegalBasis = async (req, res) => {
 export const deleteLegalBasisBatch = async (req, res) => {
   const { userId } = req
   const { legalBasisIds } = req.body
-  if (!legalBasisIds || !Array.isArray(legalBasisIds) || legalBasisIds.length === 0) {
+  if (
+    !legalBasisIds ||
+    !Array.isArray(legalBasisIds) ||
+    legalBasisIds.length === 0
+  ) {
     return res.status(400).json({
       message: 'Missing required fields: legalBasisIds'
     })

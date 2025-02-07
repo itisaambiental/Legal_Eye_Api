@@ -23,7 +23,11 @@ export const createArticle = async (req, res) => {
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-    const createdArticle = await ArticlesService.create(legalBasisId, { title, article, order })
+    const createdArticle = await ArticlesService.create(legalBasisId, {
+      title,
+      article,
+      order
+    })
     return res.status(201).json({ article: createdArticle })
   } catch (error) {
     if (error instanceof ErrorUtils) {
@@ -108,7 +112,10 @@ export const getArticlesByDescription = async (req, res) => {
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-    const articles = await ArticlesService.getByDescription(legalBasisId, description)
+    const articles = await ArticlesService.getByDescription(
+      legalBasisId,
+      description
+    )
     return res.status(200).json({ articles })
   } catch (error) {
     if (error instanceof ErrorUtils) {
@@ -165,7 +172,11 @@ export const updateArticle = async (req, res) => {
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-    const updatedArticle = await ArticlesService.updateById(id, { title, article, order })
+    const updatedArticle = await ArticlesService.updateById(id, {
+      title,
+      article,
+      order
+    })
     return res.status(200).json({ updatedArticle })
   } catch (error) {
     if (error instanceof ErrorUtils) {

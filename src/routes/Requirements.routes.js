@@ -12,7 +12,21 @@ import {
   getRequirementsByNumber,
   getRequirementsByName,
   getRequirementsBySubject,
-  getRequirementsBySubjectAndAspects
+  getRequirementsBySubjectAndAspects,
+  getRequirementsByMandatoryDescription,
+  getRequirementsByComplementaryDescription,
+  getRequirementsByMandatorySentences,
+  getRequirementsByComplementarySentences,
+  getRequirementsByMandatoryKeywords,
+  getRequirementsByComplementaryKeywords,
+  getRequirementsByCondition,
+  getRequirementsByEvidence,
+  getRequirementsByPeriodicity,
+  getRequirementsByRequirementType,
+  getRequirementsByJurisdiction,
+  getRequirementsByState,
+  getRequirementsByStateAndMunicipalities,
+  updateRequirement
 } from '../controllers/Requirements.controller.js'
 
 const router = Router()
@@ -96,5 +110,174 @@ router.get('/requirements/subject/:subjectId', UserExtractor, getRequirementsByS
  * @returns {Array<Object>} - A list of requirements matching the filters.
  */
 router.get('/requirements/subject/:subjectId/aspects', UserExtractor, getRequirementsBySubjectAndAspects)
+
+/**
+ * Route to retrieve requirements by their mandatory description.
+ * @method GET
+ * @path /requirements/search/mandatory-description
+ * @description Fetches requirements matching the given mandatory description.
+ *
+ * @param {string} description - The description or partial match.
+ * @middlewares UserExtractor - Middleware to ensure that the user is authorized and extracted from the request.
+ * @returns {Array<Object>} - A list of matching requirements.
+ */
+router.get('/requirements/search/mandatory-description', UserExtractor, getRequirementsByMandatoryDescription)
+
+/**
+ * Route to retrieve requirements by their complementary description.
+ * @method GET
+ * @path /requirements/search/complementary-description
+ * @description Fetches requirements matching the given complementary description.
+ *
+ * @param {string} description - The description or partial match.
+ * @middlewares UserExtractor - Middleware to ensure that the user is authorized and extracted from the request.
+ * @returns {Array<Object>} - A list of matching requirements.
+ */
+router.get('/requirements/search/complementary-description', UserExtractor, getRequirementsByComplementaryDescription)
+
+/**
+ * Route to retrieve requirements by their mandatory sentences.
+ * @method GET
+ * @path /requirements/search/mandatory-sentences
+ * @description Fetches requirements matching the given mandatory sentences.
+ *
+ * @param {string} sentence - The sentence or partial match.
+ * @middlewares UserExtractor - Middleware to ensure that the user is authorized and extracted from the request.
+ * @returns {Array<Object>} - A list of matching requirements.
+ */
+router.get('/requirements/search/mandatory-sentences', UserExtractor, getRequirementsByMandatorySentences)
+
+/**
+ * Route to retrieve requirements by their complementary sentences.
+ * @method GET
+ * @path /requirements/search/complementary-sentences
+ * @description Fetches requirements matching the given complementary sentences.
+ *
+ * @param {string} sentence - The sentence or partial match.
+ * @middlewares UserExtractor - Middleware to ensure that the user is authorized and extracted from the request.
+ * @returns {Array<Object>} - A list of matching requirements.
+ */
+router.get('/requirements/search/complementary-sentences', UserExtractor, getRequirementsByComplementarySentences)
+
+/**
+ * Route to retrieve requirements by their mandatory keywords.
+ * @method GET
+ * @path /requirements/search/mandatory-keywords
+ * @description Fetches requirements matching the given mandatory keywords.
+ *
+ * @param {string} keyword - The keyword or partial match.
+ * @middlewares UserExtractor - Middleware to ensure that the user is authorized and extracted from the request.
+ * @returns {Array<Object>} - A list of matching requirements.
+ */
+router.get('/requirements/search/mandatory-keywords', UserExtractor, getRequirementsByMandatoryKeywords)
+
+/**
+ * Route to retrieve requirements by their complementary keywords.
+ * @method GET
+ * @path /requirements/search/complementary-keywords
+ * @description Fetches requirements matching the given complementary keywords.
+ *
+ * @param {string} keyword - The keyword or partial match.
+ * @middlewares UserExtractor - Middleware to ensure that the user is authorized and extracted from the request.
+ * @returns {Array<Object>} - A list of matching requirements.
+ */
+router.get('/requirements/search/complementary-keywords', UserExtractor, getRequirementsByComplementaryKeywords)
+
+/**
+ * Route to retrieve requirements filtered by a specific condition.
+ * @method GET
+ * @path /requirements/search/condition
+ * @description Fetches requirements matching the specified condition type.
+ *
+ * @param {string} condition - The condition type ('Crítica', 'Operativa', 'Recomendación', 'Pendiente').
+ * @middlewares UserExtractor - Middleware to ensure that the user is authorized and extracted from the request.
+ * @returns {Array<Object>} - A list of requirements matching the condition.
+ */
+router.get('/requirements/search/condition', UserExtractor, getRequirementsByCondition)
+
+/**
+ * Route to retrieve requirements filtered by a specific evidence type.
+ * @method GET
+ * @path /requirements/search/evidence
+ * @description Fetches requirements matching the specified evidence type.
+ *
+ * @param {string} evidence - The evidence type ('Trámite', 'Registro', 'Específico', 'Documento').
+ * @middlewares UserExtractor - Middleware to ensure that the user is authorized and extracted from the request.
+ * @returns {Array<Object>} - A list of requirements matching the evidence type.
+ */
+router.get('/requirements/search/evidence', UserExtractor, getRequirementsByEvidence)
+
+/**
+ * Route to retrieve requirements filtered by a specific periodicity.
+ * @method GET
+ * @path /requirements/search/periodicity
+ * @description Fetches requirements matching the specified periodicity.
+ *
+ * @param {string} periodicity - The periodicity ('Anual', '2 años', 'Por evento', 'Única vez').
+ * @middlewares UserExtractor - Middleware to ensure that the user is authorized and extracted from the request.
+ * @returns {Array<Object>} - A list of requirements matching the periodicity.
+ */
+router.get('/requirements/search/periodicity', UserExtractor, getRequirementsByPeriodicity)
+
+/**
+ * Route to retrieve requirements filtered by a specific requirement type.
+ * @method GET
+ * @path /requirements/search/type
+ * @description Fetches requirements matching the specified requirement type.
+ *
+ * @param {string} requirementType - The type of requirement to filter by.
+ * @middlewares UserExtractor - Middleware to ensure that the user is authorized and extracted from the request.
+ * @returns {Array<Object>} - A list of requirements matching the requirement type.
+ */
+router.get('/requirements/search/type', UserExtractor, getRequirementsByRequirementType)
+
+/**
+ * Route to retrieve requirements filtered by a specific jurisdiction.
+ * @method GET
+ * @path /requirements/search/jurisdiction
+ * @description Fetches requirements matching the specified jurisdiction.
+ *
+ * @param {string} jurisdiction - The jurisdiction type to filter by.
+ * @middlewares UserExtractor - Middleware to ensure that the user is authorized and extracted from the request.
+ * @returns {Array<Object>} - A list of requirements matching the jurisdiction.
+ */
+router.get('/requirements/search/jurisdiction', UserExtractor, getRequirementsByJurisdiction)
+
+/**
+ * Route to retrieve requirements filtered by a specific state.
+ * @method GET
+ * @path /requirements/search/state
+ * @description Fetches requirements matching the specified state.
+ *
+ * @param {string} state - The state to filter by.
+ * @middlewares UserExtractor - Middleware to ensure that the user is authorized and extracted from the request.
+ * @returns {Array<Object>} - A list of requirements matching the state.
+ */
+router.get('/requirements/search/state', UserExtractor, getRequirementsByState)
+
+/**
+ * Route to retrieve requirements filtered by state and optionally by municipalities.
+ * @method GET
+ * @path /requirements/search/state/municipalities
+ * @description Fetches requirements matching the specified state and optionally filtered by municipalities.
+ *
+ * @param {string} state - The state to filter by.
+ * @param {Array<string>} [municipalities] - Optional comma-separated list of municipalities to filter by.
+ * @middlewares UserExtractor - Middleware to ensure that the user is authorized and extracted from the request.
+ * @returns {Array<Object>} - A list of requirements matching the filters.
+ */
+router.get('/requirements/search/state/municipalities', UserExtractor, getRequirementsByStateAndMunicipalities)
+
+/**
+ * Route to update an existing requirement by its ID.
+ * @method PATCH
+ * @path /requirements/:id
+ * @description Updates an existing requirement with the provided details.
+ *
+ * @param {string} id - The ID of the requirement to update.
+ * @middlewares UserExtractor - Middleware to ensure that the user is authorized and extracted from the request.
+ * @returns {Object} - The updated requirement data.
+ */
+router.patch('/requirements/:id', UserExtractor, updateRequirement)
 
 export default router

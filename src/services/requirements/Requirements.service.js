@@ -620,12 +620,12 @@ class RequirementService {
         }
       }
       if (parsedRequirement.requirementName) {
-        const nameExists = await RequirementRepository.existsByNameExcludingId(
+        const requirementExists = await RequirementRepository.existsByNameExcludingId(
           parsedRequirement.requirementName,
           requirementId
         )
-        if (nameExists) {
-          throw new ErrorUtils(409, 'Requirement name already exists')
+        if (requirementExists) {
+          throw new ErrorUtils(409, 'Requirement already exists')
         }
       }
       const updatedRequirement = await RequirementRepository.update(requirementId, parsedRequirement)

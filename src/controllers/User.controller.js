@@ -286,7 +286,10 @@ export const updateUserPicture = async (req, res) => {
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-    const profilePictureUrl = await UserService.updateUserPicture(id, profilePicture)
+    const profilePictureUrl = await UserService.updateUserPicture(
+      id,
+      profilePicture
+    )
     return res.status(200).json({ profilePictureUrl })
   } catch (error) {
     if (error instanceof ErrorUtils) {

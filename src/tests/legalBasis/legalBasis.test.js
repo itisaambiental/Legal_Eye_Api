@@ -178,6 +178,28 @@ describe('Create a legal base', () => {
 
     expect(response.body.message).toMatch(/LegalBasis already exists/i)
   })
+  test('Should return 409 if a LegalBasis with the same abbreviation already exists', async () => {
+    const LegalBasisData = generateLegalBasisData({
+      legalName: 'Unique Legal Basis',
+      abbreviation: 'DUPLICATE_ABBR',
+      subjectId: String(createdSubjectId),
+      aspectsIds: JSON.stringify(createdAspectIds)
+    })
+    await api
+      .post('/api/legalBasis')
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .send(LegalBasisData)
+      .expect(201)
+    const response = await api
+      .post('/api/legalBasis')
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .send({
+        ...LegalBasisData,
+        legalName: 'Another Legal Basis'
+      })
+      .expect(409)
+    expect(response.body.message).toMatch(/LegalBasis abbreviation already exists/i)
+  })
   test('Should return 404 if Subject ID is invalid', async () => {
     const LegalBasisData = generateLegalBasisData({
       subjectId: '-1',
@@ -1819,6 +1841,7 @@ describe('Get Legal Basis By Subject And Aspects', () => {
     test('Should return 409 when trying to update a legal basis with a duplicate name', async () => {
       const LegalBasisData = generateLegalBasisData({
         legalName: 'Duplicate Name',
+        abbreviation: 'Duplicate Abbreviation',
         subjectId: String(createdSubjectId),
         aspectsIds: JSON.stringify(createdAspectIds)
       })
@@ -1839,6 +1862,48 @@ describe('Get Legal Basis By Subject And Aspects', () => {
 
       expect(response.body.message).toMatch(/LegalBasis already exists/i)
     })
+    test('Should return 409 when trying to update a legal basis with a duplicate abbreviation', async () => {
+      const firstLegalBasisData = generateLegalBasisData({
+        legalName: 'First Legal Basis',
+        abbreviation: 'DUPLICATE_ABBR',
+        subjectId: String(createdSubjectId),
+        aspectsIds: JSON.stringify(createdAspectIds)
+      })
+
+      await api
+        .post('/api/legalBasis')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send(firstLegalBasisData)
+        .expect(201)
+        .expect('Content-Type', /application\/json/)
+
+      const secondLegalBasisData = generateLegalBasisData({
+        legalName: 'Second Legal Basis',
+        abbreviation: 'UNIQUE_ABBR',
+        subjectId: String(createdSubjectId),
+        aspectsIds: JSON.stringify(createdAspectIds)
+      })
+
+      const creationResponse = await api
+        .post('/api/legalBasis')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send(secondLegalBasisData)
+        .expect(201)
+        .expect('Content-Type', /application\/json/)
+      const createdLegalBasis = creationResponse.body.legalBasis
+      const response = await api
+        .patch(`/api/legalBasis/${createdLegalBasis.id}`)
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send({
+          ...secondLegalBasisData,
+          abbreviation: 'DUPLICATE_ABBR'
+        })
+        .expect(409)
+        .expect('Content-Type', /application\/json/)
+
+      expect(response.body.message).toMatch(/LegalBasis abbreviation already exists/i)
+    })
+
     test('Should return 404 if Subject ID is invalid', async () => {
       const updatedData = generateLegalBasisData({
         legalName: 'Updated Legal Name',
@@ -1992,6 +2057,7 @@ describe('Get Legal Basis By Subject And Aspects', () => {
 
       const legalBasisData = generateLegalBasisData({
         legalName: 'Legal Basis with Document',
+        abbreviation: 'Duplicate Abbreviation',
         subjectId: String(createdSubjectId),
         aspectsIds: JSON.stringify(createdAspectIds),
         extractArticles: 'true'
@@ -2020,6 +2086,7 @@ describe('Get Legal Basis By Subject And Aspects', () => {
 
       const updatedData = generateLegalBasisData({
         legalName: 'Updated Legal Name',
+        abbreviation: 'Update Abbreviation',
         subjectId: String(createdSubjectId),
         aspectsIds: JSON.stringify(createdAspectIds),
         extractArticles: 'true'

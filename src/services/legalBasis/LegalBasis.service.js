@@ -92,6 +92,12 @@ class LegalBasisService {
       if (legalBasisExists) {
         throw new ErrorUtils(409, 'LegalBasis already exists')
       }
+      const abbreviationExists = await LegalBasisRepository.existsByAbbreviation(
+        parsedlegalBasis.abbreviation
+      )
+      if (abbreviationExists) {
+        throw new ErrorUtils(409, 'LegalBasis abbreviation already exists')
+      }
       const subjectExists = await SubjectsRepository.findById(
         parsedlegalBasis.subjectId
       )
@@ -825,14 +831,21 @@ class LegalBasisService {
       if (!existingLegalBasis) {
         throw new ErrorUtils(404, 'LegalBasis not found')
       }
-      const legalBasisExists =
-        await LegalBasisRepository.existsByNameExcludingId(
-          parsedlegalBasis.legalName,
-          legalBasisId
-        )
+      const legalBasisExists = await LegalBasisRepository.existsByNameExcludingId(
+        parsedlegalBasis.legalName,
+        legalBasisId
+      )
       if (legalBasisExists) {
         throw new ErrorUtils(409, 'LegalBasis already exists')
       }
+      const abbreviationExists = await LegalBasisRepository.existsByAbbreviationExcludingId(
+        parsedlegalBasis.abbreviation,
+        legalBasisId
+      )
+      if (abbreviationExists) {
+        throw new ErrorUtils(409, 'LegalBasis abbreviation already exists')
+      }
+
       const subjectExists = await SubjectsRepository.findById(
         parsedlegalBasis.subjectId
       )

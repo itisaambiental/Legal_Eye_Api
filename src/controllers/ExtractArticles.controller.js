@@ -50,7 +50,8 @@ export const checkLegalBasisJobs = async (req, res) => {
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-    const { hasPendingJobs, jobId } = await extractArticlesService.hasPendingJobs(legalBasisId)
+    const { hasPendingJobs, jobId } =
+      await extractArticlesService.hasPendingJobs(legalBasisId)
     return res.status(200).json({ hasPendingJobs, jobId })
   } catch (error) {
     if (error instanceof ErrorUtils) {
