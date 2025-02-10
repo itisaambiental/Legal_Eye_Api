@@ -194,7 +194,7 @@ export const updateArticle = async (req, res) => {
  * @function deleteArticleById
  * @param {import('express').Request} req - Request object, expects { id } in req.params.
  * @param {import('express').Response} res - Response object.
- * @returns {Object} - A success message or an error message if an error occurs.
+ * @returns {void}
  */
 export const deleteArticle = async (req, res) => {
   const { userId } = req

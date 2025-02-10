@@ -175,7 +175,7 @@ CREATE TABLE requirements (
     complementary_sentences LONGTEXT NOT NULL,
     mandatory_keywords LONGTEXT NOT NULL,
     complementary_keywords LONGTEXT NOT NULL,
-    condition ENUM('Crítica', 'Operativa', 'Recomendación', 'Pendiente') NOT NULL,
+    requirement_condition ENUM('Crítica', 'Operativa', 'Recomendación', 'Pendiente') NOT NULL,
     evidence ENUM('Tramite', 'Registro', 'Específico', 'Documento') NOT NULL,
     periodicity ENUM('Anual', '2 años', 'Por evento', 'Única vez') NOT NULL,
     requirement_type ENUM(
@@ -197,11 +197,7 @@ CREATE TABLE requirements (
     FULLTEXT(complementary_description),
     FULLTEXT(mandatory_sentences),
     FULLTEXT(complementary_sentences),
-    FULLTEXT(mandatory_keywords),
-    FULLTEXT(complementary_keywords)
 );
-
-
 
 
 

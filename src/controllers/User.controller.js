@@ -307,6 +307,7 @@ export const updateUserPicture = async (req, res) => {
  * @function deleteUser
  * @param {import('express').Request} req - Request object, expects { id } in params.
  * @param {import('express').Response} res - Response object.
+ * @returns {void}
  */
 export const deleteUser = async (req, res) => {
   const { id } = req.params
@@ -338,6 +339,7 @@ export const deleteUser = async (req, res) => {
  * @function deleteUsersBatch
  * @param {import('express').Request} req - Request object, expects { userIds } in body.
  * @param {import('express').Response} res - Response object.
+ * @returns {void}
  */
 export const deleteUsersBatch = async (req, res) => {
   const { userIds } = req.body

@@ -19,9 +19,9 @@ const requirementSchema = z
       .transform((val) => Number(val)),
 
     /**
-    * The aspect associated with the requirement.
-    * Must be a string that can be converted to a valid number.
-    */
+     * The aspect associated with the requirement.
+     * Must be a string that can be converted to a valid number.
+     */
     aspectId: z
       .string()
       .refine(
@@ -45,6 +45,10 @@ const requirementSchema = z
       .string()
       .min(1, 'The requirement name is required')
       .max(255, 'The requirement name cannot exceed 255 characters'),
+
+    /**
+     * The mandatory description of the requirement.
+     */
 
     mandatoryDescription: z
       .string()

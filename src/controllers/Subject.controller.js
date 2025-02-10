@@ -152,7 +152,7 @@ export const updateSubject = async (req, res) => {
  * @function deleteSubject
  * @param {import('express').Request} req - Request object, expects { id } as URL parameter.
  * @param {import('express').Response} res - Response object.
- * @returns {Object} - The result of the deletion operation.
+ * @returns {void}
  */
 export const deleteSubject = async (req, res) => {
   const { userId } = req

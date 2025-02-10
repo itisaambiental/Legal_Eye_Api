@@ -26,7 +26,9 @@ import {
   getRequirementsByJurisdiction,
   getRequirementsByState,
   getRequirementsByStateAndMunicipalities,
-  updateRequirement
+  updateRequirement,
+  deleteRequirement,
+  deleteRequirementBatch
 } from '../controllers/Requirements.controller.js'
 
 const router = Router()
@@ -70,6 +72,7 @@ router.get('/requirements/:id', UserExtractor, getRequirementById)
  * @path /requirements/search/number
  * @description Fetches requirements matching the given number or partial match.
  *
+ * @param {string} number - The number to filter by.
  * @middlewares UserExtractor - Middleware to ensure that the user is authorized and extracted from the request.
  * @returns {Array<Object>} - A list of matching requirements.
  */
@@ -81,6 +84,7 @@ router.get('/requirements/search/number', UserExtractor, getRequirementsByNumber
  * @path /requirements/search/name
  * @description Fetches requirements matching the given name or partial match.
  *
+ * @param {string} name - The name to filter by.
  * @middlewares UserExtractor - Middleware to ensure that the user is authorized and extracted from the request.
  * @returns {Array<Object>} - A list of matching requirements.
  */
@@ -279,5 +283,29 @@ router.get('/requirements/search/state/municipalities', UserExtractor, getRequir
  * @returns {Object} - The updated requirement data.
  */
 router.patch('/requirements/:id', UserExtractor, updateRequirement)
+
+/**
+ * Route to delete a requirement by its ID.
+ * @method DELETE
+ * @path /requirements/:id
+ * @description Deletes a requirement by its ID.
+ *
+ * @param {string} id - The ID of the requirement to delete.
+ * @middlewares UserExtractor - Middleware to ensure that the user is authorized and extracted from the request.
+ * @returns {void} - No content if successful.
+ */
+router.delete('/requirements/:id', UserExtractor, deleteRequirement)
+
+/**
+ * Route to delete multiple requirements by their IDs.
+ * @method DELETE
+ * @path /requirements/batch
+ * @description Deletes multiple requirements by their IDs.
+ *
+ * @param {number[]} requirementIds - An array of requirement IDs to delete.
+ * @middlewares UserExtractor - Middleware to ensure that the user is authorized and extracted from the request.
+ * @returns {void} - No content if successful.
+ */
+router.delete('/requirements/batch', UserExtractor, deleteRequirementBatch)
 
 export default router

@@ -23,7 +23,6 @@ class RequirementService {
    * @property {string} condition - The condition type ('Crítica', 'Operativa', 'Recomendación', 'Pendiente').
    * @property {string} evidence - The type of evidence ('Tramite', 'Registro', 'Específico', 'Documento').
    * @property {string} periodicity - The periodicity of the requirement ('Anual', '2 años', 'Por evento', 'Única vez').
-   * @property {string} specificDocument - A specific document related to the requirement.
    * @property {string} requirementType - The type of requirement.
    * @property {string} jurisdiction - The jurisdiction ('Estatal', 'Federal', 'Local').
    * @property {string} [state] - The state associated with the requirement, if applicable.
@@ -53,7 +52,6 @@ class RequirementService {
    * @param {string} requirement.condition - The condition type.
    * @param {string} requirement.evidence - The evidence type.
    * @param {string} requirement.periodicity - The periodicity.
-   * @param {string} requirement.specificDocument - A related document.
    * @param {string} requirement.requirementType - The type of requirement.
    * @param {string} requirement.jurisdiction - The jurisdiction type.
    * @param {string} [requirement.state] - The state, if applicable.
@@ -76,19 +74,24 @@ class RequirementService {
       if (!aspectExists) {
         throw new ErrorUtils(404, 'Aspect not found')
       }
-      const requirementExists =
+      const requirementExistsByNumber =
+        await RequirementRepository.existsByRequirementNumber(
+          parsedRequirement.requirementNumber
+        )
+      if (requirementExistsByNumber) {
+        throw new ErrorUtils(409, 'Requirement number already exists')
+      }
+      const requirementExistsByName =
         await RequirementRepository.existsByRequirementName(
           parsedRequirement.requirementName
         )
-      if (requirementExists) {
-        throw new ErrorUtils(409, 'Requirement already exists')
+      if (requirementExistsByName) {
+        throw new ErrorUtils(409, 'Requirement name already exists')
       }
       const createdRequirement = await RequirementRepository.create(
         parsedRequirement
       )
-      return {
-        requirement: createdRequirement
-      }
+      return createdRequirement
     } catch (error) {
       if (error instanceof ErrorUtils) {
         throw error
@@ -390,8 +393,7 @@ class RequirementService {
    */
   static async getByComplementaryKeywords (keyword) {
     try {
-      const requirements =
-        await RequirementRepository.findByComplementaryKeywords(keyword)
+      const requirements = await RequirementRepository.findByComplementaryKeywords(keyword)
       if (!requirements) {
         return []
       }
@@ -562,7 +564,11 @@ class RequirementService {
    */
   static async getByStateAndMunicipalities (state, municipalities = []) {
     try {
-      const requirements = await RequirementRepository.findByStateAndMunicipalities(state, municipalities)
+      const requirements =
+        await RequirementRepository.findByStateAndMunicipalities(
+          state,
+          municipalities
+        )
       if (!requirements) {
         return []
       }
@@ -571,7 +577,10 @@ class RequirementService {
       if (error instanceof ErrorUtils) {
         throw error
       }
-      throw new ErrorUtils(500, 'Failed to retrieve requirements by state and municipalities')
+      throw new ErrorUtils(
+        500,
+        'Failed to retrieve requirements by state and municipalities'
+      )
     }
   }
 
@@ -603,35 +612,53 @@ class RequirementService {
   static async updateById (requirementId, requirement) {
     try {
       const parsedRequirement = requirementSchema.parse(requirement)
-      const existingRequirement = await RequirementRepository.findById(requirementId)
+      const existingRequirement = await RequirementRepository.findById(
+        requirementId
+      )
       if (!existingRequirement) {
         throw new ErrorUtils(404, 'Requirement not found')
       }
       if (parsedRequirement.subjectId) {
-        const subjectExists = await SubjectsRepository.findById(parsedRequirement.subjectId)
+        const subjectExists = await SubjectsRepository.findById(
+          parsedRequirement.subjectId
+        )
         if (!subjectExists) {
           throw new ErrorUtils(404, 'Subject not found')
         }
       }
       if (parsedRequirement.aspectId) {
-        const aspectExists = await AspectsRepository.findById(parsedRequirement.aspectId)
+        const aspectExists = await AspectsRepository.findById(
+          parsedRequirement.aspectId
+        )
         if (!aspectExists) {
           throw new ErrorUtils(404, 'Aspect not found')
         }
       }
-      if (parsedRequirement.requirementName) {
-        const requirementExists = await RequirementRepository.existsByNameExcludingId(
-          parsedRequirement.requirementName,
-          requirementId
-        )
-        if (requirementExists) {
-          throw new ErrorUtils(409, 'Requirement already exists')
+      if (parsedRequirement.requirementNumber) {
+        const requirementExistsByNumber =
+          await RequirementRepository.existsByNumberExcludingId(
+            parsedRequirement.requirementNumber,
+            requirementId
+          )
+        if (requirementExistsByNumber) {
+          throw new ErrorUtils(409, 'Requirement number already exists')
         }
       }
-      const updatedRequirement = await RequirementRepository.update(requirementId, parsedRequirement)
-      return {
-        requirement: updatedRequirement
+      if (parsedRequirement.requirementName) {
+        const requirementExistsByName =
+          await RequirementRepository.existsByNameExcludingId(
+            parsedRequirement.requirementName,
+            requirementId
+          )
+        if (requirementExistsByName) {
+          throw new ErrorUtils(409, 'Requirement name already exists')
+        }
       }
+      const updatedRequirement = await RequirementRepository.update(
+        requirementId,
+        parsedRequirement
+      )
+      return updatedRequirement
     } catch (error) {
       if (error instanceof ErrorUtils) {
         throw error
@@ -644,6 +671,70 @@ class RequirementService {
         throw new ErrorUtils(400, 'Validation failed', validationErrors)
       }
       throw new ErrorUtils(500, 'Unexpected error during requirement update')
+    }
+  }
+
+  /**
+   * Deletes a requirement by ID.
+   * @param {number} requirementId - The ID of the requirement to delete.
+   * @returns {Promise<{ success: boolean }>} - An object indicating whether the deletion was successful.
+   * @throws {ErrorUtils} - If an error occurs during deletion.
+   */
+  static async deleteById (requirementId) {
+    try {
+      const existingRequirement = await RequirementRepository.findById(
+        requirementId
+      )
+      if (!existingRequirement) {
+        throw new ErrorUtils(404, 'Requirement not found')
+      }
+      const requirementDeleted = await RequirementRepository.deleteBatch(
+        requirementId
+      )
+      if (!requirementDeleted) {
+        throw new ErrorUtils(404, 'Requirement not found')
+      }
+      return { success: true }
+    } catch (error) {
+      if (error instanceof ErrorUtils) {
+        throw error
+      }
+      throw new ErrorUtils(500, 'Unexpected error during requirement deletion')
+    }
+  }
+
+  /**
+   * Deletes multiple requirements by their IDs.
+   * @param {number[]} requirementIds - An array of requirement IDs to delete.
+   * @returns {Promise<{ success: boolean }>} - An object indicating whether the deletion was successful.
+   * @throws {ErrorUtils} - If an error occurs during deletion.
+   */
+  static async deleteBatch (requirementIds) {
+    try {
+      const requirements = await RequirementRepository.findByIds(
+        requirementIds
+      )
+      if (requirements.length !== requirementIds.length) {
+        const notFoundIds = requirementIds.filter(
+          (id) => !requirements.some((requirement) => requirement.id === id)
+        )
+        throw new ErrorUtils(404, 'Requirements not found for IDs', {
+          notFoundIds
+        })
+      }
+      const requirementsDeleted = await RequirementRepository.deleteBatch(requirementIds)
+      if (!requirementsDeleted) {
+        throw new ErrorUtils(404, 'Requirements not found')
+      }
+      return { success: true }
+    } catch (error) {
+      if (error instanceof ErrorUtils) {
+        throw error
+      }
+      throw new ErrorUtils(
+        500,
+        'Unexpected error during batch requirement deletion'
+      )
     }
   }
 }

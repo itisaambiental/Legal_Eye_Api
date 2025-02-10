@@ -1046,7 +1046,7 @@ class LegalBasisService {
         legalBasisIds
       )
       if (!LegalBasisDeleted) {
-        throw new ErrorUtils(500, 'LegalBasis not found')
+        throw new ErrorUtils(404, 'LegalBasis not found')
       }
       return { success: true }
     } catch (error) {

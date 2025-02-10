@@ -30,7 +30,6 @@ export const createRequirement = async (req, res) => {
     condition,
     evidence,
     periodicity,
-    specificDocument,
     requirementType,
     jurisdiction,
     state,
@@ -55,7 +54,6 @@ export const createRequirement = async (req, res) => {
       condition,
       evidence,
       periodicity,
-      specificDocument,
       requirementType,
       jurisdiction,
       state,
@@ -613,7 +611,6 @@ export const updateRequirement = async (req, res) => {
     condition,
     evidence,
     periodicity,
-    specificDocument,
     requirementType,
     jurisdiction,
     state,
@@ -638,13 +635,85 @@ export const updateRequirement = async (req, res) => {
       condition,
       evidence,
       periodicity,
-      specificDocument,
       requirementType,
       jurisdiction,
       state,
       municipality
     })
     return res.status(200).json({ requirement })
+  } catch (error) {
+    if (error instanceof ErrorUtils) {
+      return res.status(error.status).json({
+        message: error.message,
+        ...(error.errors && { errors: error.errors })
+      })
+    }
+    return res.status(500).json({ message: 'Internal Server Error' })
+  }
+}
+
+/**
+ * Deletes a requirement by ID.
+ * @function deleteRequirement
+ * @param {import('express').Request} req - Request object, expects { id } in params.
+ * @param {import('express').Response} res - Response object.
+ * @returns {void}
+ */
+export const deleteRequirement = async (req, res) => {
+  const { userId } = req
+  const { id } = req.params
+  try {
+    const isAuthorized = await UserService.userExists(userId)
+    if (!isAuthorized) {
+      return res.status(403).json({ message: 'Unauthorized' })
+    }
+    const { success } = await RequirementService.deleteById(id)
+    if (success) {
+      return res.sendStatus(204)
+    } else {
+      return res.status(500).json({ message: 'Internal Server Error' })
+    }
+  } catch (error) {
+    if (error instanceof ErrorUtils) {
+      return res.status(error.status).json({
+        message: error.message,
+        ...(error.errors && { errors: error.errors })
+      })
+    }
+    return res.status(500).json({ message: 'Internal Server Error' })
+  }
+}
+
+/**
+ * Deletes multiple requirements by their IDs.
+ * @function deleteRequirementBatch
+ * @param {import('express').Request} req - Request object, expects { requirementIds } in body.
+ * @param {import('express').Response} res - Response object.
+ * @returns {void}
+ */
+export const deleteRequirementBatch = async (req, res) => {
+  const { userId } = req
+  const { requirementIds } = req.body
+  if (
+    !requirementIds ||
+    !Array.isArray(requirementIds) ||
+    requirementIds.length === 0
+  ) {
+    return res.status(400).json({
+      message: 'Missing required fields: requirementIds'
+    })
+  }
+  try {
+    const isAuthorized = await UserService.userExists(userId)
+    if (!isAuthorized) {
+      return res.status(403).json({ message: 'Unauthorized' })
+    }
+    const { success } = await RequirementService.deleteBatch(requirementIds)
+    if (success) {
+      return res.sendStatus(204)
+    } else {
+      return res.status(500).json({ message: 'Internal Server Error' })
+    }
   } catch (error) {
     if (error instanceof ErrorUtils) {
       return res.status(error.status).json({

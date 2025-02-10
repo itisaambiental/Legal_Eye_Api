@@ -1427,7 +1427,7 @@ VALUES ${aspectsIds.map(() => '(?, ?, ?)').join(', ')}
 
   /**
    * Deletes all legal basis records and their relationships.
-   * @returns {Promise<boolean>} - Returns true if all deletions are successful.
+   * @returns {Promise<void>}
    * @throws {ErrorUtils} - If an error occurs during deletion.
    */
   static async deleteAll () {
@@ -1443,7 +1443,6 @@ VALUES ${aspectsIds.map(() => '(?, ?, ?)').join(', ')}
       await connection.query(deleteAspectsQuery)
       await connection.query(deleteLegalBasisQuery)
       await connection.commit()
-      return true
     } catch (error) {
       await connection.rollback()
       console.error('Error deleting legal bases:', error.message)

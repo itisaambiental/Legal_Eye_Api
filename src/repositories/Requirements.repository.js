@@ -56,10 +56,11 @@ class RequirementRepository {
         mandatory_description, complementary_description, 
         mandatory_sentences, complementary_sentences, 
         mandatory_keywords, complementary_keywords, 
-        condition, evidence, periodicity, 
+        requirement_condition, evidence, periodicity, 
         requirement_type, jurisdiction, state, municipality
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `
+
     try {
       const [result] = await pool.query(insertRequirementQuery, [
         subjectId,
@@ -80,6 +81,7 @@ class RequirementRepository {
         state,
         municipality
       ])
+
       const requirementId = result.insertId
       const requirement = await this.findById(requirementId)
       return requirement
@@ -106,7 +108,7 @@ class RequirementRepository {
         r.complementary_sentences, 
         r.mandatory_keywords, 
         r.complementary_keywords, 
-        r.condition, 
+        r.requirement_condition, 
         r.evidence, 
         r.periodicity, 
         r.requirement_type, 
@@ -145,7 +147,7 @@ class RequirementRepository {
           row.complementary_sentences,
           row.mandatory_keywords,
           row.complementary_keywords,
-          row.condition,
+          row.requirement_condition,
           row.evidence,
           row.periodicity,
           row.requirement_type,
@@ -157,6 +159,28 @@ class RequirementRepository {
     } catch (error) {
       console.error('Error retrieving all requirements:', error.message)
       throw new ErrorUtils(500, 'Error retrieving all requirements from the database')
+    }
+  }
+
+  /**
+ * Checks if a requirement exists with the given requirement number.
+ * @param {string} requirementNumber - The requirement number to check for existence.
+ * @returns {Promise<boolean>} - True if a requirement with the same requirement number exists, false otherwise.
+ * @throws {ErrorUtils} - If an error occurs during the check.
+ */
+  static async existsByRequirementNumber (requirementNumber) {
+    const query = `
+        SELECT 1 
+        FROM requirements 
+        WHERE requirement_number = ?
+        LIMIT 1
+      `
+    try {
+      const [rows] = await pool.query(query, [requirementNumber])
+      return rows.length > 0
+    } catch (error) {
+      console.error('Error checking if requirement number exists:', error.message)
+      throw new ErrorUtils(500, 'Error checking if requirement number exists')
     }
   }
 
@@ -200,7 +224,7 @@ class RequirementRepository {
         r.complementary_sentences, 
         r.mandatory_keywords, 
         r.complementary_keywords, 
-        r.condition, 
+        r.requirement_condition, 
         r.evidence, 
         r.periodicity, 
         r.requirement_type, 
@@ -240,7 +264,7 @@ class RequirementRepository {
         requirement.complementary_sentences,
         requirement.mandatory_keywords,
         requirement.complementary_keywords,
-        requirement.condition,
+        requirement.requirement_condition,
         requirement.evidence,
         requirement.periodicity,
         requirement.requirement_type,
@@ -257,7 +281,7 @@ class RequirementRepository {
   /**
    * Finds multiple requirements by their IDs.
    * @param {Array<number>} requirementIds - Array of requirement IDs to find.
-   * @returns {Promise<Array<Requirement[]>>} - Array of found requirement objects.
+   * @returns {Promise<Requirement[]>} - Array of found requirement objects.
    * @throws {ErrorUtils} - If an error occurs during retrieval.
    */
   static async findByIds (requirementIds) {
@@ -275,7 +299,7 @@ class RequirementRepository {
         r.complementary_sentences, 
         r.mandatory_keywords, 
         r.complementary_keywords, 
-        r.condition, 
+        r.requirement_condition, 
         r.evidence, 
         r.periodicity, 
         r.requirement_type, 
@@ -316,7 +340,7 @@ class RequirementRepository {
           row.complementary_sentences,
           row.mandatory_keywords,
           row.complementary_keywords,
-          row.condition,
+          row.requirement_condition,
           row.evidence,
           row.periodicity,
           row.requirement_type,
@@ -349,7 +373,7 @@ class RequirementRepository {
             r.complementary_sentences, 
             r.mandatory_keywords, 
             r.complementary_keywords, 
-            r.condition, 
+            r.requirement_condition, 
             r.evidence, 
             r.periodicity, 
             r.requirement_type, 
@@ -389,7 +413,7 @@ class RequirementRepository {
           row.complementary_sentences,
           row.mandatory_keywords,
           row.complementary_keywords,
-          row.condition,
+          row.requirement_condition,
           row.evidence,
           row.periodicity,
           row.requirement_type,
@@ -422,7 +446,7 @@ class RequirementRepository {
             r.complementary_sentences, 
             r.mandatory_keywords, 
             r.complementary_keywords, 
-            r.condition, 
+            r.requirement_condition, 
             r.evidence, 
             r.periodicity, 
             r.requirement_type, 
@@ -462,7 +486,7 @@ class RequirementRepository {
           row.complementary_sentences,
           row.mandatory_keywords,
           row.complementary_keywords,
-          row.condition,
+          row.requirement_condition,
           row.evidence,
           row.periodicity,
           row.requirement_type,
@@ -495,7 +519,7 @@ class RequirementRepository {
             r.complementary_sentences, 
             r.mandatory_keywords, 
             r.complementary_keywords, 
-            r.condition, 
+            r.requirement_condition, 
             r.evidence, 
             r.periodicity, 
             r.requirement_type, 
@@ -536,7 +560,7 @@ class RequirementRepository {
           row.complementary_sentences,
           row.mandatory_keywords,
           row.complementary_keywords,
-          row.condition,
+          row.requirement_condition,
           row.evidence,
           row.periodicity,
           row.requirement_type,
@@ -570,7 +594,7 @@ class RequirementRepository {
             r.complementary_sentences, 
             r.mandatory_keywords, 
             r.complementary_keywords, 
-            r.condition, 
+            r.requirement_condition, 
             r.evidence, 
             r.periodicity, 
             r.requirement_type, 
@@ -617,7 +641,7 @@ class RequirementRepository {
           row.complementary_sentences,
           row.mandatory_keywords,
           row.complementary_keywords,
-          row.condition,
+          row.requirement_condition,
           row.evidence,
           row.periodicity,
           row.requirement_type,
@@ -651,7 +675,7 @@ class RequirementRepository {
           r.complementary_sentences, 
           r.mandatory_keywords, 
           r.complementary_keywords, 
-          r.condition, 
+          r.requirement_condition, 
           r.evidence, 
           r.periodicity, 
           r.requirement_type, 
@@ -690,7 +714,7 @@ class RequirementRepository {
           row.complementary_sentences,
           row.mandatory_keywords,
           row.complementary_keywords,
-          row.condition,
+          row.requirement_condition,
           row.evidence,
           row.periodicity,
           row.requirement_type,
@@ -724,7 +748,7 @@ class RequirementRepository {
           r.complementary_sentences, 
           r.mandatory_keywords, 
           r.complementary_keywords, 
-          r.condition, 
+          r.requirement_condition, 
           r.evidence, 
           r.periodicity, 
           r.requirement_type, 
@@ -763,7 +787,7 @@ class RequirementRepository {
           row.complementary_sentences,
           row.mandatory_keywords,
           row.complementary_keywords,
-          row.condition,
+          row.requirement_condition,
           row.evidence,
           row.periodicity,
           row.requirement_type,
@@ -797,7 +821,7 @@ class RequirementRepository {
           r.complementary_sentences, 
           r.mandatory_keywords, 
           r.complementary_keywords, 
-          r.condition, 
+          r.requirement_condition, 
           r.evidence, 
           r.periodicity, 
           r.requirement_type, 
@@ -839,7 +863,7 @@ class RequirementRepository {
           row.complementary_sentences,
           row.mandatory_keywords,
           row.complementary_keywords,
-          row.condition,
+          row.requirement_condition,
           row.evidence,
           row.periodicity,
           row.requirement_type,
@@ -873,7 +897,7 @@ class RequirementRepository {
           r.complementary_sentences, 
           r.mandatory_keywords, 
           r.complementary_keywords, 
-          r.condition, 
+          r.requirement_condition, 
           r.evidence, 
           r.periodicity, 
           r.requirement_type, 
@@ -915,7 +939,7 @@ class RequirementRepository {
           row.complementary_sentences,
           row.mandatory_keywords,
           row.complementary_keywords,
-          row.condition,
+          row.requirement_condition,
           row.evidence,
           row.periodicity,
           row.requirement_type,
@@ -949,7 +973,7 @@ class RequirementRepository {
           r.complementary_sentences, 
           r.mandatory_keywords, 
           r.complementary_keywords, 
-          r.condition, 
+          r.requirement_condition, 
           r.evidence, 
           r.periodicity, 
           r.requirement_type, 
@@ -963,9 +987,9 @@ class RequirementRepository {
         FROM requirements r
         JOIN subjects s ON r.subject_id = s.id
         JOIN aspects a ON r.aspect_id = a.id
-        WHERE MATCH(r.mandatory_keywords) AGAINST(? IN BOOLEAN MODE)
+        WHERE r.mandatory_keywords LIKE ?   
       `
-      const [rows] = await pool.query(query, [keyword])
+      const [rows] = await pool.query(query, [`%${keyword}%`])
       if (rows.length === 0) return null
       return rows.map((row) => {
         const subject = {
@@ -988,7 +1012,7 @@ class RequirementRepository {
           row.complementary_sentences,
           row.mandatory_keywords,
           row.complementary_keywords,
-          row.condition,
+          row.requirement_condition,
           row.evidence,
           row.periodicity,
           row.requirement_type,
@@ -1004,7 +1028,7 @@ class RequirementRepository {
   }
 
   /**
- * Retrieves requirements by a flexible full-text match in their complementary keywords.
+ * Retrieves requirements by a flexible text match in their complementary keywords using LIKE.
  * @param {string} keyword - The keyword or part of the keyword to search for.
  * @returns {Promise<Array<Requirement>|null>} - A list of Requirement instances matching the keyword.
  * @throws {ErrorUtils} - If an error occurs during retrieval.
@@ -1012,34 +1036,36 @@ class RequirementRepository {
   static async findByComplementaryKeywords (keyword) {
     try {
       const query = `
-        SELECT 
-          r.id, 
-          r.requirement_number, 
-          r.requirement_name, 
-          r.mandatory_description, 
-          r.complementary_description, 
-          r.mandatory_sentences, 
-          r.complementary_sentences, 
-          r.mandatory_keywords, 
-          r.complementary_keywords, 
-          r.condition, 
-          r.evidence, 
-          r.periodicity, 
-          r.requirement_type, 
-          r.jurisdiction, 
-          r.state, 
-          r.municipality, 
-          s.id AS subject_id, 
-          s.subject_name AS subject_name, 
-          a.id AS aspect_id, 
-          a.aspect_name AS aspect_name
-        FROM requirements r
-        JOIN subjects s ON r.subject_id = s.id
-        JOIN aspects a ON r.aspect_id = a.id
-        WHERE MATCH(r.complementary_keywords) AGAINST(? IN BOOLEAN MODE)
-      `
-      const [rows] = await pool.query(query, [keyword])
+      SELECT 
+        r.id, 
+        r.requirement_number, 
+        r.requirement_name, 
+        r.mandatory_description, 
+        r.complementary_description, 
+        r.mandatory_sentences, 
+        r.complementary_sentences, 
+        r.mandatory_keywords, 
+        r.complementary_keywords, 
+        r.requirement_condition, 
+        r.evidence, 
+        r.periodicity, 
+        r.requirement_type, 
+        r.jurisdiction, 
+        r.state, 
+        r.municipality, 
+        s.id AS subject_id, 
+        s.subject_name AS subject_name, 
+        a.id AS aspect_id, 
+        a.aspect_name AS aspect_name
+      FROM requirements r
+      JOIN subjects s ON r.subject_id = s.id
+      JOIN aspects a ON r.aspect_id = a.id
+      WHERE r.complementary_keywords LIKE ?
+    `
+      const [rows] = await pool.query(query, [`%${keyword}%`])
+
       if (rows.length === 0) return null
+
       return rows.map((row) => {
         const subject = {
           subject_id: row.subject_id,
@@ -1061,7 +1087,7 @@ class RequirementRepository {
           row.complementary_sentences,
           row.mandatory_keywords,
           row.complementary_keywords,
-          row.condition,
+          row.requirement_condition,
           row.evidence,
           row.periodicity,
           row.requirement_type,
@@ -1095,7 +1121,7 @@ class RequirementRepository {
           r.complementary_sentences, 
           r.mandatory_keywords, 
           r.complementary_keywords, 
-          r.condition, 
+          r.requirement_condition, 
           r.evidence, 
           r.periodicity, 
           r.requirement_type, 
@@ -1109,7 +1135,7 @@ class RequirementRepository {
         FROM requirements r
         JOIN subjects s ON r.subject_id = s.id
         JOIN aspects a ON r.aspect_id = a.id
-        WHERE r.condition = ?
+        WHERE r.requirement_condition = ?
       `
       const [rows] = await pool.query(query, [condition])
       if (rows.length === 0) return null
@@ -1134,7 +1160,7 @@ class RequirementRepository {
           row.complementary_sentences,
           row.mandatory_keywords,
           row.complementary_keywords,
-          row.condition,
+          row.requirement_condition,
           row.evidence,
           row.periodicity,
           row.requirement_type,
@@ -1168,7 +1194,7 @@ class RequirementRepository {
           r.complementary_sentences, 
           r.mandatory_keywords, 
           r.complementary_keywords, 
-          r.condition, 
+          r.requirement_condition, 
           r.evidence, 
           r.periodicity, 
           r.requirement_type, 
@@ -1207,7 +1233,7 @@ class RequirementRepository {
           row.complementary_sentences,
           row.mandatory_keywords,
           row.complementary_keywords,
-          row.condition,
+          row.requirement_condition,
           row.evidence,
           row.periodicity,
           row.requirement_type,
@@ -1241,7 +1267,7 @@ class RequirementRepository {
           r.complementary_sentences, 
           r.mandatory_keywords, 
           r.complementary_keywords, 
-          r.condition, 
+          r.requirement_condition, 
           r.evidence, 
           r.periodicity, 
           r.requirement_type, 
@@ -1283,7 +1309,7 @@ class RequirementRepository {
           row.complementary_sentences,
           row.mandatory_keywords,
           row.complementary_keywords,
-          row.condition,
+          row.requirement_condition,
           row.evidence,
           row.periodicity,
           row.requirement_type,
@@ -1317,7 +1343,7 @@ class RequirementRepository {
           r.complementary_sentences, 
           r.mandatory_keywords, 
           r.complementary_keywords, 
-          r.condition, 
+          r.requirement_condition, 
           r.evidence, 
           r.periodicity,  
           r.requirement_type, 
@@ -1356,7 +1382,7 @@ class RequirementRepository {
           row.complementary_sentences,
           row.mandatory_keywords,
           row.complementary_keywords,
-          row.condition,
+          row.requirement_condition,
           row.evidence,
           row.periodicity,
           row.requirement_type,
@@ -1390,7 +1416,7 @@ class RequirementRepository {
           r.complementary_sentences, 
           r.mandatory_keywords, 
           r.complementary_keywords, 
-          r.condition, 
+          r.requirement_condition, 
           r.evidence, 
           r.periodicity, 
           r.requirement_type, 
@@ -1432,7 +1458,7 @@ class RequirementRepository {
           row.complementary_sentences,
           row.mandatory_keywords,
           row.complementary_keywords,
-          row.condition,
+          row.requirement_condition,
           row.evidence,
           row.periodicity,
           row.requirement_type,
@@ -1466,7 +1492,7 @@ class RequirementRepository {
           r.complementary_sentences, 
           r.mandatory_keywords, 
           r.complementary_keywords, 
-          r.condition, 
+          r.requirement_condition, 
           r.evidence, 
           r.periodicity, 
           r.requirement_type, 
@@ -1508,7 +1534,7 @@ class RequirementRepository {
           row.complementary_sentences,
           row.mandatory_keywords,
           row.complementary_keywords,
-          row.condition,
+          row.requirement_condition,
           row.evidence,
           row.periodicity,
           row.requirement_type,
@@ -1542,7 +1568,7 @@ class RequirementRepository {
         r.complementary_sentences, 
         r.mandatory_keywords, 
         r.complementary_keywords, 
-        r.condition, 
+        r.requirement_condition, 
         r.evidence, 
         r.periodicity, 
         r.requirement_type, 
@@ -1558,20 +1584,15 @@ class RequirementRepository {
       JOIN aspects a ON r.aspect_id = a.id
       WHERE r.state = ?
     `
-
     const values = [state]
-
     if (municipalities.length > 0) {
       const placeholders = municipalities.map(() => '?').join(', ')
       query += ` AND r.municipality IN (${placeholders})`
       values.push(...municipalities)
     }
-
     try {
       const [rows] = await pool.query(query, values)
-
       if (rows.length === 0) return null
-
       return rows.map((row) => {
         const subject = {
           subject_id: row.subject_id,
@@ -1593,7 +1614,7 @@ class RequirementRepository {
           row.complementary_sentences,
           row.mandatory_keywords,
           row.complementary_keywords,
-          row.condition,
+          row.requirement_condition,
           row.evidence,
           row.periodicity,
           row.requirement_type,
@@ -1605,6 +1626,29 @@ class RequirementRepository {
     } catch (error) {
       console.error('Error retrieving requirements by state and municipalities:', error.message)
       throw new ErrorUtils(500, 'Error retrieving requirements by state and municipalities')
+    }
+  }
+
+  /**
+ * Checks if a requirement with the given number exists, excluding the specified requirement ID.
+ * @param {string} requirementNumber - The requirement number to check for uniqueness.
+ * @param {number} requirementId - The requirement ID to exclude from the check.
+ * @returns {Promise<boolean>} - True if a requirement with the same number exists (excluding the given ID), false otherwise.
+ * @throws {ErrorUtils} - If an error occurs during the check.
+ */
+  static async existsByNumberExcludingId (requirementNumber, requirementId) {
+    const query = `
+      SELECT 1 
+      FROM requirements 
+      WHERE requirement_number = ? AND id != ?
+      LIMIT 1
+    `
+    try {
+      const [rows] = await pool.query(query, [requirementNumber, requirementId])
+      return rows.length > 0
+    } catch (error) {
+      console.error('Error checking requirement number uniqueness:', error.message)
+      throw new ErrorUtils(500, 'Error checking requirement number uniqueness')
     }
   }
 
@@ -1677,26 +1721,26 @@ class RequirementRepository {
     } = requirement
 
     const updateRequirementQuery = `
-        UPDATE requirements SET
-          subject_id = IFNULL(?, subject_id),
-          aspect_id = IFNULL(?, aspect_id),
-          requirement_number = IFNULL(?, requirement_number),
-          requirement_name = IFNULL(?, requirement_name),
-          mandatory_description = IFNULL(?, mandatory_description),
-          complementary_description = IFNULL(?, complementary_description),
-          mandatory_sentences = IFNULL(?, mandatory_sentences),
-          complementary_sentences = IFNULL(?, complementary_sentences),
-          mandatory_keywords = IFNULL(?, mandatory_keywords),
-          complementary_keywords = IFNULL(?, complementary_keywords),
-          condition = IFNULL(?, condition),
-          evidence = IFNULL(?, evidence),
-          periodicity = IFNULL(?, periodicity),
-          requirement_type = IFNULL(?, requirement_type),
-          jurisdiction = IFNULL(?, jurisdiction),
-          state = IFNULL(?, state),
-          municipality = IFNULL(?, municipality)
-        WHERE id = ?
-      `
+      UPDATE requirements SET
+        subject_id = IFNULL(?, subject_id),
+        aspect_id = IFNULL(?, aspect_id),
+        requirement_number = IFNULL(?, requirement_number),
+        requirement_name = IFNULL(?, requirement_name),
+        mandatory_description = IFNULL(?, mandatory_description),
+        complementary_description = IFNULL(?, complementary_description),
+        mandatory_sentences = IFNULL(?, mandatory_sentences),
+        complementary_sentences = IFNULL(?, complementary_sentences),
+        mandatory_keywords = IFNULL(?, mandatory_keywords),
+        complementary_keywords = IFNULL(?, complementary_keywords),
+        requirement_condition = IFNULL(?, requirement_condition),
+        evidence = IFNULL(?, evidence),
+        periodicity = IFNULL(?, periodicity),
+        requirement_type = IFNULL(?, requirement_type),
+        jurisdiction = IFNULL(?, jurisdiction),
+        state = IFNULL(?, state),
+        municipality = IFNULL(?, municipality)
+      WHERE id = ?
+    `
 
     try {
       await pool.query(updateRequirementQuery, [
@@ -1719,7 +1763,6 @@ class RequirementRepository {
         municipality,
         requirementId
       ])
-
       const requirement = await this.findById(requirementId)
       return requirement
     } catch (error) {
@@ -1727,32 +1770,67 @@ class RequirementRepository {
       throw new ErrorUtils(500, 'Error updating requirement in the database')
     }
   }
+
+  /**
+   * Deletes a requirement by its ID.
+    * @param {number} requirementId - The ID of the requirement to delete.
+    * @returns {Promise<boolean>} - Returns true if the deletion is successful, false otherwise.
+    * @throws {ErrorUtils} - If an error occurs during deletion.
+    */
+  static async delete (requirementId) {
+    const deleteRequirementQuery = `
+    DELETE FROM requirements WHERE id = ?
+  `
+    try {
+      const [result] = await pool.query(deleteRequirementQuery, [requirementId])
+      if (result.affectedRows === 0) {
+        return false
+      }
+      return true
+    } catch (error) {
+      console.error('Error deleting requirement:', error.message)
+      throw new ErrorUtils(500, 'Error deleting requirement from the database')
+    }
+  }
+
+  /**
+ * Deletes multiple requirements by their IDs.
+ * @param {number[]} requirementIds - An array of requirement IDs to delete.
+ * @returns {Promise<boolean>} - Returns true if at least one requirement was deleted, false otherwise.
+ * @throws {ErrorUtils} - If an error occurs during deletion.
+ */
+  static async deleteBatch (requirementIds) {
+    const deleteRequirementsQuery = `
+    DELETE FROM requirements WHERE id IN (?)
+  `
+    try {
+      const [result] = await pool.query(deleteRequirementsQuery, [requirementIds])
+      if (result.affectedRows === 0) {
+        return false
+      }
+      return true
+    } catch (error) {
+      console.error('Error deleting multiple requirements:', error.message)
+      throw new ErrorUtils(500, 'Error deleting requirements from the database')
+    }
+  }
+
+  /**
+   * Deletes all requirements from the database.
+   * @returns {Promise<void>}
+   * @throws {ErrorUtils} - If an error occurs during deletion.
+   */
+  static async deleteAll () {
+    const deleteAllRequirementsQuery = `
+    DELETE FROM requirements
+  `
+    try {
+      await pool.query(deleteAllRequirementsQuery)
+    } catch (error) {
+      console.error('Error deleting all requirements:', error.message)
+      throw new ErrorUtils(500, 'Error deleting all requirements from the database')
+    }
+  }
 }
 
 export default RequirementRepository
-
-//   /**
-//    * Deletes a requirement by its ID.
-//    * @param {number} id - The ID of the requirement to delete.
-//    * @returns {Promise<boolean>} - Returns true if the deletion is successful, false otherwise.
-//    * @throws {ErrorUtils} - If an error occurs during deletion.
-//    */
-//   static async deleteById(id) {}
-
-//   /**
-//    * Deletes multiple requirements from the database using an array of IDs.
-//    * @param {Array<number>} requirementIds - Array of requirement IDs to delete.
-//    * @returns {Promise<boolean>} - True if requirements were deleted, otherwise false.
-//    * @throws {ErrorUtils} - If an error occurs during the deletion.
-//    */
-//   static async deleteBatch(requirementIds) {}
-
-//   /**
-//    * Deletes all requirements from the database.
-//    * @returns {Promise<void>}
-//    * @throws {ErrorUtils} - If an error occurs during deletion.
-//    */
-//   static async deleteAll() {}
-// }
-
-// export default RequirementRepository

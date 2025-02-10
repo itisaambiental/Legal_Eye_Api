@@ -374,7 +374,7 @@ class UserRepository {
    * Deletes all users from the database except one specified by Gmail.
    * Its used only for testing.
    * @param {string} gmail - Gmail of the user to exclude from deletion.
-   * @returns {Promise<number>} - Number of affected rows.
+   * @returns {Promise<void>}
    * @throws {ErrorUtils} - If an error occurs during deletion.
    */
   static async deleteAllExceptByGmail (gmail) {
@@ -382,8 +382,7 @@ class UserRepository {
       DELETE FROM users WHERE gmail != ?
     `
     try {
-      const [result] = await pool.query(query, [gmail])
-      return result.affectedRows
+      await pool.query(query, [gmail])
     } catch (error) {
       console.error('Error deleting all users except one by gmail:', error)
       throw new ErrorUtils(500, 'Error deleting users from the database')
