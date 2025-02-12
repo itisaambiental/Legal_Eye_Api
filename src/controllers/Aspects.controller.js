@@ -137,8 +137,8 @@ export const updateAspect = async (req, res) => {
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-    const updatedAspect = await AspectsService.updateById(id, aspectName)
-    return res.status(200).json({ updatedAspect })
+    const aspect = await AspectsService.updateById(id, aspectName)
+    return res.status(200).json({ aspect })
   } catch (error) {
     if (error instanceof ErrorUtils) {
       return res.status(error.status).json({

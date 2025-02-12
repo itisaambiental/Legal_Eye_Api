@@ -249,11 +249,11 @@ describe('Aspects API - PATCH /aspect/:id', () => {
       .expect(200)
       .expect('Content-Type', /application\/json/)
 
-    const { updatedAspect } = response.body
-    expect(updatedAspect).toHaveProperty('id', createdAspectId)
-    expect(updatedAspect).toHaveProperty('aspect_name', newAspectName)
-    expect(updatedAspect).toHaveProperty('subject_id', createdSubjectId)
-    expect(updatedAspect).toHaveProperty('subject_name', subjectName)
+    const { aspect } = response.body
+    expect(aspect).toHaveProperty('id', createdAspectId)
+    expect(aspect).toHaveProperty('aspect_name', newAspectName)
+    expect(aspect).toHaveProperty('subject_id', createdSubjectId)
+    expect(aspect).toHaveProperty('subject_name', subjectName)
   })
 
   test('Should return 409 if the new aspect name already exists for the subject', async () => {

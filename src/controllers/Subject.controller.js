@@ -134,8 +134,8 @@ export const updateSubject = async (req, res) => {
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-    const updatedSubject = await SubjectsService.updateById(id, subjectName)
-    return res.status(200).json({ updatedSubject })
+    const subject = await SubjectsService.updateById(id, subjectName)
+    return res.status(200).json({ subject })
   } catch (error) {
     if (error instanceof ErrorUtils) {
       return res.status(error.status).json({

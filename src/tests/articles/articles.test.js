@@ -391,7 +391,7 @@ describe('Update an article', () => {
       .expect(200)
       .expect('Content-Type', /application\/json/)
 
-    const { updatedArticle } = updateResponse.body
+    const { article: updatedArticle } = updateResponse.body
 
     expect(updatedArticle).toHaveProperty('id', createdArticleId)
     expect(updatedArticle).toHaveProperty('article_name', updatedData.title)

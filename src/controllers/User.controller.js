@@ -254,7 +254,7 @@ export const updateUser = async (req, res) => {
       userId
     )
     return res.status(200).json({
-      updatedUser,
+      user: updatedUser,
       token
     })
   } catch (error) {

@@ -177,7 +177,7 @@ export const updateArticle = async (req, res) => {
       article,
       order
     })
-    return res.status(200).json({ updatedArticle })
+    return res.status(200).json({ article: updatedArticle })
   } catch (error) {
     if (error instanceof ErrorUtils) {
       return res.status(error.status).json({

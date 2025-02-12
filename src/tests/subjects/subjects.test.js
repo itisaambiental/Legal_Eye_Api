@@ -163,9 +163,9 @@ describe('Subjects API tests', () => {
         .expect(200)
         .expect('Content-Type', /application\/json/)
 
-      const { updatedSubject } = response.body
-      expect(updatedSubject).toHaveProperty('id', createdSubjectId)
-      expect(updatedSubject.subject_name).toBe(newSubjectName)
+      const { subject } = response.body
+      expect(subject).toHaveProperty('id', createdSubjectId)
+      expect(subject.subject_name).toBe(newSubjectName)
     })
 
     test('Should return 404 if the subject does not exist', async () => {

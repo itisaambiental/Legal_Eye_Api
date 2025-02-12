@@ -293,12 +293,16 @@ describe('User API tests', () => {
   describe('Updating user information', () => {
     test('Should successfully update admin user information with valid fields', async () => {
       const updatedData = { name: 'Admin Updated', gmail: ADMIN_GMAIL, roleId: '1' }
-      await api
+      const updateResponse = await api
         .patch(`/api/user/${adminUserId}`)
         .set('Authorization', `Bearer ${tokenAdmin}`)
         .send(updatedData)
         .expect(200)
         .expect('Content-Type', /application\/json/)
+
+      expect(updateResponse.body).toHaveProperty('user')
+      expect(updateResponse.body.user.name).toBe(updatedData.name)
+      expect(updateResponse.body).toHaveProperty('token')
 
       const response = await api
         .get(`/api/user/${adminUserId}`)
@@ -308,6 +312,7 @@ describe('User API tests', () => {
 
       expect(response.body.user.name).toBe(updatedData.name)
     })
+
     test('Should return validation errors for invalid user data when updating user', async () => {
       const response = await api
         .patch(`/api/user/${analystUserId}`)
@@ -360,12 +365,16 @@ describe('User API tests', () => {
         name: 'Analyst User',
         roleId: '2'
       }
-      await api
+      const updateResponse = await api
         .patch(`/api/user/${analystUserId}`)
         .set('Authorization', `Bearer ${tokenAdmin}`)
         .send(userData)
         .expect(200)
         .expect('Content-Type', /application\/json/)
+
+      expect(updateResponse.body).toHaveProperty('user')
+      expect(updateResponse.body.user.name).toBe(userData.name)
+      expect(updateResponse.body).toHaveProperty('token')
 
       const response = await api
         .get(`/api/user/${analystUserId}`)
