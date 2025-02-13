@@ -144,7 +144,7 @@ const legalBasisSchema = z
 
     /**
      * The document associated with the legal basis.
-     * Must have a valid mimetype (pdf, png, jpg, jpeg).
+     * Must have a valid mimetype (pdf, png, jpeg).
      */
     document: z
       .object({
@@ -185,10 +185,6 @@ const legalBasisSchema = z
     /**
      * Validation for the 'extractArticles' field.
      * Transforms a string input to a boolean.
-     * - If the input is the string 'true', it is converted to true.
-     * - Otherwise, it is converted to false.
-     * Ensures that 'extractArticles' is a boolean value after transformation.
-     * This field is optional.
      */
     extractArticles: z
       .string()
@@ -197,6 +193,7 @@ const legalBasisSchema = z
       })
       .transform((value) => value === 'true')
   })
+
   .superRefine((data, context) => {
     /**
      * Validates fields based on the selected jurisdiction:

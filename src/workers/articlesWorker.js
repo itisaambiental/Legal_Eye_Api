@@ -4,11 +4,11 @@ import ErrorUtils from '../utils/Error.js'
 import DocumentService from '../services/files/Document.service.js'
 import LegalBasisRepository from '../repositories/LegalBasis.repository.js'
 import ArticlesService from '../services/articles/Articles.service.js'
-import FileService from '../services/files/File.service.js'
 import { CONCURRENCY_EXTRACT_ARTICLES } from '../config/variables.config.js'
+
 /**
- Maximum number of asynchronous operations possible in parallel
-  */
+ * Maximum number of asynchronous operations possible in parallel.
+ */
 const CONCURRENCY = Number(CONCURRENCY_EXTRACT_ARTICLES || 1)
 
 /**
@@ -34,22 +34,16 @@ articlesQueue.process(CONCURRENCY, async (job, done) => {
     if (!legalBase) {
       return done(new ErrorUtils(404, 'LegalBasis not found'))
     }
-    const document = await FileService.getFileContent(legalBase.url)
-    if (!document || !document.buffer || !document.mimetype) {
-      return done(
-        new ErrorUtils(400, 'Invalid document: missing buffer or mimetype')
-      )
-    }
-    const { error, success, data } = await DocumentService.process({
-      document
-    })
+    const { error, success, text } = await DocumentService.process(
+      legalBase.url
+    )
     if (!success) {
       return done(new ErrorUtils(500, 'Document Processing Error', error))
     }
     const extractor = ArticleExtractorFactory.getExtractor(
       legalBase.classification,
       legalBase.legal_name,
-      data,
+      text,
       currentJob
     )
     if (!extractor) {

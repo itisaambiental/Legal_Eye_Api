@@ -628,6 +628,16 @@ describe('Create a legal base', () => {
 
     test('Should return 400 if document type is invalid', async () => {
       const document = Buffer.from('document')
+      const legalBasisData = generateLegalBasisData({
+        legalName: 'Normativa con Documento',
+        abbreviation: 'DocTest',
+        subjectId: String(createdSubjectId),
+        aspectsIds: JSON.stringify(createdAspectIds),
+        classification: 'Reglamento',
+        jurisdiction: 'Federal',
+        lastReform: '01-01-2024',
+        extractArticles: 'true'
+      })
       const response = await api
         .post('/api/legalBasis')
         .set('Authorization', `Bearer ${tokenAdmin}`)
@@ -635,14 +645,14 @@ describe('Create a legal base', () => {
           filename: 'file.txt',
           contentType: 'text/plain'
         })
-        .field('legalName', 'legalName')
-        .field('abbreviation', 'abbreviation')
-        .field('subjectId', String(createdSubjectId))
-        .field('aspectsIds', JSON.stringify(createdAspectIds))
-        .field('classification', 'Reglamento')
-        .field('jurisdiction', 'Federal')
-        .field('lastReform', '2024-01-01')
-        .field('extractArticles', 'false')
+        .field('legalName', legalBasisData.legalName)
+        .field('abbreviation', legalBasisData.abbreviation)
+        .field('subjectId', legalBasisData.subjectId)
+        .field('aspectsIds', legalBasisData.aspectsIds)
+        .field('classification', legalBasisData.classification)
+        .field('jurisdiction', legalBasisData.jurisdiction)
+        .field('lastReform', legalBasisData.lastReform)
+        .field('extractArticles', legalBasisData.extractArticles)
         .expect(400)
       expect(response.body.message).toMatch(/Validation failed/i)
       expect(response.body.errors).toEqual(

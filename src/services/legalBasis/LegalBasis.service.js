@@ -69,13 +69,13 @@ class LegalBasisService {
    * @param {string} legalBasis.legalName - The legal basis name.
    * @param {string} legalBasis.abbreviation - The legal basis abbreviation.
    * @param {string} legalBasis.subjectId - The legal basis subject ID.
-   * @param {string} legalBasis.aspectsIds - The aspects Ids associated with the legal basis.
+   * @param {string} legalBasis.aspectsIds - The aspects IDs associated with the legal basis.
    * @param {string} legalBasis.classification - The legal basis classification.
    * @param {string} legalBasis.jurisdiction - The jurisdiction of the legal basis.
    * @param {string} [legalBasis.state] - The state associated with the legal basis.
    * @param {string} [legalBasis.municipality] - The municipality associated with the legal basis.
    * @param {string} legalBasis.lastReform - The date of the last reform.
-   * @param {string} legalBasis.extractArticles - Indicator whether to extract articles from the document.
+   * @param {boolean} legalBasis.extractArticles - Indicator whether to extract articles from the document.
    * @param {Express.Multer.File} [document] - The document to process (optional).
    * @returns {Promise<CreatedLegalBasis>} A promise that resolves with an object containing the jobId (if applicable) and the created legal basis data.
    * @throws {ErrorUtils} If an error occurs during validation or creation.
@@ -92,9 +92,10 @@ class LegalBasisService {
       if (legalBasisExists) {
         throw new ErrorUtils(409, 'LegalBasis already exists')
       }
-      const abbreviationExists = await LegalBasisRepository.existsByAbbreviation(
-        parsedlegalBasis.abbreviation
-      )
+      const abbreviationExists =
+        await LegalBasisRepository.existsByAbbreviation(
+          parsedlegalBasis.abbreviation
+        )
       if (abbreviationExists) {
         throw new ErrorUtils(409, 'LegalBasis abbreviation already exists')
       }
@@ -824,24 +825,29 @@ class LegalBasisService {
    */
   static async updateById (legalBasisId, legalBasis, document) {
     try {
-      const parsedlegalBasis = legalBasisSchema.parse({ ...legalBasis, document })
+      const parsedlegalBasis = legalBasisSchema.parse({
+        ...legalBasis,
+        document
+      })
       const existingLegalBasis = await LegalBasisRepository.findById(
         legalBasisId
       )
       if (!existingLegalBasis) {
         throw new ErrorUtils(404, 'LegalBasis not found')
       }
-      const legalBasisExists = await LegalBasisRepository.existsByNameExcludingId(
-        parsedlegalBasis.legalName,
-        legalBasisId
-      )
+      const legalBasisExists =
+        await LegalBasisRepository.existsByNameExcludingId(
+          parsedlegalBasis.legalName,
+          legalBasisId
+        )
       if (legalBasisExists) {
         throw new ErrorUtils(409, 'LegalBasis already exists')
       }
-      const abbreviationExists = await LegalBasisRepository.existsByAbbreviationExcludingId(
-        parsedlegalBasis.abbreviation,
-        legalBasisId
-      )
+      const abbreviationExists =
+        await LegalBasisRepository.existsByAbbreviationExcludingId(
+          parsedlegalBasis.abbreviation,
+          legalBasisId
+        )
       if (abbreviationExists) {
         throw new ErrorUtils(409, 'LegalBasis abbreviation already exists')
       }

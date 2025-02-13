@@ -1,123 +1,115 @@
-import pdf from 'pdf-parse-new'
-import { createWorker } from 'tesseract.js'
+import { S3_BUCKET_NAME } from '../../config/variables.config.js'
+import { textractClient } from '../../config/aws.config.js'
 import ErrorUtils from '../../utils/Error.js'
+import {
+  StartDocumentAnalysisCommand,
+  GetDocumentAnalysisCommand,
+  JobStatus,
+  BlockType,
+  FeatureType
+} from '@aws-sdk/client-textract'
 
 /**
  * Service class for processing documents.
  * Handles PDF and image files, extracting text content using OCR when necessary.
  */
 class DocumentService {
-  // Static worker instance for OCR processing
-  static worker = null
-
   /**
-   * Initializes the OCR worker if it hasn't been initialized yet.
-   * Sets up the worker to recognize English and Spanish languages.
-   * @throws {ErrorUtils} If the worker fails to initialize.
-   * @returns {Promise<void>} Resolves when the worker is initialized.
+   * Processes the provided file, extracting text content.
+   * @param {string} fileKey - The key of the file in the S3 bucket.
+   * @returns {Promise<{success: boolean, text?: string, error?: string}>} - The processing result.
    */
-  static async initializeWorker () {
-    if (!this.worker) {
-      try {
-        this.worker = await createWorker('eng+spa')
-      } catch (error) {
-        throw new ErrorUtils(500, 'Failed to initialize the OCR worker', error.message)
-      }
-    }
-  }
-
-  /**
-   * Terminates the OCR worker if it exists.
-   * Cleans up resources used by the worker.
-   * @throws {ErrorUtils} If the worker fails to terminate.
-   * @returns {Promise<void>} Resolves when the worker is terminated.
-   */
-  static async terminateWorker () {
-    if (this.worker) {
-      try {
-        await this.worker.terminate()
-      } catch (error) {
-        throw new ErrorUtils(500, 'Failed to terminate the OCR worker', error.message)
-      } finally {
-        this.worker = null
-      }
-    }
-  }
-
-  /**
-   * @typedef {Object} ProcessResult
-   * @property {boolean} success - Indicates if the processing was successful.
-   * @property {string} [data] - Extracted text content (present only if successful).
-   * @property {string} [error] - Error message (present only if unsuccessful).
-   */
-
-  /**
-   * Processes the provided document, extracting text content.
-   * Supports PDF, PNG, JPG, and JPEG file types.
-   * @param {Object} params - Parameters object.
-   * @param {Object} params.document - The document to process.
-   * @param {Buffer} params.document.buffer - The file buffer.
-   * @param {string} params.document.mimetype - The MIME type of the file.
-   * @returns {Promise<ProcessResult>} - An object containing success status, data (text), or an error message.
-   */
-  static async process ({ document }) {
+  static async process (fileKey) {
     try {
-      await this.initializeWorker()
-      let extractedText = ''
-      const { buffer, mimetype } = document
-      if (mimetype === 'application/pdf') {
-        if (!(buffer instanceof Buffer)) {
-          return { success: false, error: 'The document buffer is not valid' }
-        }
-        extractedText = await this.extractTextFromPDF(buffer)
-      } else if (['image/png', 'image/jpg', 'image/jpeg'].includes(mimetype)) {
-        extractedText = await this.extractTextFromImage(buffer)
-      } else {
-        return { success: false, error: 'Allowed types are: pdf, png, jpg, jpeg' }
+      const jobId = await this.startExtractText(fileKey)
+      const isComplete = await this.waitForJobCompletion(jobId)
+      if (!isComplete) {
+        return { success: false, error: 'Unexpected Error' }
       }
-      if (extractedText.trim()) {
-        return { success: true, data: extractedText }
-      } else {
-        return { success: false, error: 'Failed to extract text from the document' }
-      }
+      const text = await this.getExtractedText(jobId)
+      return { success: true, text }
     } catch (error) {
-      return { success: false, error: error.message || 'Failed to process the document' }
-    } finally {
-      await this.terminateWorker()
+      return { success: false, error: error.message }
     }
   }
 
   /**
-   * Extracts text content from a PDF buffer using pdf-parse-new.
-   * @param {Buffer} buffer - The PDF file buffer.
-   * @returns {Promise<string>} - The extracted text content.
-   * @throws {ErrorUtils} If an error occurs during PDF parsing.
+   * Starts the text extraction process from a file stored in S3.
+   * @param {string} fileKey - The key of the file in the S3 bucket.
+   * @returns {Promise<string>} - The JobId of the extraction process.
    */
-  static async extractTextFromPDF (buffer) {
-    const options = {
-      verbosityLevel: 0
+  static async startExtractText (fileKey) {
+    try {
+      const startCommand = new StartDocumentAnalysisCommand({
+        DocumentLocation: {
+          S3Object: { Bucket: S3_BUCKET_NAME, Name: fileKey }
+        },
+        FeatureTypes: [FeatureType.LAYOUT]
+      })
+      const { JobId } = await textractClient.send(startCommand)
+      return JobId
+    } catch (error) {
+      throw new ErrorUtils(`Failed to start text extraction for ${fileKey}`)
     }
-    return pdf(buffer, options)
-      .then((data) => {
-        return data.text
-      })
-      .catch((error) => {
-        throw new ErrorUtils(500, 'PDF Reading Error', error.message)
-      })
   }
 
   /**
-   * Extracts text content from an image buffer using Tesseract.js.
-   * @param {Buffer} buffer - The image file buffer.
-   * @returns {Promise<string>} - The extracted text content.
-   * @throws {ErrorUtils} If an error occurs during image processing.
+ * Waits for the Textract job to complete.
+ * @param {string} jobId - The Job ID of the document analysis.
+ * @returns {Promise<boolean>} - Returns `true` if the job completes successfully, otherwise throws an error.
+ */
+  static async waitForJobCompletion (jobId) {
+    let jobStatus = JobStatus.IN_PROGRESS
+    const maxRetries = 60
+    const secondsWait = 5000
+    let retries = 0
+    while (jobStatus === JobStatus.IN_PROGRESS) {
+      if (retries >= maxRetries) {
+        throw new ErrorUtils('Textract job timed out')
+      }
+      await new Promise(resolve => setTimeout(resolve, secondsWait))
+      try {
+        const command = new GetDocumentAnalysisCommand({ JobId: jobId })
+        const response = await textractClient.send(command)
+        jobStatus = response.JobStatus
+        if (jobStatus === JobStatus.FAILED) {
+          throw new ErrorUtils('Textract job failed')
+        }
+      } catch (error) {
+        throw new ErrorUtils('Failed to check job status')
+      }
+      retries++
+    }
+    if (jobStatus === JobStatus.SUCCEEDED) {
+      return true
+    }
+    throw new ErrorUtils('Unexpected job status')
+  }
+
+  /**
+   * Retrieves the extracted text from Textract.
+   * @param {string} jobId - The Job ID of the document analysis.
+   * @returns {Promise<string>} - The full extracted text.
    */
-  static async extractTextFromImage (buffer) {
-    return this.worker.recognize(buffer)
-      .then(({ data }) => data.text)
-      .catch((error) => {
-        throw new ErrorUtils(500, 'Image Processing Error', error.message)
-      })
+  static async getExtractedText (jobId) {
+    const extractedText = []
+    let nextToken = null
+    do {
+      try {
+        const commandParams = { JobId: jobId }
+        if (nextToken) commandParams.NextToken = nextToken
+        const command = new GetDocumentAnalysisCommand(commandParams)
+        const response = await textractClient.send(command)
+        const textBlocks = response.Blocks.filter(
+          (block) => block.BlockType === BlockType.LINE && block.Text
+        ).map((block) => block.Text.trim())
+        extractedText.push(...textBlocks)
+        nextToken = response.NextToken
+      } catch (error) {
+        throw new ErrorUtils('Failed to retrieve extracted text')
+      }
+    } while (nextToken)
+    return extractedText.join('\n')
   }
 }
 

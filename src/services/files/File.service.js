@@ -1,6 +1,6 @@
 import ErrorUtils from '../../utils/Error.js'
 import { S3_BUCKET_NAME } from '../../config/variables.config.js'
-import client from '../../config/s3.config.js'
+import { s3Client } from '../../config/aws.config.js'
 import { PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import { v4 as uuidv4 } from 'uuid'
@@ -14,6 +14,11 @@ class FileService {
    * @typedef {Object} UploadFileResult
    * @property {import('@aws-sdk/client-s3').PutObjectAclCommandOutput} response - The response from AWS S3 after uploading the file.
    * @property {string} uniqueFileName - The unique name assigned to the uploaded file.
+   */
+
+  /**
+   * @typedef {Object} DeleteFileResult
+   * @property {import('@aws-sdk/client-s3').DeleteObjectCommandOutput} response - The response from AWS S3 after deleting the file.
    */
 
   /**
@@ -37,7 +42,7 @@ class FileService {
         ContentType: file.mimetype
       }
       const command = new PutObjectCommand(uploadParams)
-      const response = await client.send(command)
+      const response = await s3Client.send(command)
       return { response, uniqueFileName }
     } catch (error) {
       throw new ErrorUtils(500, 'Error uploading file', error.message)
@@ -58,53 +63,13 @@ class FileService {
         Key: fileKey
       }
       const command = new GetObjectCommand(getObjectParams)
-      const urlExpiration = 432000 // 5 days
-      const presignedUrl = await getSignedUrl(client, command, { expiresIn: urlExpiration })
+      const urlExpiration = 432000
+      const presignedUrl = await getSignedUrl(s3Client, command, { expiresIn: urlExpiration })
       return presignedUrl
     } catch (error) {
       throw new ErrorUtils(500, 'Error generating presigned URL', error.message)
     }
   }
-
-  /**
-   * @typedef {Object} FileContentResult
-   * @property {Buffer} buffer - The binary content of the file as a buffer.
-   * @property {string} mimetype - The MIME type of the file.
-   */
-
-  /**
-   * Fetches the content of a file from the S3 bucket.
-   * @param {string} fileKey - The key of the file in the S3 bucket.
-   * @returns {Promise<FileContentResult>} - An object containing the file buffer and MIME type.
-   * @throws {ErrorUtils} - If an error occurs while retrieving the file content.
-   */
-  static async getFileContent (fileKey) {
-    try {
-      const getObjectParams = {
-        Bucket: S3_BUCKET_NAME,
-        Key: fileKey
-      }
-      const command = new GetObjectCommand(getObjectParams)
-      const { Body, ContentType } = await client.send(command)
-      const streamToBuffer = async (stream) => {
-        return new Promise((resolve, reject) => {
-          const chunks = []
-          stream.on('data', (chunk) => chunks.push(chunk))
-          stream.on('end', () => resolve(Buffer.concat(chunks)))
-          stream.on('error', reject)
-        })
-      }
-      const buffer = await streamToBuffer(Body)
-      return { buffer, mimetype: ContentType }
-    } catch (error) {
-      throw new ErrorUtils(500, 'Error fetching file content', error.message)
-    }
-  }
-
-  /**
-   * @typedef {Object} DeleteFileResult
-   * @property {import('@aws-sdk/client-s3').DeleteObjectCommandOutput} response - The response from AWS S3 after deleting the file.
-   */
 
   /**
    * Deletes a file from the specified S3 bucket.
@@ -119,7 +84,7 @@ class FileService {
         Key: fileKey
       }
       const command = new DeleteObjectCommand(deleteParams)
-      const response = await client.send(command)
+      const response = await s3Client.send(command)
       return { response }
     } catch (error) {
       throw new ErrorUtils(500, 'Error deleting file', error.message)
