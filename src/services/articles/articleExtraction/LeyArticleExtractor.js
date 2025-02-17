@@ -62,7 +62,7 @@ class LeyArticleExtractor extends ArticleExtractor {
     const sectionKeywordRegex =
       /\b[Ss]\s*[Ee]\s*[Cc]\s*[Cc]\s*[ÍIíi]\s*[ÓOóo]\s*[Nn]\s*(\d+[A-Z]*|[IVXLCDM]+)\b/gi
     const transientKeywordRegex =
-      /\b(?:\S+\s+)?[Tt]\s*[Rr]\s*[Aa]\s*[Nn]\s*[Ss]\s*[Ss]\s*[Ii]\s*[Tt]\s*[Oo]\s*[Rr]\s*[Ii]\s*[Oo]\s*[Ss]\b/gi
+      /\b(?:\S+\s+)?[Tt]\s*[Rr]\s*[Aa]\s*[Nn]\s*[Ss]\s*[Ii]\s*[Tt]\s*[Oo]\s*[Rr]\s*[Ii]\s*[Oo](?:\s*[Ss])?(?:\s*\S+)?\b/gi
     const ellipsisTextRegex = /[^.]+\s*\.{3,}\s*/g
     const singleEllipsisRegex = /\s*\.{3,}\s*/g
 
@@ -88,14 +88,16 @@ class LeyArticleExtractor extends ArticleExtractor {
       '(?:t[ií]tulo)\\s+\\S+|' +
       '(?:secci[oó]n)\\s+\\S+|' +
       '(?:art[ií]culo)\\s+\\S+|' +
-      '(?:\\S+\\s+)?transitorios' +
+      '(?:\\S+\\s+)?transitori(?:o|os)(?:\\s*\\S+)?' +
       ')'
+
     const articlePattern = new RegExp(articlePatternString, 'i')
     const chapterRegex = /^(?:c[áa]p[ií]tulo)\s+\S+$/i
     const titleRegex = /^(?:t[ií]tulo)\s+\S+$/i
     const sectionRegex = /^(?:secci[oó]n)\s+\S+$/i
     const articleRegex = /^(?:art[ií]culo)\s+\S+$/i
-    const transientHeaderRegex = /^(?:\S+\s+)?transitorios$/i
+    const transientHeaderRegex = /^(?:\S+\s+)?transitori(?:o|os)(?:\s*\S+)?$/i
+
     const regexes = [
       chapterRegex,
       sectionRegex,
@@ -103,8 +105,9 @@ class LeyArticleExtractor extends ArticleExtractor {
       articleRegex,
       transientHeaderRegex
     ]
+
     const matches = text.split(articlePattern)
-    const validArticles = []
+    const articles = []
     let currentArticle = null
     let order = 1
     for (let i = 1; i < matches.length; i++) {
@@ -112,7 +115,7 @@ class LeyArticleExtractor extends ArticleExtractor {
       if (regexes.some((regex) => regex.test(currentMatch))) {
         if (currentArticle) {
           const { isValid } = await this._verifyArticle(currentArticle)
-          if (isValid) validArticles.push(currentArticle)
+          if (isValid) articles.push(currentArticle)
         }
         currentArticle = this._createArticleObject(
           currentMatch,
@@ -123,9 +126,9 @@ class LeyArticleExtractor extends ArticleExtractor {
     }
     if (currentArticle) {
       const { isValid } = await this._verifyArticle(currentArticle)
-      if (isValid) validArticles.push(currentArticle)
+      if (isValid) articles.push(currentArticle)
     }
-    return validArticles
+    return articles
   }
 
   /**
