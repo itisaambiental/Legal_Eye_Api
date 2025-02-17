@@ -24,6 +24,7 @@ class ArticleExtractor {
     this.name = name
     this.text = text
     this.job = job
+    this.model = 'gpt-4o-mini'
   }
 
   /**
@@ -43,18 +44,18 @@ class ArticleExtractor {
    * @returns {string} - The cleaned text.
    * @throws {Error} If not implemented in a subclass.
    */
-  cleanText (_text) {
+  _cleanText (_text) {
     throw new Error('Method "cleanText" must be implemented')
   }
 
   /**
    * Abstract method to extract articles from the cleaned text.
    * Subclasses must override this method to provide specific extraction logic.
-   * @param {string} _text - Cleaned text to process and extract articles from.
-   * @returns {Array<Article>} - List of article objects.
+   * @param {string} _text - Text to process and extract articles from.
+   * @returns {Promise<Array<Article>>} - List of article objects.
    * @throws {Error} If not implemented in a subclass.
    */
-  _extractArticles (_text) {
+  async _extractArticles (_text) {
     throw new Error('Method "_extractArticles" must be implemented')
   }
 
@@ -64,14 +65,10 @@ class ArticleExtractor {
    * @param {string} _title - Title of the article.
    * @param {string} _content - Content of the article.
    * @param {number} _order - Order of the article.
-   * @returns {Object} - The article object with the following properties:
-   * - `title` (string): The title of the article.
-   * - `article` (string): The content of the article in HTML format.
-   * - `plainArticle` (string): The plain text equivalent of the article content.
-   * - `order` (number): The sequential order of the article.
+   * @returns {Article} - The article object.
    * @throws {Error} If not implemented in a subclass.
    */
-  createArticleObject (_title, _content, _order) {
+  _createArticleObject (_title, _content, _order) {
     throw new Error('Method "createArticleObject" must be implemented')
   }
 
@@ -79,10 +76,10 @@ class ArticleExtractor {
    * Abstract method to correct an article.
    * Subclasses must override this method to provide specific correction logic.
    * @param {Article} _article - The article object to correct.
-   * @returns {Promise<Object>} - Corrected article object.
+   * @returns {Promise<Article>} - Corrected article object.
    * @throws {Error} If not implemented in a subclass.
    */
-  async correctArticle (_article) {
+  async _correctArticle (_article) {
     throw new Error('Method "correctArticle" must be implemented')
   }
 
@@ -94,8 +91,31 @@ class ArticleExtractor {
    * @returns {string} - The constructed prompt.
    * @throws {Error} If not implemented in a subclass.
    */
-  buildPrompt (_documentName, _article) {
-    throw new Error('Method "buildPrompt" must be implemented')
+  _buildCorrectArticlePrompt (_documentName, _article) {
+    throw new Error('Method "buildCorrectArticlePrompt" must be implemented')
+  }
+
+  /**
+   * Abstract method to verify an article.
+   * Subclasses must override this method to provide specific verification logic.
+   * @param {Article} _article - The article object to verify.
+   * @returns {Promise<{ isValid: boolean }>} - JSON object indicating if the article is valid.
+   * @throws {Error} If not implemented in a subclass.
+   */
+  async _verifyArticle (_article) {
+    throw new Error('Method "verifyArticle" must be implemented')
+  }
+
+  /**
+   * Abstract method to build the prompt for article verification.
+   * Subclasses must override this method to construct specific prompts.
+   * @param {string} _documentName - The name of the document.
+   * @param {Article} _article - The article object for which the verification prompt is built.
+   * @returns {string} - The constructed prompt.
+   * @throws {Error} If not implemented in a subclass.
+   */
+  _buildVerifyPrompt (_documentName, _article) {
+    throw new Error('Method "buildVerifyPrompt" must be implemented')
   }
 
   /**
