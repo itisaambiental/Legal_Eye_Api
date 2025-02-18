@@ -53,16 +53,35 @@ class ReglamentoArticleExtractor extends ArticleExtractor {
    * @returns {string} - The cleaned text.
    */
   _cleanText (text) {
-    const articleKeywordRegex =
-      /\b[Aa]\s*R\s*T\s*[ÍIíi]\s*C\s*U\s*L\s*O\s*(\d+[A-Z]*|[IVXLCDM]+)\b/gi
-    const chapterKeywordRegex =
-      /\b[Cc]\s*[ÁAáa]\s*[Pp]\s*[ÍIíi]\s*[Tt]\s*[Uu]\s*[Ll]\s*[Oo]\s*(\d+[A-Z]*|[IVXLCDM]+)\b/gi
-    const titleKeywordRegex =
-      /\b[Tt]\s*[ÍIíi]\s*[Tt]\s*[Uu]\s*[Ll]\s*[Oo]\s*(\d+[A-Z]*|[IVXLCDM]+)\b/gi
-    const sectionKeywordRegex =
-      /\b[Ss]\s*[Ee]\s*[Cc]\s*[Cc]\s*[ÍIíi]\s*[ÓOóo]\s*[Nn]\s*(\d+[A-Z]*|[IVXLCDM]+)\b/gi
+    const numeralAdjective =
+    '(?:\\s*(?:bis|ter|quater|quinquies|sexies|septies|octies|novies|nonies|decies|undecies|duodecies|terdecies|quaterdecies|quindecies))?'
+    const articleKeywordRegex = new RegExp(
+      '\\b[Aa]\\s*R\\s*T\\s*[ÍIíi]\\s*C\\s*U\\s*L\\s*O\\s*((?:\\d+' +
+      numeralAdjective +
+      '|[IVXLCDM]+))\\b',
+      'gi'
+    )
+    const chapterKeywordRegex = new RegExp(
+      '\\b[Cc]\\s*[ÁAáa]\\s*[Pp]\\s*[ÍIíi]\\s*[Tt]\\s*[Uu]\\s*[Ll]\\s*[Oo]\\s*((?:\\d+' +
+      numeralAdjective +
+      '|[IVXLCDM]+))\\b',
+      'gi'
+    )
+    const titleKeywordRegex = new RegExp(
+      '\\b[Tt]\\s*[ÍIíi]\\s*[Tt]\\s*[Uu]\\s*[Ll]\\s*[Oo]\\s*((?:\\d+' +
+      numeralAdjective +
+      '|[IVXLCDM]+))\\b',
+      'gi'
+    )
+    const sectionKeywordRegex = new RegExp(
+      '\\b[Ss]\\s*[Ee]\\s*[Cc]\\s*[Cc]\\s*[ÍIíi]\\s*[ÓOóo]\\s*[Nn]\\s*((?:\\d+' +
+      numeralAdjective +
+      '|[IVXLCDM]+))\\b',
+      'gi'
+    )
     const transientKeywordRegex =
-      /\b(?:\S+\s+)?[Tt]\s*[Rr]\s*[Aa]\s*[Nn]\s*[Ss]\s*[Ii]\s*[Tt]\s*[Oo]\s*[Rr]\s*[Ii]\s*[Oo](?:\s*[Ss])?(?:\s*\S+)?\b/gi
+    /\b(?:\S+\s+)?[Tt]\s*[Rr]\s*[Aa]\s*[Nn]\s*[Ss]\s*[Ii]\s*[Tt]\s*[Oo]\s*[Rr]\s*[Ii]\s*[Oo](?:\s*[Ss])?(?:\s*\S+)?\b/gi
+
     const ellipsisTextRegex = /[^.]+\s*\.{3,}\s*/g
     const singleEllipsisRegex = /\s*\.{3,}\s*/g
 
@@ -77,20 +96,29 @@ class ReglamentoArticleExtractor extends ArticleExtractor {
   }
 
   /**
-   * @param {string} text - Text to process and extract articles from.
-   * @returns {Promise<Array<Article>>} - List of article objects.
-   */
+ * @param {string} text - Text to process and extract articles from.
+ * @returns {Promise<Array<Article>>} - List of article objects.
+ */
   async _extractArticles (text) {
     text = this._cleanText(text)
+    const numeralAdjective =
+    '(?:\\s*(?:bis|ter|quater|quinquies|sexies|septies|octies|novies|nonies|decies|undecies|duodecies|terdecies|quaterdecies|quindecies))?'
     const articlePatternString =
-      '(?:^|\\n)\\s*(' +
-      '(?:c[áa]p[ií]tulo)\\s+\\S+|' +
-      '(?:t[ií]tulo)\\s+\\S+|' +
-      '(?:secci[oó]n)\\s+\\S+|' +
-      '(?:art[ií]culo)\\s+\\S+|' +
-      '(?:\\S+\\s+)?transitori(?:o|os)(?:\\s*\\S+)?' +
-      ')'
-
+    '(?:^|\\n)\\s*(' +
+    '(?:c[áa]p[ií]tulo)\\s+(?:\\d+' +
+    numeralAdjective +
+    '|[IVXLCDM]+)|' +
+    '(?:t[ií]tulo)\\s+(?:\\d+' +
+    numeralAdjective +
+    '|[IVXLCDM]+)|' +
+    '(?:secci[oó]n)\\s+(?:\\d+' +
+    numeralAdjective +
+    '|[IVXLCDM]+)|' +
+    '(?:art[ií]culo)\\s+(?:\\d+' +
+    numeralAdjective +
+    '|[IVXLCDM]+)|' +
+    '(?:\\S+\\s+)?transitori(?:o|os)(?:\\s*\\S+)?' +
+    ')'
     const articlePattern = new RegExp(articlePatternString, 'i')
     const chapterRegex = /^(?:c[áa]p[ií]tulo)\s+\S+$/i
     const titleRegex = /^(?:t[ií]tulo)\s+\S+$/i
