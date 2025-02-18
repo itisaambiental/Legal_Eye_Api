@@ -24,7 +24,7 @@ class ArticleExtractor {
     this.name = name
     this.text = text
     this.job = job
-    this.model = 'gpt-4o-mini'
+    this.model = 'gpt-4o'
   }
 
   /**
