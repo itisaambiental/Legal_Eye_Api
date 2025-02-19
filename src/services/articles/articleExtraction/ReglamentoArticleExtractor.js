@@ -23,14 +23,11 @@ class ReglamentoArticleExtractor extends ArticleExtractor {
    */
   async extractArticles () {
     let articles
-    console.log(this.text)
     try {
       articles = await this._extractArticles(this.text)
     } catch (error) {
-      console.log(error)
       throw new ErrorUtils(500, 'Article Processing Error', error)
     }
-    console.log(articles)
     const totalArticles = articles.length
     const formatArticles = []
     let currentProgress = 0
@@ -43,7 +40,6 @@ class ReglamentoArticleExtractor extends ArticleExtractor {
         correctedArticle.plainArticle = convert(correctedArticle.article)
         formatArticles.push(correctedArticle)
       } catch (error) {
-        console.log(error)
         continue
       }
       currentProgress += 1
