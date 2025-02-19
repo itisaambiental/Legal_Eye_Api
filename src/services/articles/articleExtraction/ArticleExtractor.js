@@ -15,16 +15,17 @@ class ArticleExtractor {
    * Constructs an instance of ArticleExtractor.
    * @param {string} name - The name of the document.
    * @param {string} text - The text from which to extract articles.
+   * @param {string} model - AI model to be used in article extraction
    * @param {import("bull").Job} job - The Bull job object used for progress tracking.
    */
-  constructor (name, text, job) {
+  constructor (name, text, model, job) {
     if (this.constructor === ArticleExtractor) {
       throw new Error('Cannot instantiate abstract class ArticleExtractor')
     }
     this.name = name
     this.text = text
     this.job = job
-    this.model = 'gpt-4o'
+    this.model = model
   }
 
   /**

@@ -13,7 +13,8 @@ export default function generateLegalBasisData (overrides = {}) {
     classification: 'Reglamento',
     jurisdiction: 'Federal',
     lastReform: '01-01-2024',
-    extractArticles: 'false'
+    extractArticles: 'false',
+    intelligenceLevel: 'Low'
   }
   const data = {
     ...defaultData,

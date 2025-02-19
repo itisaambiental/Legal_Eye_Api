@@ -7,6 +7,25 @@ import ArticlesService from '../services/articles/Articles.service.js'
 import { CONCURRENCY_EXTRACT_ARTICLES } from '../config/variables.config.js'
 
 /**
+ * AI Models.
+ * @type {Object}
+ */
+const models = {
+  High: 'gpt-4o',
+  Low: 'gpt-4o-mini'
+}
+
+/**
+ * Returns the appropriate model based on the provided intelligence level.
+ *
+ * @param {string|null|undefined} intelligenceLevel - The intelligence level, expected to be 'High' or 'Low'.
+ * @returns {string} - Returns 'gpt-4o' if intelligenceLevel is 'High'; otherwise, returns 'gpt-4o-mini'.
+ */
+function getModel (intelligenceLevel) {
+  return intelligenceLevel === 'High' ? models.High : models.Low
+}
+
+/**
  * Maximum number of asynchronous operations possible in parallel.
  */
 const CONCURRENCY = Number(CONCURRENCY_EXTRACT_ARTICLES || 1)
@@ -14,14 +33,13 @@ const CONCURRENCY = Number(CONCURRENCY_EXTRACT_ARTICLES || 1)
 /**
  * Worker for processing articles jobs from the articles queue.
  * Listens to the articles queue and processes the articles data.
- * Handles the extraction and insertion of articles from a legal basis document.
  *
  * @param {import('bull').Job} job - The job object containing data to be processed.
  * @param {import('bull').ProcessCallbackFunction} done - Callback function to signal job completion.
  * @throws {ErrorUtils} - Throws an error if any step in the job processing fails.
  */
 articlesQueue.process(CONCURRENCY, async (job, done) => {
-  const { legalBasisId } = job.data
+  const { legalBasisId, intelligenceLevel } = job.data
   try {
     const currentJob = await articlesQueue.getJob(job.id)
     if (!currentJob) {
@@ -34,16 +52,16 @@ articlesQueue.process(CONCURRENCY, async (job, done) => {
     if (!legalBase) {
       return done(new ErrorUtils(404, 'LegalBasis not found'))
     }
-    const { error, success, text } = await DocumentService.process(
-      legalBase.url
-    )
+    const { error, success, text } = await DocumentService.process(legalBase.url)
     if (!success) {
       return done(new ErrorUtils(500, 'Document Processing Error', error))
     }
+    const model = getModel(intelligenceLevel)
     const extractor = ArticleExtractorFactory.getExtractor(
       legalBase.classification,
       legalBase.legal_name,
       text,
+      model,
       currentJob
     )
     if (!extractor) {
@@ -68,9 +86,7 @@ articlesQueue.process(CONCURRENCY, async (job, done) => {
     if (error instanceof ErrorUtils) {
       return done(error)
     }
-    return done(
-      new ErrorUtils(500, 'Unexpected error during article processing')
-    )
+    return done(new ErrorUtils(500, 'Unexpected error during article processing'))
   }
 })
 

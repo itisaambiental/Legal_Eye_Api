@@ -126,6 +126,7 @@ describe('Create a legal base', () => {
       .field('jurisdiction', legalBasisData.jurisdiction)
       .field('lastReform', legalBasisData.lastReform)
       .field('extractArticles', legalBasisData.extractArticles)
+      .field('intelligenceLevel', legalBasisData.intelligenceLevel)
       .expect(201)
       .expect('Content-Type', /application\/json/)
 
@@ -653,6 +654,7 @@ describe('Create a legal base', () => {
         .field('jurisdiction', legalBasisData.jurisdiction)
         .field('lastReform', legalBasisData.lastReform)
         .field('extractArticles', legalBasisData.extractArticles)
+        .field('intelligenceLevel', legalBasisData.intelligenceLevel)
         .expect(400)
       expect(response.body.message).toMatch(/Validation failed/i)
       expect(response.body.errors).toEqual(
@@ -688,6 +690,29 @@ describe('Create a legal base', () => {
         ])
       )
     })
+  })
+  test('Should return 400 if intelligenceLevel is invalid', async () => {
+    const legalBasisData = generateLegalBasisData({
+      subjectId: String(createdSubjectId),
+      aspectsIds: JSON.stringify(createdAspectIds),
+      intelligenceLevel: 'Medium'
+    })
+
+    const response = await api
+      .post('/api/legalBasis')
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .send(legalBasisData)
+      .expect(400)
+
+    expect(response.body.message).toMatch(/Validation failed/i)
+    expect(response.body.errors).toEqual(
+      expect.arrayContaining([
+        {
+          field: 'intelligenceLevel',
+          message: 'The intelligenceLevel field must be either "High" or "Low"'
+        }
+      ])
+    )
   })
 })
 describe('Get All Legal Basis', () => {
@@ -1975,6 +2000,7 @@ describe('Get Legal Basis By Subject And Aspects', () => {
         .field('lastReform', updatedData.lastReform)
         .field('removeDocument', updatedData.removeDocument)
         .field('extractArticles', updatedData.extractArticles)
+        .field('intelligenceLevel', updatedData.intelligenceLevel)
         .expect(400)
         .expect('Content-Type', /application\/json/)
 
@@ -2051,6 +2077,7 @@ describe('Get Legal Basis By Subject And Aspects', () => {
         .field('jurisdiction', updatedData.jurisdiction)
         .field('lastReform', updatedData.lastReform)
         .field('extractArticles', updatedData.extractArticles)
+        .field('intelligenceLevel', updatedData.intelligenceLevel)
         .expect(409)
         .expect('Content-Type', /application\/json/)
 
@@ -2089,6 +2116,7 @@ describe('Get Legal Basis By Subject And Aspects', () => {
         .field('jurisdiction', legalBasisData.jurisdiction)
         .field('lastReform', legalBasisData.lastReform)
         .field('extractArticles', legalBasisData.extractArticles)
+        .field('intelligenceLevel', legalBasisData.intelligenceLevel)
         .expect(201)
         .expect('Content-Type', /application\/json/)
 
@@ -2113,6 +2141,7 @@ describe('Get Legal Basis By Subject And Aspects', () => {
         .field('jurisdiction', updatedData.jurisdiction)
         .field('lastReform', updatedData.lastReform)
         .field('extractArticles', updatedData.extractArticles)
+        .field('intelligenceLevel', updatedData.intelligenceLevel)
         .expect(409)
         .expect('Content-Type', /application\/json/)
 

@@ -11,7 +11,7 @@ import validateDate from '../utils/validateDate.js'
 /**
  * Creates a new legal basis record.
  * @function createLegalBasis
- * @param {import('express').Request} req - Request object, expects { legalName, abbreviation, subjectId, aspectsIds, classification, jurisdiction, state, municipality, lastReform, extractArticles } in body, and 'document' as a file.
+ * @param {import('express').Request} req - Request object, expects { legalName, abbreviation, subjectId, aspectsIds, classification, jurisdiction, state, municipality, lastReform, extractArticles, intelligenceLevel } in body, and 'document' as a file.
  * @param {import('express').Response} res - Response object.
  * @returns {Object} - The jobId and the created legalBasis data.
  */
@@ -27,7 +27,8 @@ export const createLegalBasis = async (req, res) => {
     state,
     municipality,
     lastReform,
-    extractArticles
+    extractArticles,
+    intelligenceLevel
   } = req.body
   const document = req.file
   try {
@@ -46,7 +47,8 @@ export const createLegalBasis = async (req, res) => {
         state,
         municipality,
         lastReform,
-        extractArticles
+        extractArticles,
+        intelligenceLevel
       },
       document
     )
@@ -439,7 +441,7 @@ export const getLegalBasisByLastReform = async (req, res) => {
 /**
  * Updates a legal basis record.
  * @function updateLegalBasis
- * @param {import('express').Request} req - Request object, expects { id } in params and { legalName, abbreviation, subjectId, aspectsIds, classification, jurisdiction, state, municipality, lastReform, extractArticles, removeDocument } in body and an optional 'document' file.
+ * @param {import('express').Request} req - Request object, expects { id } in params and { legalName, abbreviation, subjectId, aspectsIds, classification, jurisdiction, state, municipality, lastReform, extractArticles, intelligenceLevel, removeDocument } in body and an optional 'document' file.
  * @param {import('express').Response} res - Response object.
  * @returns {Object} - The updated legal basis record.
  */
@@ -457,6 +459,7 @@ export const updateLegalBasis = async (req, res) => {
     municipality,
     lastReform,
     extractArticles,
+    intelligenceLevel,
     removeDocument
   } = req.body
   const document = req.file
@@ -478,6 +481,7 @@ export const updateLegalBasis = async (req, res) => {
         municipality,
         lastReform,
         extractArticles,
+        intelligenceLevel,
         removeDocument
       },
       document

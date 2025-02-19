@@ -3,12 +3,12 @@ import { isValid, parse, parseISO, format } from 'date-fns'
 
 /**
  * Zod validation schema for a legal basis record.
- * Ensures that the input data meets the requirements for creating or updating a legal basis.
+ * This schema ensures that the input data meets the requirements for creating or updating a legal basis.
  */
 const legalBasisSchema = z
   .object({
     /**
-     * The name of the legal basis.
+     * Legal basis name.
      * Must be a non-empty string with a maximum length of 255 characters.
      */
     legalName: z
@@ -17,7 +17,7 @@ const legalBasisSchema = z
       .max(255, 'The legal name cannot exceed 255 characters'),
 
     /**
-     * The abbreviation of the legal basis.
+     * Abbreviation of the legal basis.
      * Must be a non-empty string with a maximum length of 255 characters.
      */
     abbreviation: z
@@ -26,7 +26,7 @@ const legalBasisSchema = z
       .max(255, 'The abbreviation cannot exceed 255 characters'),
 
     /**
-     * The subject associated with the legal basis.
+     * Subject ID associated with the legal basis.
      * Must be a string that can be converted to a valid number.
      */
     subjectId: z
@@ -38,8 +38,8 @@ const legalBasisSchema = z
       .transform((val) => Number(val)),
 
     /**
-     * The aspects associated with the legal basis.
-     * Must be an array of valid numbers represented as strings.
+     * Aspects IDs associated with the legal basis.
+     * Must be a stringified JSON array of valid numbers.
      */
     aspectsIds: z
       .string()
@@ -61,7 +61,7 @@ const legalBasisSchema = z
       ),
 
     /**
-     * The classification of the legal basis.
+     * Classification of the legal basis.
      * Must be one of the predefined categories.
      */
     classification: z.enum(
@@ -87,8 +87,8 @@ const legalBasisSchema = z
     ),
 
     /**
-     * The jurisdiction of the legal basis.
-     * Must be one of 'Estatal', 'Federal', or 'Local'.
+     * Jurisdiction of the legal basis.
+     * Must be one of: 'Estatal', 'Federal', or 'Local'.
      */
     jurisdiction: z.enum(['Estatal', 'Federal', 'Local'], {
       message:
@@ -96,8 +96,8 @@ const legalBasisSchema = z
     }),
 
     /**
-     * The state associated with the legal basis.
-     * Optional field, applicable only for 'Estatal' and 'Local' jurisdictions.
+     * State associated with the legal basis.
+     * Optional; applicable for 'Estatal' and 'Local' jurisdictions.
      */
     state: z
       .string()
@@ -105,8 +105,8 @@ const legalBasisSchema = z
       .optional(),
 
     /**
-     * The municipality associated with the legal basis.
-     * Optional field, applicable only for 'Local' jurisdiction.
+     * Municipality associated with the legal basis.
+     * Optional; applicable only for 'Local' jurisdiction.
      */
     municipality: z
       .string()
@@ -114,8 +114,8 @@ const legalBasisSchema = z
       .optional(),
 
     /**
-     * The date of the last reform of the legal basis.
-     * Must be a valid date string.
+     * Date of the last reform.
+     * Must be a valid date string in either YYYY-MM-DD or DD-MM-YYYY format.
      */
     lastReform: z
       .string()
@@ -143,8 +143,8 @@ const legalBasisSchema = z
       }),
 
     /**
-     * The document associated with the legal basis.
-     * Must have a valid mimetype (pdf, png, jpeg).
+     * Document associated with the legal basis.
+     * Optional; must have a valid mimetype (pdf, png, jpeg).
      */
     document: z
       .object({
@@ -162,12 +162,9 @@ const legalBasisSchema = z
       .optional(),
 
     /**
-     * Validation for the 'removeDocument' field.
-     * Transforms a string input to a boolean.
-     * - If the input is the string 'true', it is converted to true.
-     * - Otherwise, it is converted to false.
-     * Ensures that 'removeDocument' is a boolean value after transformation.
-     * This field is optional.
+     * Flag to remove the associated document.
+     * Optional string that is transformed into a boolean.
+     * Allowed values: 'true' or 'false'.
      */
     removeDocument: z
       .string()
@@ -183,24 +180,28 @@ const legalBasisSchema = z
       ),
 
     /**
-     * Validation for the 'extractArticles' field.
-     * Transforms a string input to a boolean.
+     * Flag indicating whether to extract articles from the document.
+     * Must be either 'true' or 'false'. Transforms the string into a boolean.
      */
     extractArticles: z
       .string()
       .refine((value) => value === 'true' || value === 'false', {
         message: 'extractArticles must be either "true" or "false"'
       })
-      .transform((value) => value === 'true')
-  })
+      .transform((value) => value === 'true'),
 
-  .superRefine((data, context) => {
     /**
-     * Validates fields based on the selected jurisdiction:
-     * - 'Federal': No state or municipality should be provided.
-     * - 'Estatal': A state must be provided, but no municipality.
-     * - 'Local': Both state and municipality must be provided.
+     * Intelligence level.
+     * Optional and nullable enum. Allowed values: 'High' or 'Low'.
      */
+    intelligenceLevel: z
+      .enum(['High', 'Low'], {
+        message: 'The intelligenceLevel field must be either "High" or "Low"'
+      })
+      .optional()
+      .nullable()
+  })
+  .superRefine((data, context) => {
     if (data.jurisdiction === 'Federal') {
       if (data.state) {
         context.addIssue({

@@ -62,6 +62,7 @@ class LegalBasisService {
    * @property {string|null} legalBasis.url - The URL of the updated document, or null if not provided.
    * @property {string|null} legalBasis.fileKey - The unique key of the updated document, or null.
    */
+
   /**
    * Creates a new legal basis entry.
    *
@@ -76,6 +77,7 @@ class LegalBasisService {
    * @param {string} [legalBasis.municipality] - The municipality associated with the legal basis.
    * @param {string} legalBasis.lastReform - The date of the last reform.
    * @param {boolean} legalBasis.extractArticles - Indicator whether to extract articles from the document.
+   * @param {string} legalBasis.intelligenceLevel - Level of intelligence to extract the articles
    * @param {Express.Multer.File} [document] - The document to process (optional).
    * @returns {Promise<CreatedLegalBasis>} A promise that resolves with an object containing the jobId (if applicable) and the created legal basis data.
    * @throws {ErrorUtils} If an error occurs during validation or creation.
@@ -141,7 +143,8 @@ class LegalBasisService {
         documentUrl = await FileService.getFile(documentKey)
         if (parsedlegalBasis.extractArticles) {
           const job = await articlesQueue.add({
-            legalBasisId: createdLegalBasis.id
+            legalBasisId: createdLegalBasis.id,
+            intelligenceLevel: parsedlegalBasis.intelligenceLevel
           })
           jobId = job.id
         }
@@ -818,6 +821,7 @@ class LegalBasisService {
    * @param {string} [legalBasis.municipality] - The municipality associated with the legal basis.
    * @param {string} legalBasis.lastReform - The date of the last reform.
    * @param {string} legalBasis.extractArticles - Indicator whether to extract articles from the document.
+   * @param {string} legalBasis.intelligenceLevel - Level of intelligence to extract the articles
    * @param {string} [legalBasis.removeDocument] - The flag to determine whether the document should be deleted.
    * @param {Express.Multer.File} [document] - The document to process (optional).
    * @returns {Promise<UpdatedLegalBasis>} A promise that resolves with an object containing the jobId (if an extraction job is initiated) and the updated legal basis data.
@@ -936,7 +940,8 @@ class LegalBasisService {
         documentUrl = await FileService.getFile(documentKey)
         if (parsedlegalBasis.extractArticles) {
           const job = await articlesQueue.add({
-            legalBasisId: updatedLegalBasis.id
+            legalBasisId: updatedLegalBasis.id,
+            intelligenceLevel: parsedlegalBasis.intelligenceLevel
           })
           jobId = job.id
         }
