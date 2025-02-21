@@ -62,7 +62,9 @@ class LeyArticleExtractor extends ArticleExtractor {
     const sectionKeywordRegex =
       /\b[Ss]\s*[Ee]\s*[Cc]\s*[Cc]\s*[ÍIíi]\s*[ÓOóo]\s*[Nn]\s*(\d+[A-Z]*|[IVXLCDM]+)\b/gi
     const transientKeywordRegex =
-      /\b(?:\S+\s+)?[Tt]\s*[Rr]\s*[Aa]\s*[Nn]\s*[Ss]\s*[Ii]\s*[Tt]\s*[Oo]\s*[Rr]\s*[Ii]\s*[Oo](?:\s*[Ss])?(?:\s*\S+)?\b/gi
+      /\b[Tt]\s*[Rr]\s*[Aa]\s*[Nn]\s*[Ss]\s*[Ii]\s*[Tt]\s*[Oo]\s*[Rr]\s*[Ii]\s*[Oo](?:\s*[Ss])?\s*(\d+[A-Z]*|[IVXLCDM]+)?\b/gi
+    const annexKeywordRegex =
+      /\b[Aa]\s*[Nn]\s*[Ee]\s*[Xx]\s*[Oo]\s*(\d+[A-Z]*|[IVXLCDM]+)?\b/gi
     const ellipsisTextRegex = /[^.]+\s*\.{3,}\s*/g
     const singleEllipsisRegex = /\s*\.{3,}\s*/g
 
@@ -71,7 +73,8 @@ class LeyArticleExtractor extends ArticleExtractor {
       .replace(chapterKeywordRegex, 'CAPÍTULO $1')
       .replace(sectionKeywordRegex, 'SECCIÓN $1')
       .replace(titleKeywordRegex, 'TÍTULO $1')
-      .replace(transientKeywordRegex, 'TRANSITORIOS')
+      .replace(transientKeywordRegex, 'TRANSITORIOS $1')
+      .replace(annexKeywordRegex, 'ANEXO $1')
       .replace(ellipsisTextRegex, '')
       .replace(singleEllipsisRegex, '')
   }
@@ -82,13 +85,15 @@ class LeyArticleExtractor extends ArticleExtractor {
    */
   async _extractArticles (text) {
     text = this._cleanText(text)
+
     const articlePatternString =
       '(?:^|\\n)\\s*(' +
       '(?:c[áa]p[ií]tulo)\\s+\\S+|' +
       '(?:t[ií]tulo)\\s+\\S+|' +
       '(?:secci[oó]n)\\s+\\S+|' +
       '(?:art[ií]culo)\\s+\\S+|' +
-      '(?:\\S+\\s+)?transitori(?:o|os)(?:\\s*\\S+)?' +
+      '(?:transitori[oó]s?)\\s+\\S+|' +
+      '(?:anexo)\\s+\\S+' +
       ')'
 
     const articlePattern = new RegExp(articlePatternString, 'i')
@@ -96,20 +101,23 @@ class LeyArticleExtractor extends ArticleExtractor {
     const titleRegex = /^(?:t[ií]tulo)\s+\S+$/i
     const sectionRegex = /^(?:secci[oó]n)\s+\S+$/i
     const articleRegex = /^(?:art[ií]culo)\s+\S+$/i
-    const transientHeaderRegex = /^(?:\S+\s+)?transitori(?:o|os)(?:\s*\S+)?$/i
+    const transientHeaderRegex = /^(?:transitori[oó]s?)\s+\S+$/i
+    const annexHeaderRegex = /^(?:anexo)\s+\S+$/i
 
     const regexes = [
       chapterRegex,
       sectionRegex,
       titleRegex,
       articleRegex,
-      transientHeaderRegex
+      transientHeaderRegex,
+      annexHeaderRegex
     ]
 
     const matches = text.split(articlePattern)
     const articles = []
     let currentArticle = null
     let order = 1
+
     for (let i = 1; i < matches.length; i++) {
       const currentMatch = matches[i].trim()
       if (regexes.some((regex) => regex.test(currentMatch))) {
@@ -124,10 +132,12 @@ class LeyArticleExtractor extends ArticleExtractor {
         )
       }
     }
+
     if (currentArticle) {
       const { isValid } = await this._verifyArticle(currentArticle)
       if (isValid) articles.push(currentArticle)
     }
+
     return articles
   }
 
@@ -211,19 +221,35 @@ class LeyArticleExtractor extends ArticleExtractor {
    */
   _buildVerifyPrompt (documentName, article) {
     return `
-    Analyze the content of "${article.title}" within the Mexican legal basis titled "${documentName}". Then, Indicates if the article is valid:
-    
+    Analyze the content of "${article.title}" within the Mexican legal basis titled "${documentName}". 
+    Then, determine whether the legal provision is valid based on the following criteria:
+
+    ### **Legal Provision Details**
     {
       "title": "${article.title}",
       "article": "${article.article}",
       "plainArticle": "${article.plainArticle}",
       "order": ${article.order}
     }
-    
-    ### Instructions:
-    1. If the "article" field is empty, or contains only numbers or gibberish characters, consider the article invalid.
-    2. If the "article" field contains text that clearly explains a concept or presents a valid title, section, chapter or transient, consider the article valid.
-    `
+
+    ### **Criteria for a Valid Legal Provision**
+    A provision is considered valid if it meets at least one of the following conditions:
+
+    1. **Articles (Artículos)**:
+      - Must belong to a recognized legal document.
+      - Must establish legal norms such as obligations, rights, prohibitions, or principles.
+      - Should have a clear legal structure.
+      - It must contain a specific legal rule or directive rather than just referencing other articles.
+
+    2. **Chapters (Capítulos), Titles (Títulos), and Sections (Secciones)**:
+      - Must be part of a structured legal framework.
+
+    3. **Annexes (Anexos)**:
+      - Must provide additional information that supports or complements the legal text.
+
+    4. **Transitory Provisions (Disposiciones Transitorias)**:
+      - Must establish rules for the transition or application of the legal document.
+   `
   }
 
   /**
@@ -294,18 +320,22 @@ Analyze the content of "${article.title}" within the Mexican legal basis titled 
    - The "plainArticle" field must always remain as an empty string ("").
    - Do not modify or populate this field with any content.
 
-2. **Title**: 
+2. **Title**:
    - The title field should only state the article, title, section, or chapter number.
-   - If the article content begins with a numeral indicator (e.g., "bis", "ter", "quater", "quinquies", "sexies", "septies", "octies", "novies", "nonies", "decies", "undecies", "duodecies", "terdecies", "quaterdecies", or "quindecies"), remove it from the article content and append it to the title.
+   - If the article content begins with a **numeral indicator** (e.g., "bis", "ter", "quater", "quinquies", "sexies", "septies", "octies", "novies", "nonies", "decies", "undecies", "duodecies", "terdecies", "quaterdecies", "quindecies"), **or an ordinal numeral** (e.g., "décimo", "undécimo", "duodécimo", "trigésimo", "cuadragésimo", "quincuagésimo", "sexagésimo", "septuagésimo", "octogésimo", "nonagésimo", "centésimo"), "Check if the numeral indicator is being used as part of the article’s legal meaning. If removing it does not change the meaning, move it to the title field.  If the numeral indicator is an essential part of the article’s meaning, keep it within the content.".
+   - This applies to **articles, chapters, sections, titles, annex and transitories,**.
    - Ensure that titles are concise and formatted consistently.
    - Do not use HTML tags in titles.
 
   #### Examples (in Spanish):
-   - ARTÍCULO 1 Bis, Sección 2, Capítulo 3
-   - Artículo I Ter - Artículo II, Sección III, CAPÍTULO IV
-   - Artículo 1 Bis - Artículo 2, SECCIÓN 3 Ter, Capítulo 4 Bis
-   - Capítulo Tercero, Sección Cuarta, Artículo Primero Sexies
-   - TÍTULO I, Titulo I Bis, Titulo VII, Titulo VIII Quater, 
+   - **ARTÍCULO 1 Bis**, **SECCIÓN 2**, **CAPÍTULO 3**
+   - **Artículo I Ter**, **Artículo II**, **Sección III**, **CAPÍTULO IV**
+   - **Artículo 1 Bis**, **Artículo 2**, **SECCIÓN 3 Ter**, **Capítulo 4 Bis**
+   - **Capítulo Tercero**, **Sección Cuarta**, **Artículo Primero Sexies**
+   - **TÍTULO I**, **Título I Bis**, **Título VII**, **Título VIII Quater**
+   - **CAPÍTULO DÉCIMO SEGUNDO**, **CAPÍTULO DÉCIMO TERCERO**, **CAPÍTULO TRIGÉSIMO PRIMERO**
+   - **SECCIÓN UNDÉCIMA**, **SECCIÓN VIGÉSIMA, **TRANSITORIO PRIMERO**, **ANEXO 1**
+   - **TÍTULO CUADRAGÉSIMO**, **TÍTULO QUINCUAGÉSIMO SEXTO**, **TRANSITORIO SEGUNDO**, **ANEXO II**
 
   **Output (Unformatted HTML):**  
    // Titles should not have HTML tags.
@@ -313,7 +343,10 @@ Analyze the content of "${article.title}" within the Mexican legal basis titled 
    - Artículo I Ter - Artículo II, Sección III, CAPÍTULO IV
    - Artículo 1 Bis - Artículo 2, SECCIÓN 3 Ter, Capítulo 4 Bis
    - Capítulo Tercero, Sección Cuarta, Artículo Primero Sexies
-   - TÍTULO I, Titulo I Bis, Titulo VII, Titulo VIII Quater, 
+   - TÍTULO I, Título I Bis, Título VII, Título VIII Quater
+   - CAPÍTULO DÉCIMO SEGUNDO, CAPÍTULO DÉCIMO TERCERO, CAPÍTULO TRIGÉSIMO PRIMERO
+   - SECCIÓN UNDÉCIMA, SECCIÓN VIGÉSIMA, TRANSITORIO PRIMERO, ANEXO 1
+   - TÍTULO CUADRAGÉSIMO, TÍTULO QUINCUAGÉSIMO SEXTO, TRANSITORIO SEGUNDO, ANEXO II
 
 3. **Articles**:
    - Review and correct long paragraphs, ensuring each explains a specific concept or legal provision.
@@ -335,58 +368,61 @@ Analyze the content of "${article.title}" within the Mexican legal basis titled 
    <p>En tales casos, el promovente deberá tramitar la renovación correspondiente conforme a los criterios que la Secretaría determine.</p>
    **order:** 1
 
+  4. Chapters, Titles, Sections, and Annexes:
+   - Ensure headings are concise and formatted with appropriate text structure.
+   - Titles should be short and precise, containing only the grouping heading without including articles or detailed content.
+   - If any articles are included, remove them from the chapter, section, title, or annex.
+   - Chapters, Titles, Sections, and Annexes should follow the structure:
+     - TITLE # + Title Name
+     - CHAPTER # + Chapter Name
+     - SECTION # + Section Name
+     - ANNEX # + Annex Name
 
-   4. **Chapters, Titles, and Sections**:
-   - Ensure headings are concise and formatted with appropriate HTML tags such as " < h1 > ', ' < h2 > ', or ' < h3 > ".
-   - Make sure they are short and concise, containing only the grouping heading without including articles or detailed content. If you include any articles, remove them from the chapter, section, or title.
-   Chapters, Titles, and Sections should follow the structure:
-   TITLE # + Title Name
-   CHAPTER # + Chapter Name
-   SECTION # + Section Name
+   ATTENTION:
+   - Title, Chapter, Section, and Annex names should be short.
+   - Do not include additional information in these headings.
 
-      ATTENTION: Title, chapter, and section names should be short.
-   Please do not put additional information in Chapters, Titles, and Sections
-#### Examples:
+    Examples:
 
-   **Example 1 (Chapter in Spanish):**  
-   **title:** CAPÍTULO TERCERO  
-   **article:** DEL COMITÉ ESTATAL DE EMERGENCIAS Y DESASTRES. La Ley del Agua para el Estado de Puebla tiene como finalidad regular el uso, conservación y protección del agua, asegurando su disponibilidad y calidad para las generaciones presentes y futuras.  
-   **order:** 3  
+    Example 1 (Chapter in Spanish):
+    title: CAPÍTULO TERCERO
+    article: DEL COMITÉ ESTATAL DE EMERGENCIAS Y DESASTRES. La Ley del Agua para el Estado de Puebla tiene como finalidad regular el uso, conservación y protección del agua, asegurando su disponibilidad y calidad para las generaciones presentes y futuras.
+    order: 3
 
-   **Output (Formatted in HTML):**  
-   **title:** CAPÍTULO TERCERO  
-   **article:** <h2>DEL COMITÉ ESTATAL DE EMERGENCIAS Y DESASTRES</h2>  
-   **order:** 3  
+    Output (Formatted):
+    title: CAPÍTULO TERCERO
+    article: DEL COMITÉ ESTATAL DE EMERGENCIAS Y DESASTRES
+    order: 3
 
-   **Example 2 (Section in Spanish):**  
-   **title:** SECCIÓN PRIMERA  
-   **article:** DISPOSICIONES COMUNES  
-   **order:** 6  
+    Example 2 (Section in Spanish):
+    title: SECCIÓN PRIMERA
+    article: DISPOSICIONES COMUNES
+    order: 6
 
-   **Output (Formatted in HTML):**  
-   **title:** SECCIÓN PRIMERA  
-   **article:** <h2>DISPOSICIONES COMUNES</h2>  
-   **order:** 6  
+    Output (Formatted):
+    title: SECCIÓN PRIMERA
+    article: DISPOSICIONES COMUNES
+    order: 6
 
-   **Example 3 (Title in Spanish):**  
-   **title:** TÍTULO I
-   **article:** DISPOSICIONES GENERALES  
-   **order:** 1  
+    Example 3 (Title in Spanish):
+    title: TÍTULO I
+    article: DISPOSICIONES GENERALES
+    order: 1
 
-   **Output (Formatted in HTML):**  
-   **title:** TÍTULO I 
-   **article:** <h2>DISPOSICIONES GENERALES</h2>  
-   **order:** 1  
+    Output (Formatted):
+    title: TÍTULO I
+    article: DISPOSICIONES GENERALES
+    order: 1
 
-   **Example 4 (Title in Spanish):**  
-   **title:** TÍTULO IV
-   **article:** DEL DIRECTOR RESPONSABLE DE LA OBRA
-   **order:** 1  
+    Example 4 (Annex in Spanish) - NEW:
+    title: ANEXO IV
+    article: REQUISITOS TÉCNICOS PARA LA EVALUACIÓN DE IMPACTO AMBIENTAL
+    order: 1
 
-   **Output (Formatted in HTML):**  
-   **title:** TÍTULO IV  
-   **article:** <h2>DEL DIRECTOR RESPONSABLE DE LA OBRA</h2>  
-   **order:** 1
+    Output (Formatted):
+    title: ANEXO IV
+    article: REQUISITOS TÉCNICOS PARA LA EVALUACIÓN DE IMPACTO AMBIENTAL
+    order: 1
 
 5. **Transitory Provisions**:
    - Format temporary provisions clearly, specifying effective dates and adaptation periods.
@@ -414,7 +450,7 @@ Analyze the content of "${article.title}" within the Mexican legal basis titled 
 
 - Use consistent and professional formatting, such as proper indentation for nested elements.
 - Respect spaces, punctuation (e.g., periods, hyphens), and line breaks for clarity.
-- Ensure all text ends with complete ideas but without inventing new things.
+- Ensure all text ends with complete ideas but but without making up or creating new things.
 - Maintain any existing tables or columns using <table>, <thead>, <tbody>, and <tr> tags.
 - Use semantic HTML wherever possible to improve readability and structure.
 - Return the corrected object in **Spanish**, preserving the original meaning of the text.
