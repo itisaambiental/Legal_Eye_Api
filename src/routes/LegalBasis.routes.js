@@ -20,9 +20,7 @@ import {
   getLegalBasisByLastReform,
   updateLegalBasis,
   deleteLegalBasis,
-  deleteLegalBasisBatch,
-  getClassifications,
-  getJurisdictions
+  deleteLegalBasisBatch
 } from '../controllers/LegalBasis.controller.js'
 import { upload } from '../config/multer.config.js'
 
@@ -182,23 +180,5 @@ router.delete('/legalBasis/:id', UserExtractor, deleteLegalBasis)
  * @middlewares UserExtractor
  */
 router.delete('/legalBasis/delete/batch', UserExtractor, deleteLegalBasisBatch)
-
-/**
- * Route to retrieve legal basis entries filtered by subject and optionally by aspects.
- * @method GET
- * @path /legalBasis/classification/classification/all
- * @description Retrieves all classification entries.
- * @middleware UserExtractor
- */
-router.get('/legalBasis/classification/classification/all', UserExtractor, getClassifications)
-
-/**
- * Route to retrieve all jurisdiction entries.
- * @method GET
- * @path /legalBasis/jurisdiction/jurisdiction/all
- * @description Retrieves all jurisdiction entries.
- * @middleware UserExtractor
- */
-router.get('/legalBasis/jurisdiction/jurisdiction/all', UserExtractor, getJurisdictions)
 
 export default router

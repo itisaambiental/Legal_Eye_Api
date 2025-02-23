@@ -1070,60 +1070,6 @@ class LegalBasisService {
       )
     }
   }
-
-  /**
-   * Retrieves all unique classification values.
-   * @function getClassifications
-   * @returns {Promise<Array<{classification_name: string}>>}
-   * @throws {ErrorUtils} -  If any error occurs during the fetching process.
-   */
-  static async getClassifications () {
-    try {
-      const classifications = await LegalBasisRepository.findClassifications()
-      if (!classifications) {
-        return []
-      }
-      const classificationsData = classifications.map((classification) => ({
-        classification_name: classification
-      }))
-      return classificationsData
-    } catch (error) {
-      if (error instanceof ErrorUtils) {
-        throw error
-      }
-      throw new ErrorUtils(
-        500,
-        'Unexpected error during fetching distinct classifications'
-      )
-    }
-  }
-
-  /**
-   * Retrieves all unique jurisdiction values.
-   * @function getJurisdictions
-   * @returns {Promise<Array<{jurisdiction_name: string}>>}
-   * @throws {ErrorUtils} - If any error occurs during the fetching process.
-   */
-  static async getJurisdictions () {
-    try {
-      const jurisdictions = await LegalBasisRepository.findJurisdictions()
-      if (!jurisdictions) {
-        return []
-      }
-      const jurisdictionsData = jurisdictions.map((jurisdiction) => ({
-        jurisdiction_name: jurisdiction
-      }))
-      return jurisdictionsData
-    } catch (error) {
-      if (error instanceof ErrorUtils) {
-        throw error
-      }
-      throw new ErrorUtils(
-        500,
-        'Unexpected error during fetching distinct jurisdictions'
-      )
-    }
-  }
 }
 
 export default LegalBasisService

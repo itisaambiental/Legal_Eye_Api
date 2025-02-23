@@ -1451,54 +1451,6 @@ VALUES ${aspectsIds.map(() => '(?, ?, ?)').join(', ')}
       connection.release()
     }
   }
-
-  /**
-   * Retrieves all the unique classification values.
-   *
-   * @async
-   * @function findClassifications
-   * @returns {Promise<string[]|null>} - A promise that resolves to an array of unique classification strings.
-   * @throws {ErrorUtils} - If an error occurs while fetching the classifications.
-   */
-  static async findClassifications () {
-    const query = `
-    SELECT DISTINCT classification
-    FROM legal_basis
-  `
-    try {
-      const [rows] = await pool.query(query)
-      if (rows.length === 0) return null
-      const classifications = rows.map((row) => row.classification)
-      return classifications
-    } catch (error) {
-      console.error('Error fetching distinct classifications:', error.message)
-      throw new ErrorUtils(500, 'Error fetching distinct classifications')
-    }
-  }
-
-  /**
-   * Retrieves all the unique jurisdiction values.
-   *
-   * @async
-   * @function findJurisdictions
-   * @returns {Promise<string[]|null>} - A promise that resolves to an array of unique jurisdiction strings.
-   * @throws {ErrorUtils} - If an error occurs while fetching the jurisdictions.
-   */
-  static async findJurisdictions () {
-    const query = `
-    SELECT DISTINCT jurisdiction
-    FROM legal_basis
-  `
-    try {
-      const [rows] = await pool.query(query)
-      if (rows.length === 0) return null
-      const jurisdictions = rows.map((row) => row.jurisdiction)
-      return jurisdictions
-    } catch (error) {
-      console.error('Error fetching distinct jurisdictions:', error.message)
-      throw new ErrorUtils(500, 'Error fetching distinct jurisdictions')
-    }
-  }
 }
 
 export default LegalBasisRepository
