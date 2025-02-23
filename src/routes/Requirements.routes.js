@@ -58,13 +58,13 @@ router.get('/requirements', UserExtractor, getAllRequirements)
 /**
  * Route to retrieve a requirement by its ID.
  * @method GET
- * @path /requirements/:id
+ * @path /requirement/:id
  * @description Fetches a specific requirement using its ID.
  *
  * @middlewares UserExtractor - Middleware to ensure that the user is authorized and extracted from the request.
  * @returns {Object} - The retrieved requirement data.
  */
-router.get('/requirements/:id', UserExtractor, getRequirementById)
+router.get('/requirement/:id', UserExtractor, getRequirementById)
 
 /**
  * Route to retrieve requirements by their requirement number.
@@ -275,26 +275,26 @@ router.get('/requirements/search/state/municipalities', UserExtractor, getRequir
 /**
  * Route to update an existing requirement by its ID.
  * @method PATCH
- * @path /requirements/:id
+ * @path /requirement/:id
  * @description Updates an existing requirement with the provided details.
  *
  * @param {string} id - The ID of the requirement to update.
  * @middlewares UserExtractor - Middleware to ensure that the user is authorized and extracted from the request.
  * @returns {Object} - The updated requirement data.
  */
-router.patch('/requirements/:id', UserExtractor, updateRequirement)
+router.patch('/requirement/:id', UserExtractor, updateRequirement)
 
 /**
  * Route to delete a requirement by its ID.
  * @method DELETE
- * @path /requirements/:id
+ * @path /requirement/:id
  * @description Deletes a requirement by its ID.
  *
  * @param {string} id - The ID of the requirement to delete.
  * @middlewares UserExtractor - Middleware to ensure that the user is authorized and extracted from the request.
  * @returns {void} - No content if successful.
  */
-router.delete('/requirements/:id', UserExtractor, deleteRequirement)
+router.delete('/requirement/:id', UserExtractor, deleteRequirement)
 
 /**
  * Route to delete multiple requirements by their IDs.

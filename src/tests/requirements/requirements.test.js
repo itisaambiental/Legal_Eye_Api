@@ -707,7 +707,7 @@ describe('Get Requirement By ID', () => {
 
   test('Should successfully retrieve a requirement by its ID', async () => {
     const response = await api
-      .get(`/api/requirements/${createdRequirement.id}`)
+      .get(`/api/requirement/${createdRequirement.id}`)
       .set('Authorization', `Bearer ${tokenAdmin}`)
       .expect(200)
       .expect('Content-Type', /application\/json/)
@@ -745,7 +745,7 @@ describe('Get Requirement By ID', () => {
   test('Should return 404 if the requirement does not exist', async () => {
     const nonExistentId = '-1'
     const response = await api
-      .get(`/api/requirements/${nonExistentId}`)
+      .get(`/api/requirement/${nonExistentId}`)
       .set('Authorization', `Bearer ${tokenAdmin}`)
       .expect(404)
       .expect('Content-Type', /application\/json/)
@@ -755,7 +755,7 @@ describe('Get Requirement By ID', () => {
 
   test('Should return 401 if user is unauthorized', async () => {
     const response = await api
-      .get(`/api/requirements/${createdRequirement.id}`)
+      .get(`/api/requirement/${createdRequirement.id}`)
       .expect(401)
       .expect('Content-Type', /application\/json/)
 
@@ -2309,6 +2309,319 @@ describe('Get Requirements By State And Municipalities', () => {
       .query({ state: testState, municipalities: testMunicipality })
       .expect(401)
       .expect('Content-Type', /application\/json/)
+
+    expect(response.body.error).toMatch(/token missing or invalid/i)
+  })
+})
+
+describe('Update a requirement', () => {
+  let createdRequirement
+
+  beforeEach(async () => {
+    await RequirementRepository.deleteAll()
+    const requirementData = generateRequirementData({
+      subjectId: String(createdSubjectId),
+      aspectId: String(createdAspectIds[0])
+    })
+
+    const response = await api
+      .post('/api/requirements')
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .send(requirementData)
+      .expect(201)
+      .expect('Content-Type', /application\/json/)
+
+    createdRequirement = response.body.requirement
+  })
+
+  test('Should successfully update a requirement', async () => {
+    const updatedData = generateRequirementData({
+      requirementName: 'Updated Requirement Name',
+      requirementNumber: 'UPDATED-001',
+      subjectId: String(createdSubjectId),
+      aspectId: String(createdAspectIds[0])
+    })
+
+    await api
+      .patch(`/api/requirement/${createdRequirement.id}`)
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .send(updatedData)
+      .expect(200)
+      .expect('Content-Type', /application\/json/)
+
+    const response = await api
+      .get(`/api/requirement/${createdRequirement.id}`)
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .expect(200)
+      .expect('Content-Type', /application\/json/)
+
+    const { requirement } = response.body
+    expect(requirement).toMatchObject({
+      id: createdRequirement.id,
+      requirement_number: updatedData.requirementNumber,
+      requirement_name: updatedData.requirementName,
+      mandatory_description: updatedData.mandatoryDescription,
+      complementary_description: updatedData.complementaryDescription,
+      mandatory_sentences: updatedData.mandatorySentences,
+      complementary_sentences: updatedData.complementarySentences,
+      mandatory_keywords: updatedData.mandatoryKeywords,
+      complementary_keywords: updatedData.complementaryKeywords,
+      condition: updatedData.condition,
+      evidence: updatedData.evidence,
+      periodicity: updatedData.periodicity,
+      requirement_type: updatedData.requirementType,
+      jurisdiction: updatedData.jurisdiction,
+      state: null,
+      municipality: null,
+      subject: expect.objectContaining({
+        subject_id: createdSubjectId,
+        subject_name: subjectName
+      }),
+      aspect: expect.objectContaining({
+        aspect_id: createdAspectIds[0],
+        aspect_name: aspectsToCreate[0]
+      })
+    })
+  })
+
+  test('Should return 404 if requirement does not exist', async () => {
+    const updatedData = generateRequirementData({
+      requirementName: 'Updated Requirement Name',
+      requirementNumber: 'UPDATED-001',
+      subjectId: String(createdSubjectId),
+      aspectId: String(createdAspectIds[0])
+    })
+    const response = await api
+      .patch('/api/requirement/-1')
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .send(updatedData)
+      .expect(404)
+
+    expect(response.body.message).toMatch(/Requirement not found/i)
+  })
+
+  test('Should return 404 if subject ID does not exist', async () => {
+    const updatedData = generateRequirementData({
+      requirementName: 'Updated Requirement Name',
+      requirementNumber: 'UPDATED-001',
+      subjectId: '-1',
+      aspectId: String(createdAspectIds[0])
+    })
+    const response = await api
+      .patch(`/api/requirement/${createdRequirement.id}`)
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .send(updatedData)
+      .expect(404)
+
+    expect(response.body.message).toMatch(/Subject not found/i)
+  })
+
+  test('Should return 404 if aspect ID does not exist', async () => {
+    const updatedData = generateRequirementData({
+      requirementName: 'Updated Requirement Name',
+      requirementNumber: 'UPDATED-001',
+      subjectId: String(createdSubjectId),
+      aspectId: '-1'
+    })
+    const response = await api
+      .patch(`/api/requirement/${createdRequirement.id}`)
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .send(updatedData)
+      .expect(404)
+
+    expect(response.body.message).toMatch(/Aspect not found/i)
+  })
+
+  test('Should return 409 if requirement name already exists', async () => {
+    const requirement = generateRequirementData({
+      subjectId: String(createdSubjectId),
+      aspectId: String(createdAspectIds[0]),
+      requirementName: 'Existing Requirement',
+      requirementNumber: 'EXISTING-002'
+    })
+
+    const anotherRequirement = generateRequirementData({
+      subjectId: String(createdSubjectId),
+      aspectId: String(createdAspectIds[0]),
+      requirementName: 'Existing Requirement',
+      requirementNumber: 'EXISTING-002113'
+    })
+
+    await api
+      .post('/api/requirements')
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .send(requirement)
+      .expect(201)
+
+    const response = await api
+      .patch(`/api/requirement/${createdRequirement.id}`)
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .send(anotherRequirement)
+      .expect(409)
+
+    expect(response.body.message).toMatch(/Requirement name already exists/i)
+  })
+
+  test('Should return 409 if requirement number already exists', async () => {
+    const requirement = generateRequirementData({
+      subjectId: String(createdSubjectId),
+      aspectId: String(createdAspectIds[0]),
+      requirementName: 'Existing Requirement',
+      requirementNumber: 'EXISTING-002'
+    })
+    const anotherRequirement = generateRequirementData({
+      subjectId: String(createdSubjectId),
+      aspectId: String(createdAspectIds[0]),
+      requirementName: 'Unique Requirement 01',
+      requirementNumber: 'EXISTING-002'
+    })
+
+    await api
+      .post('/api/requirements')
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .send(requirement)
+      .expect(201)
+
+    const response = await api
+      .patch(`/api/requirement/${createdRequirement.id}`)
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .send(anotherRequirement)
+      .expect(409)
+
+    expect(response.body.message).toMatch(/Requirement number already exists/i)
+  })
+
+  test('Should return 401 if the user is unauthorized', async () => {
+    const response = await api
+      .patch(`/api/requirement/${createdRequirement.id}`)
+      .send({ requirementName: 'Unauthorized Update' })
+      .expect(401)
+      .expect('Content-Type', /application\/json/)
+
+    expect(response.body.error).toMatch(/token missing or invalid/i)
+  })
+})
+
+describe('Delete a requirement', () => {
+  let createdRequirement
+
+  beforeEach(async () => {
+    await RequirementRepository.deleteAll()
+    const requirementData = generateRequirementData({
+      subjectId: String(createdSubjectId),
+      aspectId: String(createdAspectIds[0])
+    })
+
+    const response = await api
+      .post('/api/requirements')
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .send(requirementData)
+      .expect(201)
+      .expect('Content-Type', /application\/json/)
+
+    createdRequirement = response.body.requirement
+  })
+
+  test('Should successfully delete a requirement', async () => {
+    await api
+      .delete(`/api/requirement/${createdRequirement.id}`)
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .expect(204)
+
+    const response = await api
+      .get(`/api/requirement/${createdRequirement.id}`)
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .expect(404)
+
+    expect(response.body.message).toMatch(/Requirement not found/i)
+  })
+
+  test('Should return 404 if requirement does not exist', async () => {
+    const response = await api
+      .delete('/api/requirement/-1')
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .expect(404)
+
+    expect(response.body.message).toMatch(/Requirement not found/i)
+  })
+
+  test('Should return 401 if user is unauthorized', async () => {
+    const response = await api
+      .delete(`/api/requirement/${createdRequirement.id}`)
+      .expect(401)
+
+    expect(response.body.error).toMatch(/token missing or invalid/i)
+  })
+})
+
+describe('Delete multiple requirements', () => {
+  let createdRequirements
+
+  beforeEach(async () => {
+    await RequirementRepository.deleteAll()
+    const numberOfRequirements = 2
+    createdRequirements = []
+    for (let i = 0; i < numberOfRequirements; i++) {
+      const requirementData = generateRequirementData({
+        requirementNumber: `REQ-${i}`,
+        requirementName: `Requirement Name ${i}`,
+        subjectId: String(createdSubjectId),
+        aspectId: String(createdAspectIds[0])
+      })
+
+      const response = await api
+        .post('/api/requirements')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send(requirementData)
+        .expect(201)
+
+      createdRequirements.push(response.body.requirement.id)
+    }
+  })
+
+  test('Should successfully delete multiple requirements', async () => {
+    await api
+      .delete('/api/requirements/batch')
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .send({ requirementIds: createdRequirements })
+      .expect(204)
+
+    for (const id of createdRequirements) {
+      const response = await api
+        .get(`/api/requirement/${id}`)
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .expect(404)
+
+      expect(response.body.message).toMatch(/Requirement not found/i)
+    }
+  })
+
+  test('Should return 404 if one or more requirement IDs do not exist', async () => {
+    const nonExistingIds = [...createdRequirements, -1]
+    const response = await api
+      .delete('/api/requirements/batch')
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .send({ requirementIds: nonExistingIds })
+      .expect(404)
+
+    expect(response.body.message).toMatch(/Requirements not found for IDs/i)
+  })
+
+  test('Should return 400 if no requirementIds are provided', async () => {
+    const response = await api
+      .delete('/api/requirements/batch')
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .send({})
+      .expect(400)
+
+    expect(response.body.message).toMatch(/Missing required fields: requirementIds/i)
+  })
+
+  test('Should return 401 if user is unauthorized', async () => {
+    const response = await api
+      .delete('/api/requirements/batch')
+      .send({ requirementIds: createdRequirements })
+      .expect(401)
 
     expect(response.body.error).toMatch(/token missing or invalid/i)
   })
