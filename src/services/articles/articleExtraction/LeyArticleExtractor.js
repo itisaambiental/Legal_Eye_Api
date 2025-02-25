@@ -232,9 +232,9 @@ class LeyArticleExtractor extends ArticleExtractor {
   }
 
   /**
-   * @param {ArticleToVerify} article - The article to verify.
-   * @returns {Promise<{ isValid: boolean, reason?: string }>} - An object indicating if the article is valid and optionally the reason why it is considered invalid.
-   */
+ * @param {ArticleToVerify} article - The article to verify.
+ * @returns {Promise<{ isValid: boolean, reason?: string }>} - An object indicating if the article is valid and optionally the reason why it is considered invalid.
+ */
   async _verifyArticle (article) {
     const prompt = this._buildVerifyPrompt(this.name, article)
 
@@ -244,7 +244,7 @@ class LeyArticleExtractor extends ArticleExtractor {
         {
           role: 'system',
           content:
-            'You are a legal expert who is specialized in confirming the validity of the legal provisions extracted from legal documents. Note: Although your instructions are in English, the provisions provided will be in Spanish.'
+          'You are a legal expert who is specialized in confirming the validity of the legal provisions extracted from legal documents. Note: Although your instructions are in English, the provisions provided will be in Spanish.'
         },
         { role: 'user', content: prompt }
       ],
@@ -262,9 +262,9 @@ class LeyArticleExtractor extends ArticleExtractor {
               },
               reason: {
                 description:
-                  'Reason why the article is considered invalid. Possible values: "IsContinuation", "IsIncomplete", "OutContext".',
+                'Reason why the article is considered invalid. Possible values: "IsContinuation", "IsIncomplete".',
                 type: 'string',
-                enum: ['IsContinuation', 'IsIncomplete', 'OutContext']
+                enum: ['IsContinuation', 'IsIncomplete']
               }
             },
             additionalProperties: false
@@ -302,36 +302,35 @@ class LeyArticleExtractor extends ArticleExtractor {
   }
 
   /**
-   * Constructs a verification prompt for evaluating a legal provision.
-   *
-   * @param {string} legalName - The name of the legal base.
-   * @param {ArticleToVerify} article - The article for which the verification prompt is built.
-   * @returns {string} - The constructed prompt.
-   */
+ * Constructs a verification prompt for evaluating a legal provision.
+ *
+ * @param {string} legalName - The name of the legal base.
+ * @param {ArticleToVerify} article - The article for which the verification prompt is built.
+ * @returns {string} - The constructed prompt.
+ */
   _buildVerifyPrompt (legalName, article) {
     return `
-  You are a legal expert who confirms the validity of legal provisions. The provisions will all be valid unless they clearly meet one of the specific exceptions described below.
+You are a legal expert who confirms the validity of legal provisions. The provisions will all be valid unless they clearly meet one of the specific exceptions described below.
 
-  ### Evaluation Context:
-  - **Legal Base:** "${legalName}"
-  - **Previous Provision:** "${article.previousArticle.content}" 
-    (Validation: { "isValid": ${article.previousArticle.lastResult.isValid}, "reason": "${article.previousArticle.lastResult.reason}" })
-  - **Current Provision Title:** "${article.title}"
-  - **Current Provision:** "${article.currentArticle}"
-  
-  ### Always Valid Conditions:
-  - If the current provision is a structural marker (e.g., Chapter [Capítulo], Section [Sección], Title [Título], Annex [Anexo], or Transitory Provision [Transitorio]) and it presents a complete, logically coherent provision, it must always be classified as VALID.
-  - If the previous provision is itself a structural marker, treat the current provision as an independent provision and classify it as VALID.
-  
-  ### Exceptions (Mark as INVALID):
-  Only mark an provision as INVALID if it clearly meets one of the following conditions:
-  - **IsIncomplete:** The provision’s text is abruptly cut off or clearly unfinished, lacking a concluding idea.
-    - *Note:* If the previous provision was marked as "IsIncomplete," then classify the current provision as "IsContinuation" instead.
-  - **IsContinuation:** The provision is simply a continuation of the idea from a complete previous provision and does not stand alone as an independent provision.
-  - **OutContext:** The provision is out of context, irrelevant, or does not belong to the legal base.
-    
-  Unless one of these exceptions applies, classify ALWAYS the provision as VALID.
-    `
+### Evaluation Context:
+- **Legal Base:** "${legalName}"
+- **Previous Provision:** "${article.previousArticle.content}" 
+  (Validation: { "isValid": ${article.previousArticle.lastResult.isValid}, "reason": "${article.previousArticle.lastResult.reason}" })
+- **Current Provision Title:** "${article.title}"
+- **Current Provision:** "${article.currentArticle}"
+
+### Always Valid Conditions:
+- If the current provision is a structural marker (e.g., Chapter [Capítulo], Section [Sección], Title [Título], Annex [Anexo], or Transitory Provision [Transitorio]) and it presents a complete, logically coherent provision, it must always be classified as VALID.
+- If the previous provision is itself a structural marker, treat the current provision as an independent provision and classify it as VALID.
+
+### Exceptions (Mark as INVALID):
+Only mark an provision as INVALID if it clearly meets one of the following conditions:
+- **IsIncomplete:** The provision’s text is abruptly cut off or clearly unfinished, lacking a concluding idea.
+  - *Note:* If the previous provision was marked as "IsIncomplete," then classify the current provision as "IsContinuation" instead.
+- **IsContinuation:** The provision is simply a continuation of the idea from a complete previous provision and does not stand alone as an independent provision.
+
+Unless one of these exceptions applies, classify ALWAYS the provision as VALID.
+  `
   }
 
   /**

@@ -262,9 +262,9 @@ class ReglamentoArticleExtractor extends ArticleExtractor {
               },
               reason: {
                 description:
-                'Reason why the article is considered invalid. Possible values: "IsContinuation", "IsIncomplete", "OutContext".',
+                'Reason why the article is considered invalid. Possible values: "IsContinuation", "IsIncomplete".',
                 type: 'string',
-                enum: ['IsContinuation', 'IsIncomplete', 'OutContext']
+                enum: ['IsContinuation', 'IsIncomplete']
               }
             },
             additionalProperties: false
@@ -328,8 +328,6 @@ Only mark an provision as INVALID if it clearly meets one of the following condi
 - **IsIncomplete:** The provision’s text is abruptly cut off or clearly unfinished, lacking a concluding idea.
   - *Note:* If the previous provision was marked as "IsIncomplete," then classify the current provision as "IsContinuation" instead.
 - **IsContinuation:** The provision is simply a continuation of the idea from a complete previous provision and does not stand alone as an independent provision.
-- **OutContext:** The provision is out of context, irrelevant, or does not belong to the legal base.
-    
 
 Unless one of these exceptions applies, classify ALWAYS the provision as VALID.
   `
