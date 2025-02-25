@@ -348,8 +348,6 @@ You are a legal expert who confirms the validity of legal provisions. The provis
   - **Previous Article:** "TRANSITORIO PRIMERO. Disposiciones transitorias sobre la implementación de nuevas normativas."
   - **Current Article:** "ARTÍCULO 2. Durante el periodo de transición, se aplicarán las siguientes medidas para asegurar la continuidad en la gestión pública."
 
-  
-
 ### Exceptions (Mark as INVALID):
 Only mark a provision as INVALID if it clearly meets one of the following conditions:
 - **IsIncomplete:** The provision’s text is abruptly cut off or clearly unfinished, lacking a concluding idea.
