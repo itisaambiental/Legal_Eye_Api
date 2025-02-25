@@ -244,7 +244,7 @@ class LeyArticleExtractor extends ArticleExtractor {
         {
           role: 'system',
           content:
-            'You are a virtual assistant specialized in evaluating the validity of legal articles extracted from Mexican legal documents. Note: Although your instructions are in English, the articles provided will be in Spanish.'
+            'You are a legal expert who is specialized in confirming the validity of the legal provisions extracted from legal documents. Note: Although your instructions are in English, the provisions provided will be in Spanish.'
         },
         { role: 'user', content: prompt }
       ],
@@ -310,28 +310,28 @@ class LeyArticleExtractor extends ArticleExtractor {
    */
   _buildVerifyPrompt (legalName, article) {
     return `
-  You are an AI expert evaluating legal provisions from Mexican law. By default, every article is VALID unless it clearly meets one of the following exceptions:
-  
-  ### Context:
+  You are a legal expert who confirms the validity of legal provisions. The provisions will all be valid unless they clearly meet one of the specific exceptions described below.
+
+  ### Evaluation Context:
   - **Legal Base:** "${legalName}"
-  - **Previous Provision:** "${article.previousArticle.content}" (Validation: { "isValid": ${article.previousArticle.lastResult.isValid}, "reason": "${article.previousArticle.lastResult.reason}" })
-  - **Title:** "${article.title}"
-  - **Content:** "${article.currentArticle}"
+  - **Previous Provision:** "${article.previousArticle.content}" 
+    (Validation: { "isValid": ${article.previousArticle.lastResult.isValid}, "reason": "${article.previousArticle.lastResult.reason}" })
+  - **Current Provision Title:** "${article.title}"
+  - **Current Provision:** "${article.currentArticle}"
   
-  ### Always VALID conditions:
-  - If the current article includes structural markers such as Chapters (Capítulo), Titles (Título), Sections (Sección), Annexes (Anexo), or Transitory Provisions (Transitorio), it is always VALID, provided it presents a logically complete provision.
-  - If the Previous Provision is a structural marker (e.g., Chapter, Section, Title, Annex, or Transitory), the current article is always VALID and must not be interpreted as a continuation.
+  ### Always Valid Conditions:
+  - If the current provision is a structural marker (e.g., Chapter [Capítulo], Section [Sección], Title [Título], Annex [Anexo], or Transitory Provision [Transitorio]) and it presents a complete, logically coherent provision, it must always be classified as VALID.
+  - If the previous provision is itself a structural marker, treat the current provision as an independent provision and classify it as VALID.
   
-  ### Exceptions (mark as INVALID):
-  - **IsIncomplete:** The text is abruptly cut off or clearly unfinished, lacking a concluding idea.
-    - *Exception:* If the previous article was marked as "IsIncomplete", classify the current one as "IsContinuation" instead.
+  ### Exceptions (Mark as INVALID):
+  Only mark an provision as INVALID if it clearly meets one of the following conditions:
+  - **IsIncomplete:** The provision’s text is abruptly cut off or clearly unfinished, lacking a concluding idea.
+    - *Note:* If the previous provision was marked as "IsIncomplete," then classify the current provision as "IsContinuation" instead.
+  - **IsContinuation:** The provision is simply a continuation of the idea from a complete previous provision and does not stand alone as an independent provision.
+  - **OutContext:** The provision merely references another provision without providing its own independent legal statement.
   
-  - **IsContinuation:** The current article directly continues the idea from a complete previous article without standing alone.
-  
-  - **OutContext:** The article merely references another provision without presenting an independent provision.
-  
-  Unless any of these conditions are clearly met, always classify the article as VALID.
-  `
+  Unless one of these exceptions applies, classify ALWAYS the provision as VALID.
+    `
   }
 
   /**
@@ -346,7 +346,7 @@ class LeyArticleExtractor extends ArticleExtractor {
         {
           role: 'system',
           content:
-            'You are a virtual assistant specialized in reviewing, correcting, and documenting Mexican legal articles extracted from various laws. Note: All laws are in Spanish, and all output must also be in Spanish.'
+            'You are a virtual assistant specialized in reviewing, correcting, and documenting legal articles extracted from various laws. Note: All laws are in Spanish, and all output must also be in Spanish.'
         },
         { role: 'user', content: prompt }
       ],
@@ -387,7 +387,7 @@ class LeyArticleExtractor extends ArticleExtractor {
    */
   _buildCorrectPrompt (legalName, article) {
     return `
-Analyze the content of "${article.title}" within the Mexican legal basis titled "${legalName}". Then, help format and correct the following article using professional HTML structure and styles:
+Analyze the content of "${article.title}" within the legal basis titled "${legalName}". Then, help format and correct the following article using professional HTML structure and styles:
 
 {
   "title": "${article.title}",
