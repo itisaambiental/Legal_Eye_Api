@@ -323,13 +323,40 @@ You are a legal expert who confirms the validity of legal provisions. The provis
 - If the current provision is a structural marker (e.g., Chapter [Capítulo], Section [Sección], Title [Título], Annex [Anexo], or Transitory Provision [Transitorio]) and it presents a complete, logically coherent provision, it must always be classified as VALID.
 - If the previous provision is itself a structural marker, treat the current provision as an independent provision and classify it as VALID.
 
+#### Examples of Valid provisions:
+- **Example 1:**
+  - **Previous Article:** "ARTÍCULO 9. Los convenios de concertación que en materia forestal celebre el Estado con personas físicas y morales del sector social y privado, podrán versar sobre la instrumentación de programas forestales, el fomento a la educación, cultura, capacitación, servicios ambientales e investigación forestales, así como respecto de las labores de vigilancia y demás programas operativos establecidos en esta Ley."
+  - **Current Article:** "ARTÍCULO 10. Se preverá que en el seguimiento y evaluación de los resultados que se obtengan por la ejecución de los convenios a que se refiere este capítulo, intervenga el Consejo Forestal Estatal."
+
+- **Example 2 (Chapter [Capítulo]):**
+  - **Previous Article:** "CAPÍTULO I CONSEJO FORESTAL DEL ESTADO DE MORELOS"
+  - **Current Article:** "ARTÍCULO 4. Para la elección de los representantes de los sectores que conforme a la Ley deben formar parte del Consejo, la Comisión publicará en dos diarios de mayor circulación en el Estado, la convocatoria que establezca las bases sobre las cuales cada sector habrá de elegir sus representantes."
+
+- **Example 3 (Section [Sección]):**
+  - **Previous Article:** "SECCIÓN II. DISPOSICIONES GENERALES"
+  - **Current Article:** "ARTÍCULO 1. Las disposiciones generales se rigen por los principios de transparencia y eficiencia en la administración pública."
+
+- **Example 4 (Title [Título]):**
+  - **Previous Article:** "TÍTULO: NORMAS ADMINISTRATIVAS"
+  - **Current Article:** "ARTÍCULO 5. Las normas administrativas se aplican a todas las entidades y organismos públicos, garantizando la coherencia en su funcionamiento."
+
+- **Example 5 (Annex [Anexo]):**
+  - **Previous Article:** "ANEXO A. REGULACIÓN COMPLEMENTARIA"
+  - **Current Article:** "ARTÍCULO 3. Este anexo establece las regulaciones complementarias para la implementación de las políticas públicas definidas en el cuerpo principal de la ley."
+
+- **Example 6 (Transitory Provision [Transitorio]):**
+  - **Previous Article:** "TRANSITORIO PRIMERO. Disposiciones transitorias sobre la implementación de nuevas normativas."
+  - **Current Article:** "ARTÍCULO 2. Durante el periodo de transición, se aplicarán las siguientes medidas para asegurar la continuidad en la gestión pública."
+
+  
+
 ### Exceptions (Mark as INVALID):
-Only mark an provision as INVALID if it clearly meets one of the following conditions:
+Only mark a provision as INVALID if it clearly meets one of the following conditions:
 - **IsIncomplete:** The provision’s text is abruptly cut off or clearly unfinished, lacking a concluding idea.
   - *Note:* If the previous provision was marked as "IsIncomplete," then classify the current provision as "IsContinuation" instead.
 - **IsContinuation:** The provision is simply a continuation of the idea from a complete previous provision and does not stand alone as an independent provision.
 
-Unless one of these exceptions applies, classify ALWAYS the provision as VALID.
+Unless one of these exceptions applies, ALWAYS classify the provision as VALID.
   `
   }
 
