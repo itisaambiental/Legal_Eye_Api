@@ -324,7 +324,6 @@ class ReglamentoArticleExtractor extends ArticleExtractor {
     - *Exception:* If the previous article was marked as "IsIncomplete", classify the current one as "IsContinuation" instead.
   
   - **IsContinuation:** The current article directly continues the idea from a complete previous article without standing alone.
-    - *Exception:* If the previous article was marked as "IsContinuation", classify the current one as "OutContext" instead.
   
   - **OutContext:** The article merely references another provision without presenting an independent provision.
   
