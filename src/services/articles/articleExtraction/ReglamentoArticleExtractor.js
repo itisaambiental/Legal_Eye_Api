@@ -310,7 +310,7 @@ class ReglamentoArticleExtractor extends ArticleExtractor {
    */
   _buildVerifyPrompt (legalName, article) {
     return `
-  You are an AI expert evaluating legal provisions from Mexican law. Determine if the provided text is a valid, standalone article or just a continuation/reference to a previous one.
+  You are an AI expert evaluating legal provisions from Mexican law. By default, every article is VALID unless it clearly meets one of the following exceptions:
   
   ### Context:
   - **Legal Base:** "${legalName}"
@@ -318,17 +318,17 @@ class ReglamentoArticleExtractor extends ArticleExtractor {
   - **Title:** "${article.title}"
   - **Content:** "${article.currentArticle}"
   
-  ### Rules:
-  1. **Valid Provision:**  
-     - Always valid if the previous provision is a header (e.g., Chapter, Section, Title, Annex, Transitory) or if it directly precedes the current article (e.g., "ARTÍCULO 1" then "ARTÍCULO 2").  
-     - Must be complete and self-contained.
+  ### Exceptions (mark as INVALID):
   
-  2. **Invalid Provision:**  
-     - **IsIncomplete:** If the text is cut off, unfinished, or lacks a concluding idea.  
-       (Exception: If the previous article was already marked as "IsIncomplete", classify as "IsContinuation".)
-     - **IsContinuation:** If it merely continues the idea of a complete previous article.  
-       (Exception: If already marked as "IsContinuation", then classify as "OutContext".)
-     - **OutContext:** If it only references another article without being an independent provision.
+  - **IsIncomplete:** The text is abruptly cut off or clearly unfinished, lacking a concluding idea.
+    - *Exception:* If the previous article was marked as "IsIncomplete", classify the current one as "IsContinuation" instead.
+  
+  - **IsContinuation:** The current article directly continues the idea from a complete previous article without standing alone.
+    - *Exception:* If the previous article was marked as "IsContinuation", classify the current one as "OutContext" instead.
+  
+  - **OutContext:** The article merely references another provision without presenting an independent provision.
+  
+  Unless any of these conditions are clearly met, always classify the article as VALID.
   `
   }
 
