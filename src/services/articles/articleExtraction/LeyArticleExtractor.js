@@ -4,18 +4,40 @@ import { singleArticleModelSchema } from '../../../schemas/article.schema.js'
 import { zodResponseFormat } from 'openai/helpers/zod'
 import { convert } from 'html-to-text'
 import ErrorUtils from '../../../utils/Error.js'
+
 /**
  * Class extending ArticleExtractor to extract articles from laws texts.
  * Processes the text, cleans inconsistent formats, and extracts articles,
- * chapters, sections, and transitory provisions in a structured manner.
+ * chapters, titles, sections, annexes, and transitory provisions in a structured manner.
  */
 class LeyArticleExtractor extends ArticleExtractor {
   /**
    * @typedef {Object} Article
-   * @property {string} title - The title of the article, chapter, section, title or transitory provision.
-   * @property {string} article - The content of the article in HTML format. Empty string if no content is found.
-   * @property {string} plainArticle - The plain text equivalent of the article content.
-   * @property {number} order - The sequential order of the extracted item.
+   * @property {string} title - The title of the article, chapter, section, annex, or transitory provision.
+   * @property {string} article - The content of the article.
+   * @property {string} plainArticle - Plain text of the article.
+   * @property {number} order - Order of the article.
+   */
+
+  /**
+   * @typedef {Object} ValidationResult
+   * @property {boolean} isValid - Indicates if the article is valid.
+   * @property {string | null} reason - The reason why the article is considered invalid, or null if valid.
+   */
+
+  /**
+   * @typedef {Object} PreviousArticle
+   * @property {string} content - Content of the previous article.
+   * @property {ValidationResult} lastResult - Validation result of the previous article.
+   */
+
+  /**
+   * @typedef {Object} ArticleToVerify
+   * @property {string} title - The title of the article, title, chapter, section, annex, or transitory provision.
+   * @property {PreviousArticle} previousArticle - Object containing the content and validation result of the previous article.
+   * @property {string} currentArticle - Main content of the article to be analyzed.
+   * @property {string} plainArticle - Plain text of the article.
+   * @property {number} order - Order of the article.
    */
 
   /**
@@ -29,7 +51,7 @@ class LeyArticleExtractor extends ArticleExtractor {
       throw new ErrorUtils(500, 'Article Processing Error', error)
     }
     const totalArticles = articles.length
-    const formatArticles = []
+    const correctedArticles = []
     let currentProgress = 0
     for (const article of articles) {
       if (await this.job.isFailed()) {
@@ -38,33 +60,33 @@ class LeyArticleExtractor extends ArticleExtractor {
       try {
         const correctedArticle = await this._correctArticle(article)
         correctedArticle.plainArticle = convert(correctedArticle.article)
-        formatArticles.push(correctedArticle)
+        correctedArticles.push(correctedArticle)
       } catch (error) {
         continue
       }
       currentProgress += 1
       this.updateProgress(currentProgress, totalArticles)
     }
-    return this.formatArticles(formatArticles)
+    return correctedArticles
   }
 
   /**
-   * @param {string} text - The text to clean.
-   * @returns {string} - The cleaned text.
-   */
+ * @param {string} text - The text to clean.
+ * @returns {string} - The cleaned text.
+ */
   _cleanText (text) {
     const articleKeywordRegex =
-      /\b[Aa]\s*R\s*T\s*[ÍIíi]\s*C\s*U\s*L\s*O\s*(\d+[A-Z]*|[IVXLCDM]+)\b/gi
+  /\b[Aa]\s*R\s*T\s*[ÍIíi]\s*C\s*U\s*L\s*O\s*(\d+[A-Z]*|[IVXLCDM]+)\b/gi
     const chapterKeywordRegex =
-      /\b[Cc]\s*[ÁAáa]\s*[Pp]\s*[ÍIíi]\s*[Tt]\s*[Uu]\s*[Ll]\s*[Oo]\s*(\d+[A-Z]*|[IVXLCDM]+)\b/gi
+  /\b[Cc]\s*[ÁAáa]\s*[Pp]\s*[ÍIíi]\s*[Tt]\s*[Uu]\s*[Ll]\s*[Oo]\s*(\d+[A-Z]*|[IVXLCDM]+)\b/gi
     const titleKeywordRegex =
-      /\b[Tt]\s*[ÍIíi]\s*[Tt]\s*[Uu]\s*[Ll]\s*[Oo]\s*(\d+[A-Z]*|[IVXLCDM]+)\b/gi
+  /\b[Tt]\s*[ÍIíi]\s*[Tt]\s*[Uu]\s*[Ll]\s*[Oo]\s*(\d+[A-Z]*|[IVXLCDM]+)\b/gi
     const sectionKeywordRegex =
-      /\b[Ss]\s*[Ee]\s*[Cc]\s*[Cc]\s*[ÍIíi]\s*[ÓOóo]\s*[Nn]\s*(\d+[A-Z]*|[IVXLCDM]+)\b/gi
+  /\b[Ss]\s*[Ee]\s*[Cc]\s*[Cc]\s*[ÍIíi]\s*[ÓOóo]\s*[Nn]\s*(\d+[A-Z]*|[IVXLCDM]+)\b/gi
     const transientKeywordRegex =
-      /\b[Tt]\s*[Rr]\s*[Aa]\s*[Nn]\s*[Ss]\s*[Ii]\s*[Tt]\s*[Oo]\s*[Rr]\s*[Ii]\s*[Oo](?:\s*[Ss])?\s*(\d+[A-Z]*|[IVXLCDM]+)?\b/gi
+  /\b(?:\w+\s+)*[Tt][Rr][Aa][Nn][Ss][Ii][Tt][Oo][Rr][Ii][AaOo](?:\s*[SsAa])?\s*(\d+[A-Z]*|[IVXLCDM]+)?\b/gi
     const annexKeywordRegex =
-      /\b[Aa]\s*[Nn]\s*[Ee]\s*[Xx]\s*[Oo]\s*(\d+[A-Z]*|[IVXLCDM]+)?\b/gi
+  /\b[Aa]\s*[Nn]\s*[Ee]\s*[Xx]\s*[Oo]\s*(\d+[A-Z]*|[IVXLCDM]+)?\b/gi
     const ellipsisTextRegex = /[^.]+\s*\.{3,}\s*/g
     const singleEllipsisRegex = /\s*\.{3,}\s*/g
 
@@ -73,101 +95,143 @@ class LeyArticleExtractor extends ArticleExtractor {
       .replace(chapterKeywordRegex, 'CAPÍTULO $1')
       .replace(sectionKeywordRegex, 'SECCIÓN $1')
       .replace(titleKeywordRegex, 'TÍTULO $1')
-      .replace(transientKeywordRegex, 'TRANSITORIOS $1')
+      .replace(transientKeywordRegex, 'TRANSITORIO $1')
       .replace(annexKeywordRegex, 'ANEXO $1')
       .replace(ellipsisTextRegex, '')
       .replace(singleEllipsisRegex, '')
   }
 
   /**
-   * @param {string} text - Text to process and extract articles from.
-   * @returns {Promise<Array<Article>>} - List of article objects.
-   */
+* @param {string} text - Text to process and extract articles from.
+* @returns {Promise<Array<Article>>} - List of article objects.
+*/
   async _extractArticles (text) {
     text = this._cleanText(text)
 
     const articlePatternString =
-      '(?:^|\\n)\\s*(' +
-      '(?:c[áa]p[ií]tulo)\\s+\\S+|' +
-      '(?:t[ií]tulo)\\s+\\S+|' +
-      '(?:secci[oó]n)\\s+\\S+|' +
-      '(?:art[ií]culo)\\s+\\S+|' +
-      '(?:transitori[oó]s?)\\s+\\S+|' +
-      '(?:anexo)\\s+\\S+' +
-      ')'
+  '(?:^|\\n)\\s*(' +
+  '(?:c[áa]p[ií]tulo)\\s+\\S+|' +
+  '(?:t[ií]tulo)\\s+\\S+|' +
+  '(?:secci[oó]n)\\s+\\S+|' +
+  '(?:art[ií]culo)\\s+\\S+|' +
+  '(?:transitori[oa][s]?)\\s+\\S+|' +
+  '(?:anexo)\\s+\\S+' +
+  ')'
 
     const articlePattern = new RegExp(articlePatternString, 'i')
-    const chapterRegex = /^(?:c[áa]p[ií]tulo)\s+\S+$/i
-    const titleRegex = /^(?:t[ií]tulo)\s+\S+$/i
-    const sectionRegex = /^(?:secci[oó]n)\s+\S+$/i
-    const articleRegex = /^(?:art[ií]culo)\s+\S+$/i
-    const transientHeaderRegex = /^(?:transitori[oó]s?)\s+\S+$/i
-    const annexHeaderRegex = /^(?:anexo)\s+\S+$/i
-
     const regexes = [
-      chapterRegex,
-      sectionRegex,
-      titleRegex,
-      articleRegex,
-      transientHeaderRegex,
-      annexHeaderRegex
+      /^(?:c[áa]p[ií]tulo)\s+\S+$/i,
+      /^(?:t[ií]tulo)\s+\S+$/i,
+      /^(?:secci[oó]n)\s+\S+$/i,
+      /^(?:art[ií]culo)\s+\S+$/i,
+      /^(?:transitori[oa][s]?)\s+\S+$/i,
+      /^(?:anexo)\s+\S+$/i
     ]
 
     const matches = text.split(articlePattern)
     const articles = []
-    let currentArticle = null
     let order = 1
-
+    let lastResult = { isValid: true, reason: null }
+    let lastArticle = null
     for (let i = 1; i < matches.length; i++) {
-      const currentMatch = matches[i].trim()
-      if (regexes.some((regex) => regex.test(currentMatch))) {
-        if (currentArticle) {
-          const { isValid } = await this._verifyArticle(currentArticle)
-          if (isValid) articles.push(currentArticle)
-        }
-        currentArticle = this._createArticleObject(
-          currentMatch,
-          matches[i + 1],
+      const previousTitle = i > 1 ? matches[i - 2]?.trim() : ''
+      const previousContent = i > 1 ? matches[i - 1]?.trim() : ''
+      const currentTitle = matches[i].trim()
+      const currentContent = i + 1 < matches.length ? matches[i + 1].trim() : ''
+      if (regexes.some((regex) => regex.test(currentTitle))) {
+        const previousArticle = `${previousTitle} ${previousContent}`.trim()
+        const currentArticle = `${currentTitle} ${currentContent}`.trim()
+        const currentArticleData = this._createArticleToVerify(
+          currentTitle,
+          lastResult,
+          previousArticle,
+          currentArticle,
           order++
         )
+        const { isValid, reason } = await this._verifyArticle(currentArticleData)
+        if (
+          (!lastResult.isValid &&
+        lastResult.reason === 'IsIncomplete' &&
+        reason === 'IsContinuation') ||
+      (!lastResult.isValid &&
+        lastResult.reason === 'IsContinuation' &&
+        reason === 'IsContinuation')
+        ) {
+          if (lastArticle) {
+            lastArticle.article += ` ${currentArticleData.currentArticle}`
+          } else {
+            lastArticle = {
+              title: previousTitle,
+              article: `${previousContent} ${currentArticleData.currentArticle}`,
+              plainArticle: currentArticleData.plainArticle,
+              order: currentArticleData.order
+            }
+          }
+        } else {
+          if (lastArticle) {
+            articles.push(lastArticle)
+            lastArticle = null
+          }
+          if (isValid) {
+            articles.push({
+              title: currentArticleData.title,
+              article: currentArticleData.currentArticle,
+              plainArticle: currentArticleData.plainArticle,
+              order: currentArticleData.order
+            })
+          }
+        }
+        lastResult = { isValid, reason }
       }
     }
-
-    if (currentArticle) {
-      const { isValid } = await this._verifyArticle(currentArticle)
-      if (isValid) articles.push(currentArticle)
+    if (lastArticle) {
+      articles.push(lastArticle)
     }
 
     return articles
   }
 
   /**
-   * @param {string} title - Title of the article.
-   * @param {string} content - Content of the article.
-   * @param {number} order - Order of the article.
-   */
-  _createArticleObject (title, content, order) {
+* @param {string} title - Title of the article.
+* @param {ValidationResult} previousLastResult - Validation result of the previous article.
+* @param {string} previousContent - Previous article including its title.
+* @param {string} currentContent - Current article including its title.
+* @param {number} order - Order of the article.
+* @returns {ArticleToVerify} - The article to verify.
+*/
+  _createArticleToVerify (
+    title,
+    previousLastResult,
+    previousContent,
+    currentContent,
+    order
+  ) {
     return {
       title,
-      article: content ? content.trim() : '',
+      previousArticle: {
+        content: previousContent.trim(),
+        lastResult: previousLastResult
+      },
+      currentArticle: currentContent.trim(),
       plainArticle: '',
       order
     }
   }
 
   /**
-   * @param {Article} article - The article object to verify.
-   * @returns {Promise<{ isValid: boolean }>} - JSON object indicating if the article is valid.
-   */
+* @param {ArticleToVerify} article - The article to verify.
+* @returns {Promise<{ isValid: boolean, reason?: string }>} - An object indicating if the article is valid and optionally the reason why it is considered invalid.
+*/
   async _verifyArticle (article) {
     const prompt = this._buildVerifyPrompt(this.name, article)
+
     const request = {
       model: this.model,
       messages: [
         {
           role: 'system',
           content:
-            'You are a virtual assistant specialized in evaluating the validity of legal articles extracted from Mexican legal documents. Note: Although your instructions are in English, the articles provided will be in Spanish.'
+        'You are a virtual assistant specialized in evaluating the validity of legal articles extracted from Mexican legal documents. Note: Although your instructions are in English, the articles provided will be in Spanish.'
         },
         { role: 'user', content: prompt }
       ],
@@ -182,6 +246,12 @@ class LeyArticleExtractor extends ArticleExtractor {
               isValid: {
                 description: 'Indicates if the article is valid',
                 type: 'boolean'
+              },
+              reason: {
+                description:
+              'Reason why the article is considered invalid. Possible values: "IsContinuation", "IsIncomplete", "OutContext".',
+                type: 'string',
+                enum: ['IsContinuation', 'IsIncomplete', 'OutContext']
               }
             },
             additionalProperties: false
@@ -189,12 +259,15 @@ class LeyArticleExtractor extends ArticleExtractor {
         }
       }
     }
+
     const attemptRequest = async (retryCount = 0) => {
       try {
         const response = await openai.chat.completions.create(request)
-        const content = JSON.parse(response.choices[0].message.content)
-        if (content && typeof content.isValid === 'boolean') {
-          return content
+        const { isValid, reason } = JSON.parse(
+          response.choices[0].message.content
+        )
+        if (typeof isValid === 'boolean') {
+          return { isValid, reason }
         } else {
           throw new ErrorUtils(500, 'Article Processing Error')
         }
@@ -216,40 +289,128 @@ class LeyArticleExtractor extends ArticleExtractor {
   }
 
   /**
-   * @param {string} documentName - The name of the document.
-   * @param {Article} article - The article object for which the prompt is built.
-   */
-  _buildVerifyPrompt (documentName, article) {
+ * Constructs a verification prompt for evaluating a legal provision.
+ *
+ * @param {string} legalName - The name of the legal base.
+ * @param {ArticleToVerify} article - The article for which the verification prompt is built.
+ * @returns {string} - The constructed prompt.
+ */
+  _buildVerifyPrompt (legalName, article) {
     return `
-    Analyze the content of "${article.title}" within the Mexican legal basis titled "${documentName}". 
-    Then, determine whether the legal provision is valid based on the following criteria:
+You are an AI expert specializing in the evaluation of legal provisions extracted from Mexican legal documents. Your task is to determine whether the provided text represents a valid, standalone legal provision or if it is merely a continuation or reference from another provision.
 
-    ### **Legal Provision Details**
-    {
-      "title": "${article.title}",
-      "article": "${article.article}",
-      "plainArticle": "${article.plainArticle}",
-      "order": ${article.order}
-    }
+### Context Information
+- **Legal Base:** "${legalName}"
+- **Previous Provision Context:** "${article.previousArticle.content}"
+- **Previous Provision Validation Result:** { "isValid": ${article.previousArticle.lastResult.isValid}, "reason": "${article.previousArticle.lastResult.reason}" }
+- **Title of the Article to be Verified:** "${article.title}"
+- **Content of the Article to be Verified:** "${article.currentArticle}"
 
-    ### **Criteria for a Valid Legal Provision**
-    A provision is considered valid if it meets at least one of the following conditions:
+### Decision Criteria
 
-    1. **Articles (Artículos)**:
-      - Must belong to a recognized legal document.
-      - Must establish legal norms such as obligations, rights, prohibitions, or principles.
-      - Should have a clear legal structure.
-      - It must contain a specific legal rule or directive rather than just referencing other articles.
+1. **Valid provision:**
+- If the **Previous Provision Context** matches the article immediately before the **Content of the Article to be Verified**, the article **must always be considered VALID**.  (e.g., Previous Provision Context: "ARTÍCULO 1", Content of the Article to be Verified: "ARTÍCULO 2"). //Apply this rule to all articles.
+- The article is valid if it is a complete, standalone legal provision.
+- It must **end with a complete idea**.
+- If the **previous provision is a "Chapter(Capítulo)", "Section(Sección)", "Title(Título)", "Annex(Annexo)", or "Transitory(Transitorio)"**, the article **must always be considered VALID**, as these provisions introduce a new section of the law.  (e.g., "CAPÍTULO PRIMERO", "SECCIÓN SEGUNDA", "TÍTULO TERCERO", "ANEXO CUARTO", "TRANSITORIO QUINTO"). (Note: The previous provision is always considered valid if it is one of these types).
 
-    2. **Chapters (Capítulos), Titles (Títulos), and Sections (Secciones)**:
-      - Must be part of a structured legal framework.
+- ✅ **Example of a valid article:**
+   - **Previous Article:** "SECCIÓN 1 GENERALIDADES"
+   - **Current Article:** "ARTÍCULO 11. Se crea el Consejo Forestal del Estado de Morelos, como órgano consultivo, de asesoramiento y concertación, en materias de planeación, supervisión, evaluación de la política forestal y aprovechamiento, conservación y restauración de los recursos forestales de las autoridades estatales en materia forestal."
+   - **✅ Expected Output:** { "isValid": true }
+   
+  - ✅ **Example of a valid article where the previous provision is another article but it still ends with a clear idea:**
+   - **Previous Article:** "ARTÍCULO 14. Cada sector a que se refiere la fracción IV del artículo anterior, designará un Consejero titular y uno suplente; con el objeto de asegurar el buen funcionamiento del Consejo, el Pleno revisará y actualizará la representación de los sectores cada dos años."
+   - **Current Article:** "ARTÍCULO 15. En términos de lo establecido en el ARTÍCULO 153 de la Ley General, la incorporación al Consejo Foresta del Estado de Morelos, de los representantes de los sectores a que se refiere la fracción V del ARTÍCULO 13 del presente ordenamiento, será proporcional y equitativa, mediante convocatoria que se publicará al menos en un diario de circulación estatal. En dicha convocatoria se establecerán los plazos, condiciones y requisitos para la integración de los sectores."
+   - **✅ Expected Output:** { "isValid": true }
 
-    3. **Annexes (Anexos)**:
-      - Must provide additional information that supports or complements the legal text.
+  - **Previous Article:** "ARTÍCULO 9. Los convenios de concertación que en materia forestal celebre el
+   Estado con personas físicas y morales del sector social y privado, podrán versar
+   sobre la instrumentación de programas forestales, el fomento a la educación,
+   cultura, capacitación, servicios ambientales e investigación forestales, así como
+   respecto de las labores de vigilancia y demás programas operativos establecidos
+   en esta Ley."
 
-    4. **Transitory Provisions (Disposiciones Transitorias)**:
-      - Must establish rules for the transition or application of the legal document.
-   `
+   - **Current Article:** ARTÍCULO 10. Se preverá que en el seguimiento y evaluación de los resultados
+   que se obtengan por la ejecución de los convenios a que se refiere este capítulo,
+   intervenga el Consejo Forestal Estatal."
+
+   - **✅ Expected Output:** { "isValid": true }
+   
+2. **Invalid provision (with reasons):**
+- **OutContext**: If the article is merely a **reference** to another article and not an independent provision. (Pay attention to the context of the previous provision).  
+ **If an article references another article and has no standalone meaning, it must always be classified as OutContext.**  
+ (e.g., "For more information, see Article 5 (Ver articulo 5)"). 
+
+- **IsIncomplete**: If the article does not end with a clear, complete idea.
+   - 🚨 **An article is "IsIncomplete" if:**
+   - The last sentence is **cut off or unfinished**.
+   - It **does not end with a period (".")**.
+   - It introduces a concept but does **not complete the explanation**.
+   - **Exception: If the previous article was already marked as "IsIncomplete", the current article CANNOT be marked as "IsIncomplete" again. In this case, classify as "IsContinuation" instead.**
+
+   - Example:
+     - Previous Article: "ARTÍCULO 6. Las atribuciones gubernamentales, en materia de conservación,
+     protección, restauración, producción, ordenación, cultivo, manejo y
+     aprovechamiento de los ecosistemas forestales que son objeto de esta ley, serán
+     ejercidas, de conformidad con la distribución que hace la misma, sin perjuicio de lo
+     que se disponga en otros ordenamientos aplicables.
+     Para efecto de la coordinación de acciones, siempre que exista transferencia de
+     atribuciones, el Gobierno del Estado y los gobiernos municipales deberán celebrar
+     convenios entre ellos y/o con la federación, en los casos y las materias que se
+     precisan en la presente ley." // The article is complete.
+
+     - Current Article: "ARTÍCULO *7. El Estado podrá suscribir convenios o acuerdos de coordinación
+      con la Federación con el objeto de que en el ámbito territorial de su competencia
+      asuma las funciones previstas en el artículo 24 de la Ley General.
+      El Gobierno del Estado y los Municipios podrán celebrar convenios de
+      coordinación en materia forestal con la finalidad de que estos últimos, en el ámbito
+      de su competencia territorial asuman algunas de las funciones previstas en el"  // The article is incomplete.
+
+     - ❌ Resultado esperado: { "isValid": false, "reason": "IsIncomplete" }
+
+- **IsContinuation**: If the article **continues the idea** of the previous article **(except when the previous provision is a Chapter(Capítulo)", "Section(Sección)", "Title(Título)", "Annex(Annexo)", or "Transitory(Transitorio), in which case it is always valid).**
+   - 🚨 **An article is "IsContinuation" if:**
+   - The **previous article was NOT a Chapter(Capítulo)", "Section(Sección)", "Title(Título)", "Annex(Annexo)", or "Transitory(Transitorio)**.
+   - The current article expands directly on the previous article **without introducing a new independent provision**.
+   - **Exception: If the previous article was not marked as "IsIncomplete", then CANNOT classify the article as "IsContinuation". If unsure, mark it as "OutContext".**
+   - **Exception: If the previous article was already marked as "IsContinuation", the current article CANNOT be marked as "IsContinuation" again. In this case, classify it as "OutContext" instead.**
+
+   - Example:
+
+     - Previous Article: ARTÍCULO 7. "ARTÍCULO *7. El Estado podrá suscribir convenios o acuerdos de coordinación
+      con la Federación con el objeto de que en el ámbito territorial de su competencia
+      asuma las funciones previstas en el artículo 24 de la Ley General.
+      El Gobierno del Estado y los Municipios podrán celebrar convenios de
+      coordinación en materia forestal con la finalidad de que estos últimos, en el ámbito
+      de su competencia territorial asuman algunas de las funciones previstas en el" // The article is incomplete.
+
+     - Current Article:  "Artículo 24 de la Ley General y además, alguna de las siguientes:  // The article is a continuation of the previous article.
+     I. Aplicar y operar las políticas públicas federales y estatales en materia de
+     desarrollo social;
+
+     II. Combatir los incendios forestales, la tala clandestina y el comercio ilegal de
+     productos forestales, regular y vigilar el uso adecuado del fuego;
+
+     III. Aplicar y operar las demás disposiciones o programas que formulen el
+     gobierno federal y estatal;
+
+    - ❌ Resultado esperado: { "isValid": false, "reason": "IsContinuation" }
+
+### Important Clarifications:
+- If the **Previous Provision Context** matches the article immediately before the **Content of the Article to be Verified**, the article **must always be considered VALID**.  (e.g., Previous Provision Context: "ARTÍCULO 1", Content of the Article to be Verified: "ARTÍCULO 2"). //Apply this rule to all articles.
+- **Exception: If the previous article was already marked as "IsIncomplete", the current article CANNOT be marked as "IsIncomplete" again. In this case, classify as "IsContinuation" instead.**
+- **Exception: If the previous article was not marked as "IsIncomplete", then CANNOT classify the article as "IsContinuation". If unsure, mark it as "OutContext".**
+- **Exception: If the previous article was already marked as "IsContinuation", the current article CANNOT be marked as "IsContinuation" again. In this case, classify it as "OutContext" instead.**
+- **Articles preceded by a Chapter, Section, Title, Annex, or Transitory must always be considered valid, regardless of content.**
+- If the previous provision is another **Article**, then the validation rules for continuation and completeness apply. (Articles must end with a complete idea).
+
+Return the result in JSON format following this schema:
+{
+"isValid": true/false,
+"reason": "IsContinuation" | "IsIncomplete" | "OutContext"
+}
+`
   }
 
   /**
@@ -257,7 +418,7 @@ class LeyArticleExtractor extends ArticleExtractor {
    * @returns {Promise<Article>} - Corrected article object.
    */
   async _correctArticle (article) {
-    const prompt = this._buildCorrectArticlePrompt(this.name, article)
+    const prompt = this._buildCorrectPrompt(this.name, article)
     const request = {
       model: this.model,
       messages: [
@@ -300,12 +461,12 @@ class LeyArticleExtractor extends ArticleExtractor {
   }
 
   /**
-   * @param {string} documentName - The name of the document.
+   * @param {string} legalName - The name of the legal Base.
    * @param {Article} article - The article object for which the prompt is built.
    */
-  _buildCorrectArticlePrompt (documentName, article) {
+  _buildCorrectPrompt (legalName, article) {
     return `
-Analyze the content of "${article.title}" within the Mexican legal basis titled "${documentName}". Then, help format and correct the following article using professional HTML structure and styles:
+Analyze the content of "${article.title}" within the Mexican legal basis titled "${legalName}". Then, help format and correct the following article using professional HTML structure and styles:
 
 {
   "title": "${article.title}",
@@ -448,13 +609,14 @@ Analyze the content of "${article.title}" within the Mexican legal basis titled 
 
 ### Additional Formatting Guidelines:
 
+- Please do not create or write random definitions within the article. Just make sure you are working with the information that is being shared with you. //Attention with this rule.
 - Use consistent and professional formatting, such as proper indentation for nested elements.
 - Respect spaces, punctuation (e.g., periods, hyphens), and line breaks for clarity.
+- The text contains footnotes or headers that is not relevant to the context. This information that is out of context is removed. (Remove footnotes and headers) // Attention: Do not remove any relevant information.
 - Ensure all text ends with complete ideas but but without making up or creating new things.
 - Maintain any existing tables or columns using <table>, <thead>, <tbody>, and <tr> tags.
 - Use semantic HTML wherever possible to improve readability and structure.
 - Return the corrected object in **Spanish**, preserving the original meaning of the text.
-- Sometimes the text contains footnotes or headers that is not relevant to the context. This information that is out of context is removed. 
   `
   }
 }

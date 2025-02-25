@@ -5,10 +5,31 @@
 class ArticleExtractor {
   /**
    * @typedef {Object} Article
-   * @property {string} title - The title of the article, chapter, section, or transitory provision.
-   * @property {string} article - The content of the article in HTML format. Empty string if no content is found.
-   * @property {string} plainArticle - The plain text equivalent of the article content.
-   * @property {number} order - The sequential order of the extracted item.
+   * @property {string} title - The title of the article, chapter, section, annex, or transitory provision.
+   * @property {string} article - The content of the article.
+   * @property {string} plainArticle - Plain text of the article.
+   * @property {number} order - Order of the article.
+   */
+
+  /**
+   * @typedef {Object} ValidationResult
+   * @property {boolean} isValid - Indicates if the article is valid.
+   * @property {string | null} reason - The reason why the article is considered invalid, or null if valid.
+   */
+
+  /**
+   * @typedef {Object} PreviousArticle
+   * @property {string} content - Content of the previous article.
+   * @property {ValidationResult} lastResult - Validation result of the previous article.
+   */
+
+  /**
+   * @typedef {Object} ArticleToVerify
+   * @property {string} title - The title of the article, title, chapter, section, annex, or transitory provision.
+   * @property {PreviousArticle} previousArticle - Object containing the content and validation result of the previous article.
+   * @property {string} currentArticle - Main content of the article to be analyzed.
+   * @property {string} plainArticle - Plain text of the article.
+   * @property {number} order - Order of the article.
    */
 
   /**
@@ -53,7 +74,7 @@ class ArticleExtractor {
    * Abstract method to extract articles from the cleaned text.
    * Subclasses must override this method to provide specific extraction logic.
    * @param {string} _text - Text to process and extract articles from.
-   * @returns {Promise<Array<Article>>} - List of article objects.
+   * @returns {Promise<Array<Article>>} - List of articles.
    * @throws {Error} If not implemented in a subclass.
    */
   async _extractArticles (_text) {
@@ -61,16 +82,41 @@ class ArticleExtractor {
   }
 
   /**
-   * Abstract method to create an article object.
+   * Abstract method to create an article.
    * Subclasses must override this method to define how articles are created.
    * @param {string} _title - Title of the article.
-   * @param {string} _content - Content of the article.
+   * @param {ValidationResult} _previousLastResult - Validation result of the previous article.
+   * @param {string} _previousContent - Content of the previous article.
+   * @param {string} _currentContent - Content of the article.
    * @param {number} _order - Order of the article.
-   * @returns {Article} - The article object.
+   * @returns {ArticleToVerify} - The article to verify.
    * @throws {Error} If not implemented in a subclass.
    */
-  _createArticleObject (_title, _content, _order) {
-    throw new Error('Method "createArticleObject" must be implemented')
+  _createArticleToVerify (_title, _previousLastResult, _previousContent, _currentContent, _order) {
+    throw new Error('Method "_createArticleToVerify" must be implemented')
+  }
+
+  /**
+   * Abstract method to verify an article.
+   * Subclasses must override this method to provide specific verification logic.
+   * @param {ArticleToVerify} _article - The article to verify.
+   * @returns {Promise<boolean> }>} - Boolean indicating if the article is valid.
+   * @throws {Error} If not implemented in a subclass.
+   */
+  async _verifyArticle (_article) {
+    throw new Error('Method "verifyArticle" must be implemented')
+  }
+
+  /**
+   * Abstract method to build the prompt for article verification.
+   * Subclasses must override this method to construct specific prompts.
+   * @param {string} _legalName - The name of the legal Base.
+   * @param {ArticleToVerify} _article - The article for which the verification prompt is built.
+   * @returns {string} - The constructed prompt.
+   * @throws {Error} If not implemented in a subclass.
+   */
+  _buildVerifyPrompt (_legalName, _article) {
+    throw new Error('Method "buildVerifyPrompt" must be implemented')
   }
 
   /**
@@ -87,36 +133,13 @@ class ArticleExtractor {
   /**
    * Abstract method to build the prompt for AI correction.
    * Subclasses must override this method to construct specific prompts.
-   * @param {string} _documentName - The name of the document.
+   * @param {string} _legalName - The name of the Lega Base.
    * @param {Article} _article - The article object for which the prompt is built.
    * @returns {string} - The constructed prompt.
    * @throws {Error} If not implemented in a subclass.
    */
-  _buildCorrectArticlePrompt (_documentName, _article) {
-    throw new Error('Method "buildCorrectArticlePrompt" must be implemented')
-  }
-
-  /**
-   * Abstract method to verify an article.
-   * Subclasses must override this method to provide specific verification logic.
-   * @param {Article} _article - The article object to verify.
-   * @returns {Promise<{ isValid: boolean }>} - JSON object indicating if the article is valid.
-   * @throws {Error} If not implemented in a subclass.
-   */
-  async _verifyArticle (_article) {
-    throw new Error('Method "verifyArticle" must be implemented')
-  }
-
-  /**
-   * Abstract method to build the prompt for article verification.
-   * Subclasses must override this method to construct specific prompts.
-   * @param {string} _documentName - The name of the document.
-   * @param {Article} _article - The article object for which the verification prompt is built.
-   * @returns {string} - The constructed prompt.
-   * @throws {Error} If not implemented in a subclass.
-   */
-  _buildVerifyPrompt (_documentName, _article) {
-    throw new Error('Method "buildVerifyPrompt" must be implemented')
+  _buildCorrectPrompt (_legalName, _article) {
+    throw new Error('Method "_buildCorrectPrompt" must be implemented')
   }
 
   /**
@@ -128,20 +151,6 @@ class ArticleExtractor {
     let progress = Math.floor((current / total) * 100)
     progress = Math.max(0, Math.min(progress, 100))
     this.job.progress(progress)
-  }
-
-  /**
-   * Formats the extracted articles into a standardized structure.
-   * @param {Array<Article>} articles - The list of articles to format.
-   * @returns {Array<Article>} - The list of formatted articles.
-   */
-  formatArticles (articles) {
-    return articles.map((article) => ({
-      title: article.title,
-      article: article.article,
-      plainArticle: article.plainArticle,
-      order: article.order
-    }))
   }
 }
 
