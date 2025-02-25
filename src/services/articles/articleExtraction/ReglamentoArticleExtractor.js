@@ -318,8 +318,11 @@ class ReglamentoArticleExtractor extends ArticleExtractor {
   - **Title:** "${article.title}"
   - **Content:** "${article.currentArticle}"
   
-  ### Exceptions (mark as INVALID):
+  ### Always VALID conditions:
+  - If the current article includes structural markers such as Chapters (Capítulo), Titles (Título), Sections (Sección), Annexes (Anexo), or Transitory Provisions (Transitorio), it is always VALID, provided it presents a logically complete provision.
+  - If the Previous Provision is a structural marker (e.g., Chapter, Section, Title, Annex, or Transitory), the current article is always VALID and must not be interpreted as a continuation.
   
+  ### Exceptions (mark as INVALID):
   - **IsIncomplete:** The text is abruptly cut off or clearly unfinished, lacking a concluding idea.
     - *Exception:* If the previous article was marked as "IsIncomplete", classify the current one as "IsContinuation" instead.
   
