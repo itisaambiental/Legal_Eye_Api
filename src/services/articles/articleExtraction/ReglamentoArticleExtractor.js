@@ -71,9 +71,9 @@ class ReglamentoArticleExtractor extends ArticleExtractor {
   }
 
   /**
- * @param {string} text - The text to clean.
- * @returns {string} - The cleaned text.
- */
+   * @param {string} text - The text to clean.
+   * @returns {string} - The cleaned text.
+   */
   _cleanText (text) {
     const articleKeywordRegex =
     /\b[Aa]\s*R\s*T\s*[ÍIíi]\s*C\s*U\s*L\s*O\s*(\d+[A-Z]*|[IVXLCDM]+)\b/gi
@@ -133,11 +133,15 @@ class ReglamentoArticleExtractor extends ArticleExtractor {
     let order = 1
     let lastResult = { isValid: true, reason: null }
     let lastArticle = null
+    let isConcatenating = false
+
     for (let i = 1; i < matches.length; i++) {
       const previousTitle = i > 1 ? matches[i - 2]?.trim() : ''
       const previousContent = i > 1 ? matches[i - 1]?.trim() : ''
       const currentTitle = matches[i].trim()
-      const currentContent = i + 1 < matches.length ? matches[i + 1].trim() : ''
+      const currentContent =
+      i + 1 < matches.length ? matches[i + 1].trim() : ''
+
       if (regexes.some((regex) => regex.test(currentTitle))) {
         const previousArticle = `${previousTitle} ${previousContent}`.trim()
         const currentArticle = `${currentTitle} ${currentContent}`.trim()
@@ -148,23 +152,30 @@ class ReglamentoArticleExtractor extends ArticleExtractor {
           currentArticle,
           order++
         )
-        const { isValid, reason } = await this._verifyArticle(currentArticleData)
-        if (
-          (!lastResult.isValid &&
-          lastResult.reason === 'IsIncomplete' &&
-          reason === 'IsContinuation') ||
-        (!lastResult.isValid &&
-          lastResult.reason === 'IsContinuation' &&
-          reason === 'IsContinuation')
-        ) {
-          if (lastArticle) {
-            lastArticle.article += ` ${currentArticleData.currentArticle}`
+        const { isValid, reason } = await this._verifyArticle(
+          currentArticleData
+        )
+        if (reason === 'IsContinuation') {
+          if (
+            lastResult.reason === 'IsIncomplete' ||
+          (isConcatenating && lastResult.reason === 'IsContinuation')
+          ) {
+            if (lastArticle) {
+              lastArticle.article += ` ${currentArticleData.currentArticle}`
+            } else {
+              lastArticle = {
+                title: previousTitle,
+                article: `${previousContent} ${currentArticleData.currentArticle}`,
+                plainArticle: currentArticleData.plainArticle,
+                order: currentArticleData.order
+              }
+            }
+            isConcatenating = true
           } else {
-            lastArticle = {
-              title: previousTitle,
-              article: `${previousContent} ${currentArticleData.currentArticle}`,
-              plainArticle: currentArticleData.plainArticle,
-              order: currentArticleData.order
+            isConcatenating = false
+            if (lastArticle) {
+              articles.push(lastArticle)
+              lastArticle = null
             }
           }
         } else {
@@ -180,7 +191,9 @@ class ReglamentoArticleExtractor extends ArticleExtractor {
               order: currentArticleData.order
             })
           }
+          isConcatenating = false
         }
+
         lastResult = { isValid, reason }
       }
     }
@@ -289,12 +302,12 @@ class ReglamentoArticleExtractor extends ArticleExtractor {
   }
 
   /**
-   * Constructs a verification prompt for evaluating a legal provision.
-   *
-   * @param {string} legalName - The name of the legal base.
-   * @param {ArticleToVerify} article - The article for which the verification prompt is built.
-   * @returns {string} - The constructed prompt.
-   */
+ * Constructs a verification prompt for evaluating a legal provision.
+ *
+ * @param {string} legalName - The name of the legal base.
+ * @param {ArticleToVerify} article - The article for which the verification prompt is built.
+ * @returns {string} - The constructed prompt.
+ */
   _buildVerifyPrompt (legalName, article) {
     return `
 You are an AI expert specializing in the evaluation of legal provisions extracted from Mexican legal documents. Your task is to determine whether the provided text represents a valid, standalone legal provision or if it is merely a continuation or reference from another provision.
@@ -309,93 +322,94 @@ You are an AI expert specializing in the evaluation of legal provisions extracte
 ### Decision Criteria
 
 1. **Valid provision:**
- - If the **Previous Provision Context** matches the article immediately before the **Content of the Article to be Verified**, the article **must always be considered VALID**.  (e.g., Previous Provision Context: "ARTÍCULO 1", Content of the Article to be Verified: "ARTÍCULO 2"). //Apply this rule to all articles.
- - The article is valid if it is a complete, standalone legal provision.
- - It must **end with a complete idea**.
- - If the **previous provision is a "Chapter(Capítulo)", "Section(Sección)", "Title(Título)", "Annex(Annexo)", or "Transitory(Transitorio)"**, the article **must always be considered VALID**, as these provisions introduce a new section of the law.  (e.g., "CAPÍTULO PRIMERO", "SECCIÓN SEGUNDA", "TÍTULO TERCERO", "ANEXO CUARTO", "TRANSITORIO QUINTO"). (Note: The previous provision is always considered valid if it is one of these types).
+- If the **Previous Provision Context** matches the article immediately before the **Content of the Article to be Verified**, the article **must always be considered VALID**.  (e.g., Previous Provision Context: "ARTÍCULO 1", Content of the Article to be Verified: "ARTÍCULO 2"). //Apply this rule to all articles.
+- The article is valid if it is a complete, standalone legal provision.
+- If the **previous provision is a "Chapter(Capítulo)", "Section(Sección)", "Title(Título)", "Annex(Annexo)", or "Transitory(Transitorio)"**, the article **must always be considered VALID**, as these provisions introduce a new section of the law.  (e.g., "CAPÍTULO PRIMERO", "SECCIÓN SEGUNDA", "TÍTULO TERCERO", "ANEXO CUARTO", "TRANSITORIO QUINTO"). (Note: The previous provision is always considered valid if it is one of these types).
+- The articles and "Chapters(Capítulos)", "Sections(Secciónes)", "Titles(Títulos)", "Annexes(Annexos)", or "Transitories(Transitorios)"** can be any size and have any style. The key is that they must be complete and independent legal provisions.
+- The article must end with a **clear, complete idea**. It should not be a reference to another article or an incomplete thought.
 
 - ✅ **Example of a valid article:**
-     - **Previous Article:** "SECCIÓN 1 GENERALIDADES"
-     - **Current Article:** "ARTÍCULO 11. Se crea el Consejo Forestal del Estado de Morelos, como órgano consultivo, de asesoramiento y concertación, en materias de planeación, supervisión, evaluación de la política forestal y aprovechamiento, conservación y restauración de los recursos forestales de las autoridades estatales en materia forestal."
-     - **✅ Expected Output:** { "isValid": true }
-     
-    - ✅ **Example of a valid article where the previous provision is another article but it still ends with a clear idea:**
-     - **Previous Article:** "ARTÍCULO 14. Cada sector a que se refiere la fracción IV del artículo anterior, designará un Consejero titular y uno suplente; con el objeto de asegurar el buen funcionamiento del Consejo, el Pleno revisará y actualizará la representación de los sectores cada dos años."
-     - **Current Article:** "ARTÍCULO 15. En términos de lo establecido en el ARTÍCULO 153 de la Ley General, la incorporación al Consejo Foresta del Estado de Morelos, de los representantes de los sectores a que se refiere la fracción V del ARTÍCULO 13 del presente ordenamiento, será proporcional y equitativa, mediante convocatoria que se publicará al menos en un diario de circulación estatal. En dicha convocatoria se establecerán los plazos, condiciones y requisitos para la integración de los sectores."
-     - **✅ Expected Output:** { "isValid": true }
+ - **Previous Article:** "SECCIÓN 1 GENERALIDADES"
+ - **Current Article:** "ARTÍCULO 11. Se crea el Consejo Forestal del Estado de Morelos, como órgano consultivo, de asesoramiento y concertación, en materias de planeación, supervisión, evaluación de la política forestal y aprovechamiento, conservación y restauración de los recursos forestales de las autoridades estatales en materia forestal."
+ - **✅ Expected Output:** { "isValid": true }
+ 
+- ✅ **Example of a valid article where the previous provision is another article but it still ends with a clear idea:**
+ - **Previous Article:** "ARTÍCULO 14. Cada sector a que se refiere la fracción IV del artículo anterior, designará un Consejero titular y uno suplente; con el objeto de asegurar el buen funcionamiento del Consejo, el Pleno revisará y actualizará la representación de los sectores cada dos años."
+ - **Current Article:** "ARTÍCULO 15. En términos de lo establecido en el ARTÍCULO 153 de la Ley General, la incorporación al Consejo Foresta del Estado de Morelos, de los representantes de los sectores a que se refiere la fracción V del ARTÍCULO 13 del presente ordenamiento, será proporcional y equitativa, mediante convocatoria que se publicará al menos en un diario de circulación estatal. En dicha convocatoria se establecerán los plazos, condiciones y requisitos para la integración de los sectores."
+ - **✅ Expected Output:** { "isValid": true }
 
-    - **Previous Article:** "ARTÍCULO 9. Los convenios de concertación que en materia forestal celebre el
-     Estado con personas físicas y morales del sector social y privado, podrán versar
-     sobre la instrumentación de programas forestales, el fomento a la educación,
-     cultura, capacitación, servicios ambientales e investigación forestales, así como
-     respecto de las labores de vigilancia y demás programas operativos establecidos
-     en esta Ley."
+- **Previous Article:** "ARTÍCULO 9. Los convenios de concertación que en materia forestal celebre el
+ Estado con personas físicas y morales del sector social y privado, podrán versar
+ sobre la instrumentación de programas forestales, el fomento a la educación,
+ cultura, capacitación, servicios ambientales e investigación forestales, así como
+ respecto de las labores de vigilancia y demás programas operativos establecidos
+ en esta Ley."
 
-     - **Current Article:** ARTÍCULO 10. Se preverá que en el seguimiento y evaluación de los resultados
-     que se obtengan por la ejecución de los convenios a que se refiere este capítulo,
-     intervenga el Consejo Forestal Estatal."
+ - **Current Article:** ARTÍCULO 10. Se preverá que en el seguimiento y evaluación de los resultados
+ que se obtengan por la ejecución de los convenios a que se refiere este capítulo,
+ intervenga el Consejo Forestal Estatal."
 
-     - **✅ Expected Output:** { "isValid": true }
-     
+ - **✅ Expected Output:** { "isValid": true }
+ 
 2. **Invalid provision (with reasons):**
 - **OutContext**: If the article is merely a **reference** to another article and not an independent provision. (Pay attention to the context of the previous provision).  
-   **If an article references another article and has no standalone meaning, it must always be classified as OutContext.**  
-   (e.g., "For more information, see Article 5 (Ver articulo 5)"). 
+**If an article references another article and has no standalone meaning, it must always be classified as OutContext.**  
+(e.g., "For more information, see Article 5 (Ver articulo 5)"). 
 
- - **IsIncomplete**: If the article does not end with a clear, complete idea.
-     - 🚨 **An article is "IsIncomplete" if:**
-     - The last sentence is **cut off or unfinished**.
-     - It **does not end with a period (".")**.
-     - It introduces a concept but does **not complete the explanation**.
-     - **Exception: If the previous article was already marked as "IsIncomplete", the current article CANNOT be marked as "IsIncomplete" again. In this case, classify as "IsContinuation" instead.**
+- **IsIncomplete**: If the article does not end with a clear, complete idea.
+ - 🚨 **An article is "IsIncomplete" if:**
+ - The last sentence is **cut off or unfinished**.
+ - It **does not end with a period (".")**.
+ - It introduces a concept but does **not complete the explanation**.
+ - **Exception: If the previous article was already marked as "IsIncomplete", the current article CANNOT be marked as "IsIncomplete" again. In this case, classify as "IsContinuation" instead.**
 
-     - Example:
-       - Previous Article: "ARTÍCULO 6. Las atribuciones gubernamentales, en materia de conservación,
-       protección, restauración, producción, ordenación, cultivo, manejo y
-       aprovechamiento de los ecosistemas forestales que son objeto de esta ley, serán
-       ejercidas, de conformidad con la distribución que hace la misma, sin perjuicio de lo
-       que se disponga en otros ordenamientos aplicables.
-       Para efecto de la coordinación de acciones, siempre que exista transferencia de
-       atribuciones, el Gobierno del Estado y los gobiernos municipales deberán celebrar
-       convenios entre ellos y/o con la federación, en los casos y las materias que se
-       precisan en la presente ley." // The article is complete.
+ - Example:
+   - Previous Article: "ARTÍCULO 6. Las atribuciones gubernamentales, en materia de conservación,
+   protección, restauración, producción, ordenación, cultivo, manejo y
+   aprovechamiento de los ecosistemas forestales que son objeto de esta ley, serán
+   ejercidas, de conformidad con la distribución que hace la misma, sin perjuicio de lo
+   que se disponga en otros ordenamientos aplicables.
+   Para efecto de la coordinación de acciones, siempre que exista transferencia de
+   atribuciones, el Gobierno del Estado y los gobiernos municipales deberán celebrar
+   convenios entre ellos y/o con la federación, en los casos y las materias que se
+   precisan en la presente ley." // The article is complete.
 
-       - Current Article: "ARTÍCULO *7. El Estado podrá suscribir convenios o acuerdos de coordinación
-        con la Federación con el objeto de que en el ámbito territorial de su competencia
-        asuma las funciones previstas en el artículo 24 de la Ley General.
-        El Gobierno del Estado y los Municipios podrán celebrar convenios de
-        coordinación en materia forestal con la finalidad de que estos últimos, en el ámbito
-        de su competencia territorial asuman algunas de las funciones previstas en el"  // The article is incomplete.
+   - Current Article: "ARTÍCULO *7. El Estado podrá suscribir convenios o acuerdos de coordinación
+    con la Federación con el objeto de que en el ámbito territorial de su competencia
+    asuma las funciones previstas en el artículo 24 de la Ley General.
+    El Gobierno del Estado y los Municipios podrán celebrar convenios de
+    coordinación en materia forestal con la finalidad de que estos últimos, en el ámbito
+    de su competencia territorial asuman algunas de las funciones previstas en el"  // The article is incomplete.
 
-       - ❌ Resultado esperado: { "isValid": false, "reason": "IsIncomplete" }
+   - ❌ Resultado esperado: { "isValid": false, "reason": "IsIncomplete" }
 
- - **IsContinuation**: If the article **continues the idea** of the previous article **(except when the previous provision is a Chapter(Capítulo)", "Section(Sección)", "Title(Título)", "Annex(Annexo)", or "Transitory(Transitorio), in which case it is always valid).**
-     - 🚨 **An article is "IsContinuation" if:**
-     - The **previous article was NOT a Chapter(Capítulo)", "Section(Sección)", "Title(Título)", "Annex(Annexo)", or "Transitory(Transitorio)**.
-     - The current article expands directly on the previous article **without introducing a new independent provision**.
-     - **Exception: If the previous article was not marked as "IsIncomplete", then CANNOT classify the article as "IsContinuation". If unsure, mark it as "OutContext".**
-     - **Exception: If the previous article was already marked as "IsContinuation", the current article CANNOT be marked as "IsContinuation" again. In this case, classify it as "OutContext" instead.**
+- **IsContinuation**: If the article **continues the idea** of the previous article **(except when the previous provision is a Chapter(Capítulo)", "Section(Sección)", "Title(Título)", "Annex(Annexo)", or "Transitory(Transitorio), in which case it is always valid).**
+ - 🚨 **An article is "IsContinuation" if:**
+ - The **previous article was NOT a Chapter(Capítulo)", "Section(Sección)", "Title(Título)", "Annex(Annexo)", or "Transitory(Transitorio)**.
+ - The current article expands directly on the previous article **without introducing a new independent provision**.
+ - **Exception: If the previous article was not marked as "IsIncomplete", then CANNOT classify the article as "IsContinuation". If unsure, mark it as "OutContext".**
+ - **Exception: If the previous article was already marked as "IsContinuation", the current article CANNOT be marked as "IsContinuation" again. In this case, classify it as "OutContext" instead.**
 
-     - Example:
+ - Example:
 
-       - Previous Article: ARTÍCULO 7. "ARTÍCULO *7. El Estado podrá suscribir convenios o acuerdos de coordinación
-        con la Federación con el objeto de que en el ámbito territorial de su competencia
-        asuma las funciones previstas en el artículo 24 de la Ley General.
-        El Gobierno del Estado y los Municipios podrán celebrar convenios de
-        coordinación en materia forestal con la finalidad de que estos últimos, en el ámbito
-        de su competencia territorial asuman algunas de las funciones previstas en el" // The article is incomplete.
+   - Previous Article: ARTÍCULO 7. "ARTÍCULO *7. El Estado podrá suscribir convenios o acuerdos de coordinación
+    con la Federación con el objeto de que en el ámbito territorial de su competencia
+    asuma las funciones previstas en el artículo 24 de la Ley General.
+    El Gobierno del Estado y los Municipios podrán celebrar convenios de
+    coordinación en materia forestal con la finalidad de que estos últimos, en el ámbito
+    de su competencia territorial asuman algunas de las funciones previstas en el" // The article is incomplete.
 
-       - Current Article:  "Artículo 24 de la Ley General y además, alguna de las siguientes:  // The article is a continuation of the previous article.
-       I. Aplicar y operar las políticas públicas federales y estatales en materia de
-       desarrollo social;
+   - Current Article:  "Artículo 24 de la Ley General y además, alguna de las siguientes:  // The article is a continuation of the previous article.
+   I. Aplicar y operar las políticas públicas federales y estatales en materia de
+   desarrollo social;
 
-       II. Combatir los incendios forestales, la tala clandestina y el comercio ilegal de
-       productos forestales, regular y vigilar el uso adecuado del fuego;
+   II. Combatir los incendios forestales, la tala clandestina y el comercio ilegal de
+   productos forestales, regular y vigilar el uso adecuado del fuego;
 
-       III. Aplicar y operar las demás disposiciones o programas que formulen el
-       gobierno federal y estatal;
+   III. Aplicar y operar las demás disposiciones o programas que formulen el
+   gobierno federal y estatal;
 
-      - ❌ Resultado esperado: { "isValid": false, "reason": "IsContinuation" }
+  - ❌ Resultado esperado: { "isValid": false, "reason": "IsContinuation" }
 
 ### Important Clarifications:
 - If the **Previous Provision Context** matches the article immediately before the **Content of the Article to be Verified**, the article **must always be considered VALID**.  (e.g., Previous Provision Context: "ARTÍCULO 1", Content of the Article to be Verified: "ARTÍCULO 2"). //Apply this rule to all articles.
@@ -533,6 +547,8 @@ Analyze the content of "${article.title}" within the Mexican legal basis titled 
    - Ensure headings are concise and formatted with appropriate text structure.
    - Titles should be short and precise, containing only the grouping heading without including articles or detailed content.
    - If any articles are included, remove them from the chapter, section, title, or annex.
+   - Please do not create or write random definitions within the Chapters, Titles, Sections, and Annexes. Just make sure you are working with the information that is being shared with you. //Attention with this rule.
+
    - Chapters, Titles, Sections, and Annexes should follow the structure:
      - TITLE # + Title Name
      - CHAPTER # + Chapter Name

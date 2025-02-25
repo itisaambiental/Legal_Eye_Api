@@ -71,22 +71,22 @@ class LeyArticleExtractor extends ArticleExtractor {
   }
 
   /**
- * @param {string} text - The text to clean.
- * @returns {string} - The cleaned text.
- */
+   * @param {string} text - The text to clean.
+   * @returns {string} - The cleaned text.
+   */
   _cleanText (text) {
     const articleKeywordRegex =
-  /\b[Aa]\s*R\s*T\s*[ÍIíi]\s*C\s*U\s*L\s*O\s*(\d+[A-Z]*|[IVXLCDM]+)\b/gi
+      /\b[Aa]\s*R\s*T\s*[ÍIíi]\s*C\s*U\s*L\s*O\s*(\d+[A-Z]*|[IVXLCDM]+)\b/gi
     const chapterKeywordRegex =
-  /\b[Cc]\s*[ÁAáa]\s*[Pp]\s*[ÍIíi]\s*[Tt]\s*[Uu]\s*[Ll]\s*[Oo]\s*(\d+[A-Z]*|[IVXLCDM]+)\b/gi
+      /\b[Cc]\s*[ÁAáa]\s*[Pp]\s*[ÍIíi]\s*[Tt]\s*[Uu]\s*[Ll]\s*[Oo]\s*(\d+[A-Z]*|[IVXLCDM]+)\b/gi
     const titleKeywordRegex =
-  /\b[Tt]\s*[ÍIíi]\s*[Tt]\s*[Uu]\s*[Ll]\s*[Oo]\s*(\d+[A-Z]*|[IVXLCDM]+)\b/gi
+      /\b[Tt]\s*[ÍIíi]\s*[Tt]\s*[Uu]\s*[Ll]\s*[Oo]\s*(\d+[A-Z]*|[IVXLCDM]+)\b/gi
     const sectionKeywordRegex =
-  /\b[Ss]\s*[Ee]\s*[Cc]\s*[Cc]\s*[ÍIíi]\s*[ÓOóo]\s*[Nn]\s*(\d+[A-Z]*|[IVXLCDM]+)\b/gi
+      /\b[Ss]\s*[Ee]\s*[Cc]\s*[Cc]\s*[ÍIíi]\s*[ÓOóo]\s*[Nn]\s*(\d+[A-Z]*|[IVXLCDM]+)\b/gi
     const transientKeywordRegex =
-  /\b(?:\w+\s+)*[Tt][Rr][Aa][Nn][Ss][Ii][Tt][Oo][Rr][Ii][AaOo](?:\s*[SsAa])?\s*(\d+[A-Z]*|[IVXLCDM]+)?\b/gi
+      /\b(?:\w+\s+)*[Tt][Rr][Aa][Nn][Ss][Ii][Tt][Oo][Rr][Ii][AaOo](?:\s*[SsAa])?\s*(\d+[A-Z]*|[IVXLCDM]+)?\b/gi
     const annexKeywordRegex =
-  /\b[Aa]\s*[Nn]\s*[Ee]\s*[Xx]\s*[Oo]\s*(\d+[A-Z]*|[IVXLCDM]+)?\b/gi
+      /\b[Aa]\s*[Nn]\s*[Ee]\s*[Xx]\s*[Oo]\s*(\d+[A-Z]*|[IVXLCDM]+)?\b/gi
     const ellipsisTextRegex = /[^.]+\s*\.{3,}\s*/g
     const singleEllipsisRegex = /\s*\.{3,}\s*/g
 
@@ -102,21 +102,21 @@ class LeyArticleExtractor extends ArticleExtractor {
   }
 
   /**
-* @param {string} text - Text to process and extract articles from.
-* @returns {Promise<Array<Article>>} - List of article objects.
-*/
+   * @param {string} text - Text to process and extract articles from.
+   * @returns {Promise<Array<Article>>} - List of article objects.
+   */
   async _extractArticles (text) {
     text = this._cleanText(text)
 
     const articlePatternString =
-  '(?:^|\\n)\\s*(' +
-  '(?:c[áa]p[ií]tulo)\\s+\\S+|' +
-  '(?:t[ií]tulo)\\s+\\S+|' +
-  '(?:secci[oó]n)\\s+\\S+|' +
-  '(?:art[ií]culo)\\s+\\S+|' +
-  '(?:transitori[oa][s]?)\\s+\\S+|' +
-  '(?:anexo)\\s+\\S+' +
-  ')'
+      '(?:^|\\n)\\s*(' +
+      '(?:c[áa]p[ií]tulo)\\s+\\S+|' +
+      '(?:t[ií]tulo)\\s+\\S+|' +
+      '(?:secci[oó]n)\\s+\\S+|' +
+      '(?:art[ií]culo)\\s+\\S+|' +
+      '(?:transitori[oa][s]?)\\s+\\S+|' +
+      '(?:anexo)\\s+\\S+' +
+      ')'
 
     const articlePattern = new RegExp(articlePatternString, 'i')
     const regexes = [
@@ -133,11 +133,15 @@ class LeyArticleExtractor extends ArticleExtractor {
     let order = 1
     let lastResult = { isValid: true, reason: null }
     let lastArticle = null
+    let isConcatenating = false
+
     for (let i = 1; i < matches.length; i++) {
       const previousTitle = i > 1 ? matches[i - 2]?.trim() : ''
       const previousContent = i > 1 ? matches[i - 1]?.trim() : ''
       const currentTitle = matches[i].trim()
-      const currentContent = i + 1 < matches.length ? matches[i + 1].trim() : ''
+      const currentContent =
+        i + 1 < matches.length ? matches[i + 1].trim() : ''
+
       if (regexes.some((regex) => regex.test(currentTitle))) {
         const previousArticle = `${previousTitle} ${previousContent}`.trim()
         const currentArticle = `${currentTitle} ${currentContent}`.trim()
@@ -148,23 +152,30 @@ class LeyArticleExtractor extends ArticleExtractor {
           currentArticle,
           order++
         )
-        const { isValid, reason } = await this._verifyArticle(currentArticleData)
-        if (
-          (!lastResult.isValid &&
-        lastResult.reason === 'IsIncomplete' &&
-        reason === 'IsContinuation') ||
-      (!lastResult.isValid &&
-        lastResult.reason === 'IsContinuation' &&
-        reason === 'IsContinuation')
-        ) {
-          if (lastArticle) {
-            lastArticle.article += ` ${currentArticleData.currentArticle}`
+        const { isValid, reason } = await this._verifyArticle(
+          currentArticleData
+        )
+        if (reason === 'IsContinuation') {
+          if (
+            lastResult.reason === 'IsIncomplete' ||
+            (isConcatenating && lastResult.reason === 'IsContinuation')
+          ) {
+            if (lastArticle) {
+              lastArticle.article += ` ${currentArticleData.currentArticle}`
+            } else {
+              lastArticle = {
+                title: previousTitle,
+                article: `${previousContent} ${currentArticleData.currentArticle}`,
+                plainArticle: currentArticleData.plainArticle,
+                order: currentArticleData.order
+              }
+            }
+            isConcatenating = true
           } else {
-            lastArticle = {
-              title: previousTitle,
-              article: `${previousContent} ${currentArticleData.currentArticle}`,
-              plainArticle: currentArticleData.plainArticle,
-              order: currentArticleData.order
+            isConcatenating = false
+            if (lastArticle) {
+              articles.push(lastArticle)
+              lastArticle = null
             }
           }
         } else {
@@ -180,7 +191,9 @@ class LeyArticleExtractor extends ArticleExtractor {
               order: currentArticleData.order
             })
           }
+          isConcatenating = false
         }
+
         lastResult = { isValid, reason }
       }
     }
@@ -192,13 +205,13 @@ class LeyArticleExtractor extends ArticleExtractor {
   }
 
   /**
-* @param {string} title - Title of the article.
-* @param {ValidationResult} previousLastResult - Validation result of the previous article.
-* @param {string} previousContent - Previous article including its title.
-* @param {string} currentContent - Current article including its title.
-* @param {number} order - Order of the article.
-* @returns {ArticleToVerify} - The article to verify.
-*/
+   * @param {string} title - Title of the article.
+   * @param {ValidationResult} previousLastResult - Validation result of the previous article.
+   * @param {string} previousContent - Previous article including its title.
+   * @param {string} currentContent - Current article including its title.
+   * @param {number} order - Order of the article.
+   * @returns {ArticleToVerify} - The article to verify.
+   */
   _createArticleToVerify (
     title,
     previousLastResult,
@@ -219,9 +232,9 @@ class LeyArticleExtractor extends ArticleExtractor {
   }
 
   /**
-* @param {ArticleToVerify} article - The article to verify.
-* @returns {Promise<{ isValid: boolean, reason?: string }>} - An object indicating if the article is valid and optionally the reason why it is considered invalid.
-*/
+   * @param {ArticleToVerify} article - The article to verify.
+   * @returns {Promise<{ isValid: boolean, reason?: string }>} - An object indicating if the article is valid and optionally the reason why it is considered invalid.
+   */
   async _verifyArticle (article) {
     const prompt = this._buildVerifyPrompt(this.name, article)
 
@@ -231,7 +244,7 @@ class LeyArticleExtractor extends ArticleExtractor {
         {
           role: 'system',
           content:
-        'You are a virtual assistant specialized in evaluating the validity of legal articles extracted from Mexican legal documents. Note: Although your instructions are in English, the articles provided will be in Spanish.'
+            'You are a virtual assistant specialized in evaluating the validity of legal articles extracted from Mexican legal documents. Note: Although your instructions are in English, the articles provided will be in Spanish.'
         },
         { role: 'user', content: prompt }
       ],
@@ -249,7 +262,7 @@ class LeyArticleExtractor extends ArticleExtractor {
               },
               reason: {
                 description:
-              'Reason why the article is considered invalid. Possible values: "IsContinuation", "IsIncomplete", "OutContext".',
+                  'Reason why the article is considered invalid. Possible values: "IsContinuation", "IsIncomplete", "OutContext".',
                 type: 'string',
                 enum: ['IsContinuation', 'IsIncomplete', 'OutContext']
               }
@@ -289,12 +302,12 @@ class LeyArticleExtractor extends ArticleExtractor {
   }
 
   /**
- * Constructs a verification prompt for evaluating a legal provision.
- *
- * @param {string} legalName - The name of the legal base.
- * @param {ArticleToVerify} article - The article for which the verification prompt is built.
- * @returns {string} - The constructed prompt.
- */
+   * Constructs a verification prompt for evaluating a legal provision.
+   *
+   * @param {string} legalName - The name of the legal base.
+   * @param {ArticleToVerify} article - The article for which the verification prompt is built.
+   * @returns {string} - The constructed prompt.
+   */
   _buildVerifyPrompt (legalName, article) {
     return `
 You are an AI expert specializing in the evaluation of legal provisions extracted from Mexican legal documents. Your task is to determine whether the provided text represents a valid, standalone legal provision or if it is merely a continuation or reference from another provision.
@@ -311,8 +324,9 @@ You are an AI expert specializing in the evaluation of legal provisions extracte
 1. **Valid provision:**
 - If the **Previous Provision Context** matches the article immediately before the **Content of the Article to be Verified**, the article **must always be considered VALID**.  (e.g., Previous Provision Context: "ARTÍCULO 1", Content of the Article to be Verified: "ARTÍCULO 2"). //Apply this rule to all articles.
 - The article is valid if it is a complete, standalone legal provision.
-- It must **end with a complete idea**.
 - If the **previous provision is a "Chapter(Capítulo)", "Section(Sección)", "Title(Título)", "Annex(Annexo)", or "Transitory(Transitorio)"**, the article **must always be considered VALID**, as these provisions introduce a new section of the law.  (e.g., "CAPÍTULO PRIMERO", "SECCIÓN SEGUNDA", "TÍTULO TERCERO", "ANEXO CUARTO", "TRANSITORIO QUINTO"). (Note: The previous provision is always considered valid if it is one of these types).
+- The articles and "Chapters(Capítulos)", "Sections(Secciónes)", "Titles(Títulos)", "Annexes(Annexos)", or "Transitories(Transitorios)"** can be any size and have any style. The key is that they must be complete and independent legal provisions.
+- The article must end with a **clear, complete idea**. It should not be a reference to another article or an incomplete thought.
 
 - ✅ **Example of a valid article:**
    - **Previous Article:** "SECCIÓN 1 GENERALIDADES"
@@ -533,6 +547,8 @@ Analyze the content of "${article.title}" within the Mexican legal basis titled 
    - Ensure headings are concise and formatted with appropriate text structure.
    - Titles should be short and precise, containing only the grouping heading without including articles or detailed content.
    - If any articles are included, remove them from the chapter, section, title, or annex.
+   - Please do not create or write random definitions within the Chapters, Titles, Sections, and Annexes. Just make sure you are working with the information that is being shared with you. //Attention with this rule.
+
    - Chapters, Titles, Sections, and Annexes should follow the structure:
      - TITLE # + Title Name
      - CHAPTER # + Chapter Name
