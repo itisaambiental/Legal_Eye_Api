@@ -36,6 +36,7 @@ class ReglamentoArticleExtractor extends ArticleExtractor {
    * @property {string} title - The title of the article, title, chapter, section, annex, or transitory provision.
    * @property {PreviousArticle} previousArticle - Object containing the content and validation result of the previous article.
    * @property {string} currentArticle - Main content of the article to be analyzed.
+   * @property {string} nextArticle - Content of the next article.
    * @property {string} plainArticle - Plain text of the article.
    * @property {number} order - Order of the article.
    */
@@ -76,17 +77,17 @@ class ReglamentoArticleExtractor extends ArticleExtractor {
    */
   _cleanText (text) {
     const articleKeywordRegex =
-    /\b[Aa]\s*R\s*T\s*[ÍIíi]\s*C\s*U\s*L\s*O\s*(\d+[A-Z]*|[IVXLCDM]+)\b/gi
+      /\b[Aa]\s*R\s*T\s*[ÍIíi]\s*C\s*U\s*L\s*O\s*(\d+[A-Z]*|[IVXLCDM]+)\b/gi
     const chapterKeywordRegex =
-    /\b[Cc]\s*[ÁAáa]\s*[Pp]\s*[ÍIíi]\s*[Tt]\s*[Uu]\s*[Ll]\s*[Oo]\s*(\d+[A-Z]*|[IVXLCDM]+)\b/gi
+      /\b[Cc]\s*[ÁAáa]\s*[Pp]\s*[ÍIíi]\s*[Tt]\s*[Uu]\s*[Ll]\s*[Oo]\s*(\d+[A-Z]*|[IVXLCDM]+)\b/gi
     const titleKeywordRegex =
-    /\b[Tt]\s*[ÍIíi]\s*[Tt]\s*[Uu]\s*[Ll]\s*[Oo]\s*(\d+[A-Z]*|[IVXLCDM]+)\b/gi
+      /\b[Tt]\s*[ÍIíi]\s*[Tt]\s*[Uu]\s*[Ll]\s*[Oo]\s*(\d+[A-Z]*|[IVXLCDM]+)\b/gi
     const sectionKeywordRegex =
-    /\b[Ss]\s*[Ee]\s*[Cc]\s*[Cc]\s*[ÍIíi]\s*[ÓOóo]\s*[Nn]\s*(\d+[A-Z]*|[IVXLCDM]+)\b/gi
+      /\b[Ss]\s*[Ee]\s*[Cc]\s*[Cc]\s*[ÍIíi]\s*[ÓOóo]\s*[Nn]\s*(\d+[A-Z]*|[IVXLCDM]+)\b/gi
     const transientKeywordRegex =
-    /\b(?:\w+\s+)*[Tt][Rr][Aa][Nn][Ss][Ii][Tt][Oo][Rr][Ii][AaOo](?:\s*[SsAa])?\s*(\d+[A-Z]*|[IVXLCDM]+)?\b/gi
+      /\b(?:\w+\s+)*[Tt][Rr][Aa][Nn][Ss][Ii][Tt][Oo][Rr][Ii][AaOo](?:\s*[SsAa])?\s*(\d+[A-Z]*|[IVXLCDM]+)?\b/gi
     const annexKeywordRegex =
-    /\b[Aa]\s*[Nn]\s*[Ee]\s*[Xx]\s*[Oo]\s*(\d+[A-Z]*|[IVXLCDM]+)?\b/gi
+      /\b[Aa]\s*[Nn]\s*[Ee]\s*[Xx]\s*[Oo]\s*(\d+[A-Z]*|[IVXLCDM]+)?\b/gi
     const ellipsisTextRegex = /[^.]+\s*\.{3,}\s*/g
     const singleEllipsisRegex = /\s*\.{3,}\s*/g
 
@@ -102,21 +103,21 @@ class ReglamentoArticleExtractor extends ArticleExtractor {
   }
 
   /**
- * @param {string} text - Text to process and extract articles from.
- * @returns {Promise<Array<Article>>} - List of article objects.
- */
+   * @param {string} text - Text to process and extract articles from.
+   * @returns {Promise<Array<Article>>} - List of article objects.
+   */
   async _extractArticles (text) {
     text = this._cleanText(text)
 
     const articlePatternString =
-    '(?:^|\\n)\\s*(' +
-    '(?:c[áa]p[ií]tulo)\\s+\\S+|' +
-    '(?:t[ií]tulo)\\s+\\S+|' +
-    '(?:secci[oó]n)\\s+\\S+|' +
-    '(?:art[ií]culo)\\s+\\S+|' +
-    '(?:transitori[oa][s]?)\\s+\\S+|' +
-    '(?:anexo)\\s+\\S+' +
-    ')'
+      '(?:^|\\n)\\s*(' +
+      '(?:c[áa]p[ií]tulo)\\s+\\S+|' +
+      '(?:t[ií]tulo)\\s+\\S+|' +
+      '(?:secci[oó]n)\\s+\\S+|' +
+      '(?:art[ií]culo)\\s+\\S+|' +
+      '(?:transitori[oa][s]?)\\s+\\S+|' +
+      '(?:anexo)\\s+\\S+' +
+      ')'
 
     const articlePattern = new RegExp(articlePatternString, 'i')
     const regexes = [
@@ -139,17 +140,19 @@ class ReglamentoArticleExtractor extends ArticleExtractor {
       const previousTitle = i > 1 ? matches[i - 2]?.trim() : ''
       const previousContent = i > 1 ? matches[i - 1]?.trim() : ''
       const currentTitle = matches[i].trim()
-      const currentContent =
-      i + 1 < matches.length ? matches[i + 1].trim() : ''
-
+      const currentContent = i + 1 < matches.length ? matches[i + 1].trim() : ''
+      const nextTitle = i + 2 < matches.length ? matches[i + 2].trim() : ''
+      const nextContent = i + 3 < matches.length ? matches[i + 3].trim() : ''
       if (regexes.some((regex) => regex.test(currentTitle))) {
         const previousArticle = `${previousTitle} ${previousContent}`.trim()
         const currentArticle = `${currentTitle} ${currentContent}`.trim()
+        const nextArticle = `${nextTitle} ${nextContent}`.trim()
         const currentArticleData = this._createArticleToVerify(
           currentTitle,
           lastResult,
           previousArticle,
           currentArticle,
+          nextArticle,
           order++
         )
         const { isValid, reason } = await this._verifyArticle(
@@ -158,7 +161,7 @@ class ReglamentoArticleExtractor extends ArticleExtractor {
         if (reason === 'IsContinuation') {
           if (
             lastResult.reason === 'IsIncomplete' ||
-          (isConcatenating && lastResult.reason === 'IsContinuation')
+            (isConcatenating && lastResult.reason === 'IsContinuation')
           ) {
             if (lastArticle) {
               lastArticle.article += ` ${currentArticleData.currentArticle}`
@@ -205,36 +208,39 @@ class ReglamentoArticleExtractor extends ArticleExtractor {
   }
 
   /**
- * @param {string} title - Title of the article.
- * @param {ValidationResult} previousLastResult - Validation result of the previous article.
- * @param {string} previousContent - Previous article including its title.
- * @param {string} currentContent - Current article including its title.
- * @param {number} order - Order of the article.
- * @returns {ArticleToVerify} - The article to verify.
- */
+   * @param {string} title - Title of the article.
+   * @param {ValidationResult} previousLastResult - Validation result of the previous article.
+   * @param {string} previousContent - Previous article including its title.
+   * @param {string} currentContent - Current article including its title.
+   * @param {string} nextContent - Next article including its title.
+   * @param {number} order - Order of the article.
+   * @returns {ArticleToVerify} - The article to verify.
+   */
   _createArticleToVerify (
     title,
     previousLastResult,
     previousContent,
     currentContent,
+    nextContent,
     order
   ) {
     return {
       title,
       previousArticle: {
-        content: previousContent.trim(),
+        content: previousContent,
         lastResult: previousLastResult
       },
-      currentArticle: currentContent.trim(),
+      currentArticle: currentContent,
+      nextArticle: nextContent,
       plainArticle: '',
       order
     }
   }
 
   /**
- * @param {ArticleToVerify} article - The article to verify.
- * @returns {Promise<{ isValid: boolean, reason?: string }>} - An object indicating if the article is valid and optionally the reason why it is considered invalid.
- */
+   * @param {ArticleToVerify} article - The article to verify.
+   * @returns {Promise<{ isValid: boolean, reason?: string }>} - An object indicating if the article is valid and optionally the reason why it is considered invalid.
+   */
   async _verifyArticle (article) {
     const prompt = this._buildVerifyPrompt(this.name, article)
 
@@ -244,7 +250,7 @@ class ReglamentoArticleExtractor extends ArticleExtractor {
         {
           role: 'system',
           content:
-          'You are a legal expert who is specialized in confirming the validity of the legal provisions extracted from legal documents. Note: Although your instructions are in English, the provisions provided will be in Spanish.'
+            'You are a legal expert who is specialized in confirming the validity of the legal provisions extracted from legal documents. Note: Although your instructions are in English, the provisions provided will be in Spanish.'
         },
         { role: 'user', content: prompt }
       ],
@@ -262,7 +268,7 @@ class ReglamentoArticleExtractor extends ArticleExtractor {
               },
               reason: {
                 description:
-                'Reason why the article is considered invalid. Possible values: "IsContinuation", "IsIncomplete".',
+                  'Reason why the article is considered invalid. Possible values: "IsContinuation", "IsIncomplete".',
                 type: 'string',
                 enum: ['IsContinuation', 'IsIncomplete']
               }
@@ -310,51 +316,129 @@ class ReglamentoArticleExtractor extends ArticleExtractor {
  */
   _buildVerifyPrompt (legalName, article) {
     return `
-You are a legal expert who confirms the validity of legal provisions. The provisions will all be valid unless they clearly meet one of the specific exceptions described below.
+You are a legal expert who confirms the validity of legal provisions:
 
 ### Evaluation Context:
 - **Legal Base:** "${legalName}"
 - **Previous Provision:** "${article.previousArticle.content}" 
   (Validation: { "isValid": ${article.previousArticle.lastResult.isValid}, "reason": "${article.previousArticle.lastResult.reason}" })
-- **Current Provision Title:** "${article.title}"
-- **Current Provision:** "${article.currentArticle}"
+- **Current Provision(To be evaluated):** "${article.currentArticle}"
+- **Next Provision:** "${article.nextArticle}"
 
-### Always Valid Conditions:
-- If the current provision is a structural marker (e.g., Chapter [Capítulo], Section [Sección], Title [Título], Annex [Anexo], or Transitory Provision [Transitorio]) and it presents a complete, logically coherent provision, it must always be classified as VALID.
-- If the previous provision is itself a structural marker, treat the current provision as an independent provision and classify it as VALID.
+### **Important Note on Text Evaluation**
+- **Headers and Footnotes:** Please disregard any **headers** or **footnotes** (e.g., page numbers, publication dates, and references to external sources) present in the article or legal text. These elements are often part of the document layout but are not considered part of the legal provision itself.
+- **Content of the Provision:** Focus on the **legal content** itself, i.e., the specific rule, directive, or principle outlined in the body of the article or provision.
+- **Order of Provisions:** If the **Previous Provision**, **Current Provision**, and **Next Provision** follow the correct **logical order** and are connected in a coherent sequence, they must always be classified as **VALID**.
+  - **Reasoning:** Legal provisions typically follow a structured order within a legal document. If the sequence of provisions (Previous → Current → Next) is correct, the provisions are logically valid and should not be marked as invalid, even if their content or structure seems to suggest otherwise.
+ 
+## **Examples of Valid Legal Provision**
 
-#### Examples of Valid provisions:
-- **Example 1:**
-  - **Previous Article:** "ARTÍCULO 9. Los convenios de concertación que en materia forestal celebre el Estado con personas físicas y morales del sector social y privado, podrán versar sobre la instrumentación de programas forestales, el fomento a la educación, cultura, capacitación, servicios ambientales e investigación forestales, así como respecto de las labores de vigilancia y demás programas operativos establecidos en esta Ley."
-  - **Current Article:** "ARTÍCULO 10. Se preverá que en el seguimiento y evaluación de los resultados que se obtengan por la ejecución de los convenios a que se refiere este capítulo, intervenga el Consejo Forestal Estatal."
+1. **Articles (Artículos)**:
+   - If the current article ends with a clear, logical idea, whether short or long, it should be considered valid. A clear idea is one that presents a complete rule, principle, or directive, even if brief.
+   - Must establish legal norms such as obligations, rights, prohibitions, or principles.
+   - Should have a clear legal structure.
+   - It must contain a specific legal rule or directive rather than just referencing other articles.
+   - If the previous article is valid, the current article should be evaluated independently and should not be marked as IsContinuation even if the structure suggests continuity.
+    - **Example 1:**
+    - **Previous Provision:** "ARTÍCULO 4.Para la elección de los representantes de los sectores que conforme a la Ley deben formar parte del Consejo, la Comisión publicará en dos diarios de mayor circulación en el Estado, la convocatoria que establezca las bases sobre las cuales cada sector habrá de elegir sus representantes."
+    - **Current Provision:** "ARTÍCULO 5.La operación y funcionamiento del Consejo estará establecido en su Reglamento Interno."
+    - **Next Provision:** "ARTÍCULO 6.La conformación de los Comités Especiales señalados en el artículo 22 de la Ley será determinada en el seno del Consejo."
+    - **Example 2:**
+    - **Previous Provision:** "ARTÍCULO 7.El Consejo para su mejor funcionamiento podrá constituir Consejos Forestales Regionales, para lo cual emitirá la convocatoria respectiva, en la que se establecerán las bases para la elección y número de representantes de cada sector, así como los integrantes del mismo."
+    - **Current Provision:** "ARTÍCULO 8.EI Consejo promoverá la constitución de Consejos Forestales Municipales, en aquellos municipios de vocación forestal, los cuales se formarán e integrarán de la misma manera que los Consejos Forestales Regionales 4 de 70 Aprobación 2008/04/15 Publicación 2008/05/21 Vigencia 2008/05/22 Expidió Poder Ejecutivo del Estado de Morelos Periódico Oficial 4613 "Tierra y Libertad" UIENES-LA-T Reglamento de la Ley de Desarrollo Forestal Sustentable del Estado de Morelos MORELOS Consejería Jurídica del Poder Ejecutivo del Estado de Morelos Última Reforma: Texto original Dirección General de Legislación 2018 2024 Subdirección de Jurismática"
+    - **Next Provision:** "ARTÍCULO 9. Se preverá que en el seguimiento y evaluación de los resultados que se obtengan por la ejecución de los convenios a que se refiere este capítulo, intervenga el Consejo Forestal Estatal."
+    - **Example 3:**
+    - **Previous Provision:** "ARTÍCULO 9. Los convenios de concertación que en materia forestal celebre el Estado con personas físicas y morales del sector social y privado, podrán versar sobre la instrumentación de programas forestales, el fomento a la educación, cultura, capacitación, servicios ambientales e investigación forestales, así como respecto de las labores de vigilancia y demás programas operativos establecidos en esta Ley."
+    - **Current Provision:** "ARTÍCULO 10. Se preverá que en el seguimiento y evaluación de los resultados que se obtengan por la ejecución de los convenios a que se refiere este capítulo, intervenga el Consejo Forestal Estatal."
+    - **Next Provision:** "ARTÍCULO 11.Para los efectos del presente Reglamento, se consideran las definiciones contenidas en la Ley General de Desarrollo Forestal Sustentable y la Ley de Desarrollo Forestal Sustentable del Estado de Morelos."
+  
+2. **Chapters (Capítulos), Titles (Títulos), and Sections (Secciones)**:
+   - If the current provision is a structural marker (e.g., Chapter [Capítulo], Section [Sección], Title [Título], Annex [Anexo], or Transitory Provision [Transitorio]) and it presents a complete, logically coherent provision, it must always be classified as VALID.
+   - If the previous provision is a structural marker (e.g., Chapter [Capítulo], Section [Sección], Title [Título], Annex [Anexo], or Transitory Provision [Transitorio]) and it presents a complete, logically coherent provision, the current provision  must always be classified as VALID.
+   - Must be part of a structured legal framework.
+   - **Example 1:**
+     - **Previous Provision:** "CAPÍTULO I CONSEJO FORESTAL DEL ESTADO DE MORELOS"
+     - **Current Provision:** "ARTÍCULO 4. Para la elección de los representantes de los sectores que conforme a la Ley deben formar parte del Consejo, la Comisión publicará en dos diarios de mayor circulación en el Estado, la convocatoria que establezca las bases sobre las cuales cada sector habrá de elegir sus representantes."
+     - **Next Provision:** "ARTÍCULO 5. Las normas administrativas se aplican a todas las entidades y organismos públicos, garantizando la coherencia en su funcionamiento."
+     - **Example 2:**
+     - **Previous Provision:** "SECCIÓN II. DISPOSICIONES GENERALES"
+     - **Current Provision:** "ARTÍCULO 1. Las disposiciones generales se rigen por los principios de transparencia y eficiencia en la administración pública."
+     - **Next Provision:** "ARTÍCULO 3.Para los efectos del presente Reglamento, se consideran las definiciones contenidas en la Ley General de Desarrollo Forestal Sustentable y la Ley de Desarrollo Forestal Sustentable del Estado de Morelos."
+     - **Example 3:**
+     - **Previous Provision:** "TÍTULO: NORMAS ADMINISTRATIVAS"
+     - **Current Provision:** "ARTÍCULO 5. Las normas administrativas se aplican a todas las entidades y organismos públicos, garantizando la coherencia en su funcionamiento."
+     - **Next Provision:** "ARTÍCULO 6.La conformación de los Comités Especiales señalados en el artículo 22 de la Ley será determinada en el seno del Consejo."
+     - **Example 4:**
+     - **Previous Provision:** "TÍTULO PRIMERO DISPOSICIONES GENERALES"
+     - **Current Provision:** "CAPÍTULO PRIMERO DE LA NATURALEZA, OBJETO Y DEFINICIONES"
+     - **Next Provision:** "SECCIÓN II. DISPOSICIONES GENERALES"
+    - **Example 5:**
+     - **Previous Provision:** "TÍTULO PRIMERO DISPOSICIONES GENERALES"
+     - **Current Provision:** "SECCIÓN II. DISPOSICIONES GENERALES"
+     - **Next Provision:** "CAPÍTULO PRIMERO DE LA NATURALEZA, OBJETO Y DEFINICIONES"
+    - **Example 6:**
+     - **Previous Provision:** "CAPÍTULO PRIMERO DE LA NATURALEZA, OBJETO Y DEFINICIONES"
+     - **Current Provision:** "TÍTULO PRIMERO DISPOSICIONES GENERALES"
+     - **Next Provision:** "ARTÍCULO 5.La operación y funcionamiento del Consejo estará establecido en su Reglamento Interno."
+    - **Example 7:**
+     - **Previous Provision:** "ARTÍCULO 3.Para los efectos del presente Reglamento, se consideran las definiciones contenidas en la Ley General de Desarrollo Forestal Sustentable y la Ley de Desarrollo Forestal Sustentable del Estado de Morelos."
+     - **Current Provision:** "TÍTULO PRIMERO DISPOSICIONES GENERALES"
+     - **Next Provision:** "CAPÍTULO I CONSEJO FORESTAL DEL ESTADO DE MORELOS"
+     - **Example 8:**
+     - **Previous Provision:** "TÍTULO SEGUNDO ORGANIZACIÓN Y ADMINISTRACIÓN DEL SECTOR PÚBLICO FORESTAL"
+     - **Current Provision:** "CAPÍTULO I CONSEJO FORESTAL DEL ESTADO DE MORELOS"
+     - **Next Provision:** "SECCIÓN II. DISPOSICIONES GENERALES"
+   - **Example 9:**
+     - **Previous Provision:** "CAPÍTULO I CONSEJO FORESTAL DEL ESTADO DE MORELOS"
+     - **Current Provision:** "SECCIÓN II. DISPOSICIONES GENERALES"
+     - **Next Provision:** "ARTÍCULO 6.La conformación de los Comités Especiales señalados en el artículo 22 de la Ley será determinada en el seno del Consejo."
+   - **Example 10:**
+     - **Previous Provision:** "ARTÍCULO 5.La operación y funcionamiento del Consejo estará establecido en su Reglamento Interno."
+     - **Current Provision:** "CAPÍTULO I CONSEJO FORESTAL DEL ESTADO DE MORELOS"
+     - **Next Provision:** "TÍTULO SEGUNDO ORGANIZACIÓN Y ADMINISTRACIÓN DEL SECTOR PÚBLICO FORESTAL"
 
-- **Example 2 (Chapter [Capítulo]):**
-  - **Previous Article:** "CAPÍTULO I CONSEJO FORESTAL DEL ESTADO DE MORELOS"
-  - **Current Article:** "ARTÍCULO 4. Para la elección de los representantes de los sectores que conforme a la Ley deben formar parte del Consejo, la Comisión publicará en dos diarios de mayor circulación en el Estado, la convocatoria que establezca las bases sobre las cuales cada sector habrá de elegir sus representantes."
+3. **Annexes (Anexos)**:
+   - If the current provision is a structural marker (e.g., Chapter [Capítulo], Section [Sección], Title [Título], Annex [Anexo], or Transitory Provision [Transitorio]) and it presents a complete, logically coherent provision, it must always be classified as VALID.
+   - If the previous provision is a structural marker (e.g., Chapter [Capítulo], Section [Sección], Title [Título], Annex [Anexo], or Transitory Provision [Transitorio]) and it presents a complete, logically coherent provision, the current provision  must always be classified as VALID.
+   - Must provide additional information that supports or complements the legal text.
+   - **Example 1:**
+     - **Previous Provision:** "ANEXO A. REGULACIÓN COMPLEMENTARIA"
+     - **Current Provision:** "ARTÍCULO 3. Este anexo establece las regulaciones complementarias para la implementación de las políticas públicas definidas en el cuerpo principal de la ley."
+     - **Next Provision:** "TÍTULO SEGUNDO ORGANIZACIÓN Y ADMINISTRACIÓN DEL SECTOR PÚBLICO FORESTAL"
+     - **Example 2:**
+     - **Previous Provision:** "ARTÍCULO 3. Este anexo establece las regulaciones complementarias para la implementación de las políticas públicas definidas en el cuerpo principal de la ley."
+     - **Current Provision:** "ANEXO A. REGULACIÓN COMPLEMENTARIA"
+     - **Next Provision:** "CAPÍTULO I CONSEJO FORESTAL DEL ESTADO DE MORELOS"
 
-- **Example 3 (Section [Sección]):**
-  - **Previous Article:** "SECCIÓN II. DISPOSICIONES GENERALES"
-  - **Current Article:** "ARTÍCULO 1. Las disposiciones generales se rigen por los principios de transparencia y eficiencia en la administración pública."
+4. **Transitory Provisions (Disposiciones Transitorias)**:
+   - If the current provision is a structural marker (e.g., Chapter [Capítulo], Section [Sección], Title [Título], Annex [Anexo], or Transitory Provision [Transitorio]) and it presents a complete, logically coherent provision, it must always be classified as VALID.
+   - If the previous provision is a structural marker (e.g., Chapter [Capítulo], Section [Sección], Title [Título], Annex [Anexo], or Transitory Provision [Transitorio]) and it presents a complete, logically coherent provision, the current provision  must always be classified as VALID.
+   - Must establish rules for the transition or application of the legal document.
+   - **Example 1:**
+     - **Previous Provision:** "TRANSITORIO PRIMERO. Disposiciones transitorias sobre la implementación de nuevas normativas."
+     - **Current Provision:** "ARTÍCULO 2. Durante el periodo de transición, se aplicarán las siguientes medidas para asegurar la continuidad en la gestión pública."
+     - **Next Provision:** "ARTÍCULO 3.Para los efectos del presente Reglamento, se consideran las definiciones contenidas en la Ley General de Desarrollo Forestal Sustentable y la Ley de Desarrollo Forestal Sustentable del Estado de Morelos."
+     - **Example 2:**
+     - **Previous Provision:** "ARTÍCULO 2. Durante el periodo de transición, se aplicarán las siguientes medidas para asegurar la continuidad en la gestión pública."
+     - **Current Provision:** "TRANSITORIO PRIMERO. Disposiciones transitorias sobre la implementación de nuevas normativas"
+     - **Next Provision:** "TÍTULO SEGUNDO ORGANIZACIÓN Y ADMINISTRACIÓN DEL SECTOR PÚBLICO FORESTAL"
 
-- **Example 4 (Title [Título]):**
-  - **Previous Article:** "TÍTULO: NORMAS ADMINISTRATIVAS"
-  - **Current Article:** "ARTÍCULO 5. Las normas administrativas se aplican a todas las entidades y organismos públicos, garantizando la coherencia en su funcionamiento."
+### ## **Examples of Invalid Legal Provision**:
+- **IsIncomplete:** If the current provision is abruptly cut off or clearly unfinished, lacking a concluding idea.
+   - **Note:** An article is not considered incomplete if it ends with a **clear, logical, and complete idea** even if it is short. A brief statement or directive is sufficient if it is logically conclusive and understandable.
+   - **Example of IsIncomplete:**
+     - **Previous Provision:** "ARTÍCULO 6. Las atribuciones gubernamentales, en materia de conservación, protección, restauración, producción, ordenación, cultivo, manejo y aprovechamiento de los ecosistemas forestales que son objeto de esta ley, serán ejercidas, de conformidad con la distribución que hace la misma, sin perjuicio de lo que se disponga en otros ordenamientos aplicables. Para efecto de la coordinación de acciones, siempre que exista transferencia de atribuciones, el Gobierno del Estado y los gobiernos municipales deberán celebrar convenios entre ellos y/o con la federación, en los casos y las materias que se precisan en la presente ley."
+     - **Current Provision:** "ARTÍCULO 7. El Estado podrá suscribir convenios o acuerdos de coordinación con la Federación con el objeto de que en el ámbito territorial de su competencia asuma las funciones previstas en el artículo 24 de la Ley General. El Gobierno del Estado y los Municipios podrán celebrar convenios de coordinación en materia forestal con la finalidad de que estos últimos, en el ámbito de su competencia territorial asuman algunas de las funciones previstas en el..."
+     - **Next Provision:** "ARTÍCULO 24. Las funciones que se describen a continuación, serán asumidas por los Gobiernos de los Estados y Municipios conforme a los convenios establecidos con la Federación."
+     - **Reasoning:** The current article is **incomplete** because it leaves the clause unfinished. The specific functions to be assumed are missing.
 
-- **Example 5 (Annex [Anexo]):**
-  - **Previous Article:** "ANEXO A. REGULACIÓN COMPLEMENTARIA"
-  - **Current Article:** "ARTÍCULO 3. Este anexo establece las regulaciones complementarias para la implementación de las políticas públicas definidas en el cuerpo principal de la ley."
-
-- **Example 6 (Transitory Provision [Transitorio]):**
-  - **Previous Article:** "TRANSITORIO PRIMERO. Disposiciones transitorias sobre la implementación de nuevas normativas."
-  - **Current Article:** "ARTÍCULO 2. Durante el periodo de transición, se aplicarán las siguientes medidas para asegurar la continuidad en la gestión pública."
-
-### Exceptions (Mark as INVALID):
-Only mark a provision as INVALID if it clearly meets one of the following conditions:
-- **IsIncomplete:** The provision’s text is abruptly cut off or clearly unfinished, lacking a concluding idea.
-  - *Note:* If the previous provision was marked as "IsIncomplete," then classify the current provision as "IsContinuation" instead.
-- **IsContinuation:** The provision is simply a continuation of the idea from a complete previous provision and does not stand alone as an independent provision.
-
-Unless one of these exceptions applies, ALWAYS classify the provision as VALID.
+- **IsContinuation:** If the current provision is a continuation of the previous provision, mark it as "IsContinuation."
+  - **Note:** The current article can only be marked as "IsContinuation" if the previous article was already invalidated for that reason or was invalidated for the reason "IsIncomplete".
+  - **Example of IsContinuation:**
+    - **Previous Provision:** "ARTÍCULO 7. El Estado podrá suscribir convenios o acuerdos de coordinación con la Federación con el objeto de que en el ámbito territorial de su competencia asuma las funciones previstas en el artículo 24 de la Ley General. El Gobierno del Estado y los Municipios podrán celebrar convenios de coordinación en materia forestal con la finalidad de que estos últimos, en el ámbito de su competencia territorial asuman algunas de las funciones previstas en el..."
+    - **Current Provision:** "ARTÍCULO 24. Las funciones que se describen a continuación, serán asumidas por los Gobiernos de los Estados y Municipios conforme a los convenios establecidos con la Federación."
+    - **Next Provision:** "ARTÍCULO 8.El Consejo promoverá la constitución de Consejos Forestales Municipales, en aquellos municipios de vocación forestal, los cuales se formarán e integrarán de la misma manera que los Consejos Forestales Regionales."
+    - **Reasoning:** The current article is a clear continuation of the previous one. The functions referred to in Article 7 are detailed in Article 24, making it a direct continuation of the content, not an independent provision. Therefore, it is marked as **IsContinuation**.
   `
   }
 
@@ -478,7 +562,7 @@ Analyze the content of "${article.title}" within the legal basis titled "${legal
    - Ensure headings are concise and formatted with appropriate text structure.
    - Titles should be short and precise, containing only the grouping heading without including articles or detailed content.
    - If any articles are included, remove them from the chapter, section, title, or annex.
-   - Please do not create or write random definitions within the Chapters, Titles, Sections, and Annexes. Just make sure you are working with the information that is being shared with you. //Attention with this rule.
+   - Please do not create or write random definitions within the Chapters, Titles, Sections, and Annexes. Just make sure you are working with the information that is being shared with you. 
 
    - Chapters, Titles, Sections, and Annexes should follow the structure:
      - TITLE # + Title Name
@@ -556,10 +640,10 @@ Analyze the content of "${article.title}" within the legal basis titled "${legal
 
 ### Additional Formatting Guidelines:
 
-- Please do not create or write random definitions within the article. Just make sure you are working with the information that is being shared with you. //Attention with this rule.
+- Please do not create or write random definitions within the article. Just make sure you are working with the information that is being shared with you. 
 - Use consistent and professional formatting, such as proper indentation for nested elements.
 - Respect spaces, punctuation (e.g., periods, hyphens), and line breaks for clarity.
-- The text contains footnotes or headers that is not relevant to the context. This information that is out of context is removed. (Remove footnotes and headers) // Attention: Do not remove any relevant information.
+- The text contains footnotes or headers that is not relevant to the context. This information that is out of context is removed. (Remove footnotes and headers)
 - Ensure all text ends with complete ideas but but without making up or creating new things.
 - Maintain any existing tables or columns using <table>, <thead>, <tbody>, and <tr> tags.
 - Use semantic HTML wherever possible to improve readability and structure.

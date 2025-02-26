@@ -28,6 +28,7 @@ class ArticleExtractor {
    * @property {string} title - The title of the article, title, chapter, section, annex, or transitory provision.
    * @property {PreviousArticle} previousArticle - Object containing the content and validation result of the previous article.
    * @property {string} currentArticle - Main content of the article to be analyzed.
+   * @property {string} nextArticle - Content of the next article.
    * @property {string} plainArticle - Plain text of the article.
    * @property {number} order - Order of the article.
    */
@@ -88,11 +89,12 @@ class ArticleExtractor {
    * @param {ValidationResult} _previousLastResult - Validation result of the previous article.
    * @param {string} _previousContent - Content of the previous article.
    * @param {string} _currentContent - Content of the article.
+   * @param {string} _nextContent - Next article including its title.
    * @param {number} _order - Order of the article.
    * @returns {ArticleToVerify} - The article to verify.
    * @throws {Error} If not implemented in a subclass.
    */
-  _createArticleToVerify (_title, _previousLastResult, _previousContent, _currentContent, _order) {
+  _createArticleToVerify (_title, _previousLastResult, _previousContent, _currentContent, _nextContent, _order) {
     throw new Error('Method "_createArticleToVerify" must be implemented')
   }
 
