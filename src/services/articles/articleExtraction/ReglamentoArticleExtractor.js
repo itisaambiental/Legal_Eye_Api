@@ -23,9 +23,13 @@ class ReglamentoArticleExtractor extends ArticleExtractor {
    */
 
   /**
+   * @typedef {'IsContinuation' | 'IsIncomplete'} ValidationReason
+   */
+
+  /**
    * @typedef {Object} ValidationResult
    * @property {boolean} isValid - Indicates if the article is valid.
-   * @property {string | null} reason - The reason why the article is considered invalid, or null if valid.
+   * @property {ValidationReason} reason - The reason why the article is considered invalid.
    */
 
   /**
@@ -245,7 +249,7 @@ class ReglamentoArticleExtractor extends ArticleExtractor {
 
   /**
    * @param {ArticleToVerify} article - The article to verify.
-   * @returns {Promise<{ isValid: boolean, reason?: "IsContinuation" | "IsIncomplete" }>} - An object indicating if the article is valid and optionally the reason why it is considered invalid.
+   * @returns {Promise<ValidationResult>} - An object indicating if the article is valid and optionally the reason why it is considered invalid.
    */
   async _verifyArticle (article) {
     const prompt = this._buildVerifyPrompt(this.name, article)
@@ -268,10 +272,10 @@ class ReglamentoArticleExtractor extends ArticleExtractor {
     const attemptRequest = async (retryCount = 0) => {
       try {
         const response = await openai.chat.completions.create(request)
-        const { isValid, reason } = ArticleVerificationSchema.parse(
+        const content = ArticleVerificationSchema.parse(
           JSON.parse(response.choices[0].message.content)
         )
-        return { isValid, reason }
+        return content
       } catch (error) {
         if (error.status === 429) {
           if (retryCount < 3) {
@@ -466,12 +470,10 @@ You are a legal expert who confirms the validity of legal provisions:
     const attemptRequest = async (retryCount = 0) => {
       try {
         const response = await openai.chat.completions.create(request)
-        const content = JSON.parse(response.choices[0].message.content)
-        if (content) {
-          return content
-        } else {
-          throw new ErrorUtils(500, 'Article Processing Error')
-        }
+        const content = singleArticleModelSchema.parse(
+          JSON.parse(response.choices[0].message.content)
+        )
+        return content
       } catch (error) {
         if (error.status === 429) {
           if (retryCount < 3) {

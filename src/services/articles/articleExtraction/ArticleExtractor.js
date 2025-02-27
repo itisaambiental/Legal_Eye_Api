@@ -12,9 +12,13 @@ class ArticleExtractor {
    */
 
   /**
+   * @typedef {'IsContinuation' | 'IsIncomplete'} ValidationReason
+   */
+
+  /**
    * @typedef {Object} ValidationResult
    * @property {boolean} isValid - Indicates if the article is valid.
-   * @property {string | null} reason - The reason why the article is considered invalid, or null if valid.
+   * @property {ValidationReason} reason - The reason why the article is considered invalid.
    */
 
   /**
@@ -68,7 +72,7 @@ class ArticleExtractor {
    * @throws {Error} If not implemented in a subclass.
    */
   _cleanText (_text) {
-    throw new Error('Method "cleanText" must be implemented')
+    throw new Error('Method "_cleanText" must be implemented')
   }
 
   /**
@@ -94,7 +98,14 @@ class ArticleExtractor {
    * @returns {ArticleToVerify} - The article to verify.
    * @throws {Error} If not implemented in a subclass.
    */
-  _createArticleToVerify (_title, _previousLastResult, _previousContent, _currentContent, _nextContent, _order) {
+  _createArticleToVerify (
+    _title,
+    _previousLastResult,
+    _previousContent,
+    _currentContent,
+    _nextContent,
+    _order
+  ) {
     throw new Error('Method "_createArticleToVerify" must be implemented')
   }
 
@@ -106,7 +117,7 @@ class ArticleExtractor {
    * @throws {Error} If not implemented in a subclass.
    */
   async _verifyArticle (_article) {
-    throw new Error('Method "verifyArticle" must be implemented')
+    throw new Error('Method "_verifyArticle" must be implemented')
   }
 
   /**
@@ -118,7 +129,7 @@ class ArticleExtractor {
    * @throws {Error} If not implemented in a subclass.
    */
   _buildVerifyPrompt (_legalName, _article) {
-    throw new Error('Method "buildVerifyPrompt" must be implemented')
+    throw new Error('Method "_buildVerifyPrompt" must be implemented')
   }
 
   /**
@@ -129,7 +140,7 @@ class ArticleExtractor {
    * @throws {Error} If not implemented in a subclass.
    */
   async _correctArticle (_article) {
-    throw new Error('Method "correctArticle" must be implemented')
+    throw new Error('Method "_correctArticle" must be implemented')
   }
 
   /**
