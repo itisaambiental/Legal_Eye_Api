@@ -335,24 +335,20 @@ You are a legal expert who confirms the validity of legal provisions:
 ## **Valid Legal Provision**
 
 1. **Articles (Artículos)**:
-   - If the current article ends with a clear, logical idea, whether short or long, it should be considered valid. A clear idea is one that presents a complete rule, principle, or directive, even if brief.
-   - Must establish legal norms such as obligations, rights, prohibitions, or principles.
-   - Should have a clear legal structure.
-   - It must contain a specific legal rule or directive rather than just referencing other articles.
-   - If the previous article is valid, the current article should be evaluated independently and should not be marked as IsContinuation even if the structure suggests continuity.
+   - If the current article ends with a clear, logical idea, whether short or long, it should be considered valid.
     - **Example 1:**
-    - **Previous Provision:** "ARTÍCULO 4.Para la elección de los representantes de los sectores que conforme a la Ley deben formar parte del Consejo, la Comisión publicará en dos diarios de mayor circulación en el Estado, la convocatoria que establezca las bases sobre las cuales cada sector habrá de elegir sus representantes."
+    - **Previous Provision:** "CAPÍTULO PRIMERO DE LA NATURALEZA, OBJETO Y DEFINICIONES"
     - **Current Provision:** "ARTÍCULO 5.La operación y funcionamiento del Consejo estará establecido en su Reglamento Interno."
     - **Next Provision:** "ARTÍCULO 6.La conformación de los Comités Especiales señalados en el artículo 22 de la Ley será determinada en el seno del Consejo."
     - **Example 2:**
     - **Previous Provision:** "ARTÍCULO 7.El Consejo para su mejor funcionamiento podrá constituir Consejos Forestales Regionales, para lo cual emitirá la convocatoria respectiva, en la que se establecerán las bases para la elección y número de representantes de cada sector, así como los integrantes del mismo."
-    - **Current Provision:** "ARTÍCULO 8.EI Consejo promoverá la constitución de Consejos Forestales Municipales, en aquellos municipios de vocación forestal, los cuales se formarán e integrarán de la misma manera que los Consejos Forestales Regionales 4 de 70 Aprobación 2008/04/15 Publicación 2008/05/21 Vigencia 2008/05/22 Expidió Poder Ejecutivo del Estado de Morelos Periódico Oficial 4613 "Tierra y Libertad" UIENES-LA-T Reglamento de la Ley de Desarrollo Forestal Sustentable del Estado de Morelos MORELOS Consejería Jurídica del Poder Ejecutivo del Estado de Morelos Última Reforma: Texto original Dirección General de Legislación 2018 2024 Subdirección de Jurismática"
-    - **Next Provision:** "ARTÍCULO 9. Se preverá que en el seguimiento y evaluación de los resultados que se obtengan por la ejecución de los convenios a que se refiere este capítulo, intervenga el Consejo Forestal Estatal."
+    - **Current Provision:** "TÍTULO PRIMERO DISPOSICIONES GENERALES"
+    - **Next Provision:** "ARTÍCULO 8.EI Consejo promoverá la constitución de Consejos Forestales Municipales, en aquellos municipios de vocación forestal, los cuales se formarán e integrarán de la misma manera que los Consejos Forestales Regionales 4 de 70 Aprobación 2008/04/15 Publicación 2008/05/21 Vigencia 2008/05/22 Expidió Poder Ejecutivo del Estado de Morelos Periódico Oficial 4613 "Tierra y Libertad" UIENES-LA-T Reglamento de la Ley de Desarrollo Forestal Sustentable del Estado de Morelos MORELOS Consejería Jurídica del Poder Ejecutivo del Estado de Morelos Última Reforma: Texto original Dirección General de Legislación 2018 2024 Subdirección de Jurismática"
     - **Example 3:**
     - **Previous Provision:** "ARTÍCULO 9. Los convenios de concertación que en materia forestal celebre el Estado con personas físicas y morales del sector social y privado, podrán versar sobre la instrumentación de programas forestales, el fomento a la educación, cultura, capacitación, servicios ambientales e investigación forestales, así como respecto de las labores de vigilancia y demás programas operativos establecidos en esta Ley."
     - **Current Provision:** "ARTÍCULO 10. Se preverá que en el seguimiento y evaluación de los resultados que se obtengan por la ejecución de los convenios a que se refiere este capítulo, intervenga el Consejo Forestal Estatal."
-    - **Next Provision:** "ARTÍCULO 11.Para los efectos del presente Reglamento, se consideran las definiciones contenidas en la Ley General de Desarrollo Forestal Sustentable y la Ley de Desarrollo Forestal Sustentable del Estado de Morelos."
-  
+    - **Next Provision:** "SECCIÓN II. DISPOSICIONES GENERALES"
+
 2. **Chapters (Capítulos), Titles (Títulos), and Sections (Secciones)**:
    - If the current provision is a structural marker (e.g., Chapter [Capítulo], Section [Sección], Title [Título], Annex [Anexo], or Transitory Provision [Transitorio]) and it presents a complete, logically coherent provision, it must always be classified as VALID.
    - If the previous provision is a structural marker (e.g., Chapter [Capítulo], Section [Sección], Title [Título], Annex [Anexo], or Transitory Provision [Transitorio]) and it presents a complete, logically coherent provision, the current provision  must always be classified as VALID.
@@ -455,11 +451,7 @@ You are a legal expert who confirms the validity of legal provisions:
          - **Current Provision:** "ARTÍCULO 35 de la Ley, son coordinados por la Secretaría, su Secretario Técnico podrá ser un representante de la instancia coordinadora sectorial de la federación se integran con representantes de los gobiernos municipales que conforman su región, quienes conforman la comisión ejecutiva, y con representantes de las organizaciones productivas y sociales con incidencia en la mayor parte o en la totalidad del territorio de la región, en conjunto con las instituciones federales y estatales que apoyan proyectos y acciones para el desarrollo económico, social ambiental de alcance microregional o regional."
          - **Next Provision:** "ARTÍCULO 13.- En concordancia con el ARTÍCULO 37 de la Ley, los Consejos Municipales son las instancias encargadas de la formulación participativa del Programa Estratégico Municipal de Desarrollo Rural Sustentable, mismo que deberá actualizarse anualmente con un programa de trabajo sectorial, el cual servirá de sustento formal a los gobiernos municipales para la inclusión de los rubros de inversión para el sector rural en sus programas operativos anuales."
          - **Reasoning:** The **Current Provision** is a clear continuation of the **Previous Provision**, and should be marked as **IsContinuation**. Even though the article number changed, the content logically continues from the previous article, and thus it is treated as a continuation.
-     
-     ### **Summary**:
-     - **IsIncomplete** is applied when the article ends abruptly and does not provide a complete idea.
-     - **IsContinuation** is applied when the **Previous Provision** was marked as **IsIncomplete** and the **Current Provision** logically continues it, even if the content seems to be part of a new sequence. This ensures that the flow of legal text is respected and that incomplete sections are treated as continuations, not independent articles.
-     `
+   `
   }
 
   /**
