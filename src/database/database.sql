@@ -196,10 +196,8 @@ CREATE TABLE requirements (
     FULLTEXT(mandatory_description),
     FULLTEXT(complementary_description),
     FULLTEXT(mandatory_sentences),
-    FULLTEXT(complementary_sentences),
+    FULLTEXT(complementary_sentences)
 );
-
-
 
 
 
