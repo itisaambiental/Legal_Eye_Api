@@ -45,12 +45,7 @@ class ReglamentoArticleExtractor extends ArticleExtractor {
    * Method to extract articles from the text.
    */
   async extractArticles () {
-    let articles
-    try {
-      articles = await this._extractArticles(this.text)
-    } catch (error) {
-      throw new ErrorUtils(500, 'Article Processing Error', error)
-    }
+    const articles = await this._extractArticles(this.text)
     const totalArticles = articles.length
     const correctedArticles = []
     let currentProgress = 0
@@ -103,21 +98,21 @@ class ReglamentoArticleExtractor extends ArticleExtractor {
   }
 
   /**
-   * @param {string} text - Text to process and extract articles from.
-   * @returns {Promise<Array<Article>>} - List of article objects.
-   */
+ * @param {string} text - Text to process and extract articles from.
+ * @returns {Promise<Array<Article>>} - List of article objects.
+ */
   async _extractArticles (text) {
     text = this._cleanText(text)
 
     const articlePatternString =
-      '(?:^|\\n)\\s*(' +
-      '(?:c[áa]p[ií]tulo)\\s+\\S+|' +
-      '(?:t[ií]tulo)\\s+\\S+|' +
-      '(?:secci[oó]n)\\s+\\S+|' +
-      '(?:art[ií]culo)\\s+\\S+|' +
-      '(?:transitori[oa][s]?)\\s+\\S+|' +
-      '(?:anexo)\\s+\\S+' +
-      ')'
+    '(?:^|\\n)\\s*(' +
+    '(?:c[áa]p[ií]tulo)\\s+\\S+|' +
+    '(?:t[ií]tulo)\\s+\\S+|' +
+    '(?:secci[oó]n)\\s+\\S+|' +
+    '(?:art[ií]culo)\\s+\\S+|' +
+    '(?:transitori[oa][s]?)\\s+\\S+|' +
+    '(?:anexo)\\s+\\S+' +
+    ')'
 
     const articlePattern = new RegExp(articlePatternString, 'i')
     const regexes = [
@@ -155,55 +150,62 @@ class ReglamentoArticleExtractor extends ArticleExtractor {
           nextArticle,
           order++
         )
-        const { isValid, reason } = await this._verifyArticle(
-          currentArticleData
-        )
-        if (reason === 'IsContinuation') {
-          if (
-            lastResult.reason === 'IsIncomplete' ||
-            (isConcatenating && lastResult.reason === 'IsContinuation')
-          ) {
-            if (lastArticle) {
-              lastArticle.article += ` ${currentArticleData.currentArticle}`
-            } else {
-              lastArticle = {
-                title: previousTitle,
-                article: `${previousContent} ${currentArticleData.currentArticle}`,
-                plainArticle: currentArticleData.plainArticle,
-                order: currentArticleData.order
+        await this._verifyArticle(currentArticleData)
+          .then(({ isValid, reason }) => {
+            if (reason === 'IsContinuation') {
+              if (
+                lastResult.reason === 'IsIncomplete' ||
+              (isConcatenating && lastResult.reason === 'IsContinuation')
+              ) {
+                if (lastArticle) {
+                  lastArticle.article += ` ${currentArticleData.currentArticle}`
+                } else {
+                  lastArticle = {
+                    title: previousTitle,
+                    article: `${previousContent} ${currentArticleData.currentArticle}`,
+                    plainArticle: currentArticleData.plainArticle,
+                    order: currentArticleData.order
+                  }
+                }
+                isConcatenating = true
+              } else {
+                isConcatenating = false
+                if (lastArticle) {
+                  articles.push(lastArticle)
+                  lastArticle = null
+                }
               }
+            } else {
+              if (lastArticle) {
+                articles.push(lastArticle)
+                lastArticle = null
+              }
+              if (isValid) {
+                articles.push({
+                  title: currentArticleData.title,
+                  article: currentArticleData.currentArticle,
+                  plainArticle: currentArticleData.plainArticle,
+                  order: currentArticleData.order
+                })
+              }
+              isConcatenating = false
             }
-            isConcatenating = true
-          } else {
-            isConcatenating = false
-            if (lastArticle) {
-              articles.push(lastArticle)
-              lastArticle = null
-            }
-          }
-        } else {
-          if (lastArticle) {
-            articles.push(lastArticle)
-            lastArticle = null
-          }
-          if (isValid) {
+
+            lastResult = { isValid, reason }
+          })
+          .catch(() => {
             articles.push({
               title: currentArticleData.title,
               article: currentArticleData.currentArticle,
               plainArticle: currentArticleData.plainArticle,
               order: currentArticleData.order
             })
-          }
-          isConcatenating = false
-        }
-
-        lastResult = { isValid, reason }
+          })
       }
     }
     if (lastArticle) {
       articles.push(lastArticle)
     }
-
     return articles
   }
 
