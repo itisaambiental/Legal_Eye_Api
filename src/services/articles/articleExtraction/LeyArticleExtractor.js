@@ -1,6 +1,6 @@
 import ArticleExtractor from './ArticleExtractor.js'
 import openai from '../../../config/openapi.config.js'
-import { singleArticleModelSchema } from '../../../schemas/article.schema.js'
+import { ArticleVerificationSchema, singleArticleModelSchema } from '../../../schemas/article.schema.js'
 import { zodResponseFormat } from 'openai/helpers/zod'
 import { convert } from 'html-to-text'
 import ErrorUtils from '../../../utils/Error.js'
@@ -241,11 +241,10 @@ class LeyArticleExtractor extends ArticleExtractor {
 
   /**
    * @param {ArticleToVerify} article - The article to verify.
-   * @returns {Promise<{ isValid: boolean, reason?: string }>} - An object indicating if the article is valid and optionally the reason why it is considered invalid.
+   * @returns {Promise<{ isValid: boolean, reason?: "IsContinuation" | "IsIncomplete" }>} - An object indicating if the article is valid and optionally the reason why it is considered invalid.
    */
   async _verifyArticle (article) {
     const prompt = this._buildVerifyPrompt(this.name, article)
-
     const request = {
       model: this.model,
       messages: [
@@ -257,41 +256,15 @@ class LeyArticleExtractor extends ArticleExtractor {
         { role: 'user', content: prompt }
       ],
       temperature: 0,
-      response_format: {
-        type: 'json_schema',
-        json_schema: {
-          name: 'article_verification_schema',
-          schema: {
-            type: 'object',
-            properties: {
-              isValid: {
-                description: 'Indicates if the article is valid',
-                type: 'boolean'
-              },
-              reason: {
-                description:
-                  'Reason why the article is considered invalid. Possible values: "IsContinuation", "IsIncomplete".',
-                type: 'string',
-                enum: ['IsContinuation', 'IsIncomplete']
-              }
-            },
-            additionalProperties: false
-          }
-        }
-      }
+      response_format: zodResponseFormat(ArticleVerificationSchema, 'article_verification')
     }
-
     const attemptRequest = async (retryCount = 0) => {
       try {
         const response = await openai.chat.completions.create(request)
-        const { isValid, reason } = JSON.parse(
-          response.choices[0].message.content
+        const { isValid, reason } = ArticleVerificationSchema.parse(
+          JSON.parse(response.choices[0].message.content)
         )
-        if (typeof isValid === 'boolean') {
-          return { isValid, reason }
-        } else {
-          throw new ErrorUtils(500, 'Article Processing Error')
-        }
+        return { isValid, reason }
       } catch (error) {
         if (error.status === 429) {
           if (retryCount < 3) {
@@ -305,7 +278,6 @@ class LeyArticleExtractor extends ArticleExtractor {
         throw new ErrorUtils(500, 'Article Processing Error', error)
       }
     }
-
     return attemptRequest()
   }
 
