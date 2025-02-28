@@ -1,9 +1,14 @@
 import ErrorUtils from '../../utils/Error.js'
-import { S3_BUCKET_NAME } from '../../config/variables.config.js'
+import { S3_BUCKET_NAME, AWS_REGION } from '../../config/variables.config.js'
 import { s3Client } from '../../config/aws.config.js'
-import { PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3'
+import {
+  PutObjectCommand,
+  GetObjectCommand,
+  DeleteObjectCommand
+} from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import { v4 as uuidv4 } from 'uuid'
+import axios from 'axios'
 
 /**
  * Service class for handling file uploads and retrievals.
@@ -14,6 +19,12 @@ class FileService {
    * @typedef {Object} UploadFileResult
    * @property {import('@aws-sdk/client-s3').PutObjectAclCommandOutput} response - The response from AWS S3 after uploading the file.
    * @property {string} uniqueFileName - The unique name assigned to the uploaded file.
+   */
+
+  /**
+   * @typedef {Object} FileFetchResult
+   * @property {string} file - The file data encoded in Base64.
+   * @property {string} contentType - The MIME type of the file.
    */
 
   /**
@@ -64,10 +75,50 @@ class FileService {
       }
       const command = new GetObjectCommand(getObjectParams)
       const urlExpiration = 432000
-      const presignedUrl = await getSignedUrl(s3Client, command, { expiresIn: urlExpiration })
+      const presignedUrl = await getSignedUrl(s3Client, command, {
+        expiresIn: urlExpiration
+      })
       return presignedUrl
     } catch (error) {
-      throw new ErrorUtils(500, 'Error generating presigned URL', error.message)
+      throw new ErrorUtils(
+        500,
+        'Error generating presigned URL',
+        error.message
+      )
+    }
+  }
+
+  /**
+   * Returns a permanent public URL for a file in the S3 bucket.
+   * This URL does not expire and requires public access permissions on S3.
+   *
+   * @param {string} fileKey - The file path in the S3 bucket.
+   * @returns {string} - The public URL of the file.
+   *
+   */
+  static getPermanentFileUrl (fileKey) {
+    return `https://${S3_BUCKET_NAME}.s3.${AWS_REGION}.amazonaws.com/${fileKey}`
+  }
+
+  /**
+   * Fetches a file from a given URL and returns its buffer and content type.
+   * @param {string} url - The URL of the file.
+   * @returns {Promise<FileFetchResult>} - The file buffer and content type.
+   * @throws {ErrorUtils} - If the file cannot be fetched.
+   */
+  static async getFileFromUrl (url) {
+    try {
+      const response = await axios.get(url, { responseType: 'arraybuffer' })
+      return {
+        file: Buffer.from(response.data).toString('base64'),
+        contentType: response.headers['content-type']
+      }
+    } catch (error) {
+      throw new ErrorUtils(
+        error.response?.status || 500,
+        'Error fetching file',
+        error.message
+      )
     }
   }
 
