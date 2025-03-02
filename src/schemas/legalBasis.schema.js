@@ -41,20 +41,19 @@ const legalBasisSchema = z
      * Aspects IDs associated with the legal basis.
      * Must be a stringified JSON array of valid numbers.
      */
-    aspectsIds: z
-      .string()
+    aspectsIds: z.string()
       .refine((val) => {
         try {
           const parsedArray = JSON.parse(val)
           return (
             Array.isArray(parsedArray) &&
-            parsedArray.every((item) => !isNaN(Number(item)))
+        parsedArray.every((item) => typeof item === 'number')
           )
         } catch {
           return false
         }
       }, 'Each aspectId must be a valid array of numbers')
-      .transform((val) => JSON.parse(val))
+      .transform((val) => z.array(z.number()).parse(JSON.parse(val)))
       .refine(
         (val) => val.length > 0,
         'aspectsIds must contain at least one number'
