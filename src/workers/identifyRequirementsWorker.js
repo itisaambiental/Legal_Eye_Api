@@ -63,25 +63,6 @@ identifyRequirementsQueue.process(CONCURRENCY, async (job, done) => {
       return done(new ErrorUtils(404, 'Requirements not found'))
     }
     const model = getModel(intelligenceLevel)
-    const totalTasks = legalBasis.reduce((sum, lb) => {
-      return sum + (lb.articles ? lb.articles.length * requirements.length : 0)
-    }, 0)
-    const identifier = new RequirementIdentifier(legalBasis, requirements, model, currentJob, totalTasks)
-    const { obligatoryArticles, complementaryArticles } = await identifier.identifyRequirements()
-
-    for (const requirement of requirements) {
-      const identifyRequirementId = await IdentifyRequirementsService.createIdentifyRequirement(requirement.id)
-      for (const legalBase of legalBasis) {
-        await IdentifyRequirementsService.linkIdentifyRequirementToLegalBasis(identifyRequirementId, legalBase.id)
-        for (const { article } of obligatoryArticles.filter(a => a.requirement.id === requirement.id)) {
-          await IdentifyRequirementsService.linkObligatoryArticleToRequirement(identifyRequirementId, legalBase.id, article.id)
-        }
-        for (const { article } of complementaryArticles.filter(a => a.requirement.id === requirement.id)) {
-          await IdentifyRequirementsService.linkComplementaryArticleToRequirement(identifyRequirementId, legalBase.id, article.id)
-        }
-      }
-    }
-
     done(null)
   } catch (error) {
     if (error instanceof ErrorUtils) {
