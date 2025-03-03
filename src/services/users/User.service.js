@@ -29,7 +29,7 @@ class UserService {
    * @param {string} userData.name - User's name.
    * @param {string} userData.gmail - User's Gmail.
    * @param {number} userData.roleId - User's role ID.
-   * @param {Object} profilePicture - User's profile picture file (optional).
+   * @param {Express.Multer.File} profilePicture - User's profile picture file (optional).
    * @returns {Promise<Object>} - Registered user data.
    * @throws {ErrorUtils} - If validation fails or user already exists.
    */
@@ -349,7 +349,7 @@ class UserService {
    * Updates a user's information by ID.
    * @param {number} userId - User's ID.
    * @param {Object} userData - Fields to update, expects { name, gmail, roleId, profilePicture, removePicture }.
-   * @param {File|undefined} profilePicture - New profile picture file (optional).
+   * @param {Express.Multer.File} profilePicture - New profile picture file (optional).
    * @param {number} currentUserId - ID of the currently logged-in user.
    * @returns {Promise<Object>} - Updated user data and a new token if applicable.
    * @throws {ErrorUtils} - If update fails, user not found, or validation errors occur.
@@ -447,7 +447,7 @@ class UserService {
   /**
    * Updates a user's profile picture.
    * @param {number} userId - User's ID.
-   * @param {Object} profilePicture - New profile picture file.
+   * @param {Express.Multer.File} profilePicture - New profile picture file.
    * @returns {Promise<string>} - URL of the updated profile picture.
    * @throws {ErrorUtils} - If update fails.
    */

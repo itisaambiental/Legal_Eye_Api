@@ -25,7 +25,7 @@ export const uploadFile = async (req, res) => {
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-    const { uniqueFileName } = await FileService.uploadFile(req.file)
+    const { uniqueFileName } = await FileService.uploadFile(file)
     const url = FileService.getPermanentFileUrl(uniqueFileName)
     return res.status(201).json({ url })
   } catch (error) {

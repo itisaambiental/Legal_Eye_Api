@@ -109,7 +109,7 @@ class IdentifyRequirementsService {
    */
   static async createIdentifyRequirement (requirementId) {
     try {
-      const identifyRequirementId = await IdentifyRequirementRepository.create(requirementId)
+      const identifyRequirementId = await IdentifyRequirementRepository.createIdentifyRequirement(requirementId)
       return identifyRequirementId
     } catch (error) {
       if (error instanceof ErrorUtils) {
@@ -129,7 +129,7 @@ class IdentifyRequirementsService {
      * @returns {Promise<boolean>} - Returns `true` if the link was successful, `false` otherwise.
      * @throws {ErrorUtils} - If an error occurs during the insertion.
      */
-  static async linkIdentifyRequirementToLegalBasis (identifyRequirementId, legalBasisId) {
+  static async linkToLegalBasis (identifyRequirementId, legalBasisId) {
     try {
       const legalBasis = await LegalBasisRepository.findById(legalBasisId)
       if (!legalBasis) {
@@ -154,7 +154,7 @@ class IdentifyRequirementsService {
  * @returns {Promise<boolean>} - Returns `true` if the link was successful, `false` otherwise.
  * @throws {ErrorUtils} - If an error occurs during the insertion.
  */
-  static async linkObligatoryArticleToRequirement (identifyRequirementId, legalBasisId, articleId) {
+  static async linkObligatoryArticle (identifyRequirementId, legalBasisId, articleId) {
     try {
       const legalBasis = await LegalBasisRepository.findById(legalBasisId)
       if (!legalBasis) {
@@ -183,7 +183,7 @@ class IdentifyRequirementsService {
  * @returns {Promise<boolean>} - Returns `true` if the link was successful, `false` otherwise.
  * @throws {ErrorUtils} - If an error occurs during the insertion.
  */
-  static async linkComplementaryArticleToRequirement (identifyRequirementId, legalBasisId, articleId) {
+  static async linkComplementaryArticle (identifyRequirementId, legalBasisId, articleId) {
     try {
       const legalBasis = await LegalBasisRepository.findById(legalBasisId)
       if (!legalBasis) {

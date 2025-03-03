@@ -14,7 +14,7 @@ class IdentifyRequirementRepository {
  * @returns {Promise<number>} - Returns the ID of the created identify_requirements record.
  * @throws {ErrorUtils} - If an error occurs during insertion.
  */
-  static async create (requirementId) {
+  static async createIdentifyRequirement (requirementId) {
     const query = `
       INSERT INTO identify_requirements (requirement_id)
       VALUES (?)

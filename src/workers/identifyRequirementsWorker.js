@@ -76,6 +76,7 @@ function getModel (intelligenceLevel) {
  * Maximum number of asynchronous operations possible in parallel.
  */
 const CONCURRENCY = Number(CONCURRENCY_IDENTIFY_REQUIREMENTS || 1)
+
 /**
  * @typedef {Object} IdentifyRequirementsJobData
  * @property {LegalBase[]} legalBasis - The list of legal bases.
@@ -124,23 +125,22 @@ identifyRequirementsQueue.process(CONCURRENCY, async (job, done) => {
       }
       identifyRequirementIds.push(identifyRequirementId)
       for (const legalBase of legalBasis) {
-        const linkLegalBasisSuccess = await IdentifyRequirementsService.linkIdentifyRequirementToLegalBasis(identifyRequirementId, legalBase.id)
+        const linkLegalBasisSuccess = await IdentifyRequirementsService.linkToLegalBasis(identifyRequirementId, legalBase.id)
         if (!linkLegalBasisSuccess) {
-          return done(new ErrorUtils(500, 'Failed to link requirement to legal basis'))
+          return done(new ErrorUtils(500, 'Failed link to legal basis'))
         }
         const identifier = new RequirementIdentifier(legalBase, requirement, model, currentJob, totalTasks)
         const { obligatoryArticles, complementaryArticles } = await identifier.identifyRequirements()
-
         for (const article of obligatoryArticles) {
-          const articleLinkSuccess = await IdentifyRequirementsService.linkObligatoryArticleToRequirement(identifyRequirementId, legalBase.id, article.id)
+          const articleLinkSuccess = await IdentifyRequirementsService.linkObligatoryArticle(identifyRequirementId, legalBase.id, article.id)
           if (!articleLinkSuccess) {
-            return done(new ErrorUtils(500, 'Failed to link obligatory article'))
+            return done(new ErrorUtils(500, 'Failed link to obligatory article'))
           }
         }
         for (const article of complementaryArticles) {
-          const articleLinkSuccess = await IdentifyRequirementsService.linkComplementaryArticleToRequirement(identifyRequirementId, legalBase.id, article.id)
+          const articleLinkSuccess = await IdentifyRequirementsService.linkComplementaryArticle(identifyRequirementId, legalBase.id, article.id)
           if (!articleLinkSuccess) {
-            return done(new ErrorUtils(500, 'Failed to link complementary article'))
+            return done(new ErrorUtils(500, 'Failed link to complementary article'))
           }
         }
       }
