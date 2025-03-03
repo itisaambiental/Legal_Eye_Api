@@ -5,60 +5,18 @@ import { ArticleClassificationSchema } from '../../../schemas/identifyRequiremen
 
 /**
  * Class for requirement indentifier.
- * Defines methods for analysis and identify requeriment.
+ * Defines methods for analysis and identify requeriments.
  */
 class RequirementIdentifier {
   /**
-   * @typedef {Object} Article
-   * @property {number} id - The unique identifier of the article.
-   * @property {number} legal_basis_id - The ID of the legal basis associated with this article.
-   * @property {string} article_name - The name/title of the article.
-   * @property {string} description - The description or content of the article.
-   * @property {number} article_order - The order of the article within the legal basis.
-   */
-
-  /**
    * @typedef {Object} LegalBase
-   * @property {number} id - The unique identifier of the legal basis.
-   * @property {string} legal_name - The name of the legal basis.
-   * @property {string} subject - The subject related to the legal basis.
-   * @property {string[]} aspects - The aspects covered by the legal basis.
-   * @property {string} abbreviation - The abbreviation of the legal basis.
-   * @property {string} classification - The classification of the legal basis.
-   * @property {string} jurisdiction - The jurisdiction (federal, state, etc.).
-   * @property {string} state - The state (if applicable).
-   * @property {string} municipality - The municipality (if applicable).
-   * @property {string} lastReform - The last reform date.
-   * @property {string} url - The URL of the legal document.
-   * @property {Article[]} articles - The articles associated with the legal basis.
+   * @property {import('../../../models/LegalBasis.model.js').default} legalBase - The legal basis information.
+   * @property {import('../../../models/Article.model.js').default[]} articles - The articles associated with the legal basis.
    */
-
-  /**
-   * @typedef {Object} Requirement
-   * @property {number} id - The unique identifier of the requirement.
-   * @property {string} subject - The subject related to the requirement.
-   * @property {string} aspect - The aspect related to the requirement.
-   * @property {number} requirement_number - The requirement number.
-   * @property {string} requirement_name - The name of the requirement.
-   * @property {string} mandatory_description - Description of mandatory conditions.
-   * @property {string} complementary_description - Description of complementary conditions.
-   * @property {string} mandatory_sentences - List of mandatory sentences.
-   * @property {string} complementary_sentences - List of complementary sentences.
-   * @property {string} mandatory_keywords - List of keywords for mandatory conditions.
-   * @property {string} complementary_keywords - List of keywords for complementary conditions.
-   * @property {string} condition - The condition for the requirement.
-   * @property {string} evidence - The evidence required for compliance.
-   * @property {string} periodicity - The periodicity of compliance.
-   * @property {string} requirement_type - The type of requirement (e.g., legal, procedural).
-   * @property {string} jurisdiction - The jurisdiction applicable.
-   * @property {string} state - The state applicable.
-   * @property {string} municipality - The municipality applicable.
-   */
-
   /**
    * Constructs an instance of RequirementIdentifier.
    * @param {LegalBase} legalBase - The legal basis related to the requirements.
-   * @param {Requirement} requirement - The list of requirements to be analyzed.
+   * @param {import('../../../models/Requirement.model.js').default} requirement - The list of requirements to be analyzed.
    * @param {string} model - AI model to be used in requirements identification.
    * @param {import("bull").Job} job - The Bull job object used for progress tracking.
    * @param {number} totalTasks - The total number of tasks to process.
@@ -80,7 +38,7 @@ class RequirementIdentifier {
   /**
    * Identifies whether each article is "Obligatory" or "Complementary"
    * based on the requirement conditions.
-   * @returns {Promise<{ obligatoryArticles: Article[], complementaryArticles: Article[] }>}
+   * @returns {Promise<{ obligatoryArticles: import('../../../models/Article.model.js').default[], complementaryArticles: import('../../../models/Article.model.js').default[] }>}
    */
   async identifyRequirements () {
     for (const article of this.legalBase.articles) {
@@ -155,8 +113,8 @@ class RequirementIdentifier {
 
   /**
    * Constructs the prompt for OpenAI to determine article classification.
-   * @param {Article} article - The article to evaluate.
-   * @param {Requirement} requirement - The requirement to compare against.
+   * @param {import('../../../models/Article.model.js').default} article - The article to evaluate.
+   * @param {import('../../../models/Requirement.model.js').default} requirement - The requirement to compare against.
    * @returns {string} - The constructed prompt.
    */
   _buildIdentifyPrompt (article, requirement) {

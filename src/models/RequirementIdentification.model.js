@@ -1,6 +1,6 @@
-import Article from './Article.model'
-import LegalBasis from './LegalBasis.model'
-import Requirement from './Requirement.model'
+import Article from './Article.model.js'
+import LegalBasis from './LegalBasis.model.js'
+import Requirement from './Requirement.model.js'
 
 /**
  * @typedef {Object} LegalBase
@@ -10,22 +10,26 @@ import Requirement from './Requirement.model'
  */
 
 /**
- * Class representing an Identify Requirement.
- * Stores details about a requirement identification, its legal basis associates, and articles.
+ * Class representing a Requirement Identification.
+ * Stores details about a requirement identification, its legal basis associates, articles, status, and user information.
  */
-class IdentifyRequirement {
+class RequirementIdentification {
   /**
-   * Constructs an IdentifyRequirement instance.
-   * @param {number} identifyRequirementId - The ID of the identified requirement.
+   * Constructs a RequirementsIdentification instance.
+   * @param {number} identificationId - The ID of the identified requirement process.
    * @param {Requirement} requirement - An instance of the Requirement class.
    * @param {Array<LegalBase>} legalBasis - The legal basis related to the identified requirement, including articles.
+   * @param {import('./User.model.js').default} user - The user who initiated the identification process.
+   * @param {string} status - The status of the requirements identification ('Active', 'Completed', 'Failed').
    */
   constructor (
-    identifyRequirementId,
+    identificationId,
     requirement,
-    legalBasis = []
+    legalBasis = [],
+    user,
+    status = 'Active' // Default to 'Active'
   ) {
-    this.identifyRequirementId = identifyRequirementId
+    this.identificationId = identificationId
     this.requirement = new Requirement(
       requirement.id,
       requirement.subject,
@@ -70,7 +74,11 @@ class IdentifyRequirement {
         }
       }
     })
+
+    this.userId = user.id
+    this.userName = user.name
+    this.status = status
   }
 }
 
-export default IdentifyRequirement
+export default RequirementIdentification

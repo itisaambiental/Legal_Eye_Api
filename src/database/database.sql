@@ -198,33 +198,34 @@ CREATE TABLE requirements (
     FULLTEXT(complementary_sentences)
 );
 
--- Table: identify_requirements
-CREATE TABLE identify_requirements (
+-- Table: requirements_identification
+CREATE TABLE requirements_identification (
     id INT AUTO_INCREMENT PRIMARY KEY,
     requirement_id INT NOT NULL,
     user_id BIGINT NULL, 
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    status ENUM('Active', 'Completed', 'Failed') NOT NULL DEFAULT 'Active',
     FOREIGN KEY (requirement_id) REFERENCES requirements(id) ON DELETE RESTRICT,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
 );
 
--- Table: identify_requirements_legal_basis
-CREATE TABLE identify_requirements_legal_basis (
-    identify_requirement_id INT NOT NULL,
+-- Table: requirements_identification_legal_basis
+CREATE TABLE requirements_identification_legal_basis (
+    requirements_identification_id INT NOT NULL,
     legal_basis_id INT NOT NULL,
-    PRIMARY KEY (identify_requirement_id, legal_basis_id),
-    FOREIGN KEY (identify_requirement_id) REFERENCES identify_requirements(id) ON DELETE CASCADE,
+    PRIMARY KEY (requirements_identification_id, legal_basis_id),
+    FOREIGN KEY (requirements_identification_id) REFERENCES requirements_identification(id) ON DELETE CASCADE,
     FOREIGN KEY (legal_basis_id) REFERENCES legal_basis(id) ON DELETE RESTRICT 
 );
 
--- Table: identify_requirements_articles
-CREATE TABLE identify_requirements_articles (
-    identify_requirement_id INT NOT NULL,
+-- Table: requirements_identification_articles
+CREATE TABLE requirements_identification_articles (
+    requirements_identification_id INT NOT NULL,
     legal_basis_id INT NOT NULL,
     article_id INT NOT NULL,
     classification ENUM('Obligatory', 'Complementary') NOT NULL,
-    PRIMARY KEY (identify_requirement_id, legal_basis_id, article_id),
-    FOREIGN KEY (identify_requirement_id) REFERENCES identify_requirements(id) ON DELETE CASCADE,
+    PRIMARY KEY (requirements_identification_id, legal_basis_id, article_id),
+    FOREIGN KEY (requirements_identification_id) REFERENCES requirements_identification(id) ON DELETE CASCADE,
     FOREIGN KEY (legal_basis_id) REFERENCES legal_basis(id) ON DELETE RESTRICT,
     FOREIGN KEY (article_id) REFERENCES article(id) ON DELETE RESTRICT 
 );

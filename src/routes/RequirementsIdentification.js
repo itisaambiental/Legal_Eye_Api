@@ -6,20 +6,19 @@
 import { Router } from 'express'
 import UserExtractor from '../middlewares/access_token.js'
 import {
-  startIdentifyRequirements
-} from '../controllers/IdentifyRequirements.controller.js'
+  startRequirementsIdentification
+} from '../controllers/RequirementsIdentification.controller.js'
 
 const router = Router()
 
 /**
- * Route to start an requirements identification.
+ * Route to start a requirements identification.
  * @method POST
- * @path start/identify/requirements
+ * @path /requirements-identification
  * @description Initiates a requirements identification job for selected legal bases and associated requirements.
  *
  * @middlewares UserExtractor - Middleware to ensure that the user is authorized.
- * @returns {number} - The ID of the created requirements identification job.
  */
-router.post('start/identify/requirements', UserExtractor, startIdentifyRequirements)
+router.post('/requirements-identification', UserExtractor, startRequirementsIdentification)
 
 export default router

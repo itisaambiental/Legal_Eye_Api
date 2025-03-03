@@ -1,40 +1,37 @@
-import IdentifyRequirementRepository from '../../repositories/IdentifyRequirement.repository.js'
-import SubjectsRepository from '../../repositories/Subject.repository.js'
-import AspectsRepository from '../../repositories/Aspects.repository.js'
-import ArticlesRepository from '../../repositories/Articles.repository.js'
-import UserRepository from '../../repositories/User.repository.js'
-import RequirementsRepository from '../../repositories/Requirements.repository.js'
-import { identifyRequirementsSchema } from '../../schemas/identifyRequirements.schema.js'
-import LegalBasisRepository from '../../repositories/LegalBasis.repository.js'
-import identifyRequirementsQueue from '../../workers/identifyRequirementsWorker.js'
-import ErrorUtils from '../../utils/Error.js'
+import RequirementsIdentificationRepository from '../../../repositories/RequirementsIdentification.repository.js'
+import SubjectsRepository from '../../../repositories/Subject.repository.js'
+import AspectsRepository from '../../../repositories/Aspects.repository.js'
+import ArticlesRepository from '../../../repositories/Articles.repository.js'
+import UserRepository from '../../../repositories/User.repository.js'
+import RequirementsRepository from '../../../repositories/Requirements.repository.js'
+import { RequirementsIdentificationSchema } from '../../../schemas/identifyRequirements.schema.js'
+import LegalBasisRepository from '../../../repositories/LegalBasis.repository.js'
+import requirementsIdentificationQueue from '../../../workers/requirementsIdentificationWorker.js'
+import ErrorUtils from '../../../utils/Error.js'
 import { z } from 'zod'
 /**
- * Service class for handling Identify Requirements operations.
+ * Service class for handling Requirements Identification operations.
  */
-class IdentifyRequirementsService {
+class RequirementsIdentificationService {
   /**
    * Starts a new requirements identification for selected legal bases and associated requirements.
-   * @param {Object} identifyRequirementData  - The data to identify requeriments.
-   * @param {string[]} identifyRequirementData.legalBasisIds - The IDs of the selected legal bases.
-   * @param {string} identifyRequirementData.subjectId - The ID of the subject.
-   * @param {string[]} identifyRequirementData.aspectsIds - The IDs of the selected aspects.
-   * @param {string} identifyRequirementData.intelligenceLevel - The level of intelligence for the identification of requirements.
-   * @param {number} userId - The ID of the user who starts the analysis.
+   * @param {Object} identificationData - The data to identify requirements.
+   * @param {string[]} identificationData.legalBasisIds - The IDs of the selected legal bases.
+   * @param {string} identificationData.subjectId - The ID of the subject.
+   * @param {string[]} identificationData.aspectsIds - The IDs of the selected aspects.
+   * @param {string} identificationData.intelligenceLevel - The intelligence level for the identification process.
+   * @param {number} userId - The ID of the user who starts the identification.
    * @returns {Promise<number>} - The ID of the created job.
    */
-  static async startIdentify (identifyRequirementData, userId) {
+  static async startRequirementsIdentification (identificationData, userId) {
     try {
-      const parsedIdentifyRequirementData = identifyRequirementsSchema.parse(
-        identifyRequirementData
-      )
+      const parsedData =
+        RequirementsIdentificationSchema.parse(identificationData)
       const legalBasis = await LegalBasisRepository.findByIds(
-        parsedIdentifyRequirementData.legalBasisIds
+        parsedData.legalBasisIds
       )
-      if (
-        legalBasis.length !== parsedIdentifyRequirementData.legalBasisIds.length
-      ) {
-        const notFoundIds = parsedIdentifyRequirementData.legalBasisIds.filter(
+      if (legalBasis.length !== parsedData.legalBasisIds.length) {
+        const notFoundIds = parsedData.legalBasisIds.filter(
           (id) => !legalBasis.some((legalBase) => legalBase.id === id)
         )
         throw new ErrorUtils(404, 'LegalBasis not found for IDs', {
@@ -58,50 +55,45 @@ class IdentifyRequirementsService {
       if (missingArticlesLegalBasis.length > 0) {
         throw new ErrorUtils(
           400,
-          'Some legal basis have no associated articles',
+          'Some legal bases have no associated articles',
           {
             missingArticlesLegalBasis
           }
         )
       }
       const subjectExists = await SubjectsRepository.findById(
-        parsedIdentifyRequirementData.subjectId
+        parsedData.subjectId
       )
       if (!subjectExists) {
         throw new ErrorUtils(404, 'Subject not found')
       }
       const validAspectIds = await AspectsRepository.findByIds(
-        parsedIdentifyRequirementData.aspectsIds
+        parsedData.aspectsIds
       )
-      if (
-        validAspectIds.length !==
-        parsedIdentifyRequirementData.aspectsIds.length
-      ) {
-        const notFoundIds = parsedIdentifyRequirementData.aspectsIds.filter(
+      if (validAspectIds.length !== parsedData.aspectsIds.length) {
+        const notFoundIds = parsedData.aspectsIds.filter(
           (id) => !validAspectIds.includes(id)
         )
-
         throw new ErrorUtils(404, 'Aspects not found for IDs', { notFoundIds })
       }
       const requirements = await RequirementsRepository.findBySubjectAndAspects(
-        parsedIdentifyRequirementData.subjectId,
-        parsedIdentifyRequirementData.aspectsIds
+        parsedData.subjectId,
+        parsedData.aspectsIds
       )
       if (!requirements) {
         throw new ErrorUtils(
           400,
           'No requirements found for the given subject and aspects',
           {
-            subjectId: parsedIdentifyRequirementData.subjectId,
-            aspectIds: parsedIdentifyRequirementData.aspectsIds
+            subjectId: parsedData.subjectId,
+            aspectIds: parsedData.aspectsIds
           }
         )
       }
-      const intelligenceLevel = parsedIdentifyRequirementData.intelligenceLevel
-      const job = await identifyRequirementsQueue.add({
+      const job = await requirementsIdentificationQueue.add({
         legalBasis,
         requirements,
-        intelligenceLevel,
+        intelligenceLevel: parsedData.intelligenceLevel,
         userId
       })
       return job.id
@@ -118,22 +110,19 @@ class IdentifyRequirementsService {
       }
       throw new ErrorUtils(
         500,
-        'Unexpected error during start identify requirements'
+        'Unexpected error during start requirements identification'
       )
     }
   }
 
   /**
-   * Creates a new identified requirement in the database.
-   *
-   * This function registers an identified requirement based on a legal analysis.
-   *
+   * Creates a new requirement identification.
    * @param {number} requirementId - The ID of the requirement being identified.
-   * @returns {Promise<number>} - Returns the ID of the created identified requirement.
    * @param {number} userId - The ID of the user performing the analysis.
-   * @throws {ErrorUtils} - If an error occurs during the insertion.
+   * @returns {Promise<number>} - Returns the ID of the created requirement identification.
+   * @throws {ErrorUtils} - If an error occurs during insertion.
    */
-  static async createIdentifyRequirement (requirementId, userId) {
+  static async createRequirementIdentification (requirementId, userId) {
     try {
       const existingRequirement = await RequirementsRepository.findById(
         requirementId
@@ -145,12 +134,12 @@ class IdentifyRequirementsService {
       if (!userExists) {
         throw new ErrorUtils(404, 'User not found')
       }
-      const identifyRequirementId =
-        await IdentifyRequirementRepository.createIdentifyRequirement(
+      const requirementIdentificationId =
+        await RequirementsIdentificationRepository.createRequirementIdentification(
           requirementId,
           userId
         )
-      return identifyRequirementId
+      return requirementIdentificationId
     } catch (error) {
       if (error instanceof ErrorUtils) {
         throw error
@@ -160,25 +149,23 @@ class IdentifyRequirementsService {
   }
 
   /**
-   * Links an identified requirement to a legal basis in the database.
-   *
-   * This function creates a relationship between an identified requirement and a legal basis.
-   *
-   * @param {number} identifyRequirementId - The ID of the identified requirement.
+   * Links a requirement identification to a legal basis.
+   * @param {number} requirementIdentificationId - The ID of the requirement identification.
    * @param {number} legalBasisId - The ID of the legal basis.
-   * @returns {Promise<boolean>} - Returns `true` if the link was successful, `false` otherwise.
-   * @throws {ErrorUtils} - If an error occurs during the insertion.
+   * @returns {Promise<boolean>} - Returns `true` if successful, `false` otherwise.
+   * @throws {ErrorUtils} - If an error occurs during insertion.
    */
-  static async linkToLegalBasis (identifyRequirementId, legalBasisId) {
+  static async linkToLegalBasis (requirementIdentificationId, legalBasisId) {
     try {
       const legalBasis = await LegalBasisRepository.findById(legalBasisId)
       if (!legalBasis) {
         throw new ErrorUtils(404, 'LegalBasis not found')
       }
-      const result = await IdentifyRequirementRepository.linkToLegalBasis(
-        identifyRequirementId,
-        legalBasisId
-      )
+      const result =
+        await RequirementsIdentificationRepository.linkLegalBasis(
+          requirementIdentificationId,
+          legalBasisId
+        )
       return result
     } catch (error) {
       if (error instanceof ErrorUtils) {
@@ -193,15 +180,14 @@ class IdentifyRequirementsService {
 
   /**
    * Links an identified requirement to an **obligatory** article under a specific legal basis.
-   *
-   * @param {number} identifyRequirementId - The ID of the identified requirement.
+   * @param {number} requirementIdentificationId - The ID of the requirement identification.
    * @param {number} legalBasisId - The ID of the legal basis.
    * @param {number} articleId - The ID of the article.
-   * @returns {Promise<boolean>} - Returns `true` if the link was successful, `false` otherwise.
-   * @throws {ErrorUtils} - If an error occurs during the insertion.
+   * @returns {Promise<boolean>} - Returns `true` if successful, `false` otherwise.
+   * @throws {ErrorUtils} - If an error occurs during insertion.
    */
-  static async linkObligatoryArticle (
-    identifyRequirementId,
+  static async linkToObligatoryArticle (
+    requirementIdentificationId,
     legalBasisId,
     articleId
   ) {
@@ -214,11 +200,12 @@ class IdentifyRequirementsService {
       if (!article) {
         throw new ErrorUtils(404, 'Article not found')
       }
-      const result = await IdentifyRequirementRepository.linkObligatoryArticle(
-        identifyRequirementId,
-        legalBasisId,
-        articleId
-      )
+      const result =
+        await RequirementsIdentificationRepository.linkObligatoryArticle(
+          requirementIdentificationId,
+          legalBasisId,
+          articleId
+        )
       return result
     } catch (error) {
       if (error instanceof ErrorUtils) {
@@ -233,15 +220,14 @@ class IdentifyRequirementsService {
 
   /**
    * Links an identified requirement to a **complementary** article under a specific legal basis.
-   *
-   * @param {number} identifyRequirementId - The ID of the identified requirement.
+   * @param {number} requirementIdentificationId - The ID of the requirement identification.
    * @param {number} legalBasisId - The ID of the legal basis.
    * @param {number} articleId - The ID of the article.
-   * @returns {Promise<boolean>} - Returns `true` if the link was successful, `false` otherwise.
-   * @throws {ErrorUtils} - If an error occurs during the insertion.
+   * @returns {Promise<boolean>} - Returns `true` if successful, `false` otherwise.
+   * @throws {ErrorUtils} - If an error occurs during insertion.
    */
-  static async linkComplementaryArticle (
-    identifyRequirementId,
+  static async linkToComplementaryArticle (
+    requirementIdentificationId,
     legalBasisId,
     articleId
   ) {
@@ -255,8 +241,8 @@ class IdentifyRequirementsService {
         throw new ErrorUtils(404, 'Article not found')
       }
       const result =
-        await IdentifyRequirementRepository.linkComplementaryArticle(
-          identifyRequirementId,
+        await RequirementsIdentificationRepository.linkComplementaryArticle(
+          requirementIdentificationId,
           legalBasisId,
           articleId
         )
@@ -273,4 +259,4 @@ class IdentifyRequirementsService {
   }
 }
 
-export default IdentifyRequirementsService
+export default RequirementsIdentificationService

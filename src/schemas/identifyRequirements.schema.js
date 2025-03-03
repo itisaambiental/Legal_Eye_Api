@@ -5,7 +5,7 @@ import { z } from 'zod'
  * Ensures that input data meets the requirements for requirements identification.
  * This schema is used for validation on the backend.
  */
-const identifyRequirementsSchema = z.object({
+const RequirementsIdentificationSchema = z.object({
   /**
    * The IDs of the selected legal bases.
    * Must be a stringified JSON array of valid numbers.
@@ -82,4 +82,4 @@ const ArticleClassificationSchema = z.object({
   isComplementary: z.boolean()
 })
 
-export { identifyRequirementsSchema, ArticleClassificationSchema }
+export { RequirementsIdentificationSchema, ArticleClassificationSchema }
