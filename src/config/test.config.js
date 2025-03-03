@@ -38,4 +38,4 @@ afterAll(async () => {
     serverInstance.close()
   }
   await pool.end()
-}, 800000)
+}, 100000)
