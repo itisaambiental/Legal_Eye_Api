@@ -84,7 +84,7 @@ describe('Getting job states', () => {
   test.each(jobStates)(
     'Should return correct response for job state: $state',
     async ({ message, progress, error }) => {
-      jest.spyOn(extractArticlesService, 'getStatusJob').mockResolvedValue({
+      jest.spyOn(extractArticlesService, 'getExtractionJobStatus').mockResolvedValue({
         status: 200,
         data: {
           message,
@@ -109,7 +109,7 @@ describe('Getting job states', () => {
   )
 
   test('Should return 404 when job does not exist', async () => {
-    jest.spyOn(extractArticlesService, 'getStatusJob').mockResolvedValue({
+    jest.spyOn(extractArticlesService, 'getExtractionJobStatus').mockResolvedValue({
       status: 404,
       data: { message: 'Job not found' }
     })
@@ -161,7 +161,7 @@ describe('Getting job state by Legal Basis ID', () => {
   })
 
   test('Should return hasPendingJobs = true with jobId', async () => {
-    jest.spyOn(extractArticlesService, 'hasPendingJobs').mockResolvedValue({
+    jest.spyOn(extractArticlesService, 'hasPendingExtractionJobs').mockResolvedValue({
       hasPendingJobs: true,
       jobId: '12345'
     })
@@ -176,7 +176,7 @@ describe('Getting job state by Legal Basis ID', () => {
   })
 
   test('Should return hasPendingJobs = false with jobId null', async () => {
-    jest.spyOn(extractArticlesService, 'hasPendingJobs').mockResolvedValue({
+    jest.spyOn(extractArticlesService, 'hasPendingExtractionJobs').mockResolvedValue({
       hasPendingJobs: false,
       jobId: null
     })

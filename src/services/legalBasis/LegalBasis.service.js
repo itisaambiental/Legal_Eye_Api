@@ -877,7 +877,7 @@ class LegalBasisService {
           'Cannot provide a document if removeDocument is true'
         )
       }
-      const { hasPendingJobs } = await extractArticles.hasPendingJobs(
+      const { hasPendingJobs } = await extractArticles.hasPendingExtractionJobs(
         legalBasisId
       )
       if (parsedlegalBasis.removeDocument && hasPendingJobs) {
@@ -988,7 +988,7 @@ class LegalBasisService {
       if (!legalBasis) {
         throw new ErrorUtils(404, 'LegalBasis not found')
       }
-      const { hasPendingJobs } = await extractArticles.hasPendingJobs(
+      const { hasPendingJobs } = await extractArticles.hasPendingExtractionJobs(
         legalBasisId
       )
       if (hasPendingJobs) {
@@ -1029,7 +1029,7 @@ class LegalBasisService {
       }
       const pendingJobs = []
       for (const legalBase of legalBasis) {
-        const { hasPendingJobs } = await extractArticles.hasPendingJobs(
+        const { hasPendingJobs } = await extractArticles.hasPendingExtractionJobs(
           legalBase.id
         )
         if (hasPendingJobs) {

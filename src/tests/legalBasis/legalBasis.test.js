@@ -2027,7 +2027,7 @@ describe('Get Legal Basis By Subject And Aspects', () => {
       )
     })
     test('Should return 409 if removeDocument is true and there are pending jobs for the legal basis', async () => {
-      jest.spyOn(extractArticles, 'hasPendingJobs').mockResolvedValue({
+      jest.spyOn(extractArticles, 'hasPendingExtractionJobs').mockResolvedValue({
         hasPendingJobs: true,
         jobId: '12345'
       })
@@ -2049,7 +2049,7 @@ describe('Get Legal Basis By Subject And Aspects', () => {
       )
     })
     test('Should return 409 if attempting to extract articles with a new document while there are pending jobs for the Legal Basis', async () => {
-      jest.spyOn(extractArticles, 'hasPendingJobs').mockResolvedValue({
+      jest.spyOn(extractArticles, 'hasPendingExtractionJobs').mockResolvedValue({
         hasPendingJobs: true,
         jobId: '12345'
       })
@@ -2087,7 +2087,7 @@ describe('Get Legal Basis By Subject And Aspects', () => {
     })
 
     test('Should return 409 if extractArticles is true and there are pending jobs for the Legal Basis', async () => {
-      jest.spyOn(extractArticles, 'hasPendingJobs').mockResolvedValue({
+      jest.spyOn(extractArticles, 'hasPendingExtractionJobs').mockResolvedValue({
         hasPendingJobs: true,
         jobId: '12345'
       })
@@ -2214,7 +2214,7 @@ describe('Get Legal Basis By Subject And Aspects', () => {
     })
     test('Should return 409 if the legal basis has pending jobs', async () => {
       jest
-        .spyOn(extractArticles, 'hasPendingJobs')
+        .spyOn(extractArticles, 'hasPendingExtractionJobs')
         .mockResolvedValue({ hasPendingJobs: true })
       const response = await api
         .delete(`/api/legalBasis/${createdLegalBasis.id}`)
@@ -2249,7 +2249,7 @@ describe('Get Legal Basis By Subject And Aspects', () => {
         .expect(201)
         .expect('Content-Type', /application\/json/)
       createdLegalBasis = response.body.legalBasis
-      jest.spyOn(extractArticles, 'hasPendingJobs').mockResolvedValue({ hasPendingJobs: false })
+      jest.spyOn(extractArticles, 'hasPendingExtractionJobs').mockResolvedValue({ hasPendingJobs: false })
     })
 
     test('Should delete multiple legal bases and return 204 status', async () => {
@@ -2295,7 +2295,7 @@ describe('Get Legal Basis By Subject And Aspects', () => {
     })
     test('Should return 409 if the legal basis has pending jobs', async () => {
       const idToDelete = createdLegalBasis.id
-      jest.spyOn(extractArticles, 'hasPendingJobs').mockImplementation(async (id) => {
+      jest.spyOn(extractArticles, 'hasPendingExtractionJobs').mockImplementation(async (id) => {
         return { hasPendingJobs: id === idToDelete }
       })
       const response = await api

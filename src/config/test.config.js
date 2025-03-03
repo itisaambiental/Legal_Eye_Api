@@ -10,6 +10,7 @@ import { server, app } from '../index.js'
 import { pool } from '../config/db.config.js'
 import emailQueue from '../workers/emailWorker.js'
 import articlesQueue from '../workers/articlesWorker.js'
+import identifyRequirementsQueue from '../queues/identifyRequirementsQueue.js'
 /**
  * The API object for making HTTP requests in tests.
  * @type {supertest.SuperTest<supertest.Test>}
@@ -34,8 +35,9 @@ beforeAll(async () => {
 afterAll(async () => {
   await emailQueue.close()
   await articlesQueue.close()
+  await identifyRequirementsQueue.close()
   if (serverInstance) {
     serverInstance.close()
   }
   await pool.end()
-}, 100000)
+}, 10000)
