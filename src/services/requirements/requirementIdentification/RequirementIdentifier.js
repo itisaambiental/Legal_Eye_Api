@@ -58,17 +58,17 @@ class RequirementIdentifier {
   /**
    * Constructs an instance of RequirementIdentifier.
    * @param {LegalBase} legalBase - The legal basis related to the requirements.
-   * @param {Requirement[]} requirements - The list of requirements to be analyzed.
+   * @param {Requirement} requirement - The list of requirements to be analyzed.
    * @param {string} model - AI model to be used in requirements identification.
    * @param {import("bull").Job} job - The Bull job object used for progress tracking.
    * @param {number} totalTasks - The total number of tasks to process.
    */
-  constructor (legalBase, requirements, model, job, totalTasks) {
+  constructor (legalBase, requirement, model, job, totalTasks) {
     if (this.constructor === RequirementIdentifier) {
       throw new Error('Cannot instantiate class RequirementIdentifier')
     }
     this.legalBase = legalBase
-    this.requirements = requirements
+    this.requirement = requirement
     this.job = job
     this.model = model
     this.obligatoryArticles = []
@@ -84,20 +84,18 @@ class RequirementIdentifier {
 */
   async identifyRequirements () {
     for (const article of this.legalBase.articles) {
-      for (const requirement of this.requirements) {
-        try {
-          const prompt = this._buildIdentifyPrompt(article, requirement)
-          const { isObligatory, isComplementary } = await this._classifyArticle(prompt)
-          if (isObligatory) {
-            this.obligatoryArticles.push({ article, requirement })
-          } else if (isComplementary) {
-            this.complementaryArticles.push({ article, requirement })
-          }
-          this.processedTasks++
-          this.updateProgress()
-        } catch (error) {
-          continue
+      try {
+        const prompt = this._buildIdentifyPrompt(article, this.requirement)
+        const { isObligatory, isComplementary } = await this._classifyArticle(prompt)
+        if (isObligatory) {
+          this.obligatoryArticles.push(article)
+        } else if (isComplementary) {
+          this.complementaryArticles.push(article)
         }
+        this.processedTasks++
+        this.updateProgress()
+      } catch (error) {
+        continue
       }
     }
     return {

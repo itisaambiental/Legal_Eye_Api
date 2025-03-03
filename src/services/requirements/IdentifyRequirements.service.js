@@ -131,6 +131,10 @@ class IdentifyRequirementsService {
      */
   static async linkIdentifyRequirementToLegalBasis (identifyRequirementId, legalBasisId) {
     try {
+      const legalBasis = await LegalBasisRepository.findById(legalBasisId)
+      if (!legalBasis) {
+        throw new ErrorUtils(404, 'LegalBasis not found')
+      }
       const result = await IdentifyRequirementRepository.linkToLegalBasis(identifyRequirementId, legalBasisId)
       return result
     } catch (error) {
@@ -152,6 +156,14 @@ class IdentifyRequirementsService {
  */
   static async linkObligatoryArticleToRequirement (identifyRequirementId, legalBasisId, articleId) {
     try {
+      const legalBasis = await LegalBasisRepository.findById(legalBasisId)
+      if (!legalBasis) {
+        throw new ErrorUtils(404, 'LegalBasis not found')
+      }
+      const article = await ArticlesRepository.findById(articleId)
+      if (!article) {
+        throw new ErrorUtils(404, 'Article not found')
+      }
       const result = await IdentifyRequirementRepository.linkObligatoryArticle(identifyRequirementId, legalBasisId, articleId)
       return result
     } catch (error) {
@@ -173,6 +185,14 @@ class IdentifyRequirementsService {
  */
   static async linkComplementaryArticleToRequirement (identifyRequirementId, legalBasisId, articleId) {
     try {
+      const legalBasis = await LegalBasisRepository.findById(legalBasisId)
+      if (!legalBasis) {
+        throw new ErrorUtils(404, 'LegalBasis not found')
+      }
+      const article = await ArticlesRepository.findById(articleId)
+      if (!article) {
+        throw new ErrorUtils(404, 'Article not found')
+      }
       const result = await IdentifyRequirementRepository.linkComplementaryArticle(identifyRequirementId, legalBasisId, articleId)
       return result
     } catch (error) {
