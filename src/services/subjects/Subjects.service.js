@@ -139,27 +139,25 @@ class SubjectsService {
   }
 
   /**
-   * Deletes a subject by ID.
-   * @param {number} id - The ID of the subject to delete.
-   * @returns {Promise<{ success: boolean }>} - An object indicating the deletion was successful.
-   * @throws {ErrorUtils} - If an error occurs during deletion.
-   */
+ * Deletes a subject by ID.
+ * @param {number} id - The ID of the subject to delete.
+ * @returns {Promise<{ success: boolean }>} - An object indicating the deletion was successful.
+ * @throws {ErrorUtils} - If an error occurs during deletion.
+ */
   static async deleteById (id) {
     try {
-      const {
-        isAssociatedToLegalBasis,
-        isSubjectAspectAssociatedToLegalBasis
-      } = await SubjectsRepository.checkSubjectLegalBasisAssociations(id)
+      const { isAssociatedToLegalBasis } = await SubjectsRepository.checkSubjectLegalBasisAssociations(id)
       if (isAssociatedToLegalBasis) {
         throw new ErrorUtils(
           409,
           'The subject is associated with one or more legal bases'
         )
       }
-      if (isSubjectAspectAssociatedToLegalBasis) {
+      const { isAssociatedToRequirements } = await SubjectsRepository.checkSubjectRequirementAssociations(id)
+      if (isAssociatedToRequirements) {
         throw new ErrorUtils(
           409,
-          'Some aspects of the subject are associated with legal bases'
+          'The subject is associated with one or more requirements'
         )
       }
       const subjectDeleted = await SubjectsRepository.deleteById(id)
@@ -176,11 +174,11 @@ class SubjectsService {
   }
 
   /**
-   * Deletes multiple subjects by their IDs.
-   * @param {Array<number>} subjectIds - Array of subject IDs to delete.
-   * @returns {Promise<{ success: boolean }>} - An object indicating the deletion was successful.
-   * @throws {ErrorUtils} - If subjects not found, have associations preventing deletion, or deletion fails.
-   */
+ * Deletes multiple subjects by their IDs.
+ * @param {Array<number>} subjectIds - Array of subject IDs to delete.
+ * @returns {Promise<{ success: boolean }>} - An object indicating the deletion was successful.
+ * @throws {ErrorUtils} - If subjects not found, have associations preventing deletion, or deletion fails.
+ */
   static async deleteSubjectsBatch (subjectIds) {
     try {
       const existingSubjects = await SubjectsRepository.findByIds(subjectIds)
@@ -188,43 +186,31 @@ class SubjectsService {
         const notFoundIds = subjectIds.filter(
           (id) => !existingSubjects.some((subject) => subject.id === id)
         )
-        throw new ErrorUtils(404, 'Subjects not found for IDs', {
-          notFoundIds
-        })
+        throw new ErrorUtils(404, 'Subjects not found for IDs', { notFoundIds })
       }
-      const associations =
-        await SubjectsRepository.checkSubjectsLegalBasisAssociationsBatch(
-          subjectIds
-        )
-      const subjectsWithLegalBasisAssociations = associations.filter(
+      const legalBasisAssociations = await SubjectsRepository.checkSubjectsLegalBasisAssociationsBatch(subjectIds)
+      const subjectsWithLegalBasisAssociations = legalBasisAssociations.filter(
         (subject) => subject.isAssociatedToLegalBasis
       )
-      const subjectsWithAspectAssociations = associations.filter(
-        (subject) => subject.isSubjectAspectAssociatedToLegalBasis
+      const requirementAssociations = await SubjectsRepository.checkSubjectsRequirementAssociationsBatch(subjectIds)
+      const subjectsWithRequirementAssociations = requirementAssociations.filter(
+        (subject) => subject.isAssociatedToRequirements
       )
       if (subjectsWithLegalBasisAssociations.length > 0) {
         throw new ErrorUtils(409, 'Subjects are associated with legal bases', {
-          associatedSubjects: subjectsWithLegalBasisAssociations.map(
-            (subject) => ({
-              id: subject.id,
-              name: subject.name
-            })
-          )
+          associatedSubjects: subjectsWithLegalBasisAssociations.map((subject) => ({
+            id: subject.id,
+            name: subject.name
+          }))
         })
       }
-      if (subjectsWithAspectAssociations.length > 0) {
-        throw new ErrorUtils(
-          409,
-          'Subjects have aspects associated with legal bases',
-          {
-            associatedSubjects: subjectsWithAspectAssociations.map(
-              (subject) => ({
-                id: subject.id,
-                name: subject.name
-              })
-            )
-          }
-        )
+      if (subjectsWithRequirementAssociations.length > 0) {
+        throw new ErrorUtils(409, 'Subjects are associated with requirements', {
+          associatedSubjects: subjectsWithRequirementAssociations.map((subject) => ({
+            id: subject.id,
+            name: subject.name
+          }))
+        })
       }
       const subjectsDeleted = await SubjectsRepository.deleteBatch(subjectIds)
       if (!subjectsDeleted) {

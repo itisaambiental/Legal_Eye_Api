@@ -19,9 +19,7 @@ class AspectsService {
   static async create ({ subjectId, aspectName }) {
     try {
       const parsedAspect = aspectSchema.parse({ aspectName })
-      const subjectExists = await SubjectsRepository.findById(
-        subjectId
-      )
+      const subjectExists = await SubjectsRepository.findById(subjectId)
       if (!subjectExists) {
         throw new ErrorUtils(404, 'Subject not found')
       }
@@ -111,7 +109,10 @@ class AspectsService {
       if (!subjectExists) {
         throw new ErrorUtils(404, 'Subject not found')
       }
-      const aspects = await AspectsRepository.findByNameAndSubjectId(aspectName, subjectId)
+      const aspects = await AspectsRepository.findByNameAndSubjectId(
+        aspectName,
+        subjectId
+      )
       if (!aspects) {
         return []
       }
@@ -189,6 +190,14 @@ class AspectsService {
           'The aspect is associated with one or more legal bases'
         )
       }
+      const { isAspectAssociatedToRequirements } =
+        await AspectsRepository.checkAspectRequirementAssociations(id)
+      if (isAspectAssociatedToRequirements) {
+        throw new ErrorUtils(
+          409,
+          'The aspect is associated with one or more requirements'
+        )
+      }
       const aspectDeleted = await AspectsRepository.deleteById(id)
       if (!aspectDeleted) {
         throw new ErrorUtils(404, 'Aspect not found')
@@ -203,11 +212,11 @@ class AspectsService {
   }
 
   /**
-   * Deletes multiple aspects by their IDs.
-   * @param {Array<number>} aspectIds - Array of aspect IDs to delete.
-   * @returns {Promise<{ success: boolean }>} - An object indicating the deletion was successful.
-   * @throws {ErrorUtils} - If aspects not found, have associations preventing deletion, or deletion fails.
-   */
+ * Deletes multiple aspects by their IDs.
+ * @param {Array<number>} aspectIds - Array of aspect IDs to delete.
+ * @returns {Promise<{ success: boolean }>} - An object indicating the deletion was successful.
+ * @throws {ErrorUtils} - If aspects are not found, have associations preventing deletion, or deletion fails.
+ */
   static async deleteAspectsBatch (aspectIds) {
     try {
       const existingAspects = await AspectsRepository.findByIds(aspectIds)
@@ -217,21 +226,30 @@ class AspectsService {
         )
         throw new ErrorUtils(404, 'Aspects not found for IDs', { notFoundIds })
       }
-      const associations =
-        await AspectsRepository.checkAspectsLegalBasisAssociationsBatch(
-          aspectIds
-        )
-      const aspectsWithLegalBasisAssociations = associations.filter(
+      const legalBasisAssociations =
+      await AspectsRepository.checkAspectsLegalBasisAssociationsBatch(aspectIds)
+      const aspectsWithLegalBasisAssociations = legalBasisAssociations.filter(
         (aspect) => aspect.isAspectAssociatedToLegalBasis
+      )
+      const requirementAssociations =
+      await AspectsRepository.checkAspectsRequirementAssociationsBatch(aspectIds)
+      const aspectsWithRequirementAssociations = requirementAssociations.filter(
+        (aspect) => aspect.isAspectAssociatedToRequirements
       )
       if (aspectsWithLegalBasisAssociations.length > 0) {
         throw new ErrorUtils(409, 'Aspects are associated with legal bases', {
-          associatedAspects: aspectsWithLegalBasisAssociations.map(
-            (aspect) => ({
-              id: aspect.id,
-              name: aspect.name
-            })
-          )
+          associatedAspects: aspectsWithLegalBasisAssociations.map((aspect) => ({
+            id: aspect.id,
+            name: aspect.name
+          }))
+        })
+      }
+      if (aspectsWithRequirementAssociations.length > 0) {
+        throw new ErrorUtils(409, 'Aspects are associated with requirements', {
+          associatedAspects: aspectsWithRequirementAssociations.map((aspect) => ({
+            id: aspect.id,
+            name: aspect.name
+          }))
         })
       }
       const aspectsDeleted = await AspectsRepository.deleteBatch(aspectIds)

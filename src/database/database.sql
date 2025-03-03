@@ -162,7 +162,6 @@ CREATE TABLE legal_basis_subject_aspect (
 );
 
 -- Table: requirements
--- Defines the legal requirements associated with subjects and aspects.
 CREATE TABLE requirements (
     id INT AUTO_INCREMENT PRIMARY KEY,
     subject_id INT NOT NULL,
@@ -191,8 +190,8 @@ CREATE TABLE requirements (
     state VARCHAR(255),
     municipality VARCHAR(255),
     UNIQUE (subject_id, aspect_id, requirement_name),
-    FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE CASCADE,
-    FOREIGN KEY (aspect_id) REFERENCES aspects(id) ON DELETE CASCADE,
+    FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE RESTRICT, 
+    FOREIGN KEY (aspect_id) REFERENCES aspects(id) ON DELETE RESTRICT, 
     FULLTEXT(mandatory_description),
     FULLTEXT(complementary_description),
     FULLTEXT(mandatory_sentences),
@@ -200,28 +199,25 @@ CREATE TABLE requirements (
 );
 
 -- Table: identify_requirements
--- Stores records of identified requirements based on legal analysis.
 CREATE TABLE identify_requirements (
     id INT AUTO_INCREMENT PRIMARY KEY,
     requirement_id INT NOT NULL,
     user_id BIGINT NULL, 
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (requirement_id) REFERENCES requirements(id) ON DELETE CASCADE,
+    FOREIGN KEY (requirement_id) REFERENCES requirements(id) ON DELETE RESTRICT,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
 );
 
 -- Table: identify_requirements_legal_basis
--- Links each identified requirement to the legal bases used in the evaluation.
 CREATE TABLE identify_requirements_legal_basis (
     identify_requirement_id INT NOT NULL,
     legal_basis_id INT NOT NULL,
     PRIMARY KEY (identify_requirement_id, legal_basis_id),
     FOREIGN KEY (identify_requirement_id) REFERENCES identify_requirements(id) ON DELETE CASCADE,
-    FOREIGN KEY (legal_basis_id) REFERENCES legal_basis(id) ON DELETE CASCADE
+    FOREIGN KEY (legal_basis_id) REFERENCES legal_basis(id) ON DELETE RESTRICT 
 );
 
 -- Table: identify_requirements_articles
--- Records the articles evaluated in an identified requirement, marking them as obligatory or complementary.
 CREATE TABLE identify_requirements_articles (
     identify_requirement_id INT NOT NULL,
     legal_basis_id INT NOT NULL,
@@ -229,6 +225,6 @@ CREATE TABLE identify_requirements_articles (
     classification ENUM('Obligatory', 'Complementary') NOT NULL,
     PRIMARY KEY (identify_requirement_id, legal_basis_id, article_id),
     FOREIGN KEY (identify_requirement_id) REFERENCES identify_requirements(id) ON DELETE CASCADE,
-    FOREIGN KEY (legal_basis_id) REFERENCES legal_basis(id) ON DELETE CASCADE,
-    FOREIGN KEY (article_id) REFERENCES article(id) ON DELETE CASCADE
+    FOREIGN KEY (legal_basis_id) REFERENCES legal_basis(id) ON DELETE RESTRICT,
+    FOREIGN KEY (article_id) REFERENCES article(id) ON DELETE RESTRICT 
 );

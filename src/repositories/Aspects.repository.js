@@ -280,50 +280,47 @@ class AspectsRepository {
   }
 
   /**
-   * Checks if an aspect is associated with any legal basis.
-   * @param {number} aspectId - The ID of the aspect to check.
-   * @returns {Promise<boolean>} - Returns an object with the count of legal basis associations.
-   * @throws {Error} - If an error occurs while querying the database.
-   */
+ * Checks if an aspect is associated with any legal basis.
+ * @param {number} aspectId - The ID of the aspect to check.
+ * @returns {Promise<{ isAspectAssociatedToLegalBasis: boolean }>}
+ * - Returns an object containing:
+ *    - `isAspectAssociatedToLegalBasis` (boolean): True if the aspect is linked to at least one legal basis.
+ * @throws {ErrorUtils} - If an error occurs while querying the database.
+ */
   static async checkAspectLegalBasisAssociations (aspectId) {
     try {
       const [rows] = await pool.query(
-        `
-        SELECT 
-            COUNT(DISTINCT lbsa.legal_basis_id) AS legalBasisAssociationCount
-        FROM legal_basis_subject_aspect lbsa
-        WHERE lbsa.aspect_id = ?
-      `,
-        [aspectId]
+      `
+      SELECT 
+          COUNT(DISTINCT lbsa.legal_basis_id) AS legalBasisAssociationCount
+      FROM legal_basis_subject_aspect lbsa
+      WHERE lbsa.aspect_id = ?
+    `,
+      [aspectId]
       )
-
-      const { legalBasisAssociationCount } = rows[0]
-
       return {
-        isAspectAssociatedToLegalBasis: legalBasisAssociationCount > 0
+        isAspectAssociatedToLegalBasis: rows[0].legalBasisAssociationCount > 0
       }
     } catch (error) {
-      console.error(
-        'Error checking aspect associations with legal basis:',
-        error.message
-      )
-      throw new ErrorUtils(
-        500,
-        'Error checking aspect associations with legal basis'
-      )
+      console.error('Error checking aspect associations with legal basis:', error.message)
+      throw new ErrorUtils(500, 'Error checking aspect associations with legal basis')
     }
   }
 
   /**
-   * Checks if any of the aspects in the given array are associated with any legal basis.
-   * @param {Array<number>} aspectIds - Array of aspect IDs to check.
-   * @returns {Promise<Array<Object>>} - Returns an array of objects with aspect ID, name, and their association status.
-   * @throws {Error} - If an error occurs while querying the database.
-   */
+ * Checks if any of the given aspects are associated with any legal basis.
+ * @param {Array<number>} aspectIds - Array of aspect IDs to check.
+ * @returns {Promise<Array<{ id: number, name: string, isAspectAssociatedToLegalBasis: boolean }>>}
+ * - Returns an array of objects where each object contains:
+ *    - `id` (number): The aspect ID.
+ *    - `name` (string): The name of the aspect.
+ *    - `isAspectAssociatedToLegalBasis` (boolean): True if the aspect is linked to at least one legal basis.
+ * @throws {ErrorUtils} - If an error occurs while querying the database.
+ */
   static async checkAspectsLegalBasisAssociationsBatch (aspectIds) {
     try {
       const [rows] = await pool.query(
-        `
+      `
       SELECT 
           a.id AS aspectId,
           a.aspect_name AS aspectName,
@@ -333,23 +330,79 @@ class AspectsRepository {
       WHERE a.id IN (?) 
       GROUP BY a.id
     `,
-        [aspectIds]
+      [aspectIds]
       )
-
-      return rows.map((row) => ({
+      return rows.map(row => ({
         id: row.aspectId,
         name: row.aspectName,
         isAspectAssociatedToLegalBasis: row.legalBasisAssociationCount > 0
       }))
     } catch (error) {
-      console.error(
-        'Error checking batch associations for aspects:',
-        error.message
+      console.error('Error checking batch associations for aspects:', error.message)
+      throw new ErrorUtils(500, 'Error checking batch associations for aspects')
+    }
+  }
+
+  /**
+ * Checks if an aspect is associated with any requirements.
+ * @param {number} aspectId - The ID of the aspect to check.
+ * @returns {Promise<{ isAspectAssociatedToRequirements: boolean }>}
+ * - Returns an object containing:
+ *    - `isAspectAssociatedToRequirements` (boolean): True if the aspect is linked to at least one requirement.
+ * @throws {ErrorUtils} - If an error occurs while querying the database.
+ */
+  static async checkAspectRequirementAssociations (aspectId) {
+    try {
+      const [rows] = await pool.query(
+        `
+        SELECT COUNT(*) AS requirementAssociationCount
+        FROM requirements
+        WHERE aspect_id = ?
+      `,
+        [aspectId]
       )
-      throw new ErrorUtils(
-        500,
-        'Error checking batch associations for aspects'
+      return {
+        isAspectAssociatedToRequirements: rows[0].requirementAssociationCount > 0
+      }
+    } catch (error) {
+      console.error('Error checking aspect associations with requirements:', error.message)
+      throw new ErrorUtils(500, 'Error checking aspect associations with requirements')
+    }
+  }
+
+  /**
+ * Checks if any of the given aspects are associated with any requirements.
+ * @param {Array<number>} aspectIds - Array of aspect IDs to check.
+ * @returns {Promise<Array<{ id: number, name: string, isAspectAssociatedToRequirements: boolean }>>}
+ * - Returns an array of objects where each object contains:
+ *    - `id` (number): The aspect ID.
+ *    - `name` (string): The name of the aspect.
+ *    - `isAspectAssociatedToRequirements` (boolean): True if the aspect is linked to at least one requirement.
+ * @throws {ErrorUtils} - If an error occurs while querying the database.
+ */
+  static async checkAspectsRequirementAssociationsBatch (aspectIds) {
+    try {
+      const [rows] = await pool.query(
+      `
+      SELECT 
+          a.id AS aspectId,
+          a.aspect_name AS aspectName,
+          COUNT(DISTINCT r.id) AS requirementAssociationCount
+      FROM aspects a
+      LEFT JOIN requirements r ON r.aspect_id = a.id
+      WHERE a.id IN (?) 
+      GROUP BY a.id
+    `,
+      [aspectIds]
       )
+      return rows.map(row => ({
+        id: row.aspectId,
+        name: row.aspectName,
+        isAspectAssociatedToRequirements: row.requirementAssociationCount > 0
+      }))
+    } catch (error) {
+      console.error('Error checking batch associations for aspects:', error.message)
+      throw new ErrorUtils(500, 'Error checking batch associations for aspects')
     }
   }
 }

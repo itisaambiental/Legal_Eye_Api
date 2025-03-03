@@ -22,7 +22,7 @@ export const startIdentifyRequirements = async (req, res) => {
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-    const jobId = await IdentifyRequirementsService.startIdentify({ legalBasisIds, subjectId, aspectsIds, intelligenceLevel })
+    const jobId = await IdentifyRequirementsService.startIdentify({ legalBasisIds, subjectId, aspectsIds, intelligenceLevel }, userId)
     return res.status(201).json({ jobId })
   } catch (error) {
     if (error instanceof ErrorUtils) {

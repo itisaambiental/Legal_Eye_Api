@@ -262,71 +262,129 @@ class SubjectsRepository {
   }
 
   /**
-   * Checks if a subject or any of its aspects is associated with any legal basis.
-   * @param {number} subjectId - The ID of the subject to check.
-   * @returns {Promise<Object<boolean>>} - Returns an object with two boolean values:
-   *      - isAssociatedToLegalBasis: true if the subject is associated with one or more legal bases.
-   *      - isSubjectAspectAssociatedToLegalBasis: true if any aspect of the subject is associated with legal bases.
-   * @throws {Error} - If an error occurs while querying the database.
-   */
+ * Checks if a subject is associated with any legal basis.
+ * @param {number} subjectId - The ID of the subject to check.
+ * @returns {Promise<{ isAssociatedToLegalBasis: boolean }>}
+ * - Returns an object containing:
+   - `isAssociatedToLegalBasis` (boolean): True if the subject is linked to at least one legal basis.
+ * @throws {ErrorUtils} - If an error occurs while querying the database.
+ */
   static async checkSubjectLegalBasisAssociations (subjectId) {
     try {
       const [rows] = await pool.query(
-        `
-      SELECT 
-          COUNT(DISTINCT lb.id) AS legalBasisCount, 
-          COUNT(DISTINCT lbsa.aspect_id) AS aspectAssociationCount
-      FROM subjects s
-      LEFT JOIN legal_basis lb ON s.id = lb.subject_id
-      LEFT JOIN legal_basis_subject_aspect lbsa ON lb.id = lbsa.legal_basis_id AND s.id = lbsa.subject_id
-      WHERE s.id = ?
+      `
+      SELECT COUNT(*) AS legalBasisCount
+      FROM legal_basis
+      WHERE subject_id = ?
     `,
-        [subjectId]
+      [subjectId]
       )
-      const { legalBasisCount, aspectAssociationCount } = rows[0]
+
       return {
-        isAssociatedToLegalBasis: legalBasisCount > 0,
-        isSubjectAspectAssociatedToLegalBasis: aspectAssociationCount > 0
+        isAssociatedToLegalBasis: rows[0].legalBasisCount > 0
       }
     } catch (error) {
-      console.error('Error checking subject associations:', error.message)
-      throw new ErrorUtils(500, 'Error checking subject associations')
+      console.error('Error checking subject legal basis associations:', error.message)
+      throw new ErrorUtils(500, 'Error checking subject legal basis associations')
     }
   }
 
   /**
-   * Checks if any of the subjects in the given array are associated with any legal basis or aspects.
-   * @param {Array<number>} subjectIds - Array of subject IDs to check.
-   * @returns {Promise<Array<Object>>} - Returns an array of objects with subject ID, name, and their association status.
-   * @throws {Error} - If an error occurs while querying the database.
-   */
+ * Checks if any of the subjects in the given array are associated with any legal basis.
+ * @param {Array<number>} subjectIds - Array of subject IDs to check.
+ * @returns {Promise<Array<{ id: number, name: string, isAssociatedToLegalBasis: boolean }>>}
+ * - Returns an array of objects where each object contains:
+ *    - `id` (number): The subject ID.
+ *    - `name` (string): The name of the subject.
+ *    - `isAssociatedToLegalBasis` (boolean): True if the subject is linked to at least one legal basis.
+ * @throws {ErrorUtils} - If an error occurs while querying the database.
+ */
   static async checkSubjectsLegalBasisAssociationsBatch (subjectIds) {
     try {
       const [rows] = await pool.query(
-        `
+      `
       SELECT 
           s.id AS subjectId,
           s.subject_name AS subjectName,
-          COUNT(DISTINCT lb.id) AS legalBasisCount, 
-          COUNT(DISTINCT lbsa.aspect_id) AS aspectAssociationCount
+          COUNT(lb.id) AS legalBasisCount
       FROM subjects s
       LEFT JOIN legal_basis lb ON s.id = lb.subject_id
-      LEFT JOIN legal_basis_subject_aspect lbsa ON lb.id = lbsa.legal_basis_id AND s.id = lbsa.subject_id
       WHERE s.id IN (?) 
       GROUP BY s.id
     `,
-        [subjectIds]
+      [subjectIds]
       )
-
-      return rows.map((row) => ({
+      return rows.map(row => ({
         id: row.subjectId,
         name: row.subjectName,
-        isAssociatedToLegalBasis: row.legalBasisCount > 0,
-        isSubjectAspectAssociatedToLegalBasis: row.aspectAssociationCount > 0
+        isAssociatedToLegalBasis: row.legalBasisCount > 0
       }))
     } catch (error) {
-      console.error('Error checking batch associations:', error.message)
-      throw new Error('Error checking batch associations')
+      console.error('Error checking batch subject legal basis associations:', error.message)
+      throw new ErrorUtils(500, 'Error checking batch subject legal basis associations')
+    }
+  }
+
+  /**
+ * Checks if a subject is associated with any requirements.
+ * @param {number} subjectId - The ID of the subject to check.
+ * @returns {Promise<{ isAssociatedToRequirements: boolean }>}
+ * - Returns an object containing:
+   - `isAssociatedToRequirements` (boolean): True if the subject is linked to at least one requirement.
+ * @throws {ErrorUtils} - If an error occurs while querying the database.
+ */
+  static async checkSubjectRequirementAssociations (subjectId) {
+    try {
+      const [rows] = await pool.query(
+      `
+      SELECT COUNT(*) AS requirementCount
+      FROM requirements
+      WHERE subject_id = ?
+    `,
+      [subjectId]
+      )
+      return {
+        isAssociatedToRequirements: rows[0].requirementCount > 0
+      }
+    } catch (error) {
+      console.error('Error checking subject requirement associations:', error.message)
+      throw new ErrorUtils(500, 'Error checking subject requirement associations')
+    }
+  }
+
+  /**
+ * Checks if any of the subjects in the given array are associated with any requirements.
+ * @param {Array<number>} subjectIds - Array of subject IDs to check.
+ * @returns {Promise<Array<{ id: number, name: string, isAssociatedToRequirements: boolean }>>}
+ * - Returns an array of objects where each object contains:
+ *    - `id` (number): The subject ID.
+ *    - `name` (string): The name of the subject.
+ *    - `isAssociatedToRequirements` (boolean): True if the subject has at least one associated requirement.
+ * @throws {ErrorUtils} - If an error occurs while querying the database.
+ */
+  static async checkSubjectsRequirementAssociationsBatch (subjectIds) {
+    try {
+      const [rows] = await pool.query(
+      `
+      SELECT 
+          s.id AS subjectId,
+          s.subject_name AS subjectName,
+          COUNT(r.id) AS requirementCount
+      FROM subjects s
+      LEFT JOIN requirements r ON s.id = r.subject_id
+      WHERE s.id IN (?) 
+      GROUP BY s.id
+    `,
+      [subjectIds]
+      )
+      return rows.map(row => ({
+        id: row.subjectId,
+        name: row.subjectName,
+        isAssociatedToRequirements: row.requirementCount > 0
+      }))
+    } catch (error) {
+      console.error('Error checking batch subject requirement associations:', error.message)
+      throw new ErrorUtils(500, 'Error checking batch subject requirement associations')
     }
   }
 }

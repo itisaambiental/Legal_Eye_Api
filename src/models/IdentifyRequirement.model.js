@@ -23,7 +23,7 @@ class IdentifyRequirement {
   constructor (
     identifyRequirementId,
     requirement,
-    legalBasis
+    legalBasis = []
   ) {
     this.identifyRequirementId = identifyRequirementId
     this.requirement = new Requirement(

@@ -2,6 +2,7 @@ import identifyRequirementsQueue from '../queues/identifyRequirementsQueue.js'
 import LegalBasisRepository from '../repositories/LegalBasis.repository.js'
 import RequirementRepository from '../repositories/Requirements.repository.js'
 import IdentifyRequirementsService from '../services/requirements/IdentifyRequirements.service.js'
+import UserRepository from '../repositories/User.repository.js'
 import RequirementIdentifier from '../services/requirements/requirementIdentification/RequirementIdentifier.js'
 import ErrorUtils from '../utils/Error.js'
 import { CONCURRENCY_IDENTIFY_REQUIREMENTS } from '../config/variables.config.js'
@@ -82,6 +83,7 @@ const CONCURRENCY = Number(CONCURRENCY_IDENTIFY_REQUIREMENTS || 1)
  * @property {LegalBase[]} legalBasis - The list of legal bases.
  * @property {Requirement[]} requirements - The list of requirements.
  * @property {string} intelligenceLevel - The intelligence level ('High' or 'Low').
+ * @property {number} userId - The ID of the user performing the analysis.
  */
 
 /**
@@ -94,7 +96,7 @@ const CONCURRENCY = Number(CONCURRENCY_IDENTIFY_REQUIREMENTS || 1)
  */
 identifyRequirementsQueue.process(CONCURRENCY, async (job, done) => {
   /** @type {IdentifyRequirementsJobData} */
-  const { legalBasis, requirements, intelligenceLevel } = job.data
+  const { legalBasis, requirements, intelligenceLevel, userId } = job.data
   try {
     const currentJob = await identifyRequirementsQueue.getJob(job.id)
     if (!currentJob) {
@@ -102,6 +104,10 @@ identifyRequirementsQueue.process(CONCURRENCY, async (job, done) => {
     }
     if (await currentJob.isFailed()) {
       return done(new ErrorUtils(500, 'Job was canceled'))
+    }
+    const userExists = await UserRepository.findById(userId)
+    if (!userExists) {
+      return done(new ErrorUtils(404, 'User not found'))
     }
     const legalBasisIds = legalBasis.map(lb => lb.id)
     const foundLegalBases = await LegalBasisRepository.findByIds(legalBasisIds)
@@ -118,7 +124,7 @@ identifyRequirementsQueue.process(CONCURRENCY, async (job, done) => {
     const model = getModel(intelligenceLevel)
     const totalTasks = legalBasis.reduce((sum, lb) => sum + (lb.articles.length * requirements.length), 0)
     for (const requirement of requirements) {
-      const identifyRequirementId = await IdentifyRequirementsService.createIdentifyRequirement(requirement.id)
+      const identifyRequirementId = await IdentifyRequirementsService.createIdentifyRequirement(requirement.id, userId)
       if (!identifyRequirementId) {
         return done(new ErrorUtils(500, 'Failed to create identify requirement'))
       }

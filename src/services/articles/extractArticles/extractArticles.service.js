@@ -22,7 +22,8 @@ class ExtractArticlesService {
           data: { message: 'Job not found' }
         }
       }
-      return await QueueService.getJobState(job)
+      const result = await QueueService.getJobState(job)
+      return result
     } catch (error) {
       if (error instanceof ErrorUtils) {
         throw error

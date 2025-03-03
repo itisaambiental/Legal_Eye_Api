@@ -453,6 +453,10 @@ class UserService {
    */
   static async updateUserPicture (userId, profilePicture) {
     try {
+      const userExists = await UserRepository.findById(userId)
+      if (!userExists) {
+        throw new ErrorUtils(404, 'User not found')
+      }
       const uploadResponse = await FileService.uploadFile(profilePicture)
       if (uploadResponse.response.$metadata.httpStatusCode !== 200) {
         throw new ErrorUtils(500, 'Failed to upload profile picture')

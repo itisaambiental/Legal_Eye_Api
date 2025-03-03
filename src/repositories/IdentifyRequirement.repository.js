@@ -6,20 +6,21 @@ import ErrorUtils from '../utils/Error.js'
  */
 class IdentifyRequirementRepository {
   /**
- * Inserts a new identified requirement into the database.
- *
- * This function registers an identified requirement based on a legal analysis.
- *
- * @param {number} requirementId - The ID of the requirement being identified.
- * @returns {Promise<number>} - Returns the ID of the created identify_requirements record.
- * @throws {ErrorUtils} - If an error occurs during insertion.
- */
-  static async createIdentifyRequirement (requirementId) {
+   * Inserts a new identified requirement into the database.
+   *
+   * This function registers an identified requirement based on a legal analysis.
+   *
+   * @param {number} requirementId - The ID of the requirement being identified.
+   * @param {number} userId - The ID of the user performing the analysis.
+   * @returns {Promise<number>} - Returns the ID of the created identify_requirements record.
+   * @throws {ErrorUtils} - If an error occurs during insertion.
+   */
+  static async createIdentifyRequirement (requirementId, userId) {
     const query = `
-      INSERT INTO identify_requirements (requirement_id)
-      VALUES (?)
+      INSERT INTO identify_requirements (requirement_id, user_id)
+      VALUES (?, ?)
     `
-    const values = [requirementId]
+    const values = [requirementId, userId]
     try {
       const [result] = await pool.query(query, values)
       return result.insertId
