@@ -5,12 +5,14 @@
 import express from 'express'
 import cors from 'cors'
 import UserRoutes from './routes/User.routes.js'
+import FilesRoutes from './routes/Files.routes.js'
 import SubjectsRoutes from './routes/Subjects.routes.js'
 import AspectsRoutes from './routes/Aspects.routes.js'
 import LegalBasisRoutes from './routes/LegalBasis.routes.js'
 import ArticlesRoutes from './routes/Articles.routes.js'
 import ExtractArticlesRoutes from './routes/ExtractArticles.routes.js'
 import RequirementsRoutes from './routes/Requirements.routes.js'
+import IdentifyRequirementRoutes from './routes/IdentifyRequirements.routes.js'
 import { NODE_ENV, APP_URL } from './config/variables.config.js'
 /**
  * Configure the Express application.
@@ -37,12 +39,15 @@ app.use(express.json()) // Parse incoming JSON requests
  */
 
 app.use('/api', UserRoutes)
+app.use('/api', FilesRoutes)
 app.use('/api', SubjectsRoutes)
 app.use('/api', AspectsRoutes)
 app.use('/api', LegalBasisRoutes)
 app.use('/api', ArticlesRoutes)
 app.use('/api', ExtractArticlesRoutes)
 app.use('/api', RequirementsRoutes)
+app.use('/api', IdentifyRequirementRoutes)
+
 /**
  * Handle 404 Not Found errors.
  */

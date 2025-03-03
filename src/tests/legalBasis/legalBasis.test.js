@@ -216,7 +216,7 @@ describe('Create a legal base', () => {
     expect(response.body.message).toMatch(/Subject not found/i)
   })
   test('Should return 404 if Aspect IDs are invalid', async () => {
-    const invalidAspectIds = ['-1', '-2']
+    const invalidAspectIds = [-1, -2]
     const LegalBasisData = generateLegalBasisData({
       subjectId: String(createdSubjectId),
       aspectsIds: JSON.stringify(invalidAspectIds)
@@ -1954,7 +1954,7 @@ describe('Get Legal Basis By Subject And Aspects', () => {
       expect(response.body.message).toMatch(/Subject not found/i)
     })
     test('Should return 404 if Aspect IDs are invalid when updating a legal basis', async () => {
-      const invalidAspectIds = ['-1', '-2']
+      const invalidAspectIds = [-1, -2]
       const updatedData = generateLegalBasisData({
         legalName: 'Updated Legal Name',
         subjectId: String(createdSubjectId),

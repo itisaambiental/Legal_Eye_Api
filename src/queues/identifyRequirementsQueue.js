@@ -1,5 +1,5 @@
 /**
- * Initializes and exports the articles queue using Bull.
+ * Initializes and exports the identify requirements queue using Bull.
  * Configures the queue with Redis settings and default job options.
  */
 
@@ -7,10 +7,10 @@ import Queue from 'bull'
 import { redisConfig } from '../config/redis.config.js'
 
 /**
- * The Article queue for processing articles sending jobs.
+ * The identify requirements queue for processing sending jobs.
  * @type {import('bull').Queue}
  */
-const articlesQueue = new Queue('articlesQueue', {
+const identifyRequirementsQueue = new Queue('identifyRequirementsQueue', {
   redis: redisConfig,
   defaultJobOptions: {
     attempts: 1,
@@ -19,4 +19,4 @@ const articlesQueue = new Queue('articlesQueue', {
   }
 })
 
-export default articlesQueue
+export default identifyRequirementsQueue

@@ -6,14 +6,14 @@ import LegalBasisRepository from '../../../repositories/LegalBasis.repository.js
 /**
  * Service class for handling extract Articles Jobs operations.
  */
-class extractArticlesService {
+class ExtractArticlesService {
   /**
-   * Fetch the job from the queue and return the job state.
+   * Retrieves the status of an article extraction job from the queue.
    * @param {string} jobId - The job ID.
    * @returns {Promise<import('../../queue/Queue.service.js').JobStateResponse>} - The job state and relevant data.
    * @throws {ErrorUtils} - If an error occurs while retrieving the job state.
    */
-  static async getStatusJob (jobId) {
+  static async getExtractionJobStatus (jobId) {
     try {
       const job = await articlesQueue.getJob(jobId)
       if (!job) {
@@ -22,27 +22,26 @@ class extractArticlesService {
           data: { message: 'Job not found' }
         }
       }
-      const response = await QueueService.getJobState(job)
-      return response
+      return await QueueService.getJobState(job)
     } catch (error) {
       if (error instanceof ErrorUtils) {
         throw error
       }
-      throw new ErrorUtils(500, 'Failed to retrieve status records for job', [
+      throw new ErrorUtils(500, 'Failed to retrieve extraction job status', [
         { jobId }
       ])
     }
   }
 
   /**
-   * Checks if there are pending jobs in the articlesQueue for a given legalBasisId.
+   * Checks if there are pending extraction jobs for a given legal basis ID.
    * If jobs exist, returns the jobId; otherwise, returns null.
    *
    * @param {number} legalBasisId - The ID of the legal basis to check.
    * @returns {Promise<{ hasPendingJobs: boolean, jobId: string | null }>}
-   * @throws {ErrorUtils} - If an error occurs while checking the articlesQueue.
+   * @throws {ErrorUtils} - If an error occurs while checking the extraction queue.
    */
-  static async hasPendingJobs (legalBasisId) {
+  static async hasPendingExtractionJobs (legalBasisId) {
     try {
       const legalBase = await LegalBasisRepository.findById(legalBasisId)
       if (!legalBase) {
@@ -60,31 +59,30 @@ class extractArticlesService {
       if (error instanceof ErrorUtils) {
         throw error
       }
-      throw new ErrorUtils(500, 'Failed to check pending jobs', [{ legalBasisId }])
+      throw new ErrorUtils(500, 'Failed to check pending extraction jobs', [{ legalBasisId }])
     }
   }
 
   /**
-   * Cancels a job by its ID.
+   * Cancels an article extraction job by its ID.
    * @param {string} jobId - The ID of the job to cancel.
    * @returns {Promise<boolean>} - True if the job was successfully canceled.
    * @throws {ErrorUtils} - If the job cannot be canceled.
    */
-  static async cancelJob (jobId) {
+  static async cancelExtractionJob (jobId) {
     try {
       const job = await articlesQueue.getJob(jobId)
       if (!job) {
         throw new ErrorUtils(404, 'Job not found')
       }
-      const success = await QueueService.cancelJob(job)
-      return success
+      return await QueueService.cancelJob(job)
     } catch (error) {
       if (error instanceof ErrorUtils) {
         throw error
       }
-      throw new ErrorUtils(500, 'Failed to cancel job')
+      throw new ErrorUtils(500, 'Failed to cancel extraction job')
     }
   }
 }
 
-export default extractArticlesService
+export default ExtractArticlesService

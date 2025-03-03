@@ -1,6 +1,6 @@
 import ErrorUtils from '../utils/Error.js'
 import UserService from '../services/users/User.service.js'
-import extractArticlesService from '../services/articles/extractArticles/extractArticles.service.js'
+import ExtractArticlesService from '../services/articles/extractArticles/extractArticles.service.js'
 
 /**
  * Controller for extract Articles Jobs operations.
@@ -8,13 +8,13 @@ import extractArticlesService from '../services/articles/extractArticles/extract
  */
 
 /**
- * Retrieves the status of a job by its ID.
- * @function getStatusJob
+ * Retrieves the status of an article extraction job by its ID.
+ * @function getExtractionJobStatus
  * @param {import('express').Request} req - Request object, expects jobId in req.params.
  * @param {import('express').Response} res - Response object.
  * @returns {Object} - The job status or error details.
  */
-export const getStatusJob = async (req, res) => {
+export const getExtractionJobStatus = async (req, res) => {
   const { userId } = req
   const { jobId } = req.params
   try {
@@ -22,7 +22,7 @@ export const getStatusJob = async (req, res) => {
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-    const jobStatus = await extractArticlesService.getStatusJob(jobId)
+    const jobStatus = await ExtractArticlesService.getExtractionJobStatus(jobId)
     return res.status(jobStatus.status).json(jobStatus.data)
   } catch (error) {
     if (error instanceof ErrorUtils) {
@@ -36,13 +36,13 @@ export const getStatusJob = async (req, res) => {
 }
 
 /**
- * Checks if there are pending jobs for a given legalBasisId.
- * @function checkLegalBasisJobs
+ * Checks if there are pending extraction jobs for a given legalBasisId.
+ * @function hasPendingExtractionJobs
  * @param {import('express').Request} req - Request object, expects legalBasisId in req.params and userId in req.
  * @param {import('express').Response} res - Response object.
  * @returns {Object} - Response with job status and jobId or error details.
  */
-export const checkLegalBasisJobs = async (req, res) => {
+export const hasPendingExtractionJobs = async (req, res) => {
   const { userId } = req
   const { legalBasisId } = req.params
   try {
@@ -51,7 +51,7 @@ export const checkLegalBasisJobs = async (req, res) => {
       return res.status(403).json({ message: 'Unauthorized' })
     }
     const { hasPendingJobs, jobId } =
-      await extractArticlesService.hasPendingJobs(legalBasisId)
+      await ExtractArticlesService.hasPendingExtractionJobs(legalBasisId)
     return res.status(200).json({ hasPendingJobs, jobId })
   } catch (error) {
     if (error instanceof ErrorUtils) {
@@ -65,13 +65,13 @@ export const checkLegalBasisJobs = async (req, res) => {
 }
 
 /**
- * Cancels a job by its ID.
- * @function cancelJob
+ * Cancels an article extraction job by its ID.
+ * @function cancelExtractionJob
  * @param {import('express').Request} req - Request object, expects jobId in req.params and userId in req.
  * @param {import('express').Response} res - Response object.
  * @returns {Object} - Response indicating success or failure of the job cancellation.
  */
-export const cancelJob = async (req, res) => {
+export const cancelExtractionJob = async (req, res) => {
   const { userId } = req
   const { jobId } = req.params
   try {
@@ -79,7 +79,7 @@ export const cancelJob = async (req, res) => {
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-    const success = await extractArticlesService.cancelJob(jobId)
+    const success = await ExtractArticlesService.cancelExtractionJob(jobId)
     if (success) {
       return res.sendStatus(204)
     } else {

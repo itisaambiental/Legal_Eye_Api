@@ -5,7 +5,7 @@
 
 import { Router } from 'express'
 import UserExtractor from '../middlewares/access_token.js'
-import { getStatusJob, checkLegalBasisJobs, cancelJob } from '../controllers/ExtractArticles.controller.js'
+import { getExtractionJobStatus, hasPendingExtractionJobs, cancelExtractionJob } from '../controllers/ExtractArticles.controller.js'
 
 const router = Router()
 
@@ -18,7 +18,7 @@ const router = Router()
  * @middlewares UserExtractor - Middleware to ensure that the user is authorized and extracted from the request.
  * @returns {Object} - A JSON response containing the job status and relevant details (progress, result, or error).
  */
-router.get('/jobs/articles/:jobId', UserExtractor, getStatusJob)
+router.get('/jobs/articles/:jobId', UserExtractor, getExtractionJobStatus)
 
 /**
  * Route to check for jobs for a legal basis.
@@ -35,7 +35,7 @@ router.get('/jobs/articles/:jobId', UserExtractor, getStatusJob)
  * - `hasPendingJobs`: Boolean indicating if there are pending jobs.
  * - `jobId`: String representing the job's ID if a job exists, or null if no jobs exist.
  */
-router.get('/jobs/articles/legalBasis/:legalBasisId', UserExtractor, checkLegalBasisJobs)
+router.get('/jobs/articles/legalBasis/:legalBasisId', UserExtractor, hasPendingExtractionJobs)
 
 /**
  * Cancels a job by its ID.
@@ -45,6 +45,6 @@ router.get('/jobs/articles/legalBasis/:legalBasisId', UserExtractor, checkLegalB
  * @param {string} jobId - The ID of the job to be canceled.
  * @middlewares UserExtractor - Middleware to ensure that the user is authorized.
  */
-router.delete('/jobs/articles/:jobId', UserExtractor, cancelJob)
+router.delete('/jobs/articles/:jobId', UserExtractor, cancelExtractionJob)
 
 export default router
