@@ -204,8 +204,10 @@ CREATE TABLE requirements (
 CREATE TABLE identify_requirements (
     id INT AUTO_INCREMENT PRIMARY KEY,
     requirement_id INT NOT NULL,
+    user_id BIGINT NULL, 
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (requirement_id) REFERENCES requirements(id) ON DELETE CASCADE
+    FOREIGN KEY (requirement_id) REFERENCES requirements(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
 );
 
 -- Table: identify_requirements_legal_basis

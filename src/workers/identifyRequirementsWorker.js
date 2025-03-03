@@ -116,14 +116,12 @@ identifyRequirementsQueue.process(CONCURRENCY, async (job, done) => {
       return done(new ErrorUtils(404, 'Requirements not found'))
     }
     const model = getModel(intelligenceLevel)
-    const totalTasks = legalBasis.reduce((sum, lb) => sum + (lb.articles ? lb.articles.length * requirements.length : 0), 0)
-    const identifyRequirementIds = []
+    const totalTasks = legalBasis.reduce((sum, lb) => sum + (lb.articles.length * requirements.length), 0)
     for (const requirement of requirements) {
       const identifyRequirementId = await IdentifyRequirementsService.createIdentifyRequirement(requirement.id)
       if (!identifyRequirementId) {
         return done(new ErrorUtils(500, 'Failed to create identify requirement'))
       }
-      identifyRequirementIds.push(identifyRequirementId)
       for (const legalBase of legalBasis) {
         const linkLegalBasisSuccess = await IdentifyRequirementsService.linkToLegalBasis(identifyRequirementId, legalBase.id)
         if (!linkLegalBasisSuccess) {
@@ -145,7 +143,7 @@ identifyRequirementsQueue.process(CONCURRENCY, async (job, done) => {
         }
       }
     }
-    done(null, { identifyRequirementIds })
+    done(null)
   } catch (error) {
     if (error instanceof ErrorUtils) {
       return done(error)
