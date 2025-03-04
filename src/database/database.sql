@@ -236,7 +236,6 @@ CREATE TABLE identification_legal_basis (
     FOREIGN KEY (legal_basis_id) REFERENCES legal_basis(id) ON DELETE RESTRICT
 );
 
-
 -- Table: identification_legal_basis_articles
 -- Description: This table associates legal articles with a given legal basis linked to a requirement
 -- within an analysis, classifying each article as either 'Obligatory' or 'Complementary'.
