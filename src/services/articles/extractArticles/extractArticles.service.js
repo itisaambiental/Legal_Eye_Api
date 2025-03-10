@@ -50,8 +50,7 @@ class ExtractArticlesService {
       }
       const statesToCheck = ['waiting', 'paused', 'active', 'delayed']
       const jobs = await QueueService.getJobsByStates(articlesQueue, statesToCheck)
-      const jobMap = QueueService.mapJobsById(jobs)
-      const job = jobMap.get(Number(legalBasisId))
+      const job = jobs.find((job) => Number(job.data.legalBasisId) === Number(legalBasisId))
       if (job) {
         return { hasPendingJobs: true, jobId: job.id }
       }

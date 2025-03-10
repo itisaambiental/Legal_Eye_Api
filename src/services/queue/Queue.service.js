@@ -118,19 +118,6 @@ class QueueService {
       throw new ErrorUtils(500, 'Failed to cancel job')
     }
   }
-
-  /**
-   * Maps jobs to a structured format for easier processing.
-   * @param {Array<import('bull').Job>} jobs - Array of Bull job instances.
-   * @returns {Map<number, import('bull').Job>} - Map of jobs keyed by their legalBasisId (or other unique ID).
-   */
-  static mapJobsById (jobs) {
-    try {
-      return new Map(jobs.map((job) => [Number(job.data.legalBasisId), job]))
-    } catch (error) {
-      throw new ErrorUtils(500, 'Failed to map jobs')
-    }
-  }
 }
 
 export default QueueService
