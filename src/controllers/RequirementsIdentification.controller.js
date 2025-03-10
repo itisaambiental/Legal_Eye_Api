@@ -1,6 +1,6 @@
 import RequirementsIdentificationService from '../services/requirements/requirementsIdentification/requirementsIdentification.service.js'
 import UserService from '../services/users/User.service.js'
-import ErrorUtils from '../utils/Error.js'
+import ErrorUtils from '../utils/Error.js'  
 
 /**
  * Controller for Requirements Identification Jobs operations.
@@ -106,6 +106,37 @@ export const cancelIdentificationJob = async (req, res) => {
     } else {
       return res.status(500).json({ message: 'Internal Server Error' })
     }
+  } catch (error) {
+    if (error instanceof ErrorUtils) {
+      return res.status(error.status).json({
+        message: error.message,
+        ...(error.errors && { errors: error.errors })
+      })
+    }
+    return res.status(500).json({ message: 'Internal Server Error' })
+  }
+}
+
+/**
+ * Retrieves all requirements identifications.
+ * @function getAllIdentifications
+ * @param {import('express').Request} req - Request object.
+ * @param {import('express').Response} res - Response object.
+ * @returns {Object} - A list of all requirements identifications or an error message.
+ */
+export const getAllIdentifications = async (req, res) => {
+  const { userId } = req
+  try {
+    // Verifica que el usuario esté autorizado
+    const isAuthorized = await UserService.userExists(userId)
+    if (!isAuthorized) {
+      return res.status(403).json({ message: 'Unauthorized' })
+    }
+
+    // Obtiene todas las identificaciones de requisitos
+    const identifications = await RequirementsIdentificationService.getAllIdentifications()
+
+    return res.status(200).json(identifications)
   } catch (error) {
     if (error instanceof ErrorUtils) {
       return res.status(error.status).json({

@@ -221,6 +221,24 @@ class RequirementsIdentificationService {
       throw new ErrorUtils(500, 'Failed to cancel requirements identification job', [{ jobId }])
     }
   }
+
+  /**
+   * Retrieves all requirements identifications from the database.
+   *
+   * @returns {Promise<Array<RequirementsIdentification>>} - A list of all identifications.
+   * @throws {ErrorUtils} - If an error occurs during retrieval.
+   */
+  static async getAllIdentifications () {
+    try {
+      const identifications = await RequirementsIdentificationRepository.findAll()
+      return identifications
+    } catch (error) {
+      if (error instanceof ErrorUtils) {
+        throw error
+      }
+      throw new ErrorUtils(500, 'Failed to retrieve all requirements identifications')
+    }
+  }
 }
 
 export default RequirementsIdentificationService

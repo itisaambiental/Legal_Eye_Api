@@ -8,7 +8,8 @@ import UserExtractor from '../middlewares/access_token.js'
 import {
   startIdentification,
   getIdentificationJobStatus,
-  cancelIdentificationJob
+  cancelIdentificationJob,
+  getAllIdentifications
 } from '../controllers/RequirementsIdentification.controller.js'
 
 const router = Router()
@@ -51,5 +52,15 @@ router.get('/jobs/requirements-identification/:jobId', UserExtractor, getIdentif
  * @returns {Object} - A response indicating success or failure of the job cancellation.
  */
 router.delete('/jobs/requirements-identification/:jobId', UserExtractor, cancelIdentificationJob)
+
+/**
+ * Route to get all requirements identifications.
+ * @method GET
+ * @path /requirements-identifications
+ * @description Retrieves all existing requirements identifications.
+ * @middlewares UserExtractor - Middleware to ensure that the user is authorized.
+ * @returns {Object} - A list of all requirements identifications.
+ */
+router.get('/requirements-identifications', UserExtractor, getAllIdentifications)
 
 export default router
