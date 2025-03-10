@@ -208,6 +208,7 @@ CREATE TABLE requirements_identification (
     identification_name VARCHAR(255) NOT NULL,
     identification_description TEXT,
     status ENUM('Active', 'Completed', 'Failed') NOT NULL DEFAULT 'Active',
+    failed_reason TEXT,
     user_id BIGINT NULL,  
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL

@@ -5,6 +5,7 @@ import SubjectsRepository from '../../repositories/Subject.repository.js'
 import AspectsRepository from '../../repositories/Aspects.repository.js'
 import { ADMIN_PASSWORD_TEST, ADMIN_GMAIL } from '../../config/variables.config.js'
 import LegalBasisRepository from '../../repositories/LegalBasis.repository.js'
+import RequirementRepository from '../../repositories/Requirements.repository.js'
 
 const subjectName = 'Ambiental'
 let tokenAdmin
@@ -12,6 +13,7 @@ const subjectNames = ['Seguridad', 'Gases', 'Suelo']
 let createdSubjectId
 const createdSubjectIds = []
 beforeAll(async () => {
+  await RequirementRepository.deleteAll()
   await LegalBasisRepository.deleteAll()
   await SubjectsRepository.deleteAll()
   await AspectsRepository.deleteAll()
