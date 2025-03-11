@@ -9,7 +9,12 @@ import {
   startIdentification,
   getIdentificationJobStatus,
   cancelIdentificationJob,
-  getAllIdentifications
+  getAllIdentifications,
+  getIdentificationsByName,
+  getIdentificationsByDescription,
+  getIdentificationsByStatus,
+  getIdentificationsByUserId,
+  getIdentificationsByCreatedAt
 } from '../controllers/RequirementsIdentification.controller.js'
 
 const router = Router()
@@ -62,5 +67,45 @@ router.delete('/jobs/requirements-identification/:jobId', UserExtractor, cancelI
  * @returns {Object} - A list of all requirements identifications.
  */
 router.get('/requirements-identifications', UserExtractor, getAllIdentifications)
+
+/**
+ * Route to retrieve requirements identifications filtered by identification name.
+ * @method GET
+ * @path /requirements-identifications/by-name
+ * @description Expects a query parameter `identificationName` (e.g., ?identificationName=Análisis).
+ */
+router.get('/requirements-identifications/by-name', UserExtractor, getIdentificationsByName)
+
+/**
+ * Route to retrieve requirements identifications filtered by identification description.
+ * @method GET
+ * @path /requirements-identifications/by-description
+ * @description Expects a query parameter `identificationDescription` (e.g., ?identificationDescription=Regulación).
+ */
+router.get('/requirements-identifications/by-description', UserExtractor, getIdentificationsByDescription)
+
+/**
+ * Route to retrieve requirements identifications filtered by status.
+ * @method GET
+ * @path /requirements-identifications/by-status
+ * @description Expects a query parameter `status` (e.g., ?status=Active).
+ */
+router.get('/requirements-identifications/by-status', UserExtractor, getIdentificationsByStatus)
+
+/**
+ * Route to retrieve requirements identifications filtered by user ID.
+ * @method GET
+ * @path /requirements-identifications/by-user
+ * @description Expects a query parameter `targetUserId` (e.g., ?targetUserId=10).
+ */
+router.get('/requirements-identifications/by-user', UserExtractor, getIdentificationsByUserId)
+
+/**
+ * Route to retrieve requirements identifications filtered by creation date.
+ * @method GET
+ * @path /requirements-identifications/by-createdAt
+ * @description Expects a query parameter `createdAt` in YYYY-MM-DD format (e.g., ?createdAt=2024-03-15).
+ */
+router.get('/requirements-identifications/by-createdAt', UserExtractor, getIdentificationsByCreatedAt)
 
 export default router

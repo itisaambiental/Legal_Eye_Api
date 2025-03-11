@@ -1,6 +1,6 @@
 import RequirementsIdentificationService from '../services/requirements/requirementsIdentification/requirementsIdentification.service.js'
 import UserService from '../services/users/User.service.js'
-import ErrorUtils from '../utils/Error.js'  
+import ErrorUtils from '../utils/Error.js'
 
 /**
  * Controller for Requirements Identification Jobs operations.
@@ -137,6 +137,133 @@ export const getAllIdentifications = async (req, res) => {
     const identifications = await RequirementsIdentificationService.getAllIdentifications()
 
     return res.status(200).json(identifications)
+  } catch (error) {
+    if (error instanceof ErrorUtils) {
+      return res.status(error.status).json({
+        message: error.message,
+        ...(error.errors && { errors: error.errors })
+      })
+    }
+    return res.status(500).json({ message: 'Internal Server Error' })
+  }
+}
+/**
+ * Retrieves requirements identifications filtered by name.
+ * @function getIdentificationsByName
+ * @param {import('express').Request} req - Request object, expects { identificationName } in query.
+ * @param {import('express').Response} res - Response object.
+ * @returns {Object} - The list of identifications matching the name.
+ */
+export const getIdentificationsByName = async (req, res) => {
+  const { userId } = req
+  const { identificationName } = req.query
+  try {
+    const isAuthorized = await UserService.userExists(userId)
+    if (!isAuthorized) {
+      return res.status(403).json({ message: 'Unauthorized' })
+    }
+    const identifications = await RequirementsIdentificationService.findByName(identificationName)
+    return res.status(200).json({ identifications })
+  } catch (error) {
+    if (error instanceof ErrorUtils) {
+      return res.status(error.status).json({
+        message: error.message,
+        ...(error.errors && { errors: error.errors })
+      })
+    }
+    return res.status(500).json({ message: 'Internal Server Error' })
+  }
+}
+
+/**
+ * Retrieves requirements identifications filtered by description.
+ * @function getIdentificationsByDescription
+ */
+export const getIdentificationsByDescription = async (req, res) => {
+  const { userId } = req
+  const { identificationDescription } = req.query
+  try {
+    const isAuthorized = await UserService.userExists(userId)
+    if (!isAuthorized) {
+      return res.status(403).json({ message: 'Unauthorized' })
+    }
+    const identifications = await RequirementsIdentificationService.findByDescription(identificationDescription)
+    return res.status(200).json({ identifications })
+  } catch (error) {
+    if (error instanceof ErrorUtils) {
+      return res.status(error.status).json({
+        message: error.message,
+        ...(error.errors && { errors: error.errors })
+      })
+    }
+    return res.status(500).json({ message: 'Internal Server Error' })
+  }
+}
+
+/**
+ * Retrieves requirements identifications filtered by status.
+ * @function getIdentificationsByStatus
+ */
+export const getIdentificationsByStatus = async (req, res) => {
+  const { userId } = req
+  const { status } = req.query
+  try {
+    const isAuthorized = await UserService.userExists(userId)
+    if (!isAuthorized) {
+      return res.status(403).json({ message: 'Unauthorized' })
+    }
+    const identifications = await RequirementsIdentificationService.findByStatus(status)
+    return res.status(200).json({ identifications })
+  } catch (error) {
+    if (error instanceof ErrorUtils) {
+      return res.status(error.status).json({
+        message: error.message,
+        ...(error.errors && { errors: error.errors })
+      })
+    }
+    return res.status(500).json({ message: 'Internal Server Error' })
+  }
+}
+
+/**
+ * Retrieves requirements identifications filtered by user ID.
+ * @function getIdentificationsByUserId
+ */
+export const getIdentificationsByUserId = async (req, res) => {
+  const { userId } = req
+  const { targetUserId } = req.query
+  try {
+    const isAuthorized = await UserService.userExists(userId)
+    if (!isAuthorized) {
+      return res.status(403).json({ message: 'Unauthorized' })
+    }
+    const identifications = await RequirementsIdentificationService.findByUserId(targetUserId)
+    return res.status(200).json({ identifications })
+  } catch (error) {
+    if (error instanceof ErrorUtils) {
+      return res.status(error.status).json({
+        message: error.message,
+        ...(error.errors && { errors: error.errors })
+      })
+    }
+    return res.status(500).json({ message: 'Internal Server Error' })
+  }
+}
+
+/**
+ * Retrieves requirements identifications filtered by creation date.
+ * @function getIdentificationsByCreatedAt
+ */
+export const getIdentificationsByCreatedAt = async (req, res) => {
+  const { userId } = req
+  const { createdAt } = req.query
+  try {
+    const isAuthorized = await UserService.userExists(userId)
+    if (!isAuthorized) {
+      return res.status(403).json({ message: 'Unauthorized' })
+    }
+    const identifications = await RequirementsIdentificationService.findByCreatedAt(createdAt)
+    return res.status(200).json({ identifications })
   } catch (error) {
     if (error instanceof ErrorUtils) {
       return res.status(error.status).json({

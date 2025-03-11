@@ -239,6 +239,111 @@ class RequirementsIdentificationService {
       throw new ErrorUtils(500, 'Failed to retrieve all requirements identifications')
     }
   }
+
+  /**
+   * Retrieves all requirements identifications filtered by identification name.
+   * @param {string} identificationName - The identification name to filter by.
+   * @returns {Promise<Array<Object>>} - A list of identifications matching the name.
+   * @throws {ErrorUtils} - If an error occurs during retrieval.
+   */
+  static async findByName (identificationName) {
+    try {
+      const requirementsIdentification = await RequirementsIdentificationRepository.findByName(identificationName)
+      if (!requirementsIdentification.length) {
+        throw new ErrorUtils(404, 'No identifications found with the given name')
+      }
+      return requirementsIdentification
+    } catch (error) {
+      if (error instanceof ErrorUtils) {
+        throw error
+      }
+      throw new ErrorUtils(500, 'Error retrieving identifications by name')
+    }
+  }
+
+  /**
+     * Retrieves all requirements identifications filtered by identification description.
+     * @param {string} identificationDescription - The identification description to filter by.
+     * @returns {Promise<Array<Object>>} - A list of identifications matching the description.
+     * @throws {ErrorUtils} - If an error occurs during retrieval.
+     */
+  static async findByDescription (identificationDescription) {
+    try {
+      const requirementsIdentification = await RequirementsIdentificationRepository.findByDescription(identificationDescription)
+      if (!requirementsIdentification.length) {
+        throw new ErrorUtils(404, 'No identifications found with the given description')
+      }
+      return requirementsIdentification
+    } catch (error) {
+      if (error instanceof ErrorUtils) {
+        throw error
+      }
+      throw new ErrorUtils(500, 'Error retrieving identifications by description')
+    }
+  }
+
+  /**
+     * Retrieves all requirements identifications filtered by status.
+     * @param {string} status - The status to filter by.
+     * @returns {Promise<Array<Object>>} - A list of identifications matching the status.
+     * @throws {ErrorUtils} - If an error occurs during retrieval.
+     */
+  static async findByStatus (status) {
+    try {
+      const requirementsIdentification = await RequirementsIdentificationRepository.findByStatus(status)
+      if (!requirementsIdentification.length) {
+        throw new ErrorUtils(404, 'No identifications found with the given status')
+      }
+      return requirementsIdentification
+    } catch (error) {
+      if (error instanceof ErrorUtils) {
+        throw error
+      }
+      throw new ErrorUtils(500, 'Error retrieving identifications by status')
+    }
+  }
+
+  /**
+     * Retrieves all requirements identifications filtered by user ID.
+     * @param {number} userId - The user ID to filter by.
+     * @returns {Promise<Array<Object>>} - A list of identifications associated with the user.
+     * @throws {ErrorUtils} - If an error occurs during retrieval.
+     */
+  static async findByUserId (userId) {
+    try {
+      const requirementsIdentification = await RequirementsIdentificationRepository.findByUserId(userId)
+      if (!requirementsIdentification.length) {
+        throw new ErrorUtils(404, 'No identifications found for the given user')
+      }
+      return requirementsIdentification
+    } catch (error) {
+      if (error instanceof ErrorUtils) {
+        throw error
+      }
+      throw new ErrorUtils(500, 'Error retrieving identifications by user ID')
+    }
+  }
+
+  /**
+     * Retrieves all requirements identifications filtered by creation date.
+     * @param {string} createdAt - The creation date to filter by (YYYY-MM-DD format).
+     * @returns {Promise<Array<Object>>} - A list of identifications created on the given date.
+     * @throws {ErrorUtils} - If an error occurs during retrieval.
+     */
+  static async findByCreatedAt (createdAt) {
+    try {
+      const requirementsIdentification = await RequirementsIdentificationRepository.findByCreatedAt(createdAt)
+      if (!requirementsIdentification.length) {
+        throw new ErrorUtils(404, 'No identifications found for the given creation date')
+      }
+      return requirementsIdentification
+    } catch (error) {
+      if (error instanceof ErrorUtils) {
+        throw error
+      }
+      throw new ErrorUtils(500, 'Error retrieving identifications by created_at timestamp')
+    }
+  }
 }
 
 export default RequirementsIdentificationService

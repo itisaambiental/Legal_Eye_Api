@@ -542,6 +542,132 @@ class RequirementsIdentificationRepository {
       throw new ErrorUtils(500, 'Error unlinking article')
     }
   }
+
+  /**
+   * Retrieves requirements identifications filtered by identification name.
+   * @param {string} identificationName - The identification name to filter by.
+   * @returns {Promise<Array<Object>>} - A list of identifications matching the name.
+   * @throws {ErrorUtils} - If an error occurs during retrieval.
+   */
+  static async findByName (identificationName) {
+    const query = `
+      SELECT id, identification_name, identification_description, status, user_id, created_at
+      FROM requirements_identification
+      WHERE identification_name LIKE ?`
+
+    try {
+      const [rows] = await pool.query(query, [`%${identificationName}%`])
+      return rows
+    } catch (error) {
+      console.error('Error retrieving identifications by name:', error.message)
+      throw new ErrorUtils(500, 'Error retrieving identifications by name')
+    }
+  }
+
+  /**
+   * Retrieves requirements identifications filtered by identification description.
+   * @param {string} identificationDescription - The identification description to filter by.
+   * @returns {Promise<Array<Object>>} - A list of identifications matching the description.
+   * @throws {ErrorUtils} - If an error occurs during retrieval.
+   */
+  static async findByDescription (identificationDescription) {
+    const query = `
+      SELECT id, identification_name, identification_description, status, user_id, created_at
+      FROM requirements_identification
+      WHERE identification_description LIKE ?`
+
+    try {
+      const [rows] = await pool.query(query, [`%${identificationDescription}%`])
+      return rows
+    } catch (error) {
+      console.error('Error retrieving identifications by description:', error.message)
+      throw new ErrorUtils(500, 'Error retrieving identifications by description')
+    }
+  }
+
+  /**
+   * Retrieves requirements identifications filtered by status.
+   * @param {string} status - The status to filter by.
+   * @returns {Promise<Array<RequirementsIdentification>>} - A list of identifications matching the status.
+   * @throws {ErrorUtils} - If an error occurs during retrieval.
+   */
+  static async findByStatus (status) {
+    const query = `
+      SELECT id, identification_name, identification_description, status, user_id, created_at 
+      FROM requirements_identification 
+      WHERE status = ?
+    `
+    try {
+      const [rows] = await pool.query(query, [status])
+      return rows.map(row => new RequirementsIdentification(
+        row.id,
+        row.identification_name,
+        row.identification_description,
+        row.status,
+        row.user_id,
+        row.created_at
+      ))
+    } catch (error) {
+      console.error('Error retrieving by status:', error.message)
+      throw new ErrorUtils(500, 'Error retrieving by status')
+    }
+  }
+
+  /**
+   * Retrieves requirements identifications filtered by user ID.
+   * @param {number} userId - The user ID to filter by.
+   * @returns {Promise<Array<RequirementsIdentification>>} - A list of identifications associated with the user.
+   * @throws {ErrorUtils} - If an error occurs during retrieval.
+   */
+  static async findByUserId (userId) {
+    const query = `
+      SELECT id, identification_name, identification_description, status, user_id, created_at 
+      FROM requirements_identification 
+      WHERE user_id = ?
+    `
+    try {
+      const [rows] = await pool.query(query, [userId])
+      return rows.map(row => new RequirementsIdentification(
+        row.id,
+        row.identification_name,
+        row.identification_description,
+        row.status,
+        row.user_id,
+        row.created_at
+      ))
+    } catch (error) {
+      console.error('Error retrieving by user ID:', error.message)
+      throw new ErrorUtils(500, 'Error retrieving by user ID')
+    }
+  }
+
+  /**
+   * Retrieves requirements identifications filtered by creation date.
+   * @param {string} createdAt - The creation date to filter by (YYYY-MM-DD format).
+   * @returns {Promise<Array<RequirementsIdentification>>} - A list of identifications created on the given date.
+   * @throws {ErrorUtils} - If an error occurs during retrieval.
+   */
+  static async findByCreatedAt (createdAt) {
+    const query = `
+      SELECT id, identification_name, identification_description, status, user_id, created_at 
+      FROM requirements_identification 
+      WHERE DATE(created_at) = ?
+    `
+    try {
+      const [rows] = await pool.query(query, [createdAt])
+      return rows.map(row => new RequirementsIdentification(
+        row.id,
+        row.identification_name,
+        row.identification_description,
+        row.status,
+        row.user_id,
+        row.created_at
+      ))
+    } catch (error) {
+      console.error('Error retrieving by created_at:', error.message)
+      throw new ErrorUtils(500, 'Error retrieving by created_at')
+    }
+  }
 }
 
 export default RequirementsIdentificationRepository
