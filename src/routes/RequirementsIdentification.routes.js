@@ -14,7 +14,10 @@ import {
   getIdentificationsByDescription,
   getIdentificationsByStatus,
   getIdentificationsByUserId,
-  getIdentificationsByCreatedAt
+  getIdentificationsByCreatedAt,
+  updateIdentificationById,
+  deleteIdentificationById,
+  deleteBatchIdentifications
 } from '../controllers/RequirementsIdentification.controller.js'
 
 const router = Router()
@@ -107,5 +110,38 @@ router.get('/requirements-identifications/by-user', UserExtractor, getIdentifica
  * @description Expects a query parameter `createdAt` in YYYY-MM-DD format (e.g., ?createdAt=2024-03-15).
  */
 router.get('/requirements-identifications/by-createdAt', UserExtractor, getIdentificationsByCreatedAt)
+
+/**
+ * Route to update an existing requirements identification.
+ * @method PATCH
+ * @path /requirements-identifications/:identificationId
+ * @description Updates the identification name and/or description for a specific requirements identification.
+ * @param {string} identificationId - The ID of the identification to be updated.
+ * @middlewares UserExtractor - Middleware to ensure that the user is authorized.
+ * @returns {Object} - The updated identification data.
+ */
+router.patch('/requirements-identifications/:identificationId', UserExtractor, updateIdentificationById)
+
+/**
+ * Route to delete a requirements identification by ID.
+ * @method DELETE
+ * @path /requirements-identifications/:identificationId
+ * @description Deletes a specific requirements identification if it has no active jobs.
+ * @param {string} identificationId - The ID of the identification to be deleted.
+ * @middlewares UserExtractor - Middleware to ensure that the user is authorized.
+ * @returns {Object} - Response indicating success or failure of the deletion.
+ */
+router.delete('/requirements-identifications/:identificationId', UserExtractor, deleteIdentificationById)
+
+/**
+ * Route to delete multiple requirements identifications.
+ * @method DELETE
+ * @path /requirements-identifications
+ * @description Deletes multiple requirements identifications if they have no active jobs.
+ * @param {Array<number>} identificationIds - Array of IDs to be deleted (sent in the request body).
+ * @middlewares UserExtractor - Middleware to ensure that the user is authorized.
+ * @returns {Object} - Response indicating success or failure of the batch deletion.
+ */
+router.delete('/requirements-identifications', UserExtractor, deleteBatchIdentifications)
 
 export default router

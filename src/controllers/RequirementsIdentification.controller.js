@@ -274,3 +274,95 @@ export const getIdentificationsByCreatedAt = async (req, res) => {
     return res.status(500).json({ message: 'Internal Server Error' })
   }
 }
+
+/**
+ * Updates an existing requirements identification entry.
+ * @function updateIdentificationById
+ * @param {import('express').Request} req - Request object, expects { identificationName, identificationDescription } in req.body and { identificationId } in req.params.
+ * @param {import('express').Response} res - Response object.
+ * @returns {Object} - The updated identification data or an error message.
+ */
+export const updateIdentificationById = async (req, res) => {
+  const { userId } = req
+  const { identificationId } = req.params
+  const { identificationName, identificationDescription } = req.body
+  try {
+    const isAuthorized = await UserService.userExists(userId)
+    if (!isAuthorized) {
+      return res.status(403).json({ message: 'Unauthorized' })
+    }
+
+    const updatedIdentification = await RequirementsIdentificationService.updateById(
+      identificationId,
+      { identificationName, identificationDescription }
+    )
+    return res.status(200).json({ updatedIdentification })
+  } catch (error) {
+    if (error instanceof ErrorUtils) {
+      return res.status(error.status).json({
+        message: error.message,
+        ...(error.errors && { errors: error.errors })
+      })
+    }
+    return res.status(500).json({ message: 'Internal Server Error' })
+  }
+}
+
+/**
+ * Deletes a requirements identification by its ID.
+ * @function deleteIdentificationById
+ * @param {import('express').Request} req - Request object, expects { identificationId } in params.
+ * @param {import('express').Response} res - Response object.
+ * @returns {Object} - Response indicating success or failure of the deletion.
+ */
+export const deleteIdentificationById = async (req, res) => {
+  const { userId } = req
+  const { identificationId } = req.params
+  try {
+    const isAuthorized = await UserService.userExists(userId)
+    if (!isAuthorized) {
+      return res.status(403).json({ message: 'Unauthorized' })
+    }
+    await RequirementsIdentificationService.deleteById(identificationId)
+    return res.status(204).send() // No Content
+  } catch (error) {
+    if (error instanceof ErrorUtils) {
+      return res.status(error.status).json({
+        message: error.message,
+        ...(error.errors && { errors: error.errors })
+      })
+    }
+    return res.status(500).json({ message: 'Internal Server Error' })
+  }
+}
+
+/**
+ * Deletes multiple requirements identifications by their IDs.
+ * @function deleteBatchIdentifications
+ * @param {import('express').Request} req - Request object, expects { identificationIds } in body as an array.
+ * @param {import('express').Response} res - Response object.
+ * @returns {Object} - Response indicating success or failure of the batch deletion.
+ */
+export const deleteBatchIdentifications = async (req, res) => {
+  const { userId } = req
+  const { identificationIds } = req.body
+  try {
+    const isAuthorized = await UserService.userExists(userId)
+    if (!isAuthorized) {
+      return res.status(403).json({ message: 'Unauthorized' })
+    }
+    if (!Array.isArray(identificationIds) || identificationIds.length === 0) {
+      return res.status(400).json({ message: 'Invalid request: identificationIds must be a non-empty array' })
+    }
+    await RequirementsIdentificationService.deleteBatch(identificationIds)
+    return res.status(204).send() // No Content
+  } catch (error) {
+    if (error instanceof ErrorUtils) {
+      return res.status(error.status).json({
+        message: error.message,
+        ...(error.errors && { errors: error.errors })
+      })
+    }
+    return res.status(500).json({ message: 'Internal Server Error' })
+  }
+}

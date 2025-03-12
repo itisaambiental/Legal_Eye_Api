@@ -344,6 +344,122 @@ class RequirementsIdentificationService {
       throw new ErrorUtils(500, 'Error retrieving identifications by created_at timestamp')
     }
   }
+
+  /**
+   * Updates an existing requirements identification entry.
+   *
+   * @param {number} identificationId - The ID of the identification to update.
+   * @param {Object} identificationData - The updated identification data.
+   * @returns {Promise<Object>} - The updated identification data.
+   * @throws {ErrorUtils} - If validation fails, the identification is not found, or an error occurs during update.
+   */
+  static async updateById (identificationId, identificationData) {
+    try {
+      const parsedData = requirementsIdentificationSchema.parse({
+        ...identificationData
+      })
+      const existingIdentification = await RequirementsIdentificationRepository.findById(identificationId)
+      if (!existingIdentification) {
+        throw new ErrorUtils(404, 'Requirements Identification not found')
+      }
+      const nameExists = await RequirementsIdentificationRepository.existsByNameExcludingId(
+        parsedData.identificationName,
+        identificationId
+      )
+      if (nameExists) {
+        throw new ErrorUtils(409, 'A Requirements Identification with this name already exists')
+      }
+      const updatedIdentification = await RequirementsIdentificationRepository.updateById(identificationId, {
+        identificationName: parsedData.identificationName,
+        identificationDescription: parsedData.identificationDescription
+      })
+      if (!updatedIdentification) {
+        throw new ErrorUtils(404, 'Requirements Identification not found after update')
+      }
+      return updatedIdentification
+    } catch (error) {
+      if (error instanceof ErrorUtils) {
+        throw error
+      }
+      throw new ErrorUtils(500, 'Unexpected error during requirements identification update')
+    }
+  }
+
+  /**
+   * Deletes a requirements identification by ID.
+   * Validates if the identification has an active job before deletion.
+   *
+   * @param {number} identificationId - The ID of the identification to delete.
+   * @returns {Promise<boolean>} - Returns true if deleted, otherwise throws an error.
+   * @throws {ErrorUtils} - If the identification has an active job or an error occurs.
+   */
+  static async deleteById (identificationId) {
+    try {
+      const existingIdentification = await RequirementsIdentificationRepository.findById(identificationId)
+      if (!existingIdentification) {
+        throw new ErrorUtils(404, 'Requirements Identification not found')
+      }
+      const activeJob = await RequirementsIdentificationQueue.getJob(identificationId)
+      if (activeJob && (await activeJob.isActive() || await activeJob.isWaiting())) {
+        throw new ErrorUtils(409, 'Cannot delete: There is an active job for this Requirements Identification')
+      }
+      const deleted = await RequirementsIdentificationRepository.deleteById(identificationId)
+      if (!deleted) {
+        throw new ErrorUtils(500, 'Failed to delete Requirements Identification')
+      }
+
+      return true
+    } catch (error) {
+      if (error instanceof ErrorUtils) {
+        throw error
+      }
+      throw new ErrorUtils(500, 'Unexpected error during requirements identification deletion')
+    }
+  }
+
+  /**
+     * Deletes multiple requirements identifications by their IDs.
+     * Validates that none of them have active jobs before deletion.
+     *
+     * @param {Array<number>} identificationIds - Array of IDs of the identifications to delete.
+     * @returns {Promise<boolean>} - Returns true if all were deleted, otherwise throws an error.
+     * @throws {ErrorUtils} - If any of the identifications have active jobs or an error occurs.
+     */
+  static async deleteBatch (identificationIds) {
+    try {
+      if (!Array.isArray(identificationIds) || identificationIds.length === 0) {
+        throw new ErrorUtils(400, 'Invalid input: identificationIds must be a non-empty array')
+      }
+      const existingIdentifications = await Promise.all(
+        identificationIds.map(id => RequirementsIdentificationRepository.findById(id))
+      )
+      const notFoundIds = identificationIds.filter((_, index) => !existingIdentifications[index])
+
+      if (notFoundIds.length > 0) {
+        throw new ErrorUtils(404, 'Some Requirements Identifications were not found', { notFoundIds })
+      }
+      const activeJobs = await Promise.all(
+        identificationIds.map(async id => {
+          const job = await RequirementsIdentificationQueue.getJob(id)
+          return job && (await job.isActive() || await job.isWaiting())
+        })
+      )
+      const idsWithActiveJobs = identificationIds.filter((_, index) => activeJobs[index])
+      if (idsWithActiveJobs.length > 0) {
+        throw new ErrorUtils(409, 'Cannot delete: Some Requirements Identifications have active jobs', { idsWithActiveJobs })
+      }
+      const deleted = await RequirementsIdentificationRepository.deleteBatch(identificationIds)
+      if (!deleted) {
+        throw new ErrorUtils(500, 'Failed to delete some or all Requirements Identifications')
+      }
+      return true
+    } catch (error) {
+      if (error instanceof ErrorUtils) {
+        throw error
+      }
+      throw new ErrorUtils(500, 'Unexpected error during batch deletion of requirements identifications')
+    }
+  }
 }
 
 export default RequirementsIdentificationService
