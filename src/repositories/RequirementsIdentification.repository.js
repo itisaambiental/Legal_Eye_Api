@@ -116,6 +116,25 @@ class RequirementsIdentificationRepository {
   }
 
   /**
+ * Checks if an identification name already exists in the database.
+ * @param {string} identificationName - The identification name to check.
+ * @returns {Promise<boolean>} - Returns true if the name exists, false otherwise.
+ * @throws {ErrorUtils} - If an error occurs during the database query.
+ */
+  static async existsByName (identificationName) {
+    const query = `
+    SELECT COUNT(*) AS count FROM requirements_identification WHERE identification_name = ?
+  `
+    try {
+      const [rows] = await pool.query(query, [identificationName])
+      return rows[0].count > 0
+    } catch (error) {
+      console.error('Error checking if identification name exists:', error.message)
+      throw new ErrorUtils(500, 'Error checking if identification name exists')
+    }
+  }
+
+  /**
    * Retrieves all requirements identifications.
    *
    * @returns {Promise<Array<RequirementsIdentification>>} - A list of all identifications.

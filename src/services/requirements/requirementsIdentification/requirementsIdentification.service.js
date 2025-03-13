@@ -31,6 +31,10 @@ class RequirementsIdentificationService {
   static async startIdentification (data, userId) {
     try {
       const parsedData = requirementsIdentificationSchema.parse(data)
+      const nameExists = await RequirementsIdentificationRepository.existsByName(parsedData.identificationName)
+      if (nameExists) {
+        throw new ErrorUtils(409, 'A Requirements Identification with this name already exists')
+      }
       const existingLegalBases = await LegalBasisRepository.findByIds(parsedData.legalBasisIds)
       if (existingLegalBases.length !== parsedData.legalBasisIds.length) {
         const missingLegalBases = parsedData.legalBasisIds.filter(id => !existingLegalBases.some(lb => lb.id === id))
@@ -223,11 +227,19 @@ class RequirementsIdentificationService {
   }
 
   /**
-   * Retrieves all requirements identifications from the database.
-   *
-   * @returns {Promise<Array<RequirementsIdentification>>} - A list of all identifications.
-   * @throws {ErrorUtils} - If an error occurs during retrieval.
-   */
+ * Retrieves all requirements identifications from the database.
+ *
+ * @typedef {Object} RequirementsIdentification
+ * @property {number} id - The ID of the identification.
+ * @property {string} identificationName - The name of the identification.
+ * @property {string} identificationDescription - The description of the identification.
+ * @property {string} status - The status of the identification ('Active', 'Completed', 'Failed').
+ * @property {number|null} userId - The ID of the user who created the identification.
+ * @property {string} createdAt - The timestamp when the identification was created.
+ *
+ * @returns {Promise<Array<RequirementsIdentification>>} - A list of all identifications.
+ * @throws {ErrorUtils} - If an error occurs during retrieval.
+ */
   static async getAllIdentifications () {
     try {
       const identifications = await RequirementsIdentificationRepository.findAll()
@@ -362,7 +374,7 @@ class RequirementsIdentificationService {
       if (!existingIdentification) {
         throw new ErrorUtils(404, 'Requirements Identification not found')
       }
-      const nameExists = await RequirementsIdentificationRepository.existsByNameExcludingId(
+      const nameExists = await RequirementsIdentificationRepository.existsByName(
         parsedData.identificationName,
         identificationId
       )

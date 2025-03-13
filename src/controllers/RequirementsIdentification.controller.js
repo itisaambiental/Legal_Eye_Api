@@ -351,6 +351,7 @@ export const deleteBatchIdentifications = async (req, res) => {
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
+
     if (!Array.isArray(identificationIds) || identificationIds.length === 0) {
       return res.status(400).json({ message: 'Invalid request: identificationIds must be a non-empty array' })
     }
