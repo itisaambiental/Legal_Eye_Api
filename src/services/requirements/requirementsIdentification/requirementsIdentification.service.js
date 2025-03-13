@@ -374,7 +374,7 @@ class RequirementsIdentificationService {
       if (!existingIdentification) {
         throw new ErrorUtils(404, 'Requirements Identification not found')
       }
-      const nameExists = await RequirementsIdentificationRepository.existsByName(
+      const nameExists = await RequirementsIdentificationRepository.existsByNameExcludingId(
         parsedData.identificationName,
         identificationId
       )
@@ -411,15 +411,16 @@ class RequirementsIdentificationService {
       if (!existingIdentification) {
         throw new ErrorUtils(404, 'Requirements Identification not found')
       }
-      const activeJob = await RequirementsIdentificationQueue.getJob(identificationId)
-      if (activeJob && (await activeJob.isActive() || await activeJob.isWaiting())) {
-        throw new ErrorUtils(409, 'Cannot delete: There is an active job for this Requirements Identification')
+      const statesToCheck = ['waiting', 'paused', 'active', 'delayed']
+      const jobs = await QueueService.getJobsByStates(RequirementsIdentificationQueue, statesToCheck)
+      const activeJob = jobs.find(job => Number(job.data.requirementsIdentificationId) === Number(identificationId))
+      if (activeJob) {
+        throw new ErrorUtils(409, 'Cannot delete: There is an active job for this Requirements Identification', { jobId: activeJob.id })
       }
       const deleted = await RequirementsIdentificationRepository.deleteById(identificationId)
       if (!deleted) {
         throw new ErrorUtils(500, 'Failed to delete Requirements Identification')
       }
-
       return true
     } catch (error) {
       if (error instanceof ErrorUtils) {
@@ -430,13 +431,13 @@ class RequirementsIdentificationService {
   }
 
   /**
-     * Deletes multiple requirements identifications by their IDs.
-     * Validates that none of them have active jobs before deletion.
-     *
-     * @param {Array<number>} identificationIds - Array of IDs of the identifications to delete.
-     * @returns {Promise<boolean>} - Returns true if all were deleted, otherwise throws an error.
-     * @throws {ErrorUtils} - If any of the identifications have active jobs or an error occurs.
-     */
+ * Deletes multiple requirements identifications by their IDs.
+ * Validates that none of them have active jobs before deletion.
+ *
+ * @param {Array<number>} identificationIds - Array of IDs of the identifications to delete.
+ * @returns {Promise<boolean>} - Returns true if all were deleted, otherwise throws an error.
+ * @throws {ErrorUtils} - If any of the identifications have active jobs or an error occurs.
+ */
   static async deleteBatch (identificationIds) {
     try {
       if (!Array.isArray(identificationIds) || identificationIds.length === 0) {
@@ -446,17 +447,14 @@ class RequirementsIdentificationService {
         identificationIds.map(id => RequirementsIdentificationRepository.findById(id))
       )
       const notFoundIds = identificationIds.filter((_, index) => !existingIdentifications[index])
-
       if (notFoundIds.length > 0) {
         throw new ErrorUtils(404, 'Some Requirements Identifications were not found', { notFoundIds })
       }
-      const activeJobs = await Promise.all(
-        identificationIds.map(async id => {
-          const job = await RequirementsIdentificationQueue.getJob(id)
-          return job && (await job.isActive() || await job.isWaiting())
-        })
+      const statesToCheck = ['waiting', 'paused', 'active', 'delayed']
+      const jobs = await QueueService.getJobsByStates(RequirementsIdentificationQueue, statesToCheck)
+      const idsWithActiveJobs = identificationIds.filter(id =>
+        jobs.some(job => Number(job.data.requirementsIdentificationId) === Number(id))
       )
-      const idsWithActiveJobs = identificationIds.filter((_, index) => activeJobs[index])
       if (idsWithActiveJobs.length > 0) {
         throw new ErrorUtils(409, 'Cannot delete: Some Requirements Identifications have active jobs', { idsWithActiveJobs })
       }

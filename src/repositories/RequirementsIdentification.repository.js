@@ -135,6 +135,29 @@ class RequirementsIdentificationRepository {
   }
 
   /**
+ * Checks if an identification name already exists in the database, excluding a specific ID.
+ * @param {string} identificationName - The identification name to check.
+ * @param {number} identificationId - The ID to exclude from the check.
+ * @returns {Promise<boolean>} - Returns true if the name exists (excluding the given ID), false otherwise.
+ * @throws {ErrorUtils} - If an error occurs during the database query.
+ */
+  static async existsByNameExcludingId (identificationName, identificationId) {
+    const query = `
+    SELECT 1 
+    FROM requirements_identification 
+    WHERE identification_name = ? AND id != ?
+    LIMIT 1
+  `
+    try {
+      const [rows] = await pool.query(query, [identificationName, identificationId])
+      return rows.length > 0
+    } catch (error) {
+      console.error('Error checking if identification name exists excluding ID:', error.message)
+      throw new ErrorUtils(500, 'Error checking if identification name exists excluding ID')
+    }
+  }
+
+  /**
    * Retrieves all requirements identifications.
    *
    * @returns {Promise<Array<RequirementsIdentification>>} - A list of all identifications.
