@@ -41,7 +41,6 @@ export const startIdentification = async (req, res) => {
         },
         userId
       )
-
     return res.status(201).json({ jobId, requirementsIdentificationId })
   } catch (error) {
     if (error instanceof ErrorUtils) {
@@ -127,15 +126,11 @@ export const cancelIdentificationJob = async (req, res) => {
 export const getAllIdentifications = async (req, res) => {
   const { userId } = req
   try {
-    // Verifica que el usuario esté autorizado
     const isAuthorized = await UserService.userExists(userId)
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-
-    // Obtiene todas las identificaciones de requisitos
     const identifications = await RequirementsIdentificationService.getAllIdentifications()
-
     return res.status(200).json(identifications)
   } catch (error) {
     if (error instanceof ErrorUtils) {
