@@ -35,7 +35,7 @@ describe('File Upload & Fetch API Tests', () => {
         .expect('Content-Type', /application\/json/)
 
       expect(response.body).toHaveProperty('url')
-      expect(response.body.url).toMatch(/^https?:\/\/legaleyeapp\.s3\..+\.amazonaws\.com\/.+/)
+      expect(response.body.url).toMatch(/^https?:\/\/legaleyeappproduction\.s3\..+\.amazonaws\.com\/.+/)
 
       uploadedFileUrl = response.body.url
     })
