@@ -14,7 +14,7 @@ import {
 } from './variables.config.js'
 
 /**
- * Determine if the application is running in the test environment
+ * Determine if the application is running in the test environment.
  * @type {boolean}
  */
 const isTest = NODE_ENV === 'test'

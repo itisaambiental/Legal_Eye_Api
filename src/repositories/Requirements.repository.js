@@ -20,7 +20,7 @@ class RequirementRepository {
    * @param {string} requirement.mandatoryKeywords - Keywords related to the mandatory aspect of the requirement.
    * @param {string} requirement.complementaryKeywords - Keywords related to the complementary aspect of the requirement.
    * @param {string} requirement.condition - The condition type ('Crítica', 'Operativa', 'Recomendación', 'Pendiente').
-   * @param {string} requirement.evidence - The type of evidence ('Tramite', 'Registro', 'Específico', 'Documento').
+   * @param {string} requirement.evidence - The type of evidence ('Trámite', 'Registro', 'Específico', 'Documento').
    * @param {string} requirement.periodicity - The periodicity of the requirement ('Anual', '2 años', 'Por evento', 'Única vez').
    * @param {string} requirement.requirementType - The type of requirement (e.g., 'Identificación Estatal', 'Requerimiento Local').
    * @param {string} requirement.jurisdiction - The jurisdiction of the requirement ('Estatal', 'Federal', 'Local').
@@ -1177,7 +1177,7 @@ class RequirementRepository {
 
   /**
  * Retrieves requirements filtered by a specific evidence type.
- * @param {string} evidence - The evidence type ('Tramite', 'Registro', 'Específico', 'Documento') to filter by.
+ * @param {string} evidence - The evidence type ('Trámite', 'Registro', 'Específico', 'Documento') to filter by.
  * @returns {Promise<Array<Requirement>|null>} - A list of Requirement instances matching the evidence type.
  * @throws {ErrorUtils} - If an error occurs during retrieval.
  */
