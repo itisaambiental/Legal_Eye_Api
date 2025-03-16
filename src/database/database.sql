@@ -177,7 +177,7 @@ CREATE TABLE requirements (
     mandatory_keywords LONGTEXT NOT NULL,
     complementary_keywords LONGTEXT NOT NULL,
     requirement_condition ENUM('Crítica', 'Operativa', 'Recomendación', 'Pendiente') NOT NULL,
-    evidence ENUM('Tramite', 'Registro', 'Específico', 'Documento') NOT NULL,
+    evidence ENUM('Trámite', 'Registro', 'Específico', 'Documento') NOT NULL,
     periodicity ENUM('Anual', '2 años', 'Por evento', 'Única vez') NOT NULL,
     requirement_type ENUM(
         'Identificación Estatal',

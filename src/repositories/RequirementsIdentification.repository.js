@@ -588,7 +588,7 @@ class RequirementsIdentificationRepository {
   /**
    * Retrieves requirements identifications filtered by identification name.
    * @param {string} identificationName - The identification name to filter by.
-   * @returns {Promise<Array<Object>>} - A list of identifications matching the name.
+   * @returns {Promise<Array<RequirementsIdentification>|null>} - A list of identifications matching the name.
    * @throws {ErrorUtils} - If an error occurs during retrieval.
    */
   static async findByName (identificationName) {
@@ -599,7 +599,15 @@ class RequirementsIdentificationRepository {
 
     try {
       const [rows] = await pool.query(query, [`%${identificationName}%`])
-      return rows
+      if (rows.length === 0) return null
+      return rows.map(row => new RequirementsIdentification(
+        row.id,
+        row.identification_name,
+        row.identification_description,
+        row.status,
+        row.user_id,
+        row.created_at
+      ))
     } catch (error) {
       console.error('Error retrieving identifications by name:', error.message)
       throw new ErrorUtils(500, 'Error retrieving identifications by name')

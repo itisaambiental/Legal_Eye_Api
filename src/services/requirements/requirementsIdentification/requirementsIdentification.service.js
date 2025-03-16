@@ -261,8 +261,8 @@ class RequirementsIdentificationService {
   static async findByName (identificationName) {
     try {
       const requirementsIdentification = await RequirementsIdentificationRepository.findByName(identificationName)
-      if (!requirementsIdentification.length) {
-        throw new ErrorUtils(404, 'No identifications found with the given name')
+      if (!requirementsIdentification) {
+        return []
       }
       return requirementsIdentification
     } catch (error) {

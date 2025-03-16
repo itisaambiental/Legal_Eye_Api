@@ -1,25 +1,21 @@
-/**
- * Initializes and exports the MySQL database connection pool.
- * Selects the appropriate database based on the NODE_ENV environment variable.
- */
-
 import { createPool } from 'mysql2/promise'
 import {
-  PASSWORD_DATABASE,
-  USER_DATABASE,
-  HOST_DATABASE,
-  DATABASE,
+  DB_HOST,
+  DB_USER,
+  DB_PASSWORD,
+  DB_DATABASE,
   DB_PORT,
-  DATABASE_DEV,
-  DATABASE_TEST,
+  DB_HOST_TEST,
+  DB_USER_TEST,
+  DB_PASSWORD_TEST,
+  DB_DATABASE_TEST,
   NODE_ENV
 } from './variables.config.js'
 
 /**
- * Determine if the environment is production or test.
+ * Determine if the application is running in the test environment
  * @type {boolean}
  */
-const isProduction = NODE_ENV === 'production'
 const isTest = NODE_ENV === 'test'
 
 /**
@@ -31,10 +27,11 @@ let pool
 try {
   pool = createPool({
     port: DB_PORT,
-    host: HOST_DATABASE,
-    user: USER_DATABASE,
-    password: PASSWORD_DATABASE,
-    database: isProduction ? DATABASE : isTest ? DATABASE_TEST : DATABASE_DEV,
+    host: isTest ? DB_HOST_TEST : DB_HOST,
+    user: isTest ? DB_USER_TEST : DB_USER,
+    password: isTest ? DB_PASSWORD_TEST : DB_PASSWORD,
+    database: isTest ? DB_DATABASE_TEST : DB_DATABASE,
+    waitForConnections: true,
     connectTimeout: 10000
   })
 } catch (error) {
