@@ -2,7 +2,7 @@ name: Node.js API REST CI/CD
 
 on:
   push:
-    branches: [ "staging" ]  
+    branches: [ "main" ]  
   pull_request:
     branches: [ "main" ]  
 
