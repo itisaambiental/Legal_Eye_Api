@@ -1,0 +1,76 @@
+name: Node.js API REST CI/CD
+
+on:
+  push:
+    branches: [ "main" ]  
+  pull_request:
+    branches: [ "main" ]  
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18.x'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        env:
+          PORT: ${{ secrets.PORT }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          JWT_EXPIRATION: ${{ secrets.JWT_EXPIRATION }}
+          DB_PORT_TEST: ${{ secrets.DB_PORT_TEST }}
+          DB_HOST_TEST: ${{ secrets.DB_HOST_TEST }}
+          DB_USER_TEST: ${{ secrets.DB_USER_TEST }}
+          DB_PASSWORD_TEST: ${{ secrets.DB_PASSWORD_TEST }}
+          DB_DATABASE_TEST: ${{ secrets.DB_DATABASE_TEST }}
+          EMAIL_USER: ${{ secrets.EMAIL_USER }}
+          AWS_USER_EMAIL: ${{ secrets.AWS_USER_EMAIL }}
+          EMAIL_PASS: ${{ secrets.EMAIL_PASS }}
+          REDIS_PASS_TEST: ${{ secrets.REDIS_PASS_TEST }}
+          REDIS_USER_TEST: ${{ secrets.REDIS_USER_TEST }}
+          REDIS_HOST_TEST: ${{ secrets.REDIS_HOST_TEST }}
+          REDIS_PORT_TEST: ${{ secrets.REDIS_PORT_TEST }}
+          EMAIL_HOST: ${{ secrets.EMAIL_HOST }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          S3_BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME }}
+          ADMIN_GMAIL: ${{ secrets.ADMIN_GMAIL }}
+          ADMIN_ROLE: ${{ secrets.ADMIN_ROLE }}
+          ADMIN_NAME: ${{ secrets.ADMIN_NAME }}
+          ADMIN_PASSWORD_TEST: ${{ secrets.ADMIN_PASSWORD_TEST }}
+          MICROSOFT_GRAPH_API: ${{ secrets.MICROSOFT_GRAPH_API }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          ORGANIZATION_ID: ${{ secrets.ORGANIZATION_ID }}
+          PROJECT_ID: ${{ secrets.PROJECT_ID }}
+          CONCURRENCY_EXTRACT_ARTICLES: ${{ secrets.CONCURRENCY_EXTRACT_ARTICLES }}
+        run: |
+          npm test
+
+      - name: Show date and time
+        run: date
+
+      - name: Send email notification
+        if: success()
+        uses: dawidd6/action-send-mail@v3
+        with:
+          connection_url: smtp://${{ secrets.SMTP_USER }}:${{ secrets.SMTP_PASSWORD }}@${{ secrets.SMTP_SERVER }}:${{ secrets.SMTP_PORT }}
+          subject: 'CI Notification: All Tests Passed successfully'
+          to: ${{ secrets.NOTIFICATION_EMAIL }} 
+          from: "Isa Legal Api <${{ secrets.EMAIL_USER }}>"
+          body: |
+            All tests have passed successfully in the Isa Legal API REST CI workflow.
+
+    concurrency:
+      group: "ci-${{ github.ref }}"
+      cancel-in-progress: true
