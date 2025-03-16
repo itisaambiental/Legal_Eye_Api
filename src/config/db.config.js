@@ -5,6 +5,7 @@ import {
   DB_PASSWORD,
   DB_DATABASE,
   DB_PORT,
+  DB_PORT_TEST,
   DB_HOST_TEST,
   DB_USER_TEST,
   DB_PASSWORD_TEST,
@@ -26,7 +27,7 @@ let pool
 
 try {
   pool = createPool({
-    port: DB_PORT,
+    port: isTest ? DB_PORT_TEST : DB_PORT,
     host: isTest ? DB_HOST_TEST : DB_HOST,
     user: isTest ? DB_USER_TEST : DB_USER,
     password: isTest ? DB_PASSWORD_TEST : DB_PASSWORD,
