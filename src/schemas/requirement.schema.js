@@ -99,9 +99,9 @@ const requirementSchema = z
     /**
      * The type of evidence of the requirement.
      */
-    evidence: z.enum(['Tramite', 'Registro', 'Específico', 'Documento'], {
+    evidence: z.enum(['Trámite', 'Registro', 'Específico', 'Documento'], {
       message:
-        'The evidence type must be one of the following: Tramite, Registro, Específico, Documento.'
+        'The evidence type must be one of the following: Trámite, Registro, Específico, Documento.'
     }),
 
     /**

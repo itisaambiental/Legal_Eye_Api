@@ -434,7 +434,7 @@ describe('Create a requirement', () => {
 
       expect(response.body.errors).toEqual(
         expect.arrayContaining([
-          { field: 'evidence', message: expect.stringMatching(/must be one of the following: Tramite, Registro, Específico, Documento/i) }
+          { field: 'evidence', message: expect.stringMatching(/must be one of the following: Trámite, Registro, Específico, Documento/i) }
         ])
       )
     })

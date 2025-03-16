@@ -21,7 +21,7 @@ class Requirement {
      * @param {string} mandatoryKeywords - Keywords related to the mandatory aspect of the requirement.
      * @param {string} complementaryKeywords - Keywords related to the complementary aspect of the requirement.
      * @param {string} condition - The condition type ('Crítica', 'Operativa', 'Recomendación', 'Pendiente').
-     * @param {string} evidence - The type of evidence ('Tramite', 'Registro', 'Específico', 'Documento').
+     * @param {string} evidence - The type of evidence ('Trámite', 'Registro', 'Específico', 'Documento').
      * @param {string} periodicity - The periodicity of the requirement ('Anual', '2 años', 'Por evento', 'Única vez').
      * @param {string} requirementType - The type of requirement (e.g., 'Identificación Estatal', 'Requerimiento Local').
      * @param {string} jurisdiction - The jurisdiction of the requirement ('Estatal', 'Federal', 'Local').

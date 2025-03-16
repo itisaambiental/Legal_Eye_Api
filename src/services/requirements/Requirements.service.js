@@ -21,7 +21,7 @@ class RequirementService {
    * @property {string} mandatoryKeywords - Keywords related to the mandatory aspect of the requirement.
    * @property {string} complementaryKeywords - Keywords related to the complementary aspect of the requirement.
    * @property {string} condition - The condition type ('Crítica', 'Operativa', 'Recomendación', 'Pendiente').
-   * @property {string} evidence - The type of evidence ('Tramite', 'Registro', 'Específico', 'Documento').
+   * @property {string} evidence - The type of evidence ('Trámite', 'Registro', 'Específico', 'Documento').
    * @property {string} periodicity - The periodicity of the requirement ('Anual', '2 años', 'Por evento', 'Única vez').
    * @property {string} requirementType - The type of requirement.
    * @property {string} jurisdiction - The jurisdiction ('Estatal', 'Federal', 'Local').
