@@ -1,10 +1,10 @@
-name: Node.js API REST
+name: Node.js API REST CI/CD
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main" ]  
   pull_request:
-    branches: [ "main" ]
+    branches: [ "main" ]  
 
 jobs:
   build:
@@ -25,34 +25,37 @@ jobs:
 
       - name: Run tests
         env:
+          PORT: ${{ secrets.PORT }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          JWT_EXPIRATION: ${{ secrets.JWT_EXPIRATION }}
+          DB_PORT_TEST: ${{ secrets.DB_PORT_TEST }}
+          DB_HOST_TEST: ${{ secrets.DB_HOST_TEST }}
+          DB_USER_TEST: ${{ secrets.DB_USER_TEST }}
+          DB_PASSWORD_TEST: ${{ secrets.DB_PASSWORD_TEST }}
+          DB_DATABASE_TEST: ${{ secrets.DB_DATABASE_TEST }}
+          EMAIL_USER: ${{ secrets.EMAIL_USER }}
+          AWS_USER_EMAIL: ${{ secrets.AWS_USER_EMAIL }}
+          EMAIL_PASS: ${{ secrets.EMAIL_PASS }}
+          REDIS_PASS_TEST: ${{ secrets.REDIS_PASS_TEST }}
+          REDIS_USER_TEST: ${{ secrets.REDIS_USER_TEST }}
+          REDIS_HOST_TEST: ${{ secrets.REDIS_HOST_TEST }}
+          REDIS_PORT_TEST: ${{ secrets.REDIS_PORT_TEST }}
+          EMAIL_HOST: ${{ secrets.EMAIL_HOST }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          S3_BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME }}
           ADMIN_GMAIL: ${{ secrets.ADMIN_GMAIL }}
+          ADMIN_ROLE: ${{ secrets.ADMIN_ROLE }}
           ADMIN_NAME: ${{ secrets.ADMIN_NAME }}
           ADMIN_PASSWORD_TEST: ${{ secrets.ADMIN_PASSWORD_TEST }}
-          ADMIN_ROLE: ${{ secrets.ADMIN_ROLE }}
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_REGION: ${{ secrets.AWS_REGION }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          DATABASE_TEST: ${{ secrets.DATABASE_TEST }}
-          DB_PORT: ${{ secrets.DB_PORT }}
-          HOST_DATABASE: ${{ secrets.HOST_DATABASE }}
-          JWT_EXPIRATION: ${{ secrets.JWT_EXPIRATION }}
-          JWT_SECRET: ${{ secrets.JWT_SECRET }}
           MICROSOFT_GRAPH_API: ${{ secrets.MICROSOFT_GRAPH_API }}
-          PASSWORD_DATABASE: ${{ secrets.PASSWORD_DATABASE }}
-          PORT: ${{ secrets.PORT }}
-          REDIS_HOST_TEST: ${{ secrets.REDIS_HOST_TEST }}
-          REDIS_PASS_TEST: ${{ secrets.REDIS_PASS_TEST }}
-          REDIS_PORT_TEST: ${{ secrets.REDIS_PORT_TEST }}
-          REDIS_USER_TEST: ${{ secrets.REDIS_USER_TEST }}
-          S3_BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME }}
-          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
-          SMTP_PORT: ${{ secrets.SMTP_PORT }}
-          SMTP_SERVER: ${{ secrets.SMTP_SERVER }}
-          SMTP_USER: ${{ secrets.SMTP_USER }}
-          USER_DATABASE: ${{ secrets.USER_DATABASE }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          ORGANIZATION_ID: ${{ secrets.ORGANIZATION_ID }}
+          PROJECT_ID: ${{ secrets.PROJECT_ID }}
+          CONCURRENCY_EXTRACT_ARTICLES: ${{ secrets.CONCURRENCY_EXTRACT_ARTICLES }}
         run: |
-          npm test  # Ejecuta tus pruebas aquí
+          npm test
 
       - name: Show date and time
         run: date
