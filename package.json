@@ -15,7 +15,10 @@
     "test:requirements": "NODE_ENV=test jest --verbose tests/requirements/requirements.test.js",
     "test:files": "NODE_ENV=test jest --verbose tests/files/files.test.js",
     "test:users": "NODE_ENV=test jest --verbose tests/users/users.test.js",
-    "test:watch": "npm run test -- --watch"
+    "test:watch": "npm run test -- --watch",
+    "migrate:dev": "NODE_ENV=development node src/database/migrate.js",
+    "migrate:test": "NODE_ENV=test node src/database/migrate.js",
+    "migrate:production": "NODE_ENV=production node src/database/migrate.js"
   },
   "engines": {
     "node": ">=18 <21",
