@@ -4,7 +4,7 @@ import { z } from 'zod'
  * Zod validation schema for a requirements identification record.
  * This schema ensures that the input data meets the necessary validation rules for creating or updating a requirements identification.
  */
-const requirementsIdentificationSchema = z.object({
+export const requirementsIdentificationSchema = z.object({
   /**
    * Name of the identification.
    * Must be a non-empty string with a maximum length of 255 characters.
@@ -90,4 +90,26 @@ const requirementsIdentificationSchema = z.object({
     .nullable()
 })
 
-export default requirementsIdentificationSchema
+/**
+ * Zod validation schema for updating a requirements identification.
+ * Only allows updating the name and description.
+ */
+export const requirementsIdentificationUpdateSchema = z.object({
+  /**
+   * Name of the identification.
+   * Must be a non-empty string with a maximum length of 255 characters.
+   */
+  identificationName: z
+    .string()
+    .min(1, 'The identification name is required')
+    .max(255, 'The identification name cannot exceed 255 characters'),
+
+  /**
+   * Description of the identification.
+   * Can be a string, empty or null.
+   */
+  identificationDescription: z
+    .string()
+    .optional()
+    .nullable()
+})

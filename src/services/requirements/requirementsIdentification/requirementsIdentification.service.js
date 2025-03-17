@@ -1,11 +1,12 @@
 import RequirementsIdentificationRepository from '../../../repositories/RequirementsIdentification.repository.js'
-import requirementsIdentificationSchema from '../../../schemas/requirementsIdentification.schema.js'
+import { requirementsIdentificationSchema, requirementsIdentificationUpdateSchema } from '../../../schemas/requirementsIdentification.schema.js'
 import RequirementsRepository from '../../../repositories/Requirements.repository.js'
 import LegalBasisRepository from '../../../repositories/LegalBasis.repository.js'
 import SubjectsRepository from '../../../repositories/Subject.repository.js'
 import AspectsRepository from '../../../repositories/Aspects.repository.js'
 import ArticlesRepository from '../../../repositories/Articles.repository.js'
-import RequirementsIdentificationQueue from '../../../queues/requirementsIdentificationQueue.js'
+import UserRepository from '../../../repositories/User.repository.js'
+import RequirementsIdentificationQueue from '../../../workers/requirementIdentificationWorker.js'
 import QueueService from '../../../services/queue/Queue.service.js'
 import ErrorUtils from '../../../utils/Error.js'
 import { z } from 'zod'
@@ -14,6 +15,16 @@ import { z } from 'zod'
  * Service class for handling the of Requirements Identification.
  */
 class RequirementsIdentificationService {
+  /**
+   * @typedef {Object} RequirementsIdentification
+   * @property {number} id - The unique identifier of the requirements identification (analysis).
+   * @property {string} identificationName - The name of the identification or analysis.
+   * @property {string} identificationDescription - A description of the identification or analysis.
+   * @property {string} status - The status of the analysis ('Active', 'Completed', 'Failed').
+   * @property {number|null} userId - The ID of the user who created the identification (nullable).
+   * @property {Date} createdAt - The timestamp when the identification was created.
+   */
+
   /**
    * Starts the requirements identification process.
    *
@@ -31,9 +42,9 @@ class RequirementsIdentificationService {
   static async startIdentification (data, userId) {
     try {
       const parsedData = requirementsIdentificationSchema.parse(data)
-      const nameExists = await RequirementsIdentificationRepository.existsByName(parsedData.identificationName)
-      if (nameExists) {
-        throw new ErrorUtils(409, 'A Requirements Identification with this name already exists')
+      const identificationNameExists = await RequirementsIdentificationRepository.existsByName(parsedData.identificationName)
+      if (identificationNameExists) {
+        throw new ErrorUtils(409, 'Requirement Identification already exists')
       }
       const existingLegalBases = await LegalBasisRepository.findByIds(parsedData.legalBasisIds)
       if (existingLegalBases.length !== parsedData.legalBasisIds.length) {
@@ -206,6 +217,37 @@ class RequirementsIdentificationService {
   }
 
   /**
+ * Checks if there are pending jobs for a given Requirements Identification ID.
+ * If jobs exist, returns the jobId; otherwise, returns null.
+ *
+ * @param {number} requirementsIdentificationId - The ID of the requirements identification to check.
+ * @returns {Promise<{ hasPendingJobs: boolean, jobId: string | null }>}
+ * @throws {ErrorUtils} - If an error occurs while checking the queue.
+ */
+  static async hasPendingRequirementsIdentificationJobs (requirementsIdentificationId) {
+    try {
+      const requirementsIdentification = await RequirementsIdentificationRepository.findById(requirementsIdentificationId)
+      if (!requirementsIdentification) {
+        throw new ErrorUtils(404, 'Requirement Identification not found')
+      }
+      const statesToCheck = ['waiting', 'paused', 'active', 'delayed']
+      const jobs = await QueueService.getJobsByStates(RequirementsIdentificationQueue, statesToCheck)
+      const job = jobs.find(job =>
+        Number(job.data.requirementsIdentificationId) === Number(requirementsIdentificationId)
+      )
+      if (job) {
+        return { hasPendingJobs: true, jobId: job.id }
+      }
+      return { hasPendingJobs: false, jobId: null }
+    } catch (error) {
+      if (error instanceof ErrorUtils) {
+        throw error
+      }
+      throw new ErrorUtils(500, 'Failed to check pending jobs for Requirements Identification', [{ requirementsIdentificationId }])
+    }
+  }
+
+  /**
    * Cancels a requirements identification job by its ID.
    * @param {string} jobId - The ID of the job to cancel.
    * @returns {Promise<boolean>} - True if the job was successfully canceled.
@@ -242,8 +284,11 @@ class RequirementsIdentificationService {
  */
   static async getAllIdentifications () {
     try {
-      const identifications = await RequirementsIdentificationRepository.findAll()
-      return identifications
+      const requirementsIdentification = await RequirementsIdentificationRepository.findAll()
+      if (!requirementsIdentification) {
+        return []
+      }
+      return requirementsIdentification
     } catch (error) {
       if (error instanceof ErrorUtils) {
         throw error
@@ -255,10 +300,10 @@ class RequirementsIdentificationService {
   /**
    * Retrieves all requirements identifications filtered by identification name.
    * @param {string} identificationName - The identification name to filter by.
-   * @returns {Promise<Array<Object>>} - A list of identifications matching the name.
+   * @returns {Promise<Array<RequirementsIdentification>>} - A list of identifications matching the name.
    * @throws {ErrorUtils} - If an error occurs during retrieval.
    */
-  static async findByName (identificationName) {
+  static async getByName (identificationName) {
     try {
       const requirementsIdentification = await RequirementsIdentificationRepository.findByName(identificationName)
       if (!requirementsIdentification) {
@@ -276,14 +321,14 @@ class RequirementsIdentificationService {
   /**
      * Retrieves all requirements identifications filtered by identification description.
      * @param {string} identificationDescription - The identification description to filter by.
-     * @returns {Promise<Array<Object>>} - A list of identifications matching the description.
+     * @returns {Promise<Array<RequirementsIdentification>>} - A list of identifications matching the description.
      * @throws {ErrorUtils} - If an error occurs during retrieval.
      */
-  static async findByDescription (identificationDescription) {
+  static async getByDescription (identificationDescription) {
     try {
       const requirementsIdentification = await RequirementsIdentificationRepository.findByDescription(identificationDescription)
-      if (!requirementsIdentification.length) {
-        throw new ErrorUtils(404, 'No identifications found with the given description')
+      if (!requirementsIdentification) {
+        return []
       }
       return requirementsIdentification
     } catch (error) {
@@ -297,14 +342,14 @@ class RequirementsIdentificationService {
   /**
      * Retrieves all requirements identifications filtered by status.
      * @param {string} status - The status to filter by.
-     * @returns {Promise<Array<Object>>} - A list of identifications matching the status.
+     * @returns {Promise<Array<RequirementsIdentification>>} - A list of identifications matching the status.
      * @throws {ErrorUtils} - If an error occurs during retrieval.
      */
-  static async findByStatus (status) {
+  static async getByStatus (status) {
     try {
       const requirementsIdentification = await RequirementsIdentificationRepository.findByStatus(status)
-      if (!requirementsIdentification.length) {
-        throw new ErrorUtils(404, 'No identifications found with the given status')
+      if (!requirementsIdentification) {
+        return []
       }
       return requirementsIdentification
     } catch (error) {
@@ -316,16 +361,21 @@ class RequirementsIdentificationService {
   }
 
   /**
-     * Retrieves all requirements identifications filtered by user ID.
-     * @param {number} userId - The user ID to filter by.
-     * @returns {Promise<Array<Object>>} - A list of identifications associated with the user.
-     * @throws {ErrorUtils} - If an error occurs during retrieval.
-     */
-  static async findByUserId (userId) {
+ * Retrieves all requirements identifications filtered by user ID.
+ * Validates if the user exists first.
+ * @param {number} userId - The user ID to filter by.
+ * @returns {Promise<{ userExists: boolean, identifications: Array<RequirementsIdentification> }>} - An object containing user existence and identifications list.
+ * @throws {ErrorUtils} - If an error occurs during retrieval.
+ */
+  static async getByUserId (userId) {
     try {
+      const user = await UserRepository.findById(userId)
+      if (!user) {
+        throw new ErrorUtils(404, 'User not found')
+      }
       const requirementsIdentification = await RequirementsIdentificationRepository.findByUserId(userId)
-      if (!requirementsIdentification.length) {
-        throw new ErrorUtils(404, 'No identifications found for the given user')
+      if (!requirementsIdentification) {
+        return []
       }
       return requirementsIdentification
     } catch (error) {
@@ -338,15 +388,15 @@ class RequirementsIdentificationService {
 
   /**
      * Retrieves all requirements identifications filtered by creation date.
-     * @param {string} createdAt - The creation date to filter by (YYYY-MM-DD format).
-     * @returns {Promise<Array<Object>>} - A list of identifications created on the given date.
+     * @param {string} createdAt - The creation date to filter by.
+     * @returns {Promise<Array<RequirementsIdentification>>} - A list of identifications created on the given date.
      * @throws {ErrorUtils} - If an error occurs during retrieval.
      */
-  static async findByCreatedAt (createdAt) {
+  static async getByCreatedAt (createdAt) {
     try {
       const requirementsIdentification = await RequirementsIdentificationRepository.findByCreatedAt(createdAt)
-      if (!requirementsIdentification.length) {
-        throw new ErrorUtils(404, 'No identifications found for the given creation date')
+      if (!requirementsIdentification) {
+        return []
       }
       return requirementsIdentification
     } catch (error) {
@@ -361,32 +411,29 @@ class RequirementsIdentificationService {
    * Updates an existing requirements identification entry.
    *
    * @param {number} identificationId - The ID of the identification to update.
-   * @param {Object} identificationData - The updated identification data.
-   * @returns {Promise<Object>} - The updated identification data.
+   * @param {Object} data - The updated identification data.
+   * @param {string} data.identificationName - The name for the identification.
+   * @param {string} data.identificationDescription - The description for the identification.
+   * @returns {Promise<RequirementsIdentification>} - The updated identification data.
    * @throws {ErrorUtils} - If validation fails, the identification is not found, or an error occurs during update.
    */
-  static async updateById (identificationId, identificationData) {
+  static async updateById (identificationId, data) {
     try {
-      const parsedData = requirementsIdentificationSchema.parse({
-        ...identificationData
-      })
+      const parsedData = requirementsIdentificationUpdateSchema.parse(data)
       const existingIdentification = await RequirementsIdentificationRepository.findById(identificationId)
       if (!existingIdentification) {
-        throw new ErrorUtils(404, 'Requirements Identification not found')
+        throw new ErrorUtils(404, 'Requirement Identification not found')
       }
-      const nameExists = await RequirementsIdentificationRepository.existsByNameExcludingId(
-        parsedData.identificationName,
-        identificationId
-      )
-      if (nameExists) {
-        throw new ErrorUtils(409, 'A Requirements Identification with this name already exists')
+      const identificationNameExists = await RequirementsIdentificationRepository.existsByNameExcludingId(parsedData.identificationName, identificationId)
+      if (identificationNameExists) {
+        throw new ErrorUtils(409, 'Requirement Identification already exists')
       }
       const updatedIdentification = await RequirementsIdentificationRepository.updateById(identificationId, {
         identificationName: parsedData.identificationName,
         identificationDescription: parsedData.identificationDescription
       })
       if (!updatedIdentification) {
-        throw new ErrorUtils(404, 'Requirements Identification not found after update')
+        throw new ErrorUtils(404, 'Requirement Identification not found')
       }
       return updatedIdentification
     } catch (error) {
@@ -398,28 +445,26 @@ class RequirementsIdentificationService {
   }
 
   /**
-   * Deletes a requirements identification by ID.
-   * Validates if the identification has an active job before deletion.
-   *
-   * @param {number} identificationId - The ID of the identification to delete.
-   * @returns {Promise<boolean>} - Returns true if deleted, otherwise throws an error.
-   * @throws {ErrorUtils} - If the identification has an active job or an error occurs.
-   */
+ * Deletes a requirements identification by ID.
+ * Validates if the identification has an active job before deletion.
+ *
+ * @param {number} identificationId - The ID of the identification to delete.
+ * @returns {Promise<boolean>} - Returns true if deleted, otherwise throws an error.
+ * @throws {ErrorUtils} - If the identification has an active job or an error occurs.
+ */
   static async deleteById (identificationId) {
     try {
       const existingIdentification = await RequirementsIdentificationRepository.findById(identificationId)
       if (!existingIdentification) {
-        throw new ErrorUtils(404, 'Requirements Identification not found')
+        throw new ErrorUtils(404, 'Requirement Identification not found')
       }
-      const statesToCheck = ['waiting', 'paused', 'active', 'delayed']
-      const jobs = await QueueService.getJobsByStates(RequirementsIdentificationQueue, statesToCheck)
-      const activeJob = jobs.find(job => Number(job.data.requirementsIdentificationId) === Number(identificationId))
-      if (activeJob) {
-        throw new ErrorUtils(409, 'Cannot delete: There is an active job for this Requirements Identification', { jobId: activeJob.id })
+      const { hasPendingJobs, jobId } = await this.hasPendingRequirementsIdentificationJobs(identificationId)
+      if (hasPendingJobs) {
+        throw new ErrorUtils(409, 'Cannot delete: There is an active job for this Requirements Identification', { jobId })
       }
       const deleted = await RequirementsIdentificationRepository.deleteById(identificationId)
       if (!deleted) {
-        throw new ErrorUtils(500, 'Failed to delete Requirements Identification')
+        throw new ErrorUtils(404, 'Requirement Identification not found')
       }
       return true
     } catch (error) {
@@ -432,42 +477,46 @@ class RequirementsIdentificationService {
 
   /**
  * Deletes multiple requirements identifications by their IDs.
- * Validates that none of them have active jobs before deletion.
- *
  * @param {Array<number>} identificationIds - Array of IDs of the identifications to delete.
- * @returns {Promise<boolean>} - Returns true if all were deleted, otherwise throws an error.
- * @throws {ErrorUtils} - If any of the identifications have active jobs or an error occurs.
+ * @returns {Promise<{ success: boolean }>} - An object indicating the deletion was successful.
+ * @throws {ErrorUtils} - If identifications not found, have active jobs, or deletion fails.
  */
   static async deleteBatch (identificationIds) {
     try {
-      if (!Array.isArray(identificationIds) || identificationIds.length === 0) {
-        throw new ErrorUtils(400, 'Invalid input: identificationIds must be a non-empty array')
+      const existingIdentifications = await RequirementsIdentificationRepository.findByIds(identificationIds)
+      if (existingIdentifications.length !== identificationIds.length) {
+        const notFoundIds = identificationIds.filter(
+          (id) => !existingIdentifications.some((ident) => ident.id === id)
+        )
+        throw new ErrorUtils(404, 'Requirements Identifications not found for provided IDs', { notFoundIds })
       }
-      const existingIdentifications = await Promise.all(
-        identificationIds.map(id => RequirementsIdentificationRepository.findById(id))
-      )
-      const notFoundIds = identificationIds.filter((_, index) => !existingIdentifications[index])
-      if (notFoundIds.length > 0) {
-        throw new ErrorUtils(404, 'Some Requirements Identifications were not found', { notFoundIds })
+      const pendingJobs = []
+      for (const identification of existingIdentifications) {
+        const { hasPendingJobs } = await this.hasPendingRequirementsIdentificationJobs(identification.id)
+        if (hasPendingJobs) {
+          pendingJobs.push({
+            id: identification.id,
+            name: identification.name
+          })
+        }
       }
-      const statesToCheck = ['waiting', 'paused', 'active', 'delayed']
-      const jobs = await QueueService.getJobsByStates(RequirementsIdentificationQueue, statesToCheck)
-      const idsWithActiveJobs = identificationIds.filter(id =>
-        jobs.some(job => Number(job.data.requirementsIdentificationId) === Number(id))
-      )
-      if (idsWithActiveJobs.length > 0) {
-        throw new ErrorUtils(409, 'Cannot delete: Some Requirements Identifications have active jobs', { idsWithActiveJobs })
+      if (pendingJobs.length > 0) {
+        throw new ErrorUtils(
+          409,
+          'Cannot delete Requirements Identifications with active jobs',
+          { pendingJobs }
+        )
       }
       const deleted = await RequirementsIdentificationRepository.deleteBatch(identificationIds)
       if (!deleted) {
-        throw new ErrorUtils(500, 'Failed to delete some or all Requirements Identifications')
+        throw new ErrorUtils(404, 'Requirements Identification not found')
       }
-      return true
+      return { success: true }
     } catch (error) {
       if (error instanceof ErrorUtils) {
         throw error
       }
-      throw new ErrorUtils(500, 'Unexpected error during batch deletion of requirements identifications')
+      throw new ErrorUtils(500, 'Unexpected error during batch deletion of Requirements Identifications')
     }
   }
 }

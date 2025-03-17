@@ -12,6 +12,7 @@ import LegalBasisRoutes from './routes/LegalBasis.routes.js'
 import ArticlesRoutes from './routes/Articles.routes.js'
 import ExtractArticlesRoutes from './routes/ExtractArticles.routes.js'
 import RequirementsRoutes from './routes/Requirements.routes.js'
+import RequirementsIdentificationRoutes from './routes/RequirementsIdentification.routes.js'
 import { NODE_ENV, APP_URL } from './config/variables.config.js'
 /**
  * Configure the Express application.
@@ -45,6 +46,7 @@ app.use('/api', LegalBasisRoutes)
 app.use('/api', ArticlesRoutes)
 app.use('/api', ExtractArticlesRoutes)
 app.use('/api', RequirementsRoutes)
+app.use('/api', RequirementsIdentificationRoutes)
 
 /**
  * Handle 404 Not Found errors.
