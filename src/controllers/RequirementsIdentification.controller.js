@@ -1,6 +1,7 @@
 import RequirementsIdentificationService from '../services/requirements/requirementsIdentification/requirementsIdentification.service.js'
 import UserService from '../services/users/User.service.js'
 import ErrorUtils from '../utils/Error.js'
+import { validateDate } from '../utils/validateDate.js'
 
 /**
  * Controller module for Requirements Identification operations.
@@ -262,15 +263,53 @@ export const getIdentificationsByUserId = async (req, res) => {
  */
 export const getIdentificationsByCreatedAt = async (req, res) => {
   const { userId } = req
-  const { createdAt } = req.query
-  console.log(createdAt)
+  const { from, to } = req.query
+  const errors = []
+  if (!from && !to) {
+    errors.push(
+      {
+        field: 'from',
+        message: 'At least one of "from" or "to" must be provided'
+      },
+      {
+        field: 'to',
+        message: 'At least one of "from" or "to" must be provided'
+      }
+    )
+  } else if (!from) {
+    errors.push({
+      field: 'from',
+      message: 'The "from" date must be provided when "to" is specified'
+    })
+  } else if (!to) {
+    errors.push({
+      field: 'to',
+      message: 'The "to" date must be provided when "from" is specified'
+    })
+  }
+  if (errors.length > 0) {
+    return res.status(400).json({ message: 'Validation failed', errors })
+  }
+  const { date: parsedFrom, error: fromError } = from
+    ? validateDate(from, 'from')
+    : {}
+  const { date: parsedTo, error: toError } = to ? validateDate(to, 'to') : {}
 
+  if (fromError) errors.push(fromError)
+  if (toError) errors.push(toError)
+
+  if (errors.length > 0) {
+    return res.status(400).json({ message: 'Validation failed', errors })
+  }
   try {
     const isAuthorized = await UserService.userExists(userId)
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-    const identifications = await RequirementsIdentificationService.getByCreatedAt(createdAt)
+    const identifications = await RequirementsIdentificationService.findByCreatedAt(
+      parsedFrom,
+      parsedTo
+    )
     return res.status(200).json({ identifications })
   } catch (error) {
     if (error instanceof ErrorUtils) {

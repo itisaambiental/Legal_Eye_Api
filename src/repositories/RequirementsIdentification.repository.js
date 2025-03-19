@@ -744,29 +744,49 @@ class RequirementsIdentificationRepository {
   }
 
   /**
-   * Retrieves by created_at date.
-   * @param {string} createdAt
-   * @returns {Promise<Array<RequirementsIdentification>|null>}
-   */
-  static async findByCreatedAt (createdAt) {
-    const query = `
-        SELECT id, identification_name, identification_description, status, user_id, created_at
-        FROM requirements_identification
-        WHERE DATE(created_at) = ?`
+ * Retrieves requirements identifications filtered by a date range on created_at.
+ * @param {Date|null} from - Start date as a Date object (optional).
+ * @param {Date|null} to - End date as a Date object (optional).
+ * @returns {Promise<Array<RequirementsIdentification>>} - A list of identifications created within the date range.
+ * @throws {ErrorUtils} - If an error occurs during retrieval.
+ */
+  static async findByCreatedAt (from, to) {
+    let query = `
+    SELECT id, identification_name, identification_description, status, user_id, created_at 
+    FROM requirements_identification
+  `
+    const values = []
+    const conditions = []
+
+    if (from && to) {
+      conditions.push('DATE(created_at) BETWEEN ? AND ?')
+      values.push(from, to)
+    } else if (from) {
+      conditions.push('DATE(created_at) >= ?')
+      values.push(from)
+    } else if (to) {
+      conditions.push('DATE(created_at) <= ?')
+      values.push(to)
+    }
+    if (conditions.length > 0) {
+      query += ' WHERE ' + conditions.join(' AND ')
+    }
     try {
-      const [rows] = await pool.query(query, [createdAt])
-      if (rows.length === 0) return null
-      return rows.map(row => new RequirementsIdentification(
-        row.id,
-        row.identification_name,
-        row.identification_description,
-        row.status,
-        row.user_id,
-        row.created_at
-      ))
+      const [rows] = await pool.query(query, values)
+      return rows.map(
+        (row) =>
+          new RequirementsIdentification(
+            row.id,
+            row.identification_name,
+            row.identification_description,
+            row.status,
+            row.user_id,
+            row.created_at
+          )
+      )
     } catch (error) {
-      console.error('Error retrieving by created_at:', error.message)
-      throw new ErrorUtils(500, 'Error retrieving by created_at')
+      console.error('Error retrieving by created_at range:', error.message)
+      throw new ErrorUtils(500, 'Error retrieving by created_at range')
     }
   }
 }

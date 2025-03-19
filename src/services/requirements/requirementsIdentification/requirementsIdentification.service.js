@@ -10,6 +10,8 @@ import RequirementsIdentificationQueue from '../../../workers/requirementIdentif
 import QueueService from '../../../services/queue/Queue.service.js'
 import ErrorUtils from '../../../utils/Error.js'
 import { z } from 'zod'
+import { format } from 'date-fns'
+import { es } from 'date-fns/locale'
 
 /**
  * Service class for handling the of Requirements Identification.
@@ -288,7 +290,28 @@ class RequirementsIdentificationService {
       if (!requirementsIdentification) {
         return []
       }
-      return requirementsIdentification
+
+      const formattedIdentifications = await Promise.all(
+        requirementsIdentification.map(async (identification) => {
+          let formattedCreatedAt = null
+          if (identification.created_at) {
+            formattedCreatedAt = format(
+              new Date(identification.created_at),
+              'dd-MM-yyyy',
+              { locale: es }
+            )
+          }
+          return {
+            id: identification.id,
+            identification_name: identification.identification_name,
+            identification_description: identification.identification_description,
+            status: identification.status,
+            user_id: identification.user_id,
+            created_at: formattedCreatedAt
+          }
+        })
+      )
+      return formattedIdentifications
     } catch (error) {
       if (error instanceof ErrorUtils) {
         throw error
@@ -309,7 +332,27 @@ class RequirementsIdentificationService {
       if (!requirementsIdentification) {
         return []
       }
-      return requirementsIdentification
+      const formattedIdentifications = await Promise.all(
+        requirementsIdentification.map(async (identification) => {
+          let formattedCreatedAt = null
+          if (identification.created_at) {
+            formattedCreatedAt = format(
+              new Date(identification.created_at),
+              'dd-MM-yyyy',
+              { locale: es }
+            )
+          }
+          return {
+            id: identification.id,
+            identification_name: identification.identification_name,
+            identification_description: identification.identification_description,
+            status: identification.status,
+            user_id: identification.user_id,
+            created_at: formattedCreatedAt
+          }
+        })
+      )
+      return formattedIdentifications
     } catch (error) {
       if (error instanceof ErrorUtils) {
         throw error
@@ -330,7 +373,27 @@ class RequirementsIdentificationService {
       if (!requirementsIdentification) {
         return []
       }
-      return requirementsIdentification
+      const formattedIdentifications = await Promise.all(
+        requirementsIdentification.map(async (identification) => {
+          let formattedCreatedAt = null
+          if (identification.created_at) {
+            formattedCreatedAt = format(
+              new Date(identification.created_at),
+              'dd-MM-yyyy',
+              { locale: es }
+            )
+          }
+          return {
+            id: identification.id,
+            identification_name: identification.identification_name,
+            identification_description: identification.identification_description,
+            status: identification.status,
+            user_id: identification.user_id,
+            created_at: formattedCreatedAt
+          }
+        })
+      )
+      return formattedIdentifications
     } catch (error) {
       if (error instanceof ErrorUtils) {
         throw error
@@ -351,7 +414,27 @@ class RequirementsIdentificationService {
       if (!requirementsIdentification) {
         return []
       }
-      return requirementsIdentification
+      const formattedIdentifications = await Promise.all(
+        requirementsIdentification.map(async (identification) => {
+          let formattedCreatedAt = null
+          if (identification.created_at) {
+            formattedCreatedAt = format(
+              new Date(identification.created_at),
+              'dd-MM-yyyy',
+              { locale: es }
+            )
+          }
+          return {
+            id: identification.id,
+            identification_name: identification.identification_name,
+            identification_description: identification.identification_description,
+            status: identification.status,
+            user_id: identification.user_id,
+            created_at: formattedCreatedAt
+          }
+        })
+      )
+      return formattedIdentifications
     } catch (error) {
       if (error instanceof ErrorUtils) {
         throw error
@@ -373,11 +456,32 @@ class RequirementsIdentificationService {
       if (!user) {
         throw new ErrorUtils(404, 'User not found')
       }
+
       const requirementsIdentification = await RequirementsIdentificationRepository.findByUserId(userId)
       if (!requirementsIdentification) {
         return []
       }
-      return requirementsIdentification
+      const formattedIdentifications = await Promise.all(
+        requirementsIdentification.map(async (identification) => {
+          let formattedCreatedAt = null
+          if (identification.created_at) {
+            formattedCreatedAt = format(
+              new Date(identification.created_at),
+              'dd-MM-yyyy',
+              { locale: es }
+            )
+          }
+          return {
+            id: identification.id,
+            identification_name: identification.identification_name,
+            identification_description: identification.identification_description,
+            status: identification.status,
+            user_id: identification.user_id,
+            created_at: formattedCreatedAt
+          }
+        })
+      )
+      return formattedIdentifications
     } catch (error) {
       if (error instanceof ErrorUtils) {
         throw error
@@ -387,23 +491,46 @@ class RequirementsIdentificationService {
   }
 
   /**
-     * Retrieves all requirements identifications filtered by creation date.
-     * @param {string} createdAt - The creation date to filter by.
-     * @returns {Promise<Array<RequirementsIdentification>>} - A list of identifications created on the given date.
-     * @throws {ErrorUtils} - If an error occurs during retrieval.
-     */
-  static async getByCreatedAt (createdAt) {
+ * Retrieves all requirements identifications filtered by a created_at date range.
+ * Both 'from' and 'to' are optional. If provided, they can be in 'YYYY-MM-DD' or 'DD-MM-YYYY'.
+ *
+ * @param {string|null} from - The start date (optional).
+ * @param {string|null} to - The end date (optional).
+ * @returns {Promise<Array<RequirementsIdentification>>} - A list of identifications filtered by created_at.
+ * @throws {ErrorUtils} - If an error occurs during retrieval.
+ */
+  static async getByCreatedAt (from, to) {
     try {
-      const requirementsIdentification = await RequirementsIdentificationRepository.findByCreatedAt(createdAt)
-      if (!requirementsIdentification) {
+      const identifications = await RequirementsIdentificationRepository.findByCreatedAt(from, to)
+      if (!identifications) {
         return []
       }
-      return requirementsIdentification
+      const formattedIdentifications = await Promise.all(
+        identifications.map(async (identification) => {
+          let formattedCreatedAt = null
+          if (identification.created_at) {
+            formattedCreatedAt = format(
+              new Date(identification.created_at),
+              'dd-MM-yyyy',
+              { locale: es }
+            )
+          }
+          return {
+            id: identification.id,
+            identification_name: identification.identification_name,
+            identification_description: identification.identification_description,
+            status: identification.status,
+            user_id: identification.user_id,
+            created_at: formattedCreatedAt
+          }
+        })
+      )
+      return formattedIdentifications
     } catch (error) {
       if (error instanceof ErrorUtils) {
         throw error
       }
-      throw new ErrorUtils(500, 'Error retrieving identifications by created_at timestamp')
+      throw new ErrorUtils(500, 'Error retrieving identifications by created_at range')
     }
   }
 
