@@ -1,7 +1,7 @@
 import RequirementsIdentificationService from '../services/requirements/requirementsIdentification/requirementsIdentification.service.js'
 import UserService from '../services/users/User.service.js'
 import ErrorUtils from '../utils/Error.js'
-import { validateDate } from '../utils/validateDate.js'
+import validateDate from '../utils/validateDate.js'
 
 /**
  * Controller module for Requirements Identification operations.
@@ -264,49 +264,20 @@ export const getIdentificationsByUserId = async (req, res) => {
 export const getIdentificationsByCreatedAt = async (req, res) => {
   const { userId } = req
   const { from, to } = req.query
-  const errors = []
-  if (!from && !to) {
-    errors.push(
-      {
-        field: 'from',
-        message: 'At least one of "from" or "to" must be provided'
-      },
-      {
-        field: 'to',
-        message: 'At least one of "from" or "to" must be provided'
-      }
-    )
-  } else if (!from) {
-    errors.push({
-      field: 'from',
-      message: 'The "from" date must be provided when "to" is specified'
+  const { date: parsedFrom, error: fromError } = from ? validateDate(from, 'from') : { date: null, error: null }
+  const { date: parsedTo, error: toError } = to ? validateDate(to, 'to') : { date: null, error: null }
+  if (fromError || toError) {
+    return res.status(400).json({
+      message: 'Invalid date format',
+      errors: [fromError, toError].filter(Boolean)
     })
-  } else if (!to) {
-    errors.push({
-      field: 'to',
-      message: 'The "to" date must be provided when "from" is specified'
-    })
-  }
-  if (errors.length > 0) {
-    return res.status(400).json({ message: 'Validation failed', errors })
-  }
-  const { date: parsedFrom, error: fromError } = from
-    ? validateDate(from, 'from')
-    : {}
-  const { date: parsedTo, error: toError } = to ? validateDate(to, 'to') : {}
-
-  if (fromError) errors.push(fromError)
-  if (toError) errors.push(toError)
-
-  if (errors.length > 0) {
-    return res.status(400).json({ message: 'Validation failed', errors })
   }
   try {
     const isAuthorized = await UserService.userExists(userId)
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-    const identifications = await RequirementsIdentificationService.findByCreatedAt(
+    const identifications = await RequirementsIdentificationService.getByCreatedAt(
       parsedFrom,
       parsedTo
     )

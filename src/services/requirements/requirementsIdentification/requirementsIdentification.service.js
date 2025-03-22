@@ -494,8 +494,8 @@ class RequirementsIdentificationService {
  * Retrieves all requirements identifications filtered by a created_at date range.
  * Both 'from' and 'to' are optional. If provided, they can be in 'YYYY-MM-DD' or 'DD-MM-YYYY'.
  *
- * @param {string|null} from - The start date (optional).
- * @param {string|null} to - The end date (optional).
+ * @param {string} [from] - Start date.
+ * @param {string} [to] - End date.
  * @returns {Promise<Array<RequirementsIdentification>>} - A list of identifications filtered by created_at.
  * @throws {ErrorUtils} - If an error occurs during retrieval.
  */

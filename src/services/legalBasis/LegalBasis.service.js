@@ -752,8 +752,8 @@ class LegalBasisService {
    * Both 'from' and 'to' are optional. If provided, they can be in 'YYYY-MM-DD' or 'DD-MM-YYYY'.
    *
    * @function getByLastReform
-   * @param {Date} [from] - Start date.
-   * @param {Date} [to] - End date.
+   * @param {string} [from] - Start date.
+   * @param {string} [to] - End date.
    * @returns {Promise<Array<LegalBasis>>} - A list of legal basis entries filtered by the date range.
    * @throws {ErrorUtils} - If an error occurs during retrieval or date validation.
    */

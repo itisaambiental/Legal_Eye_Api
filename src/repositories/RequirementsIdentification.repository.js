@@ -745,19 +745,18 @@ class RequirementsIdentificationRepository {
 
   /**
  * Retrieves requirements identifications filtered by a date range on created_at.
- * @param {Date|null} from - Start date as a Date object (optional).
- * @param {Date|null} to - End date as a Date object (optional).
+ * @param {string} [from] - Start date.
+ * @param {string} [to] - End date.
  * @returns {Promise<Array<RequirementsIdentification>>} - A list of identifications created within the date range.
  * @throws {ErrorUtils} - If an error occurs during retrieval.
  */
   static async findByCreatedAt (from, to) {
     let query = `
-    SELECT id, identification_name, identification_description, status, user_id, created_at 
-    FROM requirements_identification
+  SELECT id, identification_name, identification_description, status, user_id, created_at 
+  FROM requirements_identification
   `
     const values = []
     const conditions = []
-
     if (from && to) {
       conditions.push('DATE(created_at) BETWEEN ? AND ?')
       values.push(from, to)

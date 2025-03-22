@@ -4,6 +4,7 @@ import UserRepository from '../../repositories/User.repository.js'
 import SubjectsRepository from '../../repositories/Subject.repository.js'
 import LegalBasisRepository from '../../repositories/LegalBasis.repository.js'
 import AspectsRepository from '../../repositories/Aspects.repository.js'
+import RequirementRepository from '../../repositories/Requirements.repository.js'
 import extractArticles from '../../services/articles/extractArticles/extractArticles.service.js'
 
 import {
@@ -19,6 +20,7 @@ let createdSubjectId
 const createdAspectIds = []
 
 beforeAll(async () => {
+  await RequirementRepository.deleteAll()
   await LegalBasisRepository.deleteAll()
   await SubjectsRepository.deleteAll()
   await AspectsRepository.deleteAll()
@@ -1560,6 +1562,7 @@ describe('Get Legal Basis By Subject And Aspects', () => {
 
     expect(response.body.error).toMatch(/token missing or invalid/i)
   })
+
   describe('Get Legal Basis By Last Reform', () => {
     let createdLegalBasis
 
@@ -1568,7 +1571,7 @@ describe('Get Legal Basis By Subject And Aspects', () => {
       const legalBasisData = generateLegalBasisData({
         subjectId: String(createdSubjectId),
         aspectsIds: JSON.stringify(createdAspectIds),
-        lastReform: '01-01-2024'
+        lastReform: '2024-01-01'
       })
 
       const response = await api
@@ -1580,69 +1583,6 @@ describe('Get Legal Basis By Subject And Aspects', () => {
 
       createdLegalBasis = response.body.legalBasis
     })
-    test('Should return 400 if both "from" and "to" are missing', async () => {
-      const response = await api
-        .get('/api/legalBasis/lastReform/lastReform')
-        .set('Authorization', `Bearer ${tokenAdmin}`)
-        .expect(400)
-        .expect('Content-Type', /application\/json/)
-
-      expect(response.body.message).toMatch(/Validation failed/i)
-      expect(response.body.errors).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({
-            field: 'from',
-            message: expect.stringMatching(/At least one of "from" or "to"/i)
-          }),
-          expect.objectContaining({
-            field: 'to',
-            message: expect.stringMatching(/At least one of "from" or "to"/i)
-          })
-        ])
-      )
-    })
-
-    test('Should return 400 if only "from" is provided', async () => {
-      const response = await api
-        .get('/api/legalBasis/lastReform/lastReform')
-        .set('Authorization', `Bearer ${tokenAdmin}`)
-        .query({ from: '2024-01-01' })
-        .expect(400)
-        .expect('Content-Type', /application\/json/)
-
-      expect(response.body.message).toMatch(/Validation failed/i)
-      expect(response.body.errors).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({
-            field: 'to',
-            message: expect.stringMatching(
-              /The "to" date must be provided when "from" is specified/i
-            )
-          })
-        ])
-      )
-    })
-
-    test('Should return 400 if only "to" is provided', async () => {
-      const response = await api
-        .get('/api/legalBasis/lastReform/lastReform')
-        .set('Authorization', `Bearer ${tokenAdmin}`)
-        .query({ to: '2024-12-31' })
-        .expect(400)
-        .expect('Content-Type', /application\/json/)
-
-      expect(response.body.message).toMatch(/Validation failed/i)
-      expect(response.body.errors).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({
-            field: 'from',
-            message: expect.stringMatching(
-              /The "from" date must be provided when "to" is specified/i
-            )
-          })
-        ])
-      )
-    })
 
     test('Should return 400 if "from" date is invalid', async () => {
       const response = await api
@@ -1652,7 +1592,7 @@ describe('Get Legal Basis By Subject And Aspects', () => {
         .expect(400)
         .expect('Content-Type', /application\/json/)
 
-      expect(response.body.message).toMatch(/Validation failed/i)
+      expect(response.body.message).toMatch(/Invalid date format/i)
       expect(response.body.errors).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
@@ -1671,7 +1611,7 @@ describe('Get Legal Basis By Subject And Aspects', () => {
         .expect(400)
         .expect('Content-Type', /application\/json/)
 
-      expect(response.body.message).toMatch(/Validation failed/i)
+      expect(response.body.message).toMatch(/Invalid date format/i)
       expect(response.body.errors).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
@@ -1705,6 +1645,28 @@ describe('Get Legal Basis By Subject And Aspects', () => {
         url: createdLegalBasis.url,
         fileKey: createdLegalBasis.fileKey
       })
+    })
+
+    test('Should return 200 if only "from" is provided', async () => {
+      const response = await api
+        .get('/api/legalBasis/lastReform/lastReform')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .query({ from: '2024-01-01' })
+        .expect(200)
+        .expect('Content-Type', /application\/json/)
+
+      expect(response.body.legalBasis).toBeInstanceOf(Array)
+    })
+
+    test('Should return 200 if only "to" is provided', async () => {
+      const response = await api
+        .get('/api/legalBasis/lastReform/lastReform')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .query({ to: '2024-12-31' }) // Solo enviamos "to"
+        .expect(200)
+        .expect('Content-Type', /application\/json/)
+
+      expect(response.body.legalBasis).toBeInstanceOf(Array)
     })
 
     test('Should return 401 if the user is unauthorized', async () => {
