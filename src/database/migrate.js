@@ -22,7 +22,7 @@ async function migrate () {
       for (const statement of statements) {
         await connection.query(statement)
       }
-      console.log('✅ Migration completed successfully.')
+      console.info('✅ Migration completed successfully.')
     } finally {
       connection.release()
       await pool.end()

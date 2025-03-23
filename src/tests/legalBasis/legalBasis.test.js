@@ -2174,7 +2174,7 @@ describe('Get Legal Basis By Subject And Aspects', () => {
 
       expect(response.body.message).toMatch(/LegalBasis not found/i)
     })
-    test('Should return 409 if the legal basis has pending jobs', async () => {
+    test('Should return 409 if the legal basis has pending Article Extraction jobs', async () => {
       jest
         .spyOn(extractArticles, 'hasPendingExtractionJobs')
         .mockResolvedValue({ hasPendingJobs: true })
@@ -2184,7 +2184,7 @@ describe('Get Legal Basis By Subject And Aspects', () => {
         .expect(409)
 
       expect(response.body.message).toMatch(
-        /Cannot delete LegalBasis with pending jobs/i
+        /Cannot delete LegalBasis with pending Article Extraction jobs/i
       )
     })
     test('Should return 401 if the user is unauthorized', async () => {
@@ -2255,7 +2255,7 @@ describe('Get Legal Basis By Subject And Aspects', () => {
 
       expect(response.body.message).toMatch(/Missing required fields: legalBasisIds/i)
     })
-    test('Should return 409 if the legal basis has pending jobs', async () => {
+    test('Should return 409 if the legal basis has pending Article Extraction jobs', async () => {
       const idToDelete = createdLegalBasis.id
       jest.spyOn(extractArticles, 'hasPendingExtractionJobs').mockImplementation(async (id) => {
         return { hasPendingJobs: id === idToDelete }
@@ -2265,8 +2265,8 @@ describe('Get Legal Basis By Subject And Aspects', () => {
         .set('Authorization', `Bearer ${tokenAdmin}`)
         .send({ legalBasisIds: [idToDelete] })
         .expect(409)
-      expect(response.body.message).toMatch(/Cannot delete Legal Bases with pending jobs/i)
-      expect(response.body.errors.LegalBases).toContainEqual(
+      expect(response.body.message).toMatch(/Cannot delete Legal Bases with pending Article Extraction jobs/i)
+      expect(response.body.errors.legalBases).toContainEqual(
         expect.objectContaining({
           id: idToDelete,
           name: createdLegalBasis.legal_name

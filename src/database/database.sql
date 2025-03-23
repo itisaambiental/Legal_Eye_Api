@@ -200,7 +200,7 @@ CREATE TABLE IF NOT EXISTS requirements_identification (
     id INT AUTO_INCREMENT PRIMARY KEY,
     identification_name VARCHAR(255) NOT NULL,
     identification_description TEXT,
-    status ENUM('Active', 'Completed', 'Failed') NOT NULL DEFAULT 'Active',
+    status ENUM('Activo', 'Completado', 'Fallido') NOT NULL DEFAULT 'Activo';
     failed_reason TEXT,
     user_id BIGINT NULL,  
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

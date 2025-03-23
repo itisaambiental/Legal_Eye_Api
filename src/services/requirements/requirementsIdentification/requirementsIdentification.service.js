@@ -290,7 +290,6 @@ class RequirementsIdentificationService {
       if (!requirementsIdentification) {
         return []
       }
-
       const formattedIdentifications = await Promise.all(
         requirementsIdentification.map(async (identification) => {
           let formattedCreatedAt = null
@@ -585,12 +584,12 @@ class RequirementsIdentificationService {
       if (!existingIdentification) {
         throw new ErrorUtils(404, 'Requirement Identification not found')
       }
-      const { hasPendingJobs, jobId } = await this.hasPendingRequirementsIdentificationJobs(identificationId)
+      const { hasPendingJobs } = await this.hasPendingRequirementsIdentificationJobs(identificationId)
       if (hasPendingJobs) {
-        throw new ErrorUtils(409, 'Cannot delete: There is an active job for this Requirements Identification', { jobId })
+        throw new ErrorUtils(409, 'Cannot delete Requirement identification with pending jobs')
       }
-      const deleted = await RequirementsIdentificationRepository.deleteById(identificationId)
-      if (!deleted) {
+      const identificationDeleted = await RequirementsIdentificationRepository.deleteById(identificationId)
+      if (!identificationDeleted) {
         throw new ErrorUtils(404, 'Requirement Identification not found')
       }
       return true
@@ -630,12 +629,14 @@ class RequirementsIdentificationService {
       if (pendingJobs.length > 0) {
         throw new ErrorUtils(
           409,
-          'Cannot delete Requirements Identifications with active jobs',
-          { pendingJobs }
+          'Cannot delete Requirements Identifications with pending jobs',
+          {
+            identifications: pendingJobs
+          }
         )
       }
-      const deleted = await RequirementsIdentificationRepository.deleteBatch(identificationIds)
-      if (!deleted) {
+      const identificationsDeleted = await RequirementsIdentificationRepository.deleteBatch(identificationIds)
+      if (!identificationsDeleted) {
         throw new ErrorUtils(404, 'Requirements Identification not found')
       }
       return { success: true }
