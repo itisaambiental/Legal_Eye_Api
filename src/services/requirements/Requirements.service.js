@@ -723,16 +723,15 @@ class RequirementService {
         )
         throw new ErrorUtils(404, 'Requirements not found for IDs', { notFoundIds })
       }
-      const pendingRequirementIdentificationJobs = []
-      for (const requirement of requirements) {
-        const { hasPendingJobs: hasPendingRequirementIdentificationJobs } = await RequirementsIdentificationService.hasPendingRequirementJobs(requirement.id)
-        if (hasPendingRequirementIdentificationJobs) {
-          hasPendingRequirementIdentificationJobs.push({
-            id: requirement.id,
-            name: requirement.requirement_name
-          })
-        }
-      }
+      const results = await Promise.all(
+        requirements.map(async (requirement) => {
+          const { hasPendingJobs: hasPendingRequirementIdentificationJobs } = await RequirementsIdentificationService.hasPendingRequirementJobs(requirement.id)
+          return hasPendingRequirementIdentificationJobs
+            ? { id: requirement.id, name: requirement.requirement_name }
+            : null
+        })
+      )
+      const pendingRequirementIdentificationJobs = results.filter(Boolean)
       if (pendingRequirementIdentificationJobs.length > 0) {
         throw new ErrorUtils(
           409,

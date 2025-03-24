@@ -584,9 +584,9 @@ class RequirementsIdentificationService {
       if (!existingIdentification) {
         throw new ErrorUtils(404, 'Requirement Identification not found')
       }
-      const { hasPendingJobs } = await this.hasPendingRequirementsIdentificationJobs(identificationId)
-      if (hasPendingJobs) {
-        throw new ErrorUtils(409, 'Cannot delete Requirement identification with pending jobs')
+      const { hasPendingJobs: hasPendingRequirementIdentificationJobs } = await this.hasPendingRequirementsIdentificationJobs(identificationId)
+      if (hasPendingRequirementIdentificationJobs) {
+        throw new ErrorUtils(409, 'Cannot delete Requirement Identification with pending Requirement Identification jobs')
       }
       const identificationDeleted = await RequirementsIdentificationRepository.deleteById(identificationId)
       if (!identificationDeleted) {
@@ -616,23 +616,20 @@ class RequirementsIdentificationService {
         )
         throw new ErrorUtils(404, 'Requirements Identifications not found for provided IDs', { notFoundIds })
       }
-      const pendingJobs = []
-      for (const identification of existingIdentifications) {
-        const { hasPendingJobs } = await this.hasPendingRequirementsIdentificationJobs(identification.id)
-        if (hasPendingJobs) {
-          pendingJobs.push({
-            id: identification.id,
-            name: identification.name
-          })
-        }
-      }
-      if (pendingJobs.length > 0) {
+      const results = await Promise.all(
+        existingIdentifications.map(async (identification) => {
+          const { hasPendingJobs: hasPendingRequirementIdentificationJobs } = await this.hasPendingRequirementsIdentificationJobs(identification.id)
+          return hasPendingRequirementIdentificationJobs
+            ? { id: identification.id, name: identification.name }
+            : null
+        })
+      )
+      const pendingRequirementIdentificationJobs = results.filter(Boolean)
+      if (pendingRequirementIdentificationJobs.length > 0) {
         throw new ErrorUtils(
           409,
-          'Cannot delete Requirements Identifications with pending jobs',
-          {
-            identifications: pendingJobs
-          }
+          'Cannot delete Requirements Identifications with pending Requirement Identification jobs',
+          { identifications: pendingRequirementIdentificationJobs }
         )
       }
       const identificationsDeleted = await RequirementsIdentificationRepository.deleteBatch(identificationIds)

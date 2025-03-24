@@ -6,13 +6,17 @@ import AspectsRepository from '../../repositories/Aspects.repository.js'
 import LegalBasisRepository from '../../repositories/LegalBasis.repository.js'
 import RequirementRepository from '../../repositories/Requirements.repository.js'
 import { ADMIN_PASSWORD_TEST, ADMIN_GMAIL } from '../../config/variables.config.js'
+import generateLegalBasisData from '../../utils/generateLegalBasisData.js'
+import generateRequirementData from '../../utils/generateRequirementData.js'
 
 const subjectName = 'Seguridad & Higiene'
+const aspectNames = ['Organizacional', 'Tecnico', 'Ambiental']
 const aspectName = 'Organizacional'
 let tokenAdmin
 let createdSubjectId
 let createdAspectId
 const createdAspectIds = []
+
 beforeAll(async () => {
   await RequirementRepository.deleteAll()
   await LegalBasisRepository.deleteAll()
@@ -142,7 +146,7 @@ describe('Aspects API tests', () => {
     })
   })
 
-  test('Should return 401 if called without authentication', async () => {
+  test('Should return 401 if the user is unauthorized', async () => {
     const response = await api
       .get(`/api/subjects/${createdSubjectId}/aspects`)
       .expect(401)
@@ -307,30 +311,46 @@ describe('Aspects API - PATCH /aspect/:id', () => {
     expect(response.body.message).toMatch(/Aspect not found/i)
   })
 })
+
 describe('Aspects API - DELETE /aspect/:id', () => {
-  test('Should successfully delete an aspect by ID', async () => {
-    await api
-      .delete(`/api/aspect/${createdAspectId}`)
+  let createdLegalBasis
+  let createdRequirement
+  const timeout = 20000
+
+  beforeAll(async () => {
+    const aspectResponse = await api
+      .post(`/api/subjects/${createdSubjectId}/aspects`)
       .set('Authorization', `Bearer ${tokenAdmin}`)
-      .expect(204)
+      .send({ aspectName: 'Aspect with deps' })
+      .expect(201)
 
-    const response = await api
-      .get(`/api/aspect/${createdAspectId}`)
+    createdAspectId = aspectResponse.body.aspect.id
+
+    const legalBasisData = generateLegalBasisData({
+      subjectId: String(createdSubjectId),
+      aspectsIds: JSON.stringify([createdAspectId])
+    })
+
+    const legalBasisResponse = await api
+      .post('/api/legalBasis')
       .set('Authorization', `Bearer ${tokenAdmin}`)
-      .expect(404)
-      .expect('Content-Type', /application\/json/)
+      .send(legalBasisData)
+      .expect(201)
 
-    expect(response.body.message).toMatch(/Aspect not found/i)
-  })
+    createdLegalBasis = legalBasisResponse.body.legalBasis
 
-  test('Should return 401 if the user is unauthorized', async () => {
-    const response = await api
-      .delete(`/api/aspect/${createdAspectId}`)
-      .expect(401)
-      .expect('Content-Type', /application\/json/)
+    const requirementData = generateRequirementData({
+      subjectId: String(createdSubjectId),
+      aspectId: String(createdAspectId)
+    })
+    const requirementResponse = await api
+      .post('/api/requirements')
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .send(requirementData)
+      .expect(201)
 
-    expect(response.body.error).toMatch(/token missing or invalid/i)
-  })
+    createdRequirement = requirementResponse.body.requirement
+  }, timeout)
 
   test('Should return 404 if the aspect does not exist', async () => {
     const nonExistentAspectId = -1
@@ -342,66 +362,185 @@ describe('Aspects API - DELETE /aspect/:id', () => {
 
     expect(response.body.message).toMatch(/Aspect not found/i)
   })
+
+  test('Should block deletion if aspect is associated with legal bases and requirements', async () => {
+    const response = await api
+      .delete(`/api/aspect/${createdAspectId}`)
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .expect(409)
+      .expect('Content-Type', /application\/json/)
+
+    expect(response.body.message).toMatch(/associated with one or more legal bases/i)
+  })
+
+  describe('After removing legal basis', () => {
+    beforeAll(async () => {
+      await api
+        .delete(`/api/legalBasis/${createdLegalBasis.id}`)
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .expect(204)
+    })
+
+    test('Should block deletion if aspect is still associated with requirements', async () => {
+      const response = await api
+        .delete(`/api/aspect/${createdAspectId}`)
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .expect(409)
+        .expect('Content-Type', /application\/json/)
+
+      expect(response.body.message).toMatch(/associated with one or more requirements/i)
+    })
+
+    describe('After removing requirement', () => {
+      beforeAll(async () => {
+        await api
+          .delete(`/api/requirement/${createdRequirement.id}`)
+          .set('Authorization', `Bearer ${tokenAdmin}`)
+          .expect(204)
+      })
+
+      test('Should return 401 if the user is unauthorized', async () => {
+        const response = await api
+          .delete(`/api/aspect/${createdAspectId}`)
+          .expect(401)
+          .expect('Content-Type', /application\/json/)
+
+        expect(response.body.error).toMatch(/token missing or invalid/i)
+      })
+
+      test('Should successfully delete the aspect when no dependencies exist', async () => {
+        await api
+          .delete(`/api/aspect/${createdAspectId}`)
+          .set('Authorization', `Bearer ${tokenAdmin}`)
+          .expect(204)
+
+        const response = await api
+          .get(`/api/aspect/${createdAspectId}`)
+          .set('Authorization', `Bearer ${tokenAdmin}`)
+          .expect(404)
+          .expect('Content-Type', /application\/json/)
+
+        expect(response.body.message).toMatch(/Aspect not found/i)
+      })
+    })
+  })
 })
 
-describe('Aspects API - DELETE /aspects/batch', () => {
-  test('Should successfully delete multiple aspects', async () => {
-    const aspectNames = ['Organizacional', 'Tecnico', 'Ambiental']
+describe('DELETE /aspects/batch - Delete multiple aspects with dependencies', () => {
+  const createdLegalBases = []
+  const createdRequirements = []
+  const timeout = 20000
+
+  beforeAll(async () => {
     for (const name of aspectNames) {
       const aspectResponse = await api
         .post(`/api/subjects/${createdSubjectId}/aspects`)
         .set('Authorization', `Bearer ${tokenAdmin}`)
         .send({ aspectName: name })
         .expect(201)
-        .expect('Content-Type', /application\/json/)
 
       createdAspectIds.push(aspectResponse.body.aspect.id)
     }
-    await api
+
+    for (let i = 0; i < createdAspectIds.length; i++) {
+      const aspectId = createdAspectIds[i]
+
+      const legalBasisData = generateLegalBasisData({
+        legalName: `LegalBasis ${i + 1}`,
+        abbreviation: `LB-${i + 1}`,
+        subjectId: String(createdSubjectId),
+        aspectsIds: JSON.stringify([aspectId])
+      })
+
+      const legalBasisResponse = await api
+        .post('/api/legalBasis')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send(legalBasisData)
+        .expect(201)
+
+      createdLegalBases.push(legalBasisResponse.body.legalBasis)
+
+      const requirementData = generateRequirementData({
+        requirementNumber: `REQ-${i + 1}`,
+        requirementName: `Requirement Test ${i + 1}`,
+        subjectId: String(createdSubjectId),
+        aspectId: String(aspectId)
+      })
+
+      const requirementResponse = await api
+        .post('/api/requirements')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send(requirementData)
+        .expect(201)
+
+      createdRequirements.push(requirementResponse.body.requirement)
+    }
+  }, timeout)
+
+  test('Should block deletion if aspects are associated with legal bases', async () => {
+    const response = await api
       .delete('/api/aspects/batch')
       .set('Authorization', `Bearer ${tokenAdmin}`)
       .send({ aspectIds: createdAspectIds })
-      .expect(204)
-    const response = await api
-      .get(`/api/subjects/${createdSubjectId}/aspects`)
-      .set('Authorization', `Bearer ${tokenAdmin}`)
-      .expect(200)
-      .expect('Content-Type', /application\/json/)
+      .expect(409)
 
-    const remainingAspects = response.body.aspects
-    expect(remainingAspects.some(aspect => createdAspectIds.includes(aspect.id))).toBe(false)
+    expect(response.body.message).toMatch(/associated with legal bases/i)
   })
 
-  test('Should return 400 when aspectIds is missing or empty', async () => {
-    const response = await api
-      .delete('/api/aspects/batch')
-      .set('Authorization', `Bearer ${tokenAdmin}`)
-      .send({ aspectIds: [] })
-      .expect(400)
-      .expect('Content-Type', /application\/json/)
+  describe('After removing all legal bases', () => {
+    beforeAll(async () => {
+      for (const legalBasis of createdLegalBases) {
+        await api
+          .delete(`/api/legalBasis/${legalBasis.id}`)
+          .set('Authorization', `Bearer ${tokenAdmin}`)
+          .expect(204)
+      }
+    })
 
-    expect(response.body.message).toMatch(/Missing required fields: aspectIds/i)
-  })
+    test('Should block deletion if aspects are still associated with requirements', async () => {
+      const response = await api
+        .delete('/api/aspects/batch')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send({ aspectIds: createdAspectIds })
+        .expect(409)
 
-  test('Should return 401 when unauthorized user attempts to delete aspects', async () => {
-    const response = await api
-      .delete('/api/aspects/batch')
-      .send({ aspectIds: createdAspectIds })
-      .expect(401)
-      .expect('Content-Type', /application\/json/)
+      expect(response.body.message).toMatch(/associated with requirements/i)
+    })
 
-    expect(response.body.error).toMatch(/token missing or invalid/i)
-  })
+    describe('After removing all requirements', () => {
+      beforeAll(async () => {
+        for (const req of createdRequirements) {
+          await api
+            .delete(`/api/requirement/${req.id}`)
+            .set('Authorization', `Bearer ${tokenAdmin}`)
+            .expect(204)
+        }
+      })
 
-  test('Should return 404 if any aspectId does not exist', async () => {
-    const nonExistentAspectId = -1
-    const response = await api
-      .delete('/api/aspects/batch')
-      .set('Authorization', `Bearer ${tokenAdmin}`)
-      .send({ aspectIds: [nonExistentAspectId, ...createdAspectIds] })
-      .expect(404)
-      .expect('Content-Type', /application\/json/)
+      test('Should return 401 if the user is unauthorized', async () => {
+        const response = await api
+          .delete('/api/aspects/batch')
+          .send({ aspectIds: createdAspectIds })
+          .expect(401)
 
-    expect(response.body.message).toMatch(/Aspects not found for IDs/i)
+        expect(response.body.error).toMatch(/token missing or invalid/i)
+      })
+
+      test('Should successfully delete all aspects', async () => {
+        await api
+          .delete('/api/aspects/batch')
+          .set('Authorization', `Bearer ${tokenAdmin}`)
+          .send({ aspectIds: createdAspectIds })
+          .expect(204)
+
+        const response = await api
+          .get(`/api/subjects/${createdSubjectId}/aspects`)
+          .set('Authorization', `Bearer ${tokenAdmin}`)
+          .expect(200)
+
+        const remainingAspects = response.body.aspects
+        expect(remainingAspects.some(aspect => createdAspectIds.includes(aspect.id))).toBe(false)
+      })
+    })
   })
 })

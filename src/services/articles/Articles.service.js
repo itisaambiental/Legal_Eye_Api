@@ -274,11 +274,11 @@ class ArticlesService {
   }
 
   /**
-   * Deletes multiple articles by their IDs.
-   * @param {Array<number>} articleIds - Array of article IDs to delete.
-   * @returns {Promise<{ success: boolean }>} - An object indicating the deletion was successful.
-   * @throws {ErrorUtils} - If articles not found or deletion fails.
-   */
+ * Deletes multiple articles by their IDs.
+ * @param {Array<number>} articleIds - Array of article IDs to delete.
+ * @returns {Promise<{ success: boolean }>} - An object indicating the deletion was successful.
+ * @throws {ErrorUtils} - If articles not found or deletion fails.
+ */
   static async deleteArticlesBatch (articleIds) {
     try {
       const existingArticles = await ArticlesRepository.findByIds(articleIds)
@@ -288,19 +288,19 @@ class ArticlesService {
         )
         throw new ErrorUtils(404, 'Articles not found for IDs', { notFoundIds })
       }
-      const pendingRequirementIdentificationJobs = []
-      for (const article of existingArticles) {
-        const { hasPendingJobs: hasPendingRequirementIdentificationJobs } = await RequirementsIdentificationService.hasPendingArticleJobs(article.id)
-        if (hasPendingRequirementIdentificationJobs) {
-          pendingRequirementIdentificationJobs.push({
-            id: article.id,
-            name: article.article_name
-          })
-        }
-      }
-
+      const results = await Promise.all(
+        existingArticles.map(async (article) => {
+          const { hasPendingJobs: hasPendingRequirementIdentificationJobs } = await RequirementsIdentificationService.hasPendingArticleJobs(article.id)
+          return hasPendingRequirementIdentificationJobs
+            ? { id: article.id, name: article.article_name }
+            : null
+        })
+      )
+      const pendingRequirementIdentificationJobs = results.filter(Boolean)
       if (pendingRequirementIdentificationJobs.length > 0) {
-        throw new ErrorUtils(409, 'Cannot delete Articles with pending Requirement Identification jobs')
+        throw new ErrorUtils(409, 'Cannot delete Articles with pending Requirement Identification jobs', {
+          articles: pendingRequirementIdentificationJobs
+        })
       }
       const articlesDeleted = await ArticlesRepository.deleteBatch(articleIds)
       if (!articlesDeleted) {

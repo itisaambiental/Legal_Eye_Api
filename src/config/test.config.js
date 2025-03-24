@@ -12,6 +12,8 @@ import emailQueue from '../workers/emailWorker.js'
 import articlesQueue from '../workers/articlesWorker.js'
 import requirementsIdentificationQueue from '../queues/requirementsIdentificationQueue.js'
 
+const timeout = 500000
+
 /**
  * The API object for making HTTP requests in tests.
  * @type {supertest.SuperTest<supertest.Test>}
@@ -41,4 +43,4 @@ afterAll(async () => {
     serverInstance.close()
   }
   await pool.end()
-}, 500000)
+}, timeout)

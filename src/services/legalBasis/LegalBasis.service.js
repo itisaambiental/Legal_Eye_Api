@@ -1030,22 +1030,28 @@ class LegalBasisService {
       }
       const pendingArticleExtractionJobs = []
       const pendingRequirementIdentificationJobs = []
-      for (const legalBase of legalBasis) {
-        const { hasPendingJobs: hasPendingArticleExtractionJobs } = await extractArticles.hasPendingExtractionJobs(legalBase.id)
-        if (hasPendingArticleExtractionJobs) {
-          pendingArticleExtractionJobs.push({
-            id: legalBase.id,
-            name: legalBase.legal_name
-          })
-        }
-        const { hasPendingJobs: hasPendingRequirementIdentificationJobs } = await RequirementsIdentificationService.hasPendingLegalBasisJobs(legalBase.id)
-        if (hasPendingRequirementIdentificationJobs) {
-          pendingRequirementIdentificationJobs.push({
-            id: legalBase.id,
-            name: legalBase.legal_name
-          })
-        }
-      }
+      const urlsToDelete = []
+      await Promise.all(
+        legalBasis.map(async (legalBase) => {
+          const { hasPendingJobs: hasPendingArticleExtractionJobs } = await extractArticles.hasPendingExtractionJobs(legalBase.id)
+          const { hasPendingJobs: hasPendingRequirementIdentificationJobs } = await RequirementsIdentificationService.hasPendingLegalBasisJobs(legalBase.id)
+          if (hasPendingArticleExtractionJobs) {
+            pendingArticleExtractionJobs.push({
+              id: legalBase.id,
+              name: legalBase.legal_name
+            })
+          }
+          if (hasPendingRequirementIdentificationJobs) {
+            pendingRequirementIdentificationJobs.push({
+              id: legalBase.id,
+              name: legalBase.legal_name
+            })
+          }
+          if (legalBase.url) {
+            urlsToDelete.push(legalBase.url)
+          }
+        })
+      )
       if (pendingArticleExtractionJobs.length > 0) {
         throw new ErrorUtils(
           409,
@@ -1060,11 +1066,9 @@ class LegalBasisService {
           { legalBases: pendingRequirementIdentificationJobs }
         )
       }
-      for (const legalBase of legalBasis) {
-        if (legalBase.url) {
-          await FileService.deleteFile(legalBase.url)
-        }
-      }
+      await Promise.all(
+        urlsToDelete.map((url) => FileService.deleteFile(url))
+      )
       const legalBasisDeleted = await LegalBasisRepository.deleteBatch(legalBasisIds)
       if (!legalBasisDeleted) {
         throw new ErrorUtils(404, 'LegalBasis not found')
