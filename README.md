@@ -70,56 +70,76 @@ A continuación se detalla la estructura del proyecto:
 
 ```
    # Configuración General
-   PORT=                       # Puerto en el que correrá la aplicación (ejemplo: 3000)
-   JWT_SECRET=                 # Llave secreta para generar y verificar tokens JWT
-   JWT_EXPIRATION=             # Tiempo de expiración de los tokens JWT (ejemplo: 7d para 7 días)
-   APP_URL=                    # URL de la aplicación frontend.
+PORT=                          # Puerto en el que correrá la aplicación (ejemplo: 3000)
+JWT_SECRET=                    # Llave secreta para generar y verificar tokens JWT
+JWT_EXPIRATION=                # Tiempo de expiración de los tokens JWT (ejemplo: 7d para 7 días)
+APP_URL=                       # URL de la aplicación frontend
 
-   # Base de Datos
-   DB_PORT=                    # Puerto de conexión a la base de datos
-   HOST_DATABASE=              # Dirección del host de la base de datos
-   USER_DATABASE=              # Usuario para acceder a la base de datos
-   PASSWORD_DATABASE=          # Contraseña para el usuario de la base de datos
-   DATABASE=                   # Nombre de la base de datos en producción
-   DATABASE_DEV=               # Nombre de la base de datos en desarrollo
-   DATABASE_TEST=              # Nombre de la base de datos para pruebas
+# Base de Datos - Producción
+DB_PORT=                       # Puerto para la base de datos en producción
+DB_HOST=                       # Host de la base de datos en producción
+DB_USER=                       # Usuario de la base de datos en producción
+DB_PASSWORD=                   # Contraseña de la base de datos en producción
+DB_DATABASE=                   # Nombre de la base de datos en producción
 
-   # Correo Electrónico
-   EMAIL_USER=                 # Dirección de correo electrónico para enviar notificaciones (ejemplo: it@isaambiental.com)
-   EMAIL_HOST=                 # Host del servidor SMTP para envío de correos
-   EMAIL_PASS=                 # Contraseña para el correo configurado en EMAIL_USER
-   AWS_USER_EMAIL=             # Usuario de AWS para servicios de correo electrónico
+# Base de Datos - Desarrollo
+DB_PORT_DEV=                   # Puerto para la base de datos en desarrollo
+DB_HOST_DEV=                   # Host de la base de datos en desarrollo
+DB_USER_DEV=                   # Usuario de la base de datos en desarrollo
+DB_PASSWORD_DEV=               # Contraseña de la base de datos en desarrollo
+DB_DATABASE_DEV=               # Nombre de la base de datos en desarrollo
 
-   # Redis
-   REDIS_PASS_TEST=            # Contraseña para el servidor Redis en el entorno de pruebas
-   REDIS_USER_TEST=            # Usuario para acceder al servidor Redis en el entorno de pruebas
-   REDIS_HOST_TEST=            # Dirección del host del servidor Redis en el entorno de pruebas
-   REDIS_PORT_TEST=            # Puerto del servidor Redis en el entorno de pruebas
-   REDIS_PASS_DEV=             # Contraseña para el servidor Redis en el entorno de desarrollo
-   REDIS_USER_DEV=             # Usuario para acceder al servidor Redis en el entorno de desarrollo
-   REDIS_HOST_DEV=             # Dirección del host del servidor Redis en el entorno de desarrollo
-   REDIS_PORT_DEV=             # Puerto del servidor Redis en el entorno de desarrollo
+# Base de Datos - Pruebas
+DB_PORT_TEST=                  # Puerto para la base de datos en entorno de pruebas
+DB_HOST_TEST=                  # Host de la base de datos en entorno de pruebas
+DB_USER_TEST=                  # Usuario de la base de datos en entorno de pruebas
+DB_PASSWORD_TEST=              # Contraseña de la base de datos en entorno de pruebas
+DB_DATABASE_TEST=              # Nombre de la base de datos en entorno de pruebas
 
-   # AWS S3
-   AWS_ACCESS_KEY_ID=          # Clave de acceso de AWS (para integrar servicios como S3)
-   AWS_SECRET_ACCESS_KEY=      # Llave secreta de AWS
-   AWS_REGION=                 # Región de AWS para los servicios utilizados (ejemplo: us-east-2)
-   S3_BUCKET_NAME=             # Nombre del bucket S3 para almacenamiento
+# Redis - Producción
+REDIS_PASS=                    # Contraseña del servidor Redis en producción
+REDIS_USER=                    # Usuario para Redis en producción
+REDIS_HOST=                    # Host del servidor Redis en producción
+REDIS_PORT=                    # Puerto del servidor Redis en producción
 
-   # Administración
-   ADMIN_GMAIL=                # Correo electrónico del administrador
-   ADMIN_ROLE=                 # ID del rol del administrador (ejemplo: 1 para superadministrador)
-   ADMIN_NAME=                 # Nombre del administrador
-   ADMIN_PASSWORD_TEST=        # Contraseña de administrador para entorno de pruebas
+# Redis - Desarrollo
+REDIS_PASS_DEV=                # Contraseña del servidor Redis en desarrollo
+REDIS_USER_DEV=                # Usuario para Redis en desarrollo
+REDIS_HOST_DEV=                # Host del servidor Redis en desarrollo
+REDIS_PORT_DEV=                # Puerto del servidor Redis en desarrollo
 
-   # APIs Externas
-   MICROSOFT_GRAPH_API=        # URL base de la API de Microsoft Graph
-   OPENAI_API_KEY=             # Clave de API de OpenAI para procesamiento de IA
-   ORGANIZATION_ID=            # ID de la organización en OpenAI
-   PROJECT_ID=                 # ID del proyecto en OpenAI
+# Redis - Pruebas
+REDIS_PASS_TEST=               # Contraseña del servidor Redis en entorno de pruebas
+REDIS_USER_TEST=               # Usuario para Redis en entorno de pruebas
+REDIS_HOST_TEST=               # Host del servidor Redis en entorno de pruebas
+REDIS_PORT_TEST=               # Puerto del servidor Redis en entorno de pruebas
 
-   # Concurrencia
-   CONCURRENCY_EXTRACT_ARTICLES= # Número máximo de procesos concurrentes para extracción de artículos
+# Correo Electrónico
+EMAIL_USER=                    # Dirección de correo para envío de notificaciones
+EMAIL_HOST=                    # Host SMTP para el envío de correos
+EMAIL_PASS=                    # Contraseña para el EMAIL_USER
+AWS_USER_EMAIL=                # Usuario de AWS para servicios relacionados con correo
+
+# AWS S3
+AWS_ACCESS_KEY_ID=             # Clave de acceso de AWS
+AWS_SECRET_ACCESS_KEY=         # Llave secreta de AWS
+AWS_REGION=                    # Región AWS (ejemplo: us-east-1)
+S3_BUCKET_NAME=                # Nombre del bucket S3
+
+# Administración
+ADMIN_GMAIL=                   # Correo electrónico del administrador
+ADMIN_ROLE=                    # ID del rol de administrador
+ADMIN_NAME=                    # Nombre del administrador
+ADMIN_PASSWORD_TEST=           # Contraseña del administrador para entorno de pruebas
+
+# APIs Externas
+MICROSOFT_GRAPH_API=           # URL base de la API de Microsoft Graph
+OPENAI_API_KEY=                # Clave de API de OpenAI para procesamiento de IA
+ORGANIZATION_ID=               # ID de la organización de OpenAI
+PROJECT_ID=                    # ID del proyecto de OpenAI
+
+# Concurrencia
+CONCURRENCY_EXTRACT_ARTICLES=  # Máximo número de procesos concurrentes para extracción de artículos
 ```
 
 ---
