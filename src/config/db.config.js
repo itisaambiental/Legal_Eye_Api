@@ -5,6 +5,11 @@ import {
   DB_PASSWORD,
   DB_DATABASE,
   DB_PORT,
+  DB_PORT_DEV,
+  DB_HOST_DEV,
+  DB_USER_DEV,
+  DB_PASSWORD_DEV,
+  DB_DATABASE_DEV,
   DB_PORT_TEST,
   DB_HOST_TEST,
   DB_USER_TEST,
@@ -14,30 +19,47 @@ import {
 } from './variables.config.js'
 
 /**
- * Determine if the application is running in the test environment.
- * @type {boolean}
+ * Defines the database configuration settings based on the current environment.
+ * Each environment (development, test, production) has its own database parameters.
+ * @type {Object}
  */
-const isTest = NODE_ENV === 'test'
+const config = {
+  development: {
+    port: DB_PORT_DEV,
+    host: DB_HOST_DEV,
+    user: DB_USER_DEV,
+    password: DB_PASSWORD_DEV,
+    database: DB_DATABASE_DEV
+  },
+  test: {
+    port: DB_PORT_TEST,
+    host: DB_HOST_TEST,
+    user: DB_USER_TEST,
+    password: DB_PASSWORD_TEST,
+    database: DB_DATABASE_TEST
+  },
+  production: {
+    port: DB_PORT,
+    host: DB_HOST,
+    user: DB_USER,
+    password: DB_PASSWORD,
+    database: DB_DATABASE
+  }
+}
 
 /**
- * The database connection pool.
+ * Creates and exports a MySQL connection pool based on the current environment's configuration.
+ * The pool is used for managing multiple concurrent database connections efficiently.
  * @type {import('mysql2/promise').Pool}
  */
-let pool
-
-try {
-  pool = createPool({
-    port: isTest ? DB_PORT_TEST : DB_PORT,
-    host: isTest ? DB_HOST_TEST : DB_HOST,
-    user: isTest ? DB_USER_TEST : DB_USER,
-    password: isTest ? DB_PASSWORD_TEST : DB_PASSWORD,
-    database: isTest ? DB_DATABASE_TEST : DB_DATABASE,
-    waitForConnections: true,
-    connectTimeout: 10000
-  })
-} catch (error) {
-  console.error('Failed to create a database connection pool:', error)
-  process.exit(1)
-}
+const pool = createPool({
+  port: config[NODE_ENV].port,
+  host: config[NODE_ENV].host,
+  user: config[NODE_ENV].user,
+  password: config[NODE_ENV].password,
+  database: config[NODE_ENV].database,
+  waitForConnections: true,
+  connectTimeout: 10000
+})
 
 export { pool }

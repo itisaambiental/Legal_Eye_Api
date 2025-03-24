@@ -4,6 +4,7 @@ import {
   singleArticleSchema,
   articlesSchema
 } from '../../schemas/article.schema.js'
+import RequirementsIdentificationService from '../requirements/requirementsIdentification/requirementsIdentification.service.js'
 import ErrorUtils from '../../utils/Error.js'
 import { z } from 'zod'
 import { convert } from 'html-to-text'
@@ -255,6 +256,10 @@ class ArticlesService {
       if (!existingArticle) {
         throw new ErrorUtils(404, 'Article not found')
       }
+      const { hasPendingJobs: hasPendingRequirementIdentificationJobs } = await RequirementsIdentificationService.hasPendingArticleJobs(existingArticle.id)
+      if (hasPendingRequirementIdentificationJobs) {
+        throw new ErrorUtils(409, 'Cannot delete Article with pending Requirement Identification jobs')
+      }
       const articleDeleted = await ArticlesRepository.deleteById(id)
       if (!articleDeleted) {
         throw new ErrorUtils(500, 'Article not found')
@@ -269,11 +274,11 @@ class ArticlesService {
   }
 
   /**
-   * Deletes multiple articles by their IDs.
-   * @param {Array<number>} articleIds - Array of article IDs to delete.
-   * @returns {Promise<{ success: boolean }>} - An object indicating the deletion was successful.
-   * @throws {ErrorUtils} - If articles not found or deletion fails.
-   */
+ * Deletes multiple articles by their IDs.
+ * @param {Array<number>} articleIds - Array of article IDs to delete.
+ * @returns {Promise<{ success: boolean }>} - An object indicating the deletion was successful.
+ * @throws {ErrorUtils} - If articles not found or deletion fails.
+ */
   static async deleteArticlesBatch (articleIds) {
     try {
       const existingArticles = await ArticlesRepository.findByIds(articleIds)
@@ -282,6 +287,20 @@ class ArticlesService {
           (id) => !existingArticles.some((article) => article.id === id)
         )
         throw new ErrorUtils(404, 'Articles not found for IDs', { notFoundIds })
+      }
+      const results = await Promise.all(
+        existingArticles.map(async (article) => {
+          const { hasPendingJobs: hasPendingRequirementIdentificationJobs } = await RequirementsIdentificationService.hasPendingArticleJobs(article.id)
+          return hasPendingRequirementIdentificationJobs
+            ? { id: article.id, name: article.article_name }
+            : null
+        })
+      )
+      const pendingRequirementIdentificationJobs = results.filter(Boolean)
+      if (pendingRequirementIdentificationJobs.length > 0) {
+        throw new ErrorUtils(409, 'Cannot delete Articles with pending Requirement Identification jobs', {
+          articles: pendingRequirementIdentificationJobs
+        })
       }
       const articlesDeleted = await ArticlesRepository.deleteBatch(articleIds)
       if (!articlesDeleted) {

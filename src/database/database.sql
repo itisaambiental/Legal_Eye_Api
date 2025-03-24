@@ -1,16 +1,9 @@
--- Create Database
--- The 'LegalEye' database is used to manage legal information, users, and roles.
-CREATE DATABASE LegalEye;
-
--- Use Database
-USE LegalEye;
-
 -- Table: roles
 -- This table stores user roles within the system.
 -- Columns:
 -- - id: Unique identifier for each role, auto-incremented.
 -- - name: Defines the name of the role, restricted to 'Admin' or 'Analyst'.
-CREATE TABLE roles (
+CREATE TABLE IF NOT EXISTS roles (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     name ENUM('Admin', 'Analyst') NOT NULL UNIQUE
 );
@@ -24,7 +17,7 @@ CREATE TABLE roles (
 -- - gmail: User's email address, must be unique.
 -- - role_id: Foreign key referencing the 'roles' table.
 -- - profile_picture: URL of the user's profile picture, optional.
-CREATE TABLE users (
+CREATE TABLE IF NOT EXISTS users (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     password VARCHAR(255) NOT NULL,
@@ -41,7 +34,7 @@ CREATE TABLE users (
 -- - gmail: Email address associated with the verification code.
 -- - code: Verification code used for password reset or validation.
 -- - expires_at: Expiration timestamp of the verification code.
-CREATE TABLE verification_codes (
+CREATE TABLE IF NOT EXISTS verification_codes (
     id INT AUTO_INCREMENT PRIMARY KEY,
     gmail VARCHAR(255) NOT NULL,
     code VARCHAR(6) NOT NULL,
@@ -53,7 +46,7 @@ CREATE TABLE verification_codes (
 -- Columns:
 -- - id: Unique identifier for each subject, auto-incremented.
 -- - subject_name: Name of the subject, such as 'Environmental', 'Security', etc.
-CREATE TABLE subjects (
+CREATE TABLE IF NOT EXISTS subjects (
     id INT AUTO_INCREMENT PRIMARY KEY,
     subject_name VARCHAR(255) NOT NULL
 );
@@ -64,7 +57,7 @@ CREATE TABLE subjects (
 -- - id: Unique identifier for each aspect, auto-incremented.
 -- - subject_id: Foreign key referencing the 'subjects' table.
 -- - aspect_name: Name of the aspect related to the subject.
-CREATE TABLE aspects (
+CREATE TABLE IF NOT EXISTS aspects (
     id INT AUTO_INCREMENT,
     subject_id INT NOT NULL,
     aspect_name VARCHAR(255) NOT NULL,
@@ -86,7 +79,7 @@ CREATE TABLE aspects (
 -- - url: URL of the legal document.
 -- - last_reform: Date of the last reform to the legal document.
 -- - subject_id: Id of the associated subject.
-CREATE TABLE legal_basis (
+CREATE TABLE IF NOT EXISTS legal_basis (
     id INT AUTO_INCREMENT PRIMARY KEY,
     legal_name VARCHAR(255) NOT NULL,
     abbreviation VARCHAR(20),
@@ -134,7 +127,7 @@ CREATE TABLE legal_basis (
 --   compared to using operators like `LIKE`.
 -- Constraints:
 -- - FOREIGN KEY (legal_basis_id): Ensures referential integrity by linking each article to a corresponding entry in the 'legal_basis' table. Deletes are cascaded.
-CREATE TABLE article (
+CREATE TABLE IF NOT EXISTS article (
     id INT AUTO_INCREMENT PRIMARY KEY,
     legal_basis_id INT NOT NULL,
     article_name LONGTEXT,
@@ -151,7 +144,7 @@ CREATE TABLE article (
 -- - legal_basis_id: Foreign key referencing the 'legal_basis' table.
 -- - subject_id: Foreign key referencing the 'subjects' table.
 -- - aspect_id: Foreign key referencing the 'aspects' table.
-CREATE TABLE legal_basis_subject_aspect (
+CREATE TABLE IF NOT EXISTS legal_basis_subject_aspect (
     legal_basis_id INT NOT NULL,
     subject_id INT NOT NULL,
     aspect_id INT NOT NULL,
@@ -164,7 +157,7 @@ CREATE TABLE legal_basis_subject_aspect (
 -- Table: requirements
 -- Description: This table stores the requirements associated with a subject and an aspect,
 -- along with detailed descriptions, conditions, evidence types, periodicity, and jurisdiction.
-CREATE TABLE requirements (
+CREATE TABLE IF NOT EXISTS requirements (
     id INT AUTO_INCREMENT PRIMARY KEY,
     subject_id INT NOT NULL,
     aspect_id INT NOT NULL,
@@ -203,11 +196,11 @@ CREATE TABLE requirements (
 -- Table: requirements_identification
 -- Description: This master table records the analysis (identification) that groups the evaluated requirements,
 -- including the analysis name, description, status, and the associated user.
-CREATE TABLE requirements_identification (
+CREATE TABLE IF NOT EXISTS requirements_identification (
     id INT AUTO_INCREMENT PRIMARY KEY,
     identification_name VARCHAR(255) NOT NULL,
     identification_description TEXT,
-    status ENUM('Active', 'Completed', 'Failed') NOT NULL DEFAULT 'Active',
+    status ENUM('Activo', 'Completado', 'Fallido') NOT NULL DEFAULT 'Activo';
     failed_reason TEXT,
     user_id BIGINT NULL,  
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -218,7 +211,7 @@ CREATE TABLE requirements_identification (
 -- Description: This table creates a relationship between an analysis (from requirements_identification)
 -- and the requirements used in that analysis.
 -- Note: The subject and aspect are derived from the requirements table.
-CREATE TABLE identification_requirements (
+CREATE TABLE IF NOT EXISTS identification_requirements (
     id INT AUTO_INCREMENT PRIMARY KEY,
     requirements_identification_id INT NOT NULL,
     requirement_id INT NOT NULL,
@@ -229,7 +222,7 @@ CREATE TABLE identification_requirements (
 -- Table: identification_legal_basis
 -- Description: This table links each requirement (within an analysis) to one or more legal bases,
 -- establishing a many-to-many relationship between the analyzed requirement and legal documents.
-CREATE TABLE identification_legal_basis (
+CREATE TABLE IF NOT EXISTS identification_legal_basis (
     identification_requirement_id INT NOT NULL,
     legal_basis_id INT NOT NULL,
     PRIMARY KEY (identification_requirement_id, legal_basis_id),
@@ -240,7 +233,7 @@ CREATE TABLE identification_legal_basis (
 -- Table: identification_legal_basis_articles
 -- Description: This table associates legal articles with a given legal basis linked to a requirement
 -- within an analysis, classifying each article as either 'Obligatory' or 'Complementary'.
-CREATE TABLE identification_legal_basis_articles (
+CREATE TABLE IF NOT EXISTS identification_legal_basis_articles (
     id INT AUTO_INCREMENT PRIMARY KEY,
     identification_requirement_id INT NOT NULL,
     legal_basis_id INT NOT NULL,

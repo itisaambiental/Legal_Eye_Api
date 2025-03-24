@@ -2,6 +2,7 @@ import RequirementRepository from '../../repositories/Requirements.repository.js
 import requirementSchema from '../../schemas/requirement.schema.js'
 import SubjectsRepository from '../../repositories/Subject.repository.js'
 import AspectsRepository from '../../repositories/Aspects.repository.js'
+import RequirementsIdentificationService from './requirementsIdentification/requirementsIdentification.service.js'
 import ErrorUtils from '../../utils/Error.js'
 import { z } from 'zod'
 
@@ -688,6 +689,10 @@ class RequirementService {
       if (!existingRequirement) {
         throw new ErrorUtils(404, 'Requirement not found')
       }
+      const { hasPendingJobs: hasPendingRequirementIdentificationJobs } = await RequirementsIdentificationService.hasPendingRequirementJobs(requirementId)
+      if (hasPendingRequirementIdentificationJobs) {
+        throw new ErrorUtils(409, 'Cannot delete Requirement with pending Requirement Identification jobs')
+      }
       const requirementDeleted = await RequirementRepository.deleteBatch(
         requirementId
       )
@@ -704,23 +709,35 @@ class RequirementService {
   }
 
   /**
-   * Deletes multiple requirements by their IDs.
-   * @param {number[]} requirementIds - An array of requirement IDs to delete.
-   * @returns {Promise<{ success: boolean }>} - An object indicating whether the deletion was successful.
-   * @throws {ErrorUtils} - If an error occurs during deletion.
-   */
+ * Deletes multiple requirements by their IDs.
+ * @param {Array<number>} requirementIds - Array of requirement IDs to delete.
+ * @returns {Promise<{ success: boolean }>} - An object indicating whether the deletion was successful.
+ * @throws {ErrorUtils} - If requirements not found, have active jobs, or deletion fails.
+ */
   static async deleteBatch (requirementIds) {
     try {
-      const requirements = await RequirementRepository.findByIds(
-        requirementIds
-      )
+      const requirements = await RequirementRepository.findByIds(requirementIds)
       if (requirements.length !== requirementIds.length) {
         const notFoundIds = requirementIds.filter(
           (id) => !requirements.some((requirement) => requirement.id === id)
         )
-        throw new ErrorUtils(404, 'Requirements not found for IDs', {
-          notFoundIds
+        throw new ErrorUtils(404, 'Requirements not found for IDs', { notFoundIds })
+      }
+      const results = await Promise.all(
+        requirements.map(async (requirement) => {
+          const { hasPendingJobs: hasPendingRequirementIdentificationJobs } = await RequirementsIdentificationService.hasPendingRequirementJobs(requirement.id)
+          return hasPendingRequirementIdentificationJobs
+            ? { id: requirement.id, name: requirement.requirement_name }
+            : null
         })
+      )
+      const pendingRequirementIdentificationJobs = results.filter(Boolean)
+      if (pendingRequirementIdentificationJobs.length > 0) {
+        throw new ErrorUtils(
+          409,
+          'Cannot delete Requirements with pending Requirement Identification jobs',
+          { requirements: pendingRequirementIdentificationJobs }
+        )
       }
       const requirementsDeleted = await RequirementRepository.deleteBatch(requirementIds)
       if (!requirementsDeleted) {
@@ -731,10 +748,7 @@ class RequirementService {
       if (error instanceof ErrorUtils) {
         throw error
       }
-      throw new ErrorUtils(
-        500,
-        'Unexpected error during batch requirement deletion'
-      )
+      throw new ErrorUtils(500, 'Unexpected error during batch deletion of Requirements')
     }
   }
 }

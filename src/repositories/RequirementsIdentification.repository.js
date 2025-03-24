@@ -116,6 +116,47 @@ class RequirementsIdentificationRepository {
   }
 
   /**
+ * Finds multiple requirements identifications by their IDs.
+ * @param {Array<number>} identificationIds - Array of identification IDs to find.
+ * @returns {Promise<RequirementsIdentification[]>} - Array of found identification objects.
+ * @throws {ErrorUtils} - If an error occurs during retrieval.
+ */
+  static async findByIds (identificationIds) {
+    if (identificationIds.length === 0) {
+      return []
+    }
+
+    const query = `
+    SELECT 
+      id, 
+      identification_name, 
+      identification_description, 
+      status, 
+      user_id, 
+      created_at
+    FROM requirements_identification
+    WHERE id IN (?)
+  `
+    try {
+      const [rows] = await pool.query(query, [identificationIds])
+      if (rows.length === 0) return []
+      return rows.map(row => {
+        return new RequirementsIdentification(
+          row.id,
+          row.identification_name,
+          row.identification_description,
+          row.status,
+          row.user_id,
+          row.created_at
+        )
+      })
+    } catch (error) {
+      console.error('Error finding requirements identifications by IDs:', error.message)
+      throw new ErrorUtils(500, 'Error retrieving requirements identifications from the database')
+    }
+  }
+
+  /**
  * Checks if an identification name already exists in the database.
  * @param {string} identificationName - The identification name to check.
  * @returns {Promise<boolean>} - Returns true if the name exists, false otherwise.
@@ -159,17 +200,15 @@ class RequirementsIdentificationRepository {
 
   /**
    * Retrieves all requirements identifications.
-   *
-   * @returns {Promise<Array<RequirementsIdentification>>} - A list of all identifications.
-   * @throws {ErrorUtils} - If an error occurs during retrieval.
+   * @returns {Promise<Array<RequirementsIdentification>|null>}
    */
   static async findAll () {
     const query = `
       SELECT id, identification_name, identification_description, status, user_id, created_at
-      FROM requirements_identification
-    `
+      FROM requirements_identification`
     try {
       const [rows] = await pool.query(query)
+      if (rows.length === 0) return null
       return rows.map(row => new RequirementsIdentification(
         row.id,
         row.identification_name,
@@ -179,42 +218,50 @@ class RequirementsIdentificationRepository {
         row.created_at
       ))
     } catch (error) {
-      console.error('Error fetching all requirements identifications:', error.message)
-      throw new ErrorUtils(500, 'Error retrieving requirements identifications')
+      console.error('Error retrieving all:', error.message)
+      throw new ErrorUtils(500, 'Error retrieving all requirements identifications')
     }
   }
 
   /**
  * Updates an existing requirements identification by ID.
+ * Uses IFNULL to preserve existing values if fields are not provided.
  *
  * @param {number} id - The ID of the identification to update.
  * @param {Object} identification - The updated requirements identification data.
- * @param {string} identification.identificationName - The updated name of the identification.
- * @param {string} identification.identificationDescription - The updated description of the identification.
- * @param {number|null} identification.userId - The updated ID of the user who created the identification.
- * @returns {Promise<RequirementsIdentification|null>} - The updated identification or null if not found.
+ * @param {string} [identification.identificationName] - The name of the identification (optional).
+ * @param {string} [identification.identificationDescription] - The description of the identification (optional).
+ * @returns {Promise<RequirementsIdentification|null>} - The updated RequirementsIdentification instance or null if not found.
  * @throws {ErrorUtils} - If an error occurs during the update.
  */
   static async updateById (id, identification) {
+    const {
+      identificationName,
+      identificationDescription
+    } = identification
+
     const query = `
-      UPDATE requirements_identification 
-      SET identification_name = ?, identification_description = ?, user_id = ?
-      WHERE id = ?
-    `
+    UPDATE requirements_identification 
+    SET 
+      identification_name = IFNULL(?, identification_name),
+      identification_description = IFNULL(?, identification_description)
+    WHERE id = ?
+  `
+
     const values = [
-      identification.identificationName,
-      identification.identificationDescription,
-      identification.userId,
+      identificationName,
+      identificationDescription,
       id
     ]
+
     try {
       const [result] = await pool.query(query, values)
       if (result.affectedRows === 0) return null
-      const requirementsIdentification = await this.findById(result.insertId)
+      const requirementsIdentification = await this.findById(id)
       return requirementsIdentification
     } catch (error) {
       console.error('Error updating requirements identification:', error.message)
-      throw new ErrorUtils(500, 'Error updating requirements identification')
+      throw new ErrorUtils(500, 'Error updating requirements identification in the database')
     }
   }
 
@@ -615,40 +662,46 @@ class RequirementsIdentificationRepository {
   }
 
   /**
-   * Retrieves requirements identifications filtered by identification description.
-   * @param {string} identificationDescription - The identification description to filter by.
-   * @returns {Promise<Array<Object>>} - A list of identifications matching the description.
-   * @throws {ErrorUtils} - If an error occurs during retrieval.
+  /**
+   * Retrieves by description.
+   * @param {string} identificationDescription
+   * @returns {Promise<Array<RequirementsIdentification>|null>}
    */
   static async findByDescription (identificationDescription) {
     const query = `
       SELECT id, identification_name, identification_description, status, user_id, created_at
       FROM requirements_identification
       WHERE identification_description LIKE ?`
-
     try {
       const [rows] = await pool.query(query, [`%${identificationDescription}%`])
-      return rows
+      if (rows.length === 0) return null
+      return rows.map(row => new RequirementsIdentification(
+        row.id,
+        row.identification_name,
+        row.identification_description,
+        row.status,
+        row.user_id,
+        row.created_at
+      ))
     } catch (error) {
-      console.error('Error retrieving identifications by description:', error.message)
-      throw new ErrorUtils(500, 'Error retrieving identifications by description')
+      console.error('Error retrieving by description:', error.message)
+      throw new ErrorUtils(500, 'Error retrieving by description')
     }
   }
 
   /**
-   * Retrieves requirements identifications filtered by status.
-   * @param {string} status - The status to filter by.
-   * @returns {Promise<Array<RequirementsIdentification>>} - A list of identifications matching the status.
-   * @throws {ErrorUtils} - If an error occurs during retrieval.
+   * Retrieves by status.
+   * @param {string} status
+   * @returns {Promise<Array<RequirementsIdentification>|null>}
    */
   static async findByStatus (status) {
     const query = `
-      SELECT id, identification_name, identification_description, status, user_id, created_at 
-      FROM requirements_identification 
-      WHERE status = ?
-    `
+      SELECT id, identification_name, identification_description, status, user_id, created_at
+      FROM requirements_identification
+      WHERE status = ?`
     try {
       const [rows] = await pool.query(query, [status])
+      if (rows.length === 0) return null
       return rows.map(row => new RequirementsIdentification(
         row.id,
         row.identification_name,
@@ -664,19 +717,18 @@ class RequirementsIdentificationRepository {
   }
 
   /**
-   * Retrieves requirements identifications filtered by user ID.
-   * @param {number} userId - The user ID to filter by.
-   * @returns {Promise<Array<RequirementsIdentification>>} - A list of identifications associated with the user.
-   * @throws {ErrorUtils} - If an error occurs during retrieval.
+   * Retrieves by user ID.
+   * @param {number} userId
+   * @returns {Promise<Array<RequirementsIdentification>|null>}
    */
   static async findByUserId (userId) {
     const query = `
-      SELECT id, identification_name, identification_description, status, user_id, created_at 
-      FROM requirements_identification 
-      WHERE user_id = ?
-    `
+      SELECT id, identification_name, identification_description, status, user_id, created_at
+      FROM requirements_identification
+      WHERE user_id = ?`
     try {
       const [rows] = await pool.query(query, [userId])
+      if (rows.length === 0) return null
       return rows.map(row => new RequirementsIdentification(
         row.id,
         row.identification_name,
@@ -692,30 +744,48 @@ class RequirementsIdentificationRepository {
   }
 
   /**
-   * Retrieves requirements identifications filtered by creation date.
-   * @param {string} createdAt - The creation date to filter by (YYYY-MM-DD format).
-   * @returns {Promise<Array<RequirementsIdentification>>} - A list of identifications created on the given date.
-   * @throws {ErrorUtils} - If an error occurs during retrieval.
-   */
-  static async findByCreatedAt (createdAt) {
-    const query = `
-      SELECT id, identification_name, identification_description, status, user_id, created_at 
-      FROM requirements_identification 
-      WHERE DATE(created_at) = ?
-    `
+ * Retrieves requirements identifications filtered by a date range on created_at.
+ * @param {string} [from] - Start date.
+ * @param {string} [to] - End date.
+ * @returns {Promise<Array<RequirementsIdentification>>} - A list of identifications created within the date range.
+ * @throws {ErrorUtils} - If an error occurs during retrieval.
+ */
+  static async findByCreatedAt (from, to) {
+    let query = `
+  SELECT id, identification_name, identification_description, status, user_id, created_at 
+  FROM requirements_identification
+  `
+    const values = []
+    const conditions = []
+    if (from && to) {
+      conditions.push('DATE(created_at) BETWEEN ? AND ?')
+      values.push(from, to)
+    } else if (from) {
+      conditions.push('DATE(created_at) >= ?')
+      values.push(from)
+    } else if (to) {
+      conditions.push('DATE(created_at) <= ?')
+      values.push(to)
+    }
+    if (conditions.length > 0) {
+      query += ' WHERE ' + conditions.join(' AND ')
+    }
     try {
-      const [rows] = await pool.query(query, [createdAt])
-      return rows.map(row => new RequirementsIdentification(
-        row.id,
-        row.identification_name,
-        row.identification_description,
-        row.status,
-        row.user_id,
-        row.created_at
-      ))
+      const [rows] = await pool.query(query, values)
+      return rows.map(
+        (row) =>
+          new RequirementsIdentification(
+            row.id,
+            row.identification_name,
+            row.identification_description,
+            row.status,
+            row.user_id,
+            row.created_at
+          )
+      )
     } catch (error) {
-      console.error('Error retrieving by created_at:', error.message)
-      throw new ErrorUtils(500, 'Error retrieving by created_at')
+      console.error('Error retrieving by created_at range:', error.message)
+      throw new ErrorUtils(500, 'Error retrieving by created_at range')
     }
   }
 }

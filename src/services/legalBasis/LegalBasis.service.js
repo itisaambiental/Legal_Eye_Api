@@ -4,6 +4,7 @@ import legalBasisSchema from '../../schemas/legalBasis.schema.js'
 import SubjectsRepository from '../../repositories/Subject.repository.js'
 import AspectsRepository from '../../repositories/Aspects.repository.js'
 import extractArticles from '../articles/extractArticles/extractArticles.service.js'
+import RequirementsIdentificationService from '../requirements/requirementsIdentification/requirementsIdentification.service.js'
 import { z } from 'zod'
 import ErrorUtils from '../../utils/Error.js'
 import FileService from '../files/File.service.js'
@@ -752,8 +753,8 @@ class LegalBasisService {
    * Both 'from' and 'to' are optional. If provided, they can be in 'YYYY-MM-DD' or 'DD-MM-YYYY'.
    *
    * @function getByLastReform
-   * @param {Date} [from] - Start date.
-   * @param {Date} [to] - End date.
+   * @param {string} [from] - Start date.
+   * @param {string} [to] - End date.
    * @returns {Promise<Array<LegalBasis>>} - A list of legal basis entries filtered by the date range.
    * @throws {ErrorUtils} - If an error occurs during retrieval or date validation.
    */
@@ -977,28 +978,30 @@ class LegalBasisService {
   }
 
   /**
-   * Deletes a Legal base by ID.
-   * @param {number} legalBasisId - The ID of the Legal base to delete.
-   * @returns {Promise<{ success: boolean }>} - An object indicating the deletion was successful.
-   * @throws {ErrorUtils} - If an error occurs during deletion.
-   */
+ * Deletes a Legal base by ID.
+ * @param {number} legalBasisId - The ID of the Legal base to delete.
+ * @returns {Promise<{ success: boolean }>} - An object indicating the deletion was successful.
+ * @throws {ErrorUtils} - If an error occurs during deletion.
+ */
   static async deleteById (legalBasisId) {
     try {
       const legalBasis = await LegalBasisRepository.findById(legalBasisId)
       if (!legalBasis) {
         throw new ErrorUtils(404, 'LegalBasis not found')
       }
-      const { hasPendingJobs } = await extractArticles.hasPendingExtractionJobs(
-        legalBasisId
-      )
-      if (hasPendingJobs) {
-        throw new ErrorUtils(409, 'Cannot delete LegalBasis with pending jobs')
+      const { hasPendingJobs: hasPendingArticleExtractionJobs } = await extractArticles.hasPendingExtractionJobs(legalBasisId)
+      if (hasPendingArticleExtractionJobs) {
+        throw new ErrorUtils(409, 'Cannot delete LegalBasis with pending Article Extraction jobs')
+      }
+      const { hasPendingJobs: hasPendingRequirementIdentificationJobs } = await RequirementsIdentificationService.hasPendingLegalBasisJobs(legalBasisId)
+      if (hasPendingRequirementIdentificationJobs) {
+        throw new ErrorUtils(409, 'Cannot delete LegalBasis with pending Requirement Identification jobs')
       }
       if (legalBasis.url) {
         await FileService.deleteFile(legalBasis.url)
       }
-      const LegalBasisdeleted = await LegalBasisRepository.delete(legalBasisId)
-      if (!LegalBasisdeleted) {
+      const legalBasisDeleted = await LegalBasisRepository.delete(legalBasisId)
+      if (!legalBasisDeleted) {
         throw new ErrorUtils(404, 'LegalBasis not found')
       }
       return { success: true }
@@ -1011,11 +1014,11 @@ class LegalBasisService {
   }
 
   /**
-   * Deletes multiple Legal Basis records by their IDs.
-   * @param {Array<number>} legalBasisIds - An array of IDs of the Legal Basis records to delete.
-   * @returns {Promise<{ success: boolean }>} - An object indicating the deletion was successful.
-   * @throws {ErrorUtils} - If any error occurs during the deletion process.
-   */
+ * Deletes multiple Legal Basis records by their IDs.
+ * @param {Array<number>} legalBasisIds - An array of IDs of the Legal Basis records to delete.
+ * @returns {Promise<{ success: boolean }>} - An object indicating the deletion was successful.
+ * @throws {ErrorUtils} - If any error occurs during the deletion process.
+ */
   static async deleteBatch (legalBasisIds) {
     try {
       const legalBasis = await LegalBasisRepository.findByIds(legalBasisIds)
@@ -1023,40 +1026,51 @@ class LegalBasisService {
         const notFoundIds = legalBasisIds.filter(
           (id) => !legalBasis.some((legalBase) => legalBase.id === id)
         )
-        throw new ErrorUtils(404, 'LegalBasis not found for IDs', {
-          notFoundIds
+        throw new ErrorUtils(404, 'LegalBasis not found for IDs', { notFoundIds })
+      }
+      const pendingArticleExtractionJobs = []
+      const pendingRequirementIdentificationJobs = []
+      const urlsToDelete = []
+      await Promise.all(
+        legalBasis.map(async (legalBase) => {
+          const { hasPendingJobs: hasPendingArticleExtractionJobs } = await extractArticles.hasPendingExtractionJobs(legalBase.id)
+          const { hasPendingJobs: hasPendingRequirementIdentificationJobs } = await RequirementsIdentificationService.hasPendingLegalBasisJobs(legalBase.id)
+          if (hasPendingArticleExtractionJobs) {
+            pendingArticleExtractionJobs.push({
+              id: legalBase.id,
+              name: legalBase.legal_name
+            })
+          }
+          if (hasPendingRequirementIdentificationJobs) {
+            pendingRequirementIdentificationJobs.push({
+              id: legalBase.id,
+              name: legalBase.legal_name
+            })
+          }
+          if (legalBase.url) {
+            urlsToDelete.push(legalBase.url)
+          }
         })
-      }
-      const pendingJobs = []
-      for (const legalBase of legalBasis) {
-        const { hasPendingJobs } = await extractArticles.hasPendingExtractionJobs(
-          legalBase.id
-        )
-        if (hasPendingJobs) {
-          pendingJobs.push({
-            id: legalBase.id,
-            name: legalBase.legal_name
-          })
-        }
-      }
-      if (pendingJobs.length > 0) {
+      )
+      if (pendingArticleExtractionJobs.length > 0) {
         throw new ErrorUtils(
           409,
-          'Cannot delete Legal Bases with pending jobs',
-          {
-            LegalBases: pendingJobs
-          }
+          'Cannot delete Legal Bases with pending Article Extraction jobs',
+          { legalBases: pendingArticleExtractionJobs }
         )
       }
-      for (const legalBase of legalBasis) {
-        if (legalBase.url) {
-          await FileService.deleteFile(legalBase.url)
-        }
+      if (pendingRequirementIdentificationJobs.length > 0) {
+        throw new ErrorUtils(
+          409,
+          'Cannot delete Legal Bases with pending Requirement Identification jobs',
+          { legalBases: pendingRequirementIdentificationJobs }
+        )
       }
-      const LegalBasisDeleted = await LegalBasisRepository.deleteBatch(
-        legalBasisIds
+      await Promise.all(
+        urlsToDelete.map((url) => FileService.deleteFile(url))
       )
-      if (!LegalBasisDeleted) {
+      const legalBasisDeleted = await LegalBasisRepository.deleteBatch(legalBasisIds)
+      if (!legalBasisDeleted) {
         throw new ErrorUtils(404, 'LegalBasis not found')
       }
       return { success: true }
@@ -1064,10 +1078,7 @@ class LegalBasisService {
       if (error instanceof ErrorUtils) {
         throw error
       }
-      throw new ErrorUtils(
-        500,
-        'Unexpected error during batch Legal Basis deletion'
-      )
+      throw new ErrorUtils(500, 'Unexpected error during batch Legal Basis deletion')
     }
   }
 }

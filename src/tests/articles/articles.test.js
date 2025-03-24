@@ -5,6 +5,7 @@ import SubjectsRepository from '../../repositories/Subject.repository.js'
 import LegalBasisRepository from '../../repositories/LegalBasis.repository.js'
 import ArticlesRepository from '../../repositories/Articles.repository.js'
 import AspectsRepository from '../../repositories/Aspects.repository.js'
+import RequirementRepository from '../../repositories/Requirements.repository.js'
 import generateLegalBasisData from '../../utils/generateLegalBasisData.js'
 import generateArticleData from '../../utils/generateArticleData.js'
 
@@ -21,6 +22,7 @@ const createdAspectIds = []
 let createdLegalBasisId
 
 beforeAll(async () => {
+  await RequirementRepository.deleteAll()
   await LegalBasisRepository.deleteAll()
   await ArticlesRepository.deleteAll()
   await SubjectsRepository.deleteAll()

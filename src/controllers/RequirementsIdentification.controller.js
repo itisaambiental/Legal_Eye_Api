@@ -1,18 +1,19 @@
 import RequirementsIdentificationService from '../services/requirements/requirementsIdentification/requirementsIdentification.service.js'
 import UserService from '../services/users/User.service.js'
 import ErrorUtils from '../utils/Error.js'
+import validateDate from '../utils/validateDate.js'
 
 /**
- * Controller for Requirements Identification Jobs operations.
+ * Controller module for Requirements Identification operations.
+ * Handles API requests for creating, retrieving, updating, and deleting requirements identifications.
  * @module RequirementsIdentificationController
  */
-
 /**
  * Starts a requirements identification job.
  * @function startIdentification
  * @param {import('express').Request} req - Request object, expects { identificationName, identificationDescription, legalBasisIds, subjectId, aspectIds, intelligenceLevel } in req.body.
  * @param {import('express').Response} res - Response object.
- * @returns {Object} - The jobId and the created requirementsIdentification data.
+ * @returns {Object} - The jobId and the created requirementsIdentificationId.
  */
 export const startIdentification = async (req, res) => {
   const { userId } = req
@@ -29,19 +30,17 @@ export const startIdentification = async (req, res) => {
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-    const { jobId, requirementsIdentificationId } =
-      await RequirementsIdentificationService.startIdentification(
-        {
-          identificationName,
-          identificationDescription,
-          legalBasisIds,
-          subjectId,
-          aspectIds,
-          intelligenceLevel
-        },
-        userId
-      )
-
+    const { jobId, requirementsIdentificationId } = await RequirementsIdentificationService.startIdentification(
+      {
+        identificationName,
+        identificationDescription,
+        legalBasisIds,
+        subjectId,
+        aspectIds,
+        intelligenceLevel
+      },
+      userId
+    )
     return res.status(201).json({ jobId, requirementsIdentificationId })
   } catch (error) {
     if (error instanceof ErrorUtils) {
@@ -69,9 +68,7 @@ export const getIdentificationJobStatus = async (req, res) => {
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-    const jobStatus =
-      await RequirementsIdentificationService.getIdentificationJobStatus(jobId)
-
+    const jobStatus = await RequirementsIdentificationService.getIdentificationJobStatus(jobId)
     return res.status(jobStatus.status).json(jobStatus.data)
   } catch (error) {
     if (error instanceof ErrorUtils) {
@@ -94,18 +91,17 @@ export const getIdentificationJobStatus = async (req, res) => {
 export const cancelIdentificationJob = async (req, res) => {
   const { userId } = req
   const { jobId } = req.params
+
   try {
     const isAuthorized = await UserService.userExists(userId)
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-    const success =
-      await RequirementsIdentificationService.cancelIdentificationJob(jobId)
+    const success = await RequirementsIdentificationService.cancelIdentificationJob(jobId)
     if (success) {
       return res.sendStatus(204)
-    } else {
-      return res.status(500).json({ message: 'Internal Server Error' })
     }
+    return res.status(500).json({ message: 'Internal Server Error' })
   } catch (error) {
     if (error instanceof ErrorUtils) {
       return res.status(error.status).json({
@@ -126,17 +122,14 @@ export const cancelIdentificationJob = async (req, res) => {
  */
 export const getAllIdentifications = async (req, res) => {
   const { userId } = req
+
   try {
-    // Verifica que el usuario esté autorizado
     const isAuthorized = await UserService.userExists(userId)
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-
-    // Obtiene todas las identificaciones de requisitos
     const identifications = await RequirementsIdentificationService.getAllIdentifications()
-
-    return res.status(200).json(identifications)
+    return res.status(200).json({ identifications })
   } catch (error) {
     if (error instanceof ErrorUtils) {
       return res.status(error.status).json({
@@ -147,6 +140,7 @@ export const getAllIdentifications = async (req, res) => {
     return res.status(500).json({ message: 'Internal Server Error' })
   }
 }
+
 /**
  * Retrieves requirements identifications filtered by name.
  * @function getIdentificationsByName
@@ -157,12 +151,13 @@ export const getAllIdentifications = async (req, res) => {
 export const getIdentificationsByName = async (req, res) => {
   const { userId } = req
   const { identificationName } = req.query
+
   try {
     const isAuthorized = await UserService.userExists(userId)
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-    const identifications = await RequirementsIdentificationService.findByName(identificationName)
+    const identifications = await RequirementsIdentificationService.getByName(identificationName)
     return res.status(200).json({ identifications })
   } catch (error) {
     if (error instanceof ErrorUtils) {
@@ -178,16 +173,20 @@ export const getIdentificationsByName = async (req, res) => {
 /**
  * Retrieves requirements identifications filtered by description.
  * @function getIdentificationsByDescription
+ * @param {import('express').Request} req - Request object, expects { identificationDescription } in query.
+ * @param {import('express').Response} res - Response object.
+ * @returns {Object} - The list of identifications matching the description.
  */
 export const getIdentificationsByDescription = async (req, res) => {
   const { userId } = req
   const { identificationDescription } = req.query
+
   try {
     const isAuthorized = await UserService.userExists(userId)
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-    const identifications = await RequirementsIdentificationService.findByDescription(identificationDescription)
+    const identifications = await RequirementsIdentificationService.getByDescription(identificationDescription)
     return res.status(200).json({ identifications })
   } catch (error) {
     if (error instanceof ErrorUtils) {
@@ -199,10 +198,12 @@ export const getIdentificationsByDescription = async (req, res) => {
     return res.status(500).json({ message: 'Internal Server Error' })
   }
 }
-
 /**
  * Retrieves requirements identifications filtered by status.
  * @function getIdentificationsByStatus
+ * @param {import('express').Request} req - Request object, expects { status } in query.
+ * @param {import('express').Response} res - Response object.
+ * @returns {Object} - The list of identifications matching the status.
  */
 export const getIdentificationsByStatus = async (req, res) => {
   const { userId } = req
@@ -212,7 +213,7 @@ export const getIdentificationsByStatus = async (req, res) => {
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-    const identifications = await RequirementsIdentificationService.findByStatus(status)
+    const identifications = await RequirementsIdentificationService.getByStatus(status)
     return res.status(200).json({ identifications })
   } catch (error) {
     if (error instanceof ErrorUtils) {
@@ -228,6 +229,9 @@ export const getIdentificationsByStatus = async (req, res) => {
 /**
  * Retrieves requirements identifications filtered by user ID.
  * @function getIdentificationsByUserId
+ * @param {import('express').Request} req - Request object, expects { targetUserId } in query.
+ * @param {import('express').Response} res - Response object.
+ * @returns {Object} - The list of identifications matching the user ID.
  */
 export const getIdentificationsByUserId = async (req, res) => {
   const { userId } = req
@@ -237,7 +241,7 @@ export const getIdentificationsByUserId = async (req, res) => {
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-    const identifications = await RequirementsIdentificationService.findByUserId(targetUserId)
+    const identifications = await RequirementsIdentificationService.getByUserId(targetUserId)
     return res.status(200).json({ identifications })
   } catch (error) {
     if (error instanceof ErrorUtils) {
@@ -253,16 +257,30 @@ export const getIdentificationsByUserId = async (req, res) => {
 /**
  * Retrieves requirements identifications filtered by creation date.
  * @function getIdentificationsByCreatedAt
+ * @param {import('express').Request} req - Request object, expects { createdAt } in query.
+ * @param {import('express').Response} res - Response object.
+ * @returns {Object} - The list of identifications matching the creation date.
  */
 export const getIdentificationsByCreatedAt = async (req, res) => {
   const { userId } = req
-  const { createdAt } = req.query
+  const { from, to } = req.query
+  const { date: parsedFrom, error: fromError } = from ? validateDate(from, 'from') : { date: null, error: null }
+  const { date: parsedTo, error: toError } = to ? validateDate(to, 'to') : { date: null, error: null }
+  if (fromError || toError) {
+    return res.status(400).json({
+      message: 'Invalid date format',
+      errors: [fromError, toError].filter(Boolean)
+    })
+  }
   try {
     const isAuthorized = await UserService.userExists(userId)
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-    const identifications = await RequirementsIdentificationService.findByCreatedAt(createdAt)
+    const identifications = await RequirementsIdentificationService.getByCreatedAt(
+      parsedFrom,
+      parsedTo
+    )
     return res.status(200).json({ identifications })
   } catch (error) {
     if (error instanceof ErrorUtils) {
@@ -278,9 +296,9 @@ export const getIdentificationsByCreatedAt = async (req, res) => {
 /**
  * Updates an existing requirements identification entry.
  * @function updateIdentificationById
- * @param {import('express').Request} req - Request object, expects { identificationName, identificationDescription } in req.body and { identificationId } in req.params.
+ * @param {import('express').Request} req - Request object, expects { identificationName, identificationDescription } in body and { identificationId } in params.
  * @param {import('express').Response} res - Response object.
- * @returns {Object} - The updated identification data or an error message.
+ * @returns {Object} - The updated identification data.
  */
 export const updateIdentificationById = async (req, res) => {
   const { userId } = req
@@ -291,7 +309,6 @@ export const updateIdentificationById = async (req, res) => {
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-
     const updatedIdentification = await RequirementsIdentificationService.updateById(
       identificationId,
       { identificationName, identificationDescription }
@@ -313,7 +330,7 @@ export const updateIdentificationById = async (req, res) => {
  * @function deleteIdentificationById
  * @param {import('express').Request} req - Request object, expects { identificationId } in params.
  * @param {import('express').Response} res - Response object.
- * @returns {Object} - Response indicating success or failure of the deletion.
+ * @returns {Object} - Empty response indicating success.
  */
 export const deleteIdentificationById = async (req, res) => {
   const { userId } = req
@@ -324,7 +341,7 @@ export const deleteIdentificationById = async (req, res) => {
       return res.status(403).json({ message: 'Unauthorized' })
     }
     await RequirementsIdentificationService.deleteById(identificationId)
-    return res.status(204).send() // No Content
+    return res.status(204).send()
   } catch (error) {
     if (error instanceof ErrorUtils) {
       return res.status(error.status).json({
@@ -341,7 +358,7 @@ export const deleteIdentificationById = async (req, res) => {
  * @function deleteBatchIdentifications
  * @param {import('express').Request} req - Request object, expects { identificationIds } in body as an array.
  * @param {import('express').Response} res - Response object.
- * @returns {Object} - Response indicating success or failure of the batch deletion.
+ * @returns {Object} - Empty response indicating success.
  */
 export const deleteBatchIdentifications = async (req, res) => {
   const { userId } = req
@@ -351,12 +368,17 @@ export const deleteBatchIdentifications = async (req, res) => {
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-
-    if (!Array.isArray(identificationIds) || identificationIds.length === 0) {
-      return res.status(400).json({ message: 'Invalid request: identificationIds must be a non-empty array' })
+    if (
+      !identificationIds ||
+      !Array.isArray(identificationIds) ||
+      identificationIds.length === 0
+    ) {
+      return res.status(400).json({
+        message: 'Missing required fields: identificationIds'
+      })
     }
     await RequirementsIdentificationService.deleteBatch(identificationIds)
-    return res.status(204).send() // No Content
+    return res.status(204).send()
   } catch (error) {
     if (error instanceof ErrorUtils) {
       return res.status(error.status).json({

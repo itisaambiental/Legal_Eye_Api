@@ -1049,8 +1049,8 @@ class LegalBasisRepository {
 
   /**
    * Retrieves legal basis entries filtered by a date range.
-   * @param {Date|null} from - Start date as a Date object (optional).
-   * @param {Date|null} to - End date as a Date object (optional).
+   * @param {string} [from] - Start date.
+   * @param {string} [to] - End date.
    * @returns {Promise<Array<LegalBasis>|null>} - An array of LegalBasis.
    * @throws {ErrorUtils} - If an error occurs during retrieval.
    */
