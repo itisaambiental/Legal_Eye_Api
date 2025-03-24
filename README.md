@@ -69,7 +69,7 @@ A continuación se detalla la estructura del proyecto:
    Crea un archivo `.env` en la raíz del proyecto y agrega las siguientes variables:
 
 ```
-   # Configuración General
+# Configuración General
 PORT=                          # Puerto en el que correrá la aplicación (ejemplo: 3000)
 JWT_SECRET=                    # Llave secreta para generar y verificar tokens JWT
 JWT_EXPIRATION=                # Tiempo de expiración de los tokens JWT (ejemplo: 7d para 7 días)
