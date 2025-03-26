@@ -9,6 +9,7 @@ import {
   startIdentification,
   getIdentificationJobStatus,
   cancelIdentificationJob,
+  getIdentificationById,
   getAllIdentifications,
   getIdentificationsByName,
   getIdentificationsByDescription,
@@ -48,6 +49,15 @@ router.get('/jobs/requirements-identifications/:jobId', UserExtractor, getIdenti
  * @middleware UserExtractor
  */
 router.delete('/jobs/requirements-identifications/:jobId', UserExtractor, cancelIdentificationJob)
+
+/**
+ * Route to retrieve a requirements identification by its ID.
+ * @method GET
+ * @path /requirements-identifications/:identificationId
+ * @description Retrieves a single requirements identification by its ID.
+ * @middleware UserExtractor
+ */
+router.get('/requirements-identification/:identificationId', UserExtractor, getIdentificationById)
 
 /**
  * Route to retrieve all requirements identifications.

@@ -13,6 +13,7 @@
     "test:articles": "NODE_ENV=test jest --verbose tests/articles/articles.test.js",
     "test:extractArticles": "NODE_ENV=test jest --verbose tests/articles/extractArticles.test.js",
     "test:requirements": "NODE_ENV=test jest --verbose tests/requirements/requirements.test.js",
+    "test:requirementsIdentification": "NODE_ENV=test jest --verbose tests/requirementsIdentification/requirementsIdentification.test.js",
     "test:files": "NODE_ENV=test jest --verbose tests/files/files.test.js",
     "test:users": "NODE_ENV=test jest --verbose tests/users/users.test.js",
     "test:watch": "npm run test -- --watch",

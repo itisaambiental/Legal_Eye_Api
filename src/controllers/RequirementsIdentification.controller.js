@@ -43,6 +43,7 @@ export const startIdentification = async (req, res) => {
     )
     return res.status(201).json({ jobId, requirementsIdentificationId })
   } catch (error) {
+    console.log(error)
     if (error instanceof ErrorUtils) {
       return res.status(error.status).json({
         message: error.message,
@@ -102,6 +103,35 @@ export const cancelIdentificationJob = async (req, res) => {
       return res.sendStatus(204)
     }
     return res.status(500).json({ message: 'Internal Server Error' })
+  } catch (error) {
+    if (error instanceof ErrorUtils) {
+      return res.status(error.status).json({
+        message: error.message,
+        ...(error.errors && { errors: error.errors })
+      })
+    }
+    return res.status(500).json({ message: 'Internal Server Error' })
+  }
+}
+
+/**
+ * Retrieves a single requirements identification by its ID.
+ * @function getIdentificationById
+ * @param {import('express').Request} req - Request object, expects { identificationId } in req.params.
+ * @param {import('express').Response} res - Response object.
+ * @returns {Object} - The identification data or an error message.
+ */
+export const getIdentificationById = async (req, res) => {
+  const { userId } = req
+  const { identificationId } = req.params
+
+  try {
+    const isAuthorized = await UserService.userExists(userId)
+    if (!isAuthorized) {
+      return res.status(403).json({ message: 'Unauthorized' })
+    }
+    const identification = await RequirementsIdentificationService.getById(Number(identificationId))
+    return res.status(200).json({ identification })
   } catch (error) {
     if (error instanceof ErrorUtils) {
       return res.status(error.status).json({

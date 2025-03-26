@@ -271,6 +271,42 @@ class RequirementsIdentificationService {
   }
 
   /**
+  * Retrieves a single requirements identification by its ID.
+  * @param {number} id - The ID of the requirements identification to retrieve.
+  * @returns {Promise<RequirementsIdentification|null>} - The formatted identification or null if not found.
+  * @throws {ErrorUtils} - If an error occurs during retrieval.
+  */
+  static async getById (id) {
+    try {
+      const identification = await RequirementsIdentificationRepository.findById(id)
+      if (!identification) {
+        throw new ErrorUtils(404, 'Requirement Identification not found')
+      }
+      let formattedCreatedAt = null
+      if (identification.created_at) {
+        formattedCreatedAt = format(
+          new Date(identification.created_at),
+          'dd-MM-yyyy',
+          { locale: es }
+        )
+      }
+      return {
+        id: identification.id,
+        identification_name: identification.identification_name,
+        identification_description: identification.identification_description,
+        status: identification.status,
+        user_id: identification.user_id,
+        created_at: formattedCreatedAt
+      }
+    } catch (error) {
+      if (error instanceof ErrorUtils) {
+        throw error
+      }
+      throw new ErrorUtils(500, 'Error retrieving requirement identification by ID')
+    }
+  }
+
+  /**
  * Retrieves all requirements identifications from the database.
  *
  * @typedef {Object} RequirementsIdentification

@@ -1,0 +1,73 @@
+{
+    "client": "Thunder Client",
+    "collectionName": "RequirementsIdentification API",
+    "requests": [
+      {
+        "name": "Get All Identifications",
+        "method": "GET",
+        "url": "http://localhost:3000/api/requirements-identifications",
+        "headers": [
+          {
+            "name": "Authorization",
+            "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyRm9yVG9rZW4iOnsiaWQiOjU1LCJnbWFpbCI6ImFjYXN0ZWxsYW5vQGlzYWFtYmllbnRhbC5jb20iLCJ1c2VybmFtZSI6IkFsZnJlZG8iLCJ1c2VyVHlwZSI6MX0sImlhdCI6MTc0MjY1OTk1MSwiZXhwIjoxNzQzMjY0NzUxfQ.ynH9z3t7bmmd4yHYaWQpSUBkm0MwzGoJmajoxxIokpA"
+          }
+        ]
+      },
+      {
+        "name": "Get Identifications by Name",
+        "method": "GET",
+        "url": "http://localhost:3000/api/requirements-identifications/name?identificationName=Prueba",
+        "headers": [
+          {
+            "name": "Authorization",
+            "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyRm9yVG9rZW4iOnsiaWQiOjU1LCJnbWFpbCI6ImFjYXN0ZWxsYW5vQGlzYWFtYmllbnRhbC5jb20iLCJ1c2VybmFtZSI6IkFsZnJlZG8iLCJ1c2VyVHlwZSI6MX0sImlhdCI6MTc0MjY1OTk1MSwiZXhwIjoxNzQzMjY0NzUxfQ.ynH9z3t7bmmd4yHYaWQpSUBkm0MwzGoJmajoxxIokpA"
+          }
+        ]
+      },
+      {
+        "name": "Get Identifications by Description",
+        "method": "GET",
+        "url": "http://localhost:3000/api/requirements-identifications/description?identificationDescription=Análisis",
+        "headers": [
+          {
+            "name": "Authorization",
+            "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyRm9yVG9rZW4iOnsiaWQiOjU1LCJnbWFpbCI6ImFjYXN0ZWxsYW5vQGlzYWFtYmllbnRhbC5jb20iLCJ1c2VybmFtZSI6IkFsZnJlZG8iLCJ1c2VyVHlwZSI6MX0sImlhdCI6MTc0MjY1OTk1MSwiZXhwIjoxNzQzMjY0NzUxfQ.ynH9z3t7bmmd4yHYaWQpSUBkm0MwzGoJmajoxxIokpA"
+          }
+        ]
+      },
+      {
+        "name": "Get Identifications by Status",
+        "method": "GET",
+        "url": "http://localhost:3000/api/requirements-identifications/status?status=Active",
+        "headers": [
+          {
+            "name": "Authorization",
+            "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyRm9yVG9rZW4iOnsiaWQiOjU1LCJnbWFpbCI6ImFjYXN0ZWxsYW5vQGlzYWFtYmllbnRhbC5jb20iLCJ1c2VyTmFtZSI6IkFsZnJlZG8iLCJ1c2VyVHlwZSI6MX0sImlhdCI6MTc0MjY1OTk1MSwiZXhwIjoxNzQzMjY0NzUxfQ.ynH9z3t7bmmd4yHYaWQpSUBkm0MwzGoJmajoxxIokpA"
+          }
+        ]
+      },
+      {
+        "name": "Get Identifications by User ID",
+        "method": "GET",
+        "url": "http://localhost:3000/api/requirements-identifications/user?targetUserId=55",
+        "headers": [
+          {
+            "name": "Authorization",
+            "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyRm9yVG9rZW4iOnsiaWQiOjU1LCJnbWFpbCI6ImFjYXN0ZWxsYW5vQGlzYWFtYmllbnRhbC5jb20iLCJ1c2VyVHlwZSI6MX0sImlhdCI6MTc0MjY1OTk1MSwiZXhwIjoxNzQzMjY0NzUxfQ.ynH9z3t7bmmd4yHYaWQpSUBkm0MwzGoJmajoxxIokpA"
+          }
+        ]
+      },
+      {
+        "name": "Get Identifications by Created At Range",
+        "method": "GET",
+        "url": "http://localhost:3000/api/requirements-identifications/createdAt?from=2025-03-16&to=2025-03-17",
+        "headers": [
+          {
+            "name": "Authorization",
+            "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyRm9yVG9rZW4iOnsiaWQiOjU1LCJnbWFpbCI6ImFjYXN0ZWxsYW5vQGlzYWFtYmllbnRhbC5jb20iLCJ1c2VyVHlwZSI6MX0sImlhdCI6MTc0MjY1OTk1MSwiZXhwIjoxNzQzMjY0NzUxfQ.ynH9z3t7bmmd4yHYaWQpSUBkm0MwzGoJmajoxxIokpA"
+          }
+        ]
+      }
+    ]
+  }
+  
