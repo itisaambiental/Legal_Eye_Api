@@ -1,5 +1,3 @@
-// ErrorUtils.js
-
 /**
  * Custom error class for handling application-specific errors.
  * Extends the built-in Error class to include HTTP status codes and additional error details.

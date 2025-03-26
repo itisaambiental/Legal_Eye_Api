@@ -1487,7 +1487,8 @@ describe('Get Requirements By Complementary Sentences', () => {
 
 describe('Get Requirements By Mandatory Keywords', () => {
   let createdRequirement
-  const testMandatoryKeyword = 'critical-safety'
+  const fullKeywordSet = 'critical safety compliance regulation'
+  const searchableKeyword = 'compliance'
 
   beforeEach(async () => {
     await RequirementRepository.deleteAll()
@@ -1497,7 +1498,7 @@ describe('Get Requirements By Mandatory Keywords', () => {
     const response = await api
       .get('/api/requirements/search/mandatory-keywords')
       .set('Authorization', `Bearer ${tokenAdmin}`)
-      .query({ keyword: testMandatoryKeyword })
+      .query({ keyword: searchableKeyword })
       .expect(200)
       .expect('Content-Type', /application\/json/)
 
@@ -1505,11 +1506,11 @@ describe('Get Requirements By Mandatory Keywords', () => {
     expect(response.body.requirements).toHaveLength(0)
   })
 
-  test('Should return the requirement after creating one with the given mandatory keyword', async () => {
+  test('Should return the requirement after creating one with a searchable mandatory keyword', async () => {
     const requirementData = generateRequirementData({
       subjectId: String(createdSubjectId),
       aspectId: String(createdAspectIds[0]),
-      mandatoryKeywords: testMandatoryKeyword
+      mandatoryKeywords: fullKeywordSet
     })
 
     const createResponse = await api
@@ -1524,9 +1525,10 @@ describe('Get Requirements By Mandatory Keywords', () => {
     const response = await api
       .get('/api/requirements/search/mandatory-keywords')
       .set('Authorization', `Bearer ${tokenAdmin}`)
-      .query({ keyword: testMandatoryKeyword })
+      .query({ keyword: searchableKeyword })
       .expect(200)
       .expect('Content-Type', /application\/json/)
+
     const { requirements } = response.body
 
     expect(requirements).toBeInstanceOf(Array)
@@ -1562,17 +1564,17 @@ describe('Get Requirements By Mandatory Keywords', () => {
   test('Should return 401 if user is unauthorized', async () => {
     const response = await api
       .get('/api/requirements/search/mandatory-keywords')
-      .query({ keyword: testMandatoryKeyword })
+      .query({ keyword: searchableKeyword })
       .expect(401)
       .expect('Content-Type', /application\/json/)
 
     expect(response.body.error).toMatch(/token missing or invalid/i)
   })
 })
-
 describe('Get Requirements By Complementary Keywords', () => {
   let createdRequirement
-  const testComplementaryKeyword = 'safety-measures'
+  const fullComplementaryKeywords = 'safety procedures control measures checklist'
+  const searchableKeyword = 'measures'
 
   beforeEach(async () => {
     await RequirementRepository.deleteAll()
@@ -1582,7 +1584,7 @@ describe('Get Requirements By Complementary Keywords', () => {
     const response = await api
       .get('/api/requirements/search/complementary-keywords')
       .set('Authorization', `Bearer ${tokenAdmin}`)
-      .query({ keyword: testComplementaryKeyword })
+      .query({ keyword: searchableKeyword })
       .expect(200)
       .expect('Content-Type', /application\/json/)
 
@@ -1590,11 +1592,11 @@ describe('Get Requirements By Complementary Keywords', () => {
     expect(response.body.requirements).toHaveLength(0)
   })
 
-  test('Should return the requirement after creating one with the given complementary keyword', async () => {
+  test('Should return the requirement after creating one with a searchable complementary keyword', async () => {
     const requirementData = generateRequirementData({
       subjectId: String(createdSubjectId),
       aspectId: String(createdAspectIds[0]),
-      complementaryKeywords: testComplementaryKeyword
+      complementaryKeywords: fullComplementaryKeywords
     })
 
     const createResponse = await api
@@ -1609,7 +1611,7 @@ describe('Get Requirements By Complementary Keywords', () => {
     const response = await api
       .get('/api/requirements/search/complementary-keywords')
       .set('Authorization', `Bearer ${tokenAdmin}`)
-      .query({ keyword: testComplementaryKeyword })
+      .query({ keyword: searchableKeyword })
       .expect(200)
       .expect('Content-Type', /application\/json/)
 
@@ -1626,7 +1628,7 @@ describe('Get Requirements By Complementary Keywords', () => {
       mandatory_sentences: createdRequirement.mandatory_sentences,
       complementary_sentences: createdRequirement.complementary_sentences,
       mandatory_keywords: createdRequirement.mandatory_keywords,
-      complementary_keywords: testComplementaryKeyword,
+      complementary_keywords: fullComplementaryKeywords,
       condition: createdRequirement.condition,
       evidence: createdRequirement.evidence,
       periodicity: createdRequirement.periodicity,
@@ -1648,7 +1650,7 @@ describe('Get Requirements By Complementary Keywords', () => {
   test('Should return 401 if user is unauthorized', async () => {
     const response = await api
       .get('/api/requirements/search/complementary-keywords')
-      .query({ keyword: testComplementaryKeyword })
+      .query({ keyword: searchableKeyword })
       .expect(401)
       .expect('Content-Type', /application\/json/)
 

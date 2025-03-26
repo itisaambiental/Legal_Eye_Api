@@ -963,33 +963,33 @@ class RequirementRepository {
   static async findByMandatoryKeywords (keyword) {
     try {
       const query = `
-        SELECT 
-          r.id, 
-          r.requirement_number, 
-          r.requirement_name, 
-          r.mandatory_description, 
-          r.complementary_description, 
-          r.mandatory_sentences, 
-          r.complementary_sentences, 
-          r.mandatory_keywords, 
-          r.complementary_keywords, 
-          r.requirement_condition, 
-          r.evidence, 
-          r.periodicity, 
-          r.requirement_type, 
-          r.jurisdiction, 
-          r.state, 
-          r.municipality, 
-          s.id AS subject_id, 
-          s.subject_name AS subject_name, 
-          a.id AS aspect_id, 
-          a.aspect_name AS aspect_name
-        FROM requirements r
-        JOIN subjects s ON r.subject_id = s.id
-        JOIN aspects a ON r.aspect_id = a.id
-        WHERE r.mandatory_keywords LIKE ?   
-      `
-      const [rows] = await pool.query(query, [`%${keyword}%`])
+      SELECT 
+        r.id, 
+        r.requirement_number, 
+        r.requirement_name, 
+        r.mandatory_description, 
+        r.complementary_description, 
+        r.mandatory_sentences, 
+        r.complementary_sentences, 
+        r.mandatory_keywords, 
+        r.complementary_keywords, 
+        r.requirement_condition, 
+        r.evidence, 
+        r.periodicity, 
+        r.requirement_type, 
+        r.jurisdiction, 
+        r.state, 
+        r.municipality, 
+        s.id AS subject_id, 
+        s.subject_name AS subject_name, 
+        a.id AS aspect_id, 
+        a.aspect_name AS aspect_name
+      FROM requirements r
+      JOIN subjects s ON r.subject_id = s.id
+      JOIN aspects a ON r.aspect_id = a.id
+      WHERE MATCH(r.mandatory_keywords) AGAINST(? IN BOOLEAN MODE)
+    `
+      const [rows] = await pool.query(query, [`${keyword}*`])
       if (rows.length === 0) return null
       return rows.map((row) => {
         const subject = {
@@ -1028,7 +1028,7 @@ class RequirementRepository {
   }
 
   /**
- * Retrieves requirements by a flexible text match in their complementary keywords using LIKE.
+ * Retrieves requirements by a flexible full-text match in their complementary keywords.
  * @param {string} keyword - The keyword or part of the keyword to search for.
  * @returns {Promise<Array<Requirement>|null>} - A list of Requirement instances matching the keyword.
  * @throws {ErrorUtils} - If an error occurs during retrieval.
@@ -1060,12 +1060,10 @@ class RequirementRepository {
       FROM requirements r
       JOIN subjects s ON r.subject_id = s.id
       JOIN aspects a ON r.aspect_id = a.id
-      WHERE r.complementary_keywords LIKE ?
+      WHERE MATCH(r.complementary_keywords) AGAINST(? IN BOOLEAN MODE)
     `
-      const [rows] = await pool.query(query, [`%${keyword}%`])
-
+      const [rows] = await pool.query(query, [`${keyword}*`])
       if (rows.length === 0) return null
-
       return rows.map((row) => {
         const subject = {
           subject_id: row.subject_id,

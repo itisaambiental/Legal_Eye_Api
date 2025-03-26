@@ -190,7 +190,9 @@ CREATE TABLE IF NOT EXISTS requirements (
     FULLTEXT(mandatory_description),
     FULLTEXT(complementary_description),
     FULLTEXT(mandatory_sentences),
-    FULLTEXT(complementary_sentences)
+    FULLTEXT(complementary_sentences),
+    FULLTEXT(mandatory_keywords),
+    FULLTEXT(complementary_keywords)
 );
 
 -- Table: requirements_identification
@@ -200,7 +202,7 @@ CREATE TABLE IF NOT EXISTS requirements_identification (
     id INT AUTO_INCREMENT PRIMARY KEY,
     identification_name VARCHAR(255) NOT NULL,
     identification_description TEXT,
-    status ENUM('Activo', 'Completado', 'Fallido') NOT NULL DEFAULT 'Activo';
+    status ENUM('Activo', 'Completado', 'Fallido') NOT NULL DEFAULT 'Activo',
     failed_reason TEXT,
     user_id BIGINT NULL,  
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

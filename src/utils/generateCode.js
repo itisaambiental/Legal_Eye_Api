@@ -1,5 +1,3 @@
-// generateVerificationCode.js
-
 /**
  * Generates a 6-digit verification code as a string.
  * @returns {string} - The generated verification code.
