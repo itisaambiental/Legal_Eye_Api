@@ -178,7 +178,7 @@ class UserRepository {
    */
   static async findById (id) {
     const query = `
-      SELECT * FROM users WHERE id = ?
+      SELECT id, name, password, gmail, role_id, profile_picture FROM users WHERE id = ?
     `
     try {
       const [rows] = await pool.query(query, [id])
@@ -203,7 +203,7 @@ class UserRepository {
       return []
     }
     const query = `
-    SELECT * FROM users WHERE id IN (?)
+    SELECT id, name, password, gmail, role_id, profile_picture FROM users WHERE id IN (?)
   `
     try {
       const [rows] = await pool.query(query, [userIds])
@@ -222,7 +222,7 @@ class UserRepository {
    */
   static async findByRole (roleId) {
     const query = `
-      SELECT * FROM users WHERE role_id = ?
+      SELECT id, name, password, gmail, role_id, profile_picture FROM users WHERE role_id = ?
     `
     try {
       const [rows] = await pool.query(query, [roleId])
@@ -261,7 +261,7 @@ class UserRepository {
  */
   static async existsByGmail (gmail) {
     const query = `
-    SELECT * 
+    SELECT id, name, password, gmail, role_id, profile_picture 
     FROM users 
     WHERE gmail = ?
     LIMIT 1
@@ -284,7 +284,7 @@ class UserRepository {
  * @throws {ErrorUtils} - If an error occurs during retrieval.
  */
   static async findByNameOrGmail (nameOrEmail) {
-    const query = 'SELECT * FROM users WHERE name LIKE ? OR gmail LIKE ?'
+    const query = 'SELECT id, name, password, gmail, role_id, profile_picture FROM users WHERE name LIKE ? OR gmail LIKE ?'
     const searchValue = `%${nameOrEmail}%`
     try {
       const [rows] = await pool.query(query, [searchValue, searchValue])
@@ -338,7 +338,7 @@ class UserRepository {
    */
   static async findAll () {
     const query = `
-      SELECT * FROM users
+      SELECT id, name, password, gmail, role_id, profile_picture FROM users
     `
     try {
       const [rows] = await pool.query(query)
@@ -358,7 +358,7 @@ class UserRepository {
 
   static async findAllRoles () {
     const query = `
-        SELECT * FROM roles
+        SELECT id, name FROM roles
       `
     try {
       const [rows] = await pool.query(query)
