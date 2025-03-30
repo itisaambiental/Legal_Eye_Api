@@ -341,7 +341,7 @@ describe('Aspects API - DELETE /aspect/:id', () => {
 
     const requirementData = generateRequirementData({
       subjectId: String(createdSubjectId),
-      aspectId: String(createdAspectId)
+      aspectsIds: JSON.stringify([createdAspectId])
     })
     const requirementResponse = await api
       .post('/api/requirements')
@@ -464,7 +464,7 @@ describe('DELETE /aspects/batch - Delete multiple aspects with dependencies', ()
         requirementNumber: `REQ-${i + 1}`,
         requirementName: `Requirement Test ${i + 1}`,
         subjectId: String(createdSubjectId),
-        aspectId: String(aspectId)
+        aspectsIds: JSON.stringify([aspectId])
       })
 
       const requirementResponse = await api

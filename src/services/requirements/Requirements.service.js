@@ -697,7 +697,7 @@ class RequirementService {
       if (hasPendingRequirementIdentificationJobs) {
         throw new ErrorUtils(409, 'Cannot delete Requirement with pending Requirement Identification jobs')
       }
-      const requirementDeleted = await RequirementRepository.deleteBatch(
+      const requirementDeleted = await RequirementRepository.delete(
         requirementId
       )
       if (!requirementDeleted) {

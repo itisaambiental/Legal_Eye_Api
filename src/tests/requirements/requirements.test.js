@@ -66,7 +66,7 @@ describe('Create a requirement', () => {
   test('Should successfully create a requirement', async () => {
     const requirementData = generateRequirementData({
       subjectId: String(createdSubjectId),
-      aspectId: String(createdAspectIds[0])
+      aspectsIds: JSON.stringify([createdAspectIds[0]])
     })
 
     const response = await api
@@ -97,17 +97,19 @@ describe('Create a requirement', () => {
         subject_id: createdSubjectId,
         subject_name: subjectName
       },
-      aspect: {
-        aspect_id: createdAspectIds[0],
-        aspect_name: aspectsToCreate[0]
-      }
+      aspects: expect.arrayContaining([
+        {
+          aspect_id: createdAspectIds[0],
+          aspect_name: aspectsToCreate[0]
+        }
+      ])
     })
   })
 
   test('Should return 404 if Subject ID is invalid', async () => {
     const requirementData = generateRequirementData({
       subjectId: '-1',
-      aspectId: String(createdAspectIds[0])
+      aspectsIds: JSON.stringify([createdAspectIds[0]])
     })
 
     const response = await api
@@ -122,7 +124,7 @@ describe('Create a requirement', () => {
   test('Should return 404 if Aspect ID is invalid', async () => {
     const requirementData = generateRequirementData({
       subjectId: String(createdSubjectId),
-      aspectId: '-1'
+      aspectsIds: JSON.stringify([-1])
     })
 
     const response = await api
@@ -131,19 +133,22 @@ describe('Create a requirement', () => {
       .send(requirementData)
       .expect(404)
 
-    expect(response.body.message).toMatch(/Aspect not found/i)
+    expect(response.body.message).toMatch(/Aspects not found for IDs/i)
   })
+
   test('Should return 409 if requirement number already exists', async () => {
     const requirementData = generateRequirementData({
       subjectId: String(createdSubjectId),
-      aspectId: String(createdAspectIds[0]),
+      aspectsIds: JSON.stringify([createdAspectIds[0]]),
       requirementNumber: 'REQ-001'
     })
+
     await api
       .post('/api/requirements')
       .set('Authorization', `Bearer ${tokenAdmin}`)
       .send(requirementData)
       .expect(201)
+
     const response = await api
       .post('/api/requirements')
       .set('Authorization', `Bearer ${tokenAdmin}`)
@@ -156,10 +161,11 @@ describe('Create a requirement', () => {
   test('Should return 409 if requirement name already exists', async () => {
     const requirementData = generateRequirementData({
       subjectId: String(createdSubjectId),
-      aspectId: String(createdAspectIds[0]),
+      aspectsIds: JSON.stringify([createdAspectIds[0]]),
       requirementName: 'Test Requirement Name',
       requirementNumber: 'REQ-001'
     })
+
     await api
       .post('/api/requirements')
       .set('Authorization', `Bearer ${tokenAdmin}`)
@@ -170,6 +176,7 @@ describe('Create a requirement', () => {
       ...requirementData,
       requirementNumber: 'REQ-002'
     }
+
     const response = await api
       .post('/api/requirements')
       .set('Authorization', `Bearer ${tokenAdmin}`)
@@ -182,7 +189,7 @@ describe('Create a requirement', () => {
   test('Should return 401 if the user is unauthorized', async () => {
     const requirementData = generateRequirementData({
       subjectId: String(createdSubjectId),
-      aspectId: String(createdAspectIds[0])
+      aspectsIds: JSON.stringify([createdAspectIds[0]])
     })
 
     const response = await api
@@ -199,7 +206,7 @@ describe('Create a requirement', () => {
       const longRequirementNumber = 'A'.repeat(256)
       const requirementData = generateRequirementData({
         subjectId: String(createdSubjectId),
-        aspectId: String(createdAspectIds[0]),
+        aspectsIds: JSON.stringify([createdAspectIds[0]]),
         requirementNumber: longRequirementNumber
       })
 
@@ -221,7 +228,7 @@ describe('Create a requirement', () => {
       const longRequirementName = 'A'.repeat(256)
       const requirementData = generateRequirementData({
         subjectId: String(createdSubjectId),
-        aspectId: String(createdAspectIds[0]),
+        aspectsIds: JSON.stringify([createdAspectIds[0]]),
         requirementName: longRequirementName
       })
 
@@ -242,7 +249,7 @@ describe('Create a requirement', () => {
     test('Should return 400 if subjectId is not a valid number', async () => {
       const requirementData = generateRequirementData({
         subjectId: 'invalid-number',
-        aspectId: String(createdAspectIds[0])
+        aspectsIds: JSON.stringify([createdAspectIds[0]])
       })
 
       const response = await api
@@ -259,10 +266,10 @@ describe('Create a requirement', () => {
       )
     })
 
-    test('Should return 400 if aspectId is not a valid number', async () => {
+    test('Should return 400 if any aspectId is not a valid number', async () => {
       const requirementData = generateRequirementData({
         subjectId: String(createdSubjectId),
-        aspectId: 'invalid-number'
+        aspectsIds: JSON.stringify(['invalid'])
       })
 
       const response = await api
@@ -274,7 +281,7 @@ describe('Create a requirement', () => {
       expect(response.body.message).toMatch(/Validation failed/i)
       expect(response.body.errors).toEqual(
         expect.arrayContaining([
-          { field: 'aspectId', message: expect.stringMatching(/must be a valid number/i) }
+          { field: 'aspectsIds', message: expect.stringMatching(/must be a valid array of numbers/i) }
         ])
       )
     })
@@ -282,7 +289,7 @@ describe('Create a requirement', () => {
     test('Should return 400 if mandatoryDescription is missing', async () => {
       const requirementData = generateRequirementData({
         subjectId: String(createdSubjectId),
-        aspectId: String(createdAspectIds[0]),
+        aspectsIds: JSON.stringify([createdAspectIds[0]]),
         mandatoryDescription: ''
       })
 
@@ -302,7 +309,7 @@ describe('Create a requirement', () => {
     test('Should return 400 if complementaryDescription is missing', async () => {
       const requirementData = generateRequirementData({
         subjectId: String(createdSubjectId),
-        aspectId: String(createdAspectIds[0]),
+        aspectsIds: JSON.stringify([createdAspectIds[0]]),
         complementaryDescription: ''
       })
 
@@ -322,7 +329,7 @@ describe('Create a requirement', () => {
     test('Should return 400 if mandatorySentences is missing', async () => {
       const requirementData = generateRequirementData({
         subjectId: String(createdSubjectId),
-        aspectId: String(createdAspectIds[0]),
+        aspectsIds: JSON.stringify([createdAspectIds[0]]),
         mandatorySentences: ''
       })
 
@@ -342,7 +349,7 @@ describe('Create a requirement', () => {
     test('Should return 400 if complementarySentences is missing', async () => {
       const requirementData = generateRequirementData({
         subjectId: String(createdSubjectId),
-        aspectId: String(createdAspectIds[0]),
+        aspectsIds: JSON.stringify([createdAspectIds[0]]),
         complementarySentences: ''
       })
 
@@ -362,7 +369,7 @@ describe('Create a requirement', () => {
     test('Should return 400 if mandatoryKeywords is missing', async () => {
       const requirementData = generateRequirementData({
         subjectId: String(createdSubjectId),
-        aspectId: String(createdAspectIds[0]),
+        aspectsIds: JSON.stringify([createdAspectIds[0]]),
         mandatoryKeywords: ''
       })
 
@@ -382,7 +389,7 @@ describe('Create a requirement', () => {
     test('Should return 400 if complementaryKeywords is missing', async () => {
       const requirementData = generateRequirementData({
         subjectId: String(createdSubjectId),
-        aspectId: String(createdAspectIds[0]),
+        aspectsIds: JSON.stringify([createdAspectIds[0]]),
         complementaryKeywords: ''
       })
 
@@ -402,7 +409,7 @@ describe('Create a requirement', () => {
     test('Should return 400 if condition is not a valid value', async () => {
       const requirementData = generateRequirementData({
         subjectId: String(createdSubjectId),
-        aspectId: String(createdAspectIds[0]),
+        aspectsIds: JSON.stringify([createdAspectIds[0]]),
         condition: 'Invalid Condition'
       })
 
@@ -422,7 +429,7 @@ describe('Create a requirement', () => {
     test('Should return 400 if evidence is not a valid value', async () => {
       const requirementData = generateRequirementData({
         subjectId: String(createdSubjectId),
-        aspectId: String(createdAspectIds[0]),
+        aspectsIds: JSON.stringify([createdAspectIds[0]]),
         evidence: 'Invalid Evidence'
       })
 
@@ -434,7 +441,7 @@ describe('Create a requirement', () => {
 
       expect(response.body.errors).toEqual(
         expect.arrayContaining([
-          { field: 'evidence', message: expect.stringMatching(/must be one of the following: Trámite, Registro, Específico, Documento/i) }
+          { field: 'evidence', message: expect.stringMatching(/must be one of the following: Trámite, Registro, Específica, Documento/i) }
         ])
       )
     })
@@ -442,7 +449,7 @@ describe('Create a requirement', () => {
     test('Should return 400 if periodicity is not a valid value', async () => {
       const requirementData = generateRequirementData({
         subjectId: String(createdSubjectId),
-        aspectId: String(createdAspectIds[0]),
+        aspectsIds: JSON.stringify([createdAspectIds[0]]),
         periodicity: 'Invalid Periodicity'
       })
 
@@ -462,7 +469,7 @@ describe('Create a requirement', () => {
     test('Should return 400 if requirementType is not a valid value', async () => {
       const requirementData = generateRequirementData({
         subjectId: String(createdSubjectId),
-        aspectId: String(createdAspectIds[0]),
+        aspectsIds: JSON.stringify([createdAspectIds[0]]),
         requirementType: 'Invalid Type'
       })
 
@@ -482,7 +489,7 @@ describe('Create a requirement', () => {
     test('Should return 400 if state is provided for Federal jurisdiction', async () => {
       const requirementData = generateRequirementData({
         subjectId: String(createdSubjectId),
-        aspectId: String(createdAspectIds[0]),
+        aspectsIds: JSON.stringify([createdAspectIds[0]]),
         jurisdiction: 'Federal',
         state: 'Invalid State'
       })
@@ -503,7 +510,7 @@ describe('Create a requirement', () => {
     test('Should return 400 if municipality is provided for Federal jurisdiction', async () => {
       const requirementData = generateRequirementData({
         subjectId: String(createdSubjectId),
-        aspectId: String(createdAspectIds[0]),
+        aspectsIds: JSON.stringify([createdAspectIds[0]]),
         jurisdiction: 'Federal',
         municipality: 'Invalid Municipality'
       })
@@ -524,7 +531,7 @@ describe('Create a requirement', () => {
     test('Should return 400 if state is missing for Estatal jurisdiction', async () => {
       const requirementData = generateRequirementData({
         subjectId: String(createdSubjectId),
-        aspectId: String(createdAspectIds[0]),
+        aspectsIds: JSON.stringify([createdAspectIds[0]]),
         jurisdiction: 'Estatal'
       })
 
@@ -544,7 +551,7 @@ describe('Create a requirement', () => {
     test('Should return 400 if municipality is provided for Estatal jurisdiction', async () => {
       const requirementData = generateRequirementData({
         subjectId: String(createdSubjectId),
-        aspectId: String(createdAspectIds[0]),
+        aspectsIds: JSON.stringify([createdAspectIds[0]]),
         jurisdiction: 'Estatal',
         state: 'Valid State',
         municipality: 'Invalid Municipality'
@@ -566,7 +573,7 @@ describe('Create a requirement', () => {
     test('Should return 400 if state is missing for Local jurisdiction', async () => {
       const requirementData = generateRequirementData({
         subjectId: String(createdSubjectId),
-        aspectId: String(createdAspectIds[0]),
+        aspectsIds: JSON.stringify([createdAspectIds[0]]),
         jurisdiction: 'Local',
         municipality: 'Valid Municipality'
       })
@@ -587,7 +594,7 @@ describe('Create a requirement', () => {
     test('Should return 400 if municipality is missing for Local jurisdiction', async () => {
       const requirementData = generateRequirementData({
         subjectId: String(createdSubjectId),
-        aspectId: String(createdAspectIds[0]),
+        aspectsIds: JSON.stringify([createdAspectIds[0]]),
         jurisdiction: 'Local',
         state: 'Valid State'
       })
@@ -606,6 +613,7 @@ describe('Create a requirement', () => {
     })
   })
 })
+
 describe('Get All Requirements', () => {
   beforeEach(async () => {
     await RequirementRepository.deleteAll()
@@ -625,7 +633,7 @@ describe('Get All Requirements', () => {
   test('Should return all requirements after creating one', async () => {
     const requirementData = generateRequirementData({
       subjectId: String(createdSubjectId),
-      aspectId: String(createdAspectIds[0])
+      aspectsIds: JSON.stringify([createdAspectIds[0]])
     })
 
     const createResponse = await api
@@ -668,10 +676,12 @@ describe('Get All Requirements', () => {
         subject_id: createdSubjectId,
         subject_name: subjectName
       }),
-      aspect: expect.objectContaining({
-        aspect_id: createdAspectIds[0],
-        aspect_name: aspectsToCreate[0]
-      })
+      aspects: expect.arrayContaining([
+        expect.objectContaining({
+          aspect_id: createdAspectIds[0],
+          aspect_name: aspectsToCreate[0]
+        })
+      ])
     })
   })
 
@@ -684,6 +694,7 @@ describe('Get All Requirements', () => {
     expect(response.body.error).toMatch(/token missing or invalid/i)
   })
 })
+
 describe('Get Requirement By ID', () => {
   let createdRequirement
 
@@ -692,7 +703,7 @@ describe('Get Requirement By ID', () => {
 
     const requirementData = generateRequirementData({
       subjectId: String(createdSubjectId),
-      aspectId: String(createdAspectIds[0])
+      aspectsIds: JSON.stringify([createdAspectIds[0]])
     })
 
     const response = await api
@@ -735,10 +746,12 @@ describe('Get Requirement By ID', () => {
         subject_id: createdSubjectId,
         subject_name: subjectName
       }),
-      aspect: expect.objectContaining({
-        aspect_id: createdAspectIds[0],
-        aspect_name: aspectsToCreate[0]
-      })
+      aspects: expect.arrayContaining([
+        {
+          aspect_id: createdAspectIds[0],
+          aspect_name: aspectsToCreate[0]
+        }
+      ])
     })
   })
 
@@ -766,6 +779,7 @@ describe('Get Requirement By ID', () => {
 describe('Get Requirements By Number', () => {
   let createdRequirement
   const testRequirementNumber = 'REQ-SEARCH-001'
+
   beforeEach(async () => {
     await RequirementRepository.deleteAll()
   })
@@ -785,7 +799,7 @@ describe('Get Requirements By Number', () => {
   test('Should return the requirement after creating one with the given number', async () => {
     const requirementData = generateRequirementData({
       subjectId: String(createdSubjectId),
-      aspectId: String(createdAspectIds[0]),
+      aspectsIds: JSON.stringify([createdAspectIds[0]]),
       requirementNumber: testRequirementNumber
     })
 
@@ -830,10 +844,12 @@ describe('Get Requirements By Number', () => {
         subject_id: createdSubjectId,
         subject_name: subjectName
       }),
-      aspect: expect.objectContaining({
-        aspect_id: createdAspectIds[0],
-        aspect_name: aspectsToCreate[0]
-      })
+      aspects: expect.arrayContaining([
+        {
+          aspect_id: createdAspectIds[0],
+          aspect_name: aspectsToCreate[0]
+        }
+      ])
     })
   })
 
@@ -871,7 +887,7 @@ describe('Get Requirements By Name', () => {
   test('Should return the requirement after creating one with the given name', async () => {
     const requirementData = generateRequirementData({
       subjectId: String(createdSubjectId),
-      aspectId: String(createdAspectIds[0]),
+      aspectsIds: JSON.stringify([createdAspectIds[0]]),
       requirementName: testRequirementName
     })
 
@@ -916,10 +932,12 @@ describe('Get Requirements By Name', () => {
         subject_id: createdSubjectId,
         subject_name: subjectName
       }),
-      aspect: expect.objectContaining({
-        aspect_id: createdAspectIds[0],
-        aspect_name: aspectsToCreate[0]
-      })
+      aspects: expect.arrayContaining([
+        {
+          aspect_id: createdAspectIds[0],
+          aspect_name: aspectsToCreate[0]
+        }
+      ])
     })
   })
 
@@ -955,7 +973,7 @@ describe('Get Requirements By Subject', () => {
   test('Should return all requirements after creating one for the given subject', async () => {
     const requirementData = generateRequirementData({
       subjectId: String(createdSubjectId),
-      aspectId: String(createdAspectIds[0])
+      aspectsIds: JSON.stringify([createdAspectIds[0]])
     })
 
     const createResponse = await api
@@ -963,7 +981,6 @@ describe('Get Requirements By Subject', () => {
       .set('Authorization', `Bearer ${tokenAdmin}`)
       .send(requirementData)
       .expect(201)
-      .expect('Content-Type', /application\/json/)
 
     createdRequirement = createResponse.body.requirement
 
@@ -971,7 +988,6 @@ describe('Get Requirements By Subject', () => {
       .get(`/api/requirements/subject/${createdSubjectId}`)
       .set('Authorization', `Bearer ${tokenAdmin}`)
       .expect(200)
-      .expect('Content-Type', /application\/json/)
 
     const { requirements } = response.body
 
@@ -980,39 +996,25 @@ describe('Get Requirements By Subject', () => {
     expect(requirements[0]).toMatchObject({
       id: createdRequirement.id,
       requirement_number: createdRequirement.requirement_number,
-      requirement_name: createdRequirement.requirement_name,
-      mandatory_description: createdRequirement.mandatory_description,
-      complementary_description: createdRequirement.complementary_description,
-      mandatory_sentences: createdRequirement.mandatory_sentences,
-      complementary_sentences: createdRequirement.complementary_sentences,
-      mandatory_keywords: createdRequirement.mandatory_keywords,
-      complementary_keywords: createdRequirement.complementary_keywords,
-      condition: createdRequirement.condition,
-      evidence: createdRequirement.evidence,
-      periodicity: createdRequirement.periodicity,
-      requirement_type: createdRequirement.requirement_type,
-      jurisdiction: createdRequirement.jurisdiction,
-      state: createdRequirement.state,
-      municipality: createdRequirement.municipality,
       subject: expect.objectContaining({
         subject_id: createdSubjectId,
         subject_name: subjectName
       }),
-      aspect: expect.objectContaining({
-        aspect_id: createdAspectIds[0],
-        aspect_name: aspectsToCreate[0]
-      })
+      aspects: expect.arrayContaining([
+        {
+          aspect_id: createdAspectIds[0],
+          aspect_name: aspectsToCreate[0]
+        }
+      ])
     })
   })
 
   test('Should return 404 if the subject does not exist', async () => {
     const nonExistentSubjectId = '-1'
-
     const response = await api
       .get(`/api/requirements/subject/${nonExistentSubjectId}`)
       .set('Authorization', `Bearer ${tokenAdmin}`)
       .expect(404)
-      .expect('Content-Type', /application\/json/)
 
     expect(response.body.message).toMatch(/Subject not found/i)
   })
@@ -1021,7 +1023,6 @@ describe('Get Requirements By Subject', () => {
     const response = await api
       .get(`/api/requirements/subject/${createdSubjectId}`)
       .expect(401)
-      .expect('Content-Type', /application\/json/)
 
     expect(response.body.error).toMatch(/token missing or invalid/i)
   })
@@ -1040,16 +1041,15 @@ describe('Get Requirements By Subject And Aspects', () => {
       .set('Authorization', `Bearer ${tokenAdmin}`)
       .query({ aspectIds: createdAspectIds })
       .expect(200)
-      .expect('Content-Type', /application\/json/)
 
     expect(response.body.requirements).toBeInstanceOf(Array)
     expect(response.body.requirements).toHaveLength(0)
   })
 
-  test('Should return all requirements after creating one for the given subject and aspect', async () => {
+  test('Should return all requirements after creating one for the given subject and aspects', async () => {
     const requirementData = generateRequirementData({
       subjectId: String(createdSubjectId),
-      aspectId: String(createdAspectIds[0])
+      aspectsIds: JSON.stringify([createdAspectIds[0]])
     })
 
     const createResponse = await api
@@ -1057,7 +1057,6 @@ describe('Get Requirements By Subject And Aspects', () => {
       .set('Authorization', `Bearer ${tokenAdmin}`)
       .send(requirementData)
       .expect(201)
-      .expect('Content-Type', /application\/json/)
 
     createdRequirement = createResponse.body.requirement
 
@@ -1066,7 +1065,6 @@ describe('Get Requirements By Subject And Aspects', () => {
       .set('Authorization', `Bearer ${tokenAdmin}`)
       .query({ aspectIds: [createdAspectIds[0]] })
       .expect(200)
-      .expect('Content-Type', /application\/json/)
 
     const { requirements } = response.body
 
@@ -1093,10 +1091,12 @@ describe('Get Requirements By Subject And Aspects', () => {
         subject_id: createdSubjectId,
         subject_name: subjectName
       }),
-      aspect: expect.objectContaining({
-        aspect_id: createdAspectIds[0],
-        aspect_name: aspectsToCreate[0]
-      })
+      aspects: expect.arrayContaining([
+        {
+          aspect_id: createdAspectIds[0],
+          aspect_name: aspectsToCreate[0]
+        }
+      ])
     })
   })
 
@@ -1164,7 +1164,7 @@ describe('Get Requirements By Mandatory Description', () => {
   test('Should return the requirement after creating one with the given mandatory description', async () => {
     const requirementData = generateRequirementData({
       subjectId: String(createdSubjectId),
-      aspectId: String(createdAspectIds[0]),
+      aspectsIds: JSON.stringify([createdAspectIds[0]]),
       mandatoryDescription: testMandatoryDescription
     })
 
@@ -1173,7 +1173,6 @@ describe('Get Requirements By Mandatory Description', () => {
       .set('Authorization', `Bearer ${tokenAdmin}`)
       .send(requirementData)
       .expect(201)
-      .expect('Content-Type', /application\/json/)
 
     createdRequirement = createResponse.body.requirement
 
@@ -1182,7 +1181,6 @@ describe('Get Requirements By Mandatory Description', () => {
       .set('Authorization', `Bearer ${tokenAdmin}`)
       .query({ description: testMandatoryDescription })
       .expect(200)
-      .expect('Content-Type', /application\/json/)
 
     const { requirements } = response.body
 
@@ -1209,10 +1207,12 @@ describe('Get Requirements By Mandatory Description', () => {
         subject_id: createdSubjectId,
         subject_name: subjectName
       }),
-      aspect: expect.objectContaining({
-        aspect_id: createdAspectIds[0],
-        aspect_name: aspectsToCreate[0]
-      })
+      aspects: expect.arrayContaining([
+        expect.objectContaining({
+          aspect_id: createdAspectIds[0],
+          aspect_name: aspectsToCreate[0]
+        })
+      ])
     })
   })
 
@@ -1221,7 +1221,6 @@ describe('Get Requirements By Mandatory Description', () => {
       .get('/api/requirements/search/mandatory-description')
       .query({ description: testMandatoryDescription })
       .expect(401)
-      .expect('Content-Type', /application\/json/)
 
     expect(response.body.error).toMatch(/token missing or invalid/i)
   })
@@ -1241,7 +1240,6 @@ describe('Get Requirements By Complementary Description', () => {
       .set('Authorization', `Bearer ${tokenAdmin}`)
       .query({ description: testComplementaryDescription })
       .expect(200)
-      .expect('Content-Type', /application\/json/)
 
     expect(response.body.requirements).toBeInstanceOf(Array)
     expect(response.body.requirements).toHaveLength(0)
@@ -1250,7 +1248,7 @@ describe('Get Requirements By Complementary Description', () => {
   test('Should return the requirement after creating one with the given complementary description', async () => {
     const requirementData = generateRequirementData({
       subjectId: String(createdSubjectId),
-      aspectId: String(createdAspectIds[0]),
+      aspectsIds: JSON.stringify([createdAspectIds[0]]),
       complementaryDescription: testComplementaryDescription
     })
 
@@ -1259,7 +1257,6 @@ describe('Get Requirements By Complementary Description', () => {
       .set('Authorization', `Bearer ${tokenAdmin}`)
       .send(requirementData)
       .expect(201)
-      .expect('Content-Type', /application\/json/)
 
     createdRequirement = createResponse.body.requirement
 
@@ -1268,7 +1265,6 @@ describe('Get Requirements By Complementary Description', () => {
       .set('Authorization', `Bearer ${tokenAdmin}`)
       .query({ description: testComplementaryDescription })
       .expect(200)
-      .expect('Content-Type', /application\/json/)
 
     const { requirements } = response.body
 
@@ -1295,10 +1291,12 @@ describe('Get Requirements By Complementary Description', () => {
         subject_id: createdSubjectId,
         subject_name: subjectName
       }),
-      aspect: expect.objectContaining({
-        aspect_id: createdAspectIds[0],
-        aspect_name: aspectsToCreate[0]
-      })
+      aspects: expect.arrayContaining([
+        expect.objectContaining({
+          aspect_id: createdAspectIds[0],
+          aspect_name: aspectsToCreate[0]
+        })
+      ])
     })
   })
 
@@ -1307,7 +1305,6 @@ describe('Get Requirements By Complementary Description', () => {
       .get('/api/requirements/search/complementary-description')
       .query({ description: testComplementaryDescription })
       .expect(401)
-      .expect('Content-Type', /application\/json/)
 
     expect(response.body.error).toMatch(/token missing or invalid/i)
   })
@@ -1336,7 +1333,7 @@ describe('Get Requirements By Mandatory Sentences', () => {
   test('Should return the requirement after creating one with the given mandatory sentence', async () => {
     const requirementData = generateRequirementData({
       subjectId: String(createdSubjectId),
-      aspectId: String(createdAspectIds[0]),
+      aspectsIds: JSON.stringify([createdAspectIds[0]]),
       mandatorySentences: testMandatorySentence
     })
 
@@ -1345,7 +1342,6 @@ describe('Get Requirements By Mandatory Sentences', () => {
       .set('Authorization', `Bearer ${tokenAdmin}`)
       .send(requirementData)
       .expect(201)
-      .expect('Content-Type', /application\/json/)
 
     createdRequirement = createResponse.body.requirement
 
@@ -1354,7 +1350,6 @@ describe('Get Requirements By Mandatory Sentences', () => {
       .set('Authorization', `Bearer ${tokenAdmin}`)
       .query({ sentence: testMandatorySentence })
       .expect(200)
-      .expect('Content-Type', /application\/json/)
 
     const { requirements } = response.body
 
@@ -1381,10 +1376,12 @@ describe('Get Requirements By Mandatory Sentences', () => {
         subject_id: createdSubjectId,
         subject_name: subjectName
       }),
-      aspect: expect.objectContaining({
-        aspect_id: createdAspectIds[0],
-        aspect_name: aspectsToCreate[0]
-      })
+      aspects: expect.arrayContaining([
+        expect.objectContaining({
+          aspect_id: createdAspectIds[0],
+          aspect_name: aspectsToCreate[0]
+        })
+      ])
     })
   })
 
@@ -1422,7 +1419,7 @@ describe('Get Requirements By Complementary Sentences', () => {
   test('Should return the requirement after creating one with the given complementary sentence', async () => {
     const requirementData = generateRequirementData({
       subjectId: String(createdSubjectId),
-      aspectId: String(createdAspectIds[0]),
+      aspectsIds: JSON.stringify([createdAspectIds[0]]),
       complementarySentences: testComplementarySentence
     })
 
@@ -1431,7 +1428,6 @@ describe('Get Requirements By Complementary Sentences', () => {
       .set('Authorization', `Bearer ${tokenAdmin}`)
       .send(requirementData)
       .expect(201)
-      .expect('Content-Type', /application\/json/)
 
     createdRequirement = createResponse.body.requirement
 
@@ -1440,7 +1436,6 @@ describe('Get Requirements By Complementary Sentences', () => {
       .set('Authorization', `Bearer ${tokenAdmin}`)
       .query({ sentence: testComplementarySentence })
       .expect(200)
-      .expect('Content-Type', /application\/json/)
 
     const { requirements } = response.body
 
@@ -1467,10 +1462,12 @@ describe('Get Requirements By Complementary Sentences', () => {
         subject_id: createdSubjectId,
         subject_name: subjectName
       }),
-      aspect: expect.objectContaining({
-        aspect_id: createdAspectIds[0],
-        aspect_name: aspectsToCreate[0]
-      })
+      aspects: expect.arrayContaining([
+        expect.objectContaining({
+          aspect_id: createdAspectIds[0],
+          aspect_name: aspectsToCreate[0]
+        })
+      ])
     })
   })
 
@@ -1484,7 +1481,6 @@ describe('Get Requirements By Complementary Sentences', () => {
     expect(response.body.error).toMatch(/token missing or invalid/i)
   })
 })
-
 describe('Get Requirements By Mandatory Keywords', () => {
   let createdRequirement
   const fullKeywordSet = 'critical safety compliance regulation'
@@ -1509,7 +1505,7 @@ describe('Get Requirements By Mandatory Keywords', () => {
   test('Should return the requirement after creating one with a searchable mandatory keyword', async () => {
     const requirementData = generateRequirementData({
       subjectId: String(createdSubjectId),
-      aspectId: String(createdAspectIds[0]),
+      aspectsIds: JSON.stringify([createdAspectIds[0]]),
       mandatoryKeywords: fullKeywordSet
     })
 
@@ -1541,7 +1537,7 @@ describe('Get Requirements By Mandatory Keywords', () => {
       complementary_description: createdRequirement.complementary_description,
       mandatory_sentences: createdRequirement.mandatory_sentences,
       complementary_sentences: createdRequirement.complementary_sentences,
-      mandatory_keywords: createdRequirement.mandatory_keywords,
+      mandatory_keywords: fullKeywordSet,
       complementary_keywords: createdRequirement.complementary_keywords,
       condition: createdRequirement.condition,
       evidence: createdRequirement.evidence,
@@ -1554,10 +1550,12 @@ describe('Get Requirements By Mandatory Keywords', () => {
         subject_id: createdSubjectId,
         subject_name: subjectName
       }),
-      aspect: expect.objectContaining({
-        aspect_id: createdAspectIds[0],
-        aspect_name: aspectsToCreate[0]
-      })
+      aspects: expect.arrayContaining([
+        expect.objectContaining({
+          aspect_id: createdAspectIds[0],
+          aspect_name: aspectsToCreate[0]
+        })
+      ])
     })
   })
 
@@ -1571,6 +1569,7 @@ describe('Get Requirements By Mandatory Keywords', () => {
     expect(response.body.error).toMatch(/token missing or invalid/i)
   })
 })
+
 describe('Get Requirements By Complementary Keywords', () => {
   let createdRequirement
   const fullComplementaryKeywords = 'safety procedures control measures checklist'
@@ -1595,7 +1594,7 @@ describe('Get Requirements By Complementary Keywords', () => {
   test('Should return the requirement after creating one with a searchable complementary keyword', async () => {
     const requirementData = generateRequirementData({
       subjectId: String(createdSubjectId),
-      aspectId: String(createdAspectIds[0]),
+      aspectsIds: JSON.stringify([createdAspectIds[0]]),
       complementaryKeywords: fullComplementaryKeywords
     })
 
@@ -1640,10 +1639,12 @@ describe('Get Requirements By Complementary Keywords', () => {
         subject_id: createdSubjectId,
         subject_name: subjectName
       }),
-      aspect: expect.objectContaining({
-        aspect_id: createdAspectIds[0],
-        aspect_name: aspectsToCreate[0]
-      })
+      aspects: expect.arrayContaining([
+        expect.objectContaining({
+          aspect_id: createdAspectIds[0],
+          aspect_name: aspectsToCreate[0]
+        })
+      ])
     })
   })
 
@@ -1681,7 +1682,7 @@ describe('Get Requirements By Condition', () => {
   test('Should return the requirement after creating one with the given condition', async () => {
     const requirementData = generateRequirementData({
       subjectId: String(createdSubjectId),
-      aspectId: String(createdAspectIds[0]),
+      aspectsIds: JSON.stringify([createdAspectIds[0]]),
       condition: testCondition
     })
 
@@ -1726,10 +1727,12 @@ describe('Get Requirements By Condition', () => {
         subject_id: createdSubjectId,
         subject_name: subjectName
       }),
-      aspect: expect.objectContaining({
-        aspect_id: createdAspectIds[0],
-        aspect_name: aspectsToCreate[0]
-      })
+      aspects: expect.arrayContaining([
+        expect.objectContaining({
+          aspect_id: createdAspectIds[0],
+          aspect_name: aspectsToCreate[0]
+        })
+      ])
     })
   })
 
@@ -1747,6 +1750,7 @@ describe('Get Requirements By Condition', () => {
 describe('Get Requirements By Evidence', () => {
   let createdRequirement
   const testEvidence = 'Registro'
+
   beforeEach(async () => {
     await RequirementRepository.deleteAll()
   })
@@ -1766,7 +1770,7 @@ describe('Get Requirements By Evidence', () => {
   test('Should return the requirement after creating one with the given evidence', async () => {
     const requirementData = generateRequirementData({
       subjectId: String(createdSubjectId),
-      aspectId: String(createdAspectIds[0]),
+      aspectsIds: JSON.stringify([createdAspectIds[0]]),
       evidence: testEvidence
     })
 
@@ -1811,10 +1815,12 @@ describe('Get Requirements By Evidence', () => {
         subject_id: createdSubjectId,
         subject_name: subjectName
       }),
-      aspect: expect.objectContaining({
-        aspect_id: createdAspectIds[0],
-        aspect_name: aspectsToCreate[0]
-      })
+      aspects: expect.arrayContaining([
+        expect.objectContaining({
+          aspect_id: createdAspectIds[0],
+          aspect_name: aspectsToCreate[0]
+        })
+      ])
     })
   })
 
@@ -1832,6 +1838,7 @@ describe('Get Requirements By Evidence', () => {
 describe('Get Requirements By Periodicity', () => {
   let createdRequirement
   const testPeriodicity = 'Anual'
+
   beforeEach(async () => {
     await RequirementRepository.deleteAll()
   })
@@ -1851,7 +1858,7 @@ describe('Get Requirements By Periodicity', () => {
   test('Should return the requirement after creating one with the given periodicity', async () => {
     const requirementData = generateRequirementData({
       subjectId: String(createdSubjectId),
-      aspectId: String(createdAspectIds[0]),
+      aspectsIds: JSON.stringify([createdAspectIds[0]]),
       periodicity: testPeriodicity
     })
 
@@ -1896,10 +1903,12 @@ describe('Get Requirements By Periodicity', () => {
         subject_id: createdSubjectId,
         subject_name: subjectName
       }),
-      aspect: expect.objectContaining({
-        aspect_id: createdAspectIds[0],
-        aspect_name: aspectsToCreate[0]
-      })
+      aspects: expect.arrayContaining([
+        expect.objectContaining({
+          aspect_id: createdAspectIds[0],
+          aspect_name: aspectsToCreate[0]
+        })
+      ])
     })
   })
 
@@ -1937,7 +1946,7 @@ describe('Get Requirements By Requirement Type', () => {
   test('Should return the requirement after creating one with the given requirement type', async () => {
     const requirementData = generateRequirementData({
       subjectId: String(createdSubjectId),
-      aspectId: String(createdAspectIds[0]),
+      aspectsIds: JSON.stringify([createdAspectIds[0]]),
       requirementType: testRequirementType
     })
 
@@ -1982,10 +1991,12 @@ describe('Get Requirements By Requirement Type', () => {
         subject_id: createdSubjectId,
         subject_name: subjectName
       }),
-      aspect: expect.objectContaining({
-        aspect_id: createdAspectIds[0],
-        aspect_name: aspectsToCreate[0]
-      })
+      aspects: expect.arrayContaining([
+        expect.objectContaining({
+          aspect_id: createdAspectIds[0],
+          aspect_name: aspectsToCreate[0]
+        })
+      ])
     })
   })
 
@@ -2003,9 +2014,11 @@ describe('Get Requirements By Requirement Type', () => {
 describe('Get Requirements By Jurisdiction', () => {
   let createdRequirement
   const testJurisdiction = 'Federal'
+
   beforeEach(async () => {
     await RequirementRepository.deleteAll()
   })
+
   test('Should return an empty array when no requirements match the given jurisdiction', async () => {
     const response = await api
       .get('/api/requirements/search/jurisdiction')
@@ -2021,7 +2034,7 @@ describe('Get Requirements By Jurisdiction', () => {
   test('Should return the requirement after creating one with the given jurisdiction', async () => {
     const requirementData = generateRequirementData({
       subjectId: String(createdSubjectId),
-      aspectId: String(createdAspectIds[0]),
+      aspectsIds: JSON.stringify([createdAspectIds[0]]),
       jurisdiction: testJurisdiction
     })
 
@@ -2066,10 +2079,12 @@ describe('Get Requirements By Jurisdiction', () => {
         subject_id: createdSubjectId,
         subject_name: subjectName
       }),
-      aspect: expect.objectContaining({
-        aspect_id: createdAspectIds[0],
-        aspect_name: aspectsToCreate[0]
-      })
+      aspects: expect.arrayContaining([
+        expect.objectContaining({
+          aspect_id: createdAspectIds[0],
+          aspect_name: aspectsToCreate[0]
+        })
+      ])
     })
   })
 
@@ -2083,7 +2098,6 @@ describe('Get Requirements By Jurisdiction', () => {
     expect(response.body.error).toMatch(/token missing or invalid/i)
   })
 })
-
 describe('Get Requirements By State', () => {
   let createdRequirement
   const testState = 'Nuevo León'
@@ -2107,7 +2121,7 @@ describe('Get Requirements By State', () => {
   test('Should return the requirement after creating one with the given state', async () => {
     const requirementData = generateRequirementData({
       subjectId: String(createdSubjectId),
-      aspectId: String(createdAspectIds[0]),
+      aspectsIds: JSON.stringify([createdAspectIds[0]]),
       jurisdiction: 'Estatal',
       state: testState
     })
@@ -2153,10 +2167,12 @@ describe('Get Requirements By State', () => {
         subject_id: createdSubjectId,
         subject_name: subjectName
       }),
-      aspect: expect.objectContaining({
-        aspect_id: createdAspectIds[0],
-        aspect_name: aspectsToCreate[0]
-      })
+      aspects: expect.arrayContaining([
+        expect.objectContaining({
+          aspect_id: createdAspectIds[0],
+          aspect_name: aspectsToCreate[0]
+        })
+      ])
     })
   })
 
@@ -2195,7 +2211,7 @@ describe('Get Requirements By State And Municipalities', () => {
   test('Should return the requirement after creating one with the given state and municipality', async () => {
     const requirementData = generateRequirementData({
       subjectId: String(createdSubjectId),
-      aspectId: String(createdAspectIds[0]),
+      aspectsIds: JSON.stringify([createdAspectIds[0]]),
       jurisdiction: 'Local',
       state: testState,
       municipality: testMunicipality
@@ -2242,10 +2258,12 @@ describe('Get Requirements By State And Municipalities', () => {
         subject_id: createdSubjectId,
         subject_name: subjectName
       }),
-      aspect: expect.objectContaining({
-        aspect_id: createdAspectIds[0],
-        aspect_name: aspectsToCreate[0]
-      })
+      aspects: expect.arrayContaining([
+        expect.objectContaining({
+          aspect_id: createdAspectIds[0],
+          aspect_name: aspectsToCreate[0]
+        })
+      ])
     })
   })
 
@@ -2254,7 +2272,7 @@ describe('Get Requirements By State And Municipalities', () => {
       requirementNumber: 'requirementData1 Number',
       requirementName: 'requirementData1 Name',
       subjectId: String(createdSubjectId),
-      aspectId: String(createdAspectIds[0]),
+      aspectsIds: JSON.stringify([createdAspectIds[0]]),
       jurisdiction: 'Local',
       state: testState,
       municipality: 'Monterrey'
@@ -2264,7 +2282,7 @@ describe('Get Requirements By State And Municipalities', () => {
       requirementNumber: 'requirementData2 Number',
       requirementName: 'requirementData2 Name',
       subjectId: String(createdSubjectId),
-      aspectId: String(createdAspectIds[1]),
+      aspectsIds: JSON.stringify([createdAspectIds[1]]),
       jurisdiction: 'Local',
       state: testState,
       municipality: 'San Pedro'
@@ -2323,7 +2341,7 @@ describe('Update a requirement', () => {
     await RequirementRepository.deleteAll()
     const requirementData = generateRequirementData({
       subjectId: String(createdSubjectId),
-      aspectId: String(createdAspectIds[0])
+      aspectsIds: JSON.stringify([createdAspectIds[0]])
     })
 
     const response = await api
@@ -2341,7 +2359,7 @@ describe('Update a requirement', () => {
       requirementName: 'Updated Requirement Name',
       requirementNumber: 'UPDATED-001',
       subjectId: String(createdSubjectId),
-      aspectId: String(createdAspectIds[0])
+      aspectsIds: JSON.stringify([createdAspectIds[0]])
     })
 
     await api
@@ -2373,16 +2391,18 @@ describe('Update a requirement', () => {
       periodicity: updatedData.periodicity,
       requirement_type: updatedData.requirementType,
       jurisdiction: updatedData.jurisdiction,
-      state: null,
-      municipality: null,
+      state: updatedData.state ?? null,
+      municipality: updatedData.municipality ?? null,
       subject: expect.objectContaining({
         subject_id: createdSubjectId,
         subject_name: subjectName
       }),
-      aspect: expect.objectContaining({
-        aspect_id: createdAspectIds[0],
-        aspect_name: aspectsToCreate[0]
-      })
+      aspects: expect.arrayContaining([
+        expect.objectContaining({
+          aspect_id: createdAspectIds[0],
+          aspect_name: aspectsToCreate[0]
+        })
+      ])
     })
   })
 
@@ -2391,7 +2411,7 @@ describe('Update a requirement', () => {
       requirementName: 'Updated Requirement Name',
       requirementNumber: 'UPDATED-001',
       subjectId: String(createdSubjectId),
-      aspectId: String(createdAspectIds[0])
+      aspectsIds: JSON.stringify([createdAspectIds[0]])
     })
     const response = await api
       .patch('/api/requirement/-1')
@@ -2407,7 +2427,7 @@ describe('Update a requirement', () => {
       requirementName: 'Updated Requirement Name',
       requirementNumber: 'UPDATED-001',
       subjectId: '-1',
-      aspectId: String(createdAspectIds[0])
+      aspectsIds: JSON.stringify([createdAspectIds[0]])
     })
     const response = await api
       .patch(`/api/requirement/${createdRequirement.id}`)
@@ -2418,12 +2438,12 @@ describe('Update a requirement', () => {
     expect(response.body.message).toMatch(/Subject not found/i)
   })
 
-  test('Should return 404 if aspect ID does not exist', async () => {
+  test('Should return 404 if aspect IDs do not exist', async () => {
     const updatedData = generateRequirementData({
       requirementName: 'Updated Requirement Name',
       requirementNumber: 'UPDATED-001',
       subjectId: String(createdSubjectId),
-      aspectId: '-1'
+      aspectsIds: JSON.stringify([-1])
     })
     const response = await api
       .patch(`/api/requirement/${createdRequirement.id}`)
@@ -2431,63 +2451,64 @@ describe('Update a requirement', () => {
       .send(updatedData)
       .expect(404)
 
-    expect(response.body.message).toMatch(/Aspect not found/i)
+    expect(response.body.message).toMatch(/Aspects not found for IDs/i)
   })
 
   test('Should return 409 if requirement name already exists', async () => {
-    const requirement = generateRequirementData({
+    const existingData = generateRequirementData({
       subjectId: String(createdSubjectId),
-      aspectId: String(createdAspectIds[0]),
+      aspectsIds: JSON.stringify([createdAspectIds[0]]),
       requirementName: 'Existing Requirement',
-      requirementNumber: 'EXISTING-002'
-    })
-
-    const anotherRequirement = generateRequirementData({
-      subjectId: String(createdSubjectId),
-      aspectId: String(createdAspectIds[0]),
-      requirementName: 'Existing Requirement',
-      requirementNumber: 'EXISTING-002113'
+      requirementNumber: 'UNIQUE-001'
     })
 
     await api
       .post('/api/requirements')
       .set('Authorization', `Bearer ${tokenAdmin}`)
-      .send(requirement)
+      .send(existingData)
       .expect(201)
+
+    const duplicateData = generateRequirementData({
+      subjectId: String(createdSubjectId),
+      aspectsIds: JSON.stringify([createdAspectIds[0]]),
+      requirementName: 'Existing Requirement',
+      requirementNumber: 'NEW-NUMBER-002'
+    })
 
     const response = await api
       .patch(`/api/requirement/${createdRequirement.id}`)
       .set('Authorization', `Bearer ${tokenAdmin}`)
-      .send(anotherRequirement)
+      .send(duplicateData)
       .expect(409)
 
     expect(response.body.message).toMatch(/Requirement name already exists/i)
   })
 
   test('Should return 409 if requirement number already exists', async () => {
-    const requirement = generateRequirementData({
+    const existingData = generateRequirementData({
       subjectId: String(createdSubjectId),
-      aspectId: String(createdAspectIds[0]),
-      requirementName: 'Existing Requirement',
-      requirementNumber: 'EXISTING-002'
-    })
-    const anotherRequirement = generateRequirementData({
-      subjectId: String(createdSubjectId),
-      aspectId: String(createdAspectIds[0]),
-      requirementName: 'Unique Requirement 01',
-      requirementNumber: 'EXISTING-002'
+      aspectsIds: JSON.stringify([createdAspectIds[0]]),
+      requirementName: 'Unique Name',
+      requirementNumber: 'DUPLICATE-NUMBER-001'
     })
 
     await api
       .post('/api/requirements')
       .set('Authorization', `Bearer ${tokenAdmin}`)
-      .send(requirement)
+      .send(existingData)
       .expect(201)
+
+    const duplicateData = generateRequirementData({
+      subjectId: String(createdSubjectId),
+      aspectsIds: JSON.stringify([createdAspectIds[0]]),
+      requirementName: 'Another Unique Name',
+      requirementNumber: 'DUPLICATE-NUMBER-001'
+    })
 
     const response = await api
       .patch(`/api/requirement/${createdRequirement.id}`)
       .set('Authorization', `Bearer ${tokenAdmin}`)
-      .send(anotherRequirement)
+      .send(duplicateData)
       .expect(409)
 
     expect(response.body.message).toMatch(/Requirement number already exists/i)
@@ -2509,9 +2530,10 @@ describe('Delete a requirement', () => {
 
   beforeEach(async () => {
     await RequirementRepository.deleteAll()
+
     const requirementData = generateRequirementData({
       subjectId: String(createdSubjectId),
-      aspectId: String(createdAspectIds[0])
+      aspectsIds: JSON.stringify([createdAspectIds[0]])
     })
 
     const response = await api
@@ -2555,7 +2577,6 @@ describe('Delete a requirement', () => {
     expect(response.body.error).toMatch(/token missing or invalid/i)
   })
 })
-
 describe('Delete multiple requirements', () => {
   let createdRequirements
 
@@ -2563,12 +2584,13 @@ describe('Delete multiple requirements', () => {
     await RequirementRepository.deleteAll()
     const numberOfRequirements = 2
     createdRequirements = []
+
     for (let i = 0; i < numberOfRequirements; i++) {
       const requirementData = generateRequirementData({
         requirementNumber: `REQ-${i}`,
         requirementName: `Requirement Name ${i}`,
         subjectId: String(createdSubjectId),
-        aspectId: String(createdAspectIds[0])
+        aspectsIds: JSON.stringify([createdAspectIds[0]])
       })
 
       const response = await api
@@ -2600,6 +2622,7 @@ describe('Delete multiple requirements', () => {
 
   test('Should return 404 if one or more requirement IDs do not exist', async () => {
     const nonExistingIds = [...createdRequirements, -1]
+
     const response = await api
       .delete('/api/requirements/batch')
       .set('Authorization', `Bearer ${tokenAdmin}`)

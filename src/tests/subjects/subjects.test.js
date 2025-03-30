@@ -289,7 +289,7 @@ describe('Subjects API tests', () => {
 
       const requirementData = generateRequirementData({
         subjectId: String(createdSubjectId),
-        aspectId: String(createdAspectIds[0])
+        aspectsIds: JSON.stringify(createdAspectIds)
       })
 
       const requirementResponse = await api
@@ -426,7 +426,7 @@ describe('Subjects API tests', () => {
           requirementNumber: `REQ-${i + 1}`,
           requirementName: `Requirement Test ${i + 1}`,
           subjectId: String(subject.id),
-          aspectId: String(aspectIdsForSubject[0])
+          aspectsIds: JSON.stringify(aspectIdsForSubject)
         })
 
         const requirementResponse = await api
