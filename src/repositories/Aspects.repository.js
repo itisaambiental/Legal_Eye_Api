@@ -354,12 +354,13 @@ class AspectsRepository {
   static async checkAspectRequirementAssociations (aspectId) {
     try {
       const [rows] = await pool.query(
-        `
-        SELECT COUNT(*) AS requirementAssociationCount
-        FROM requirements
-        WHERE aspect_id = ?
+      `
+      SELECT 
+        COUNT(DISTINCT rsa.requirement_id) AS requirementAssociationCount
+      FROM requirement_subject_aspect rsa
+      WHERE rsa.aspect_id = ?
       `,
-        [aspectId]
+      [aspectId]
       )
       return {
         isAspectAssociatedToRequirements: rows[0].requirementAssociationCount > 0
@@ -385,16 +386,17 @@ class AspectsRepository {
       const [rows] = await pool.query(
       `
       SELECT 
-          a.id AS aspectId,
-          a.aspect_name AS aspectName,
-          COUNT(DISTINCT r.id) AS requirementAssociationCount
+        a.id AS aspectId,
+        a.aspect_name AS aspectName,
+        COUNT(DISTINCT rsa.requirement_id) AS requirementAssociationCount
       FROM aspects a
-      LEFT JOIN requirements r ON r.aspect_id = a.id
-      WHERE a.id IN (?) 
+      LEFT JOIN requirement_subject_aspect rsa ON rsa.aspect_id = a.id
+      WHERE a.id IN (?)
       GROUP BY a.id
-    `,
+      `,
       [aspectIds]
       )
+
       return rows.map(row => ({
         id: row.aspectId,
         name: row.aspectName,

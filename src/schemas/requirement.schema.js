@@ -17,18 +17,29 @@ const requirementSchema = z
         'The subjectId must be a valid number'
       )
       .transform((val) => Number(val)),
-
     /**
-     * The aspect associated with the requirement.
-     * Must be a string that can be converted to a valid number.
-     */
-    aspectId: z
-      .string()
+
+    * Aspects IDs associated with the requirement.
+     * Must be a stringified JSON array of valid numbers.
+   */
+    aspectsIds: z.string()
+      .refine((val) => {
+        try {
+          const parsedArray = JSON.parse(val)
+          return (
+            Array.isArray(parsedArray) &&
+        parsedArray.every((item) => typeof item === 'number')
+          )
+        } catch {
+          return false
+        }
+      }, 'Each aspectId must be a valid array of numbers')
+      .transform((val) => z.array(z.number()).parse(JSON.parse(val)))
       .refine(
-        (val) => !isNaN(Number(val)),
-        'The aspectId must be a valid number'
-      )
-      .transform((val) => Number(val)),
+        (val) => val.length > 0,
+        'aspectsIds must contain at least one number'
+      ),
+
     /**
      * The unique number identifying the requirement.
      */
@@ -99,9 +110,9 @@ const requirementSchema = z
     /**
      * The type of evidence of the requirement.
      */
-    evidence: z.enum(['Trámite', 'Registro', 'Específico', 'Documento'], {
+    evidence: z.enum(['Trámite', 'Registro', 'Específica', 'Documento'], {
       message:
-        'The evidence type must be one of the following: Trámite, Registro, Específico, Documento.'
+        'The evidence type must be one of the following: Trámite, Registro, Específica, Documento.'
     }),
 
     /**

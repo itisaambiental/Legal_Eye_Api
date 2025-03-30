@@ -14,55 +14,36 @@ import { es } from 'date-fns/locale'
  * Service class for handling Legal Basis operations.
  */
 class LegalBasisService {
-  /**
-   * @typedef {Object} LegalBasis
-   * @property {number|string} id - The unique identifier of the legal basis.
-   * @property {string} legal_name - The name of the legal basis.
-   * @property {string} subject - The subject associated with the legal basis.
-   * @property {string} aspects - The aspects related to the legal basis.
-   * @property {string} classification - The classification of the legal basis.
-   * @property {string} jurisdiction - The jurisdiction of the legal basis.
-   * @property {string} state - The state associated with the legal basis.
-   * @property {string} municipality - The municipality associated with the legal basis.
-   * @property {string|null} last_reform - The date of the last reform formatted as "dd-MM-yyyy", or null.
-   * @property {string} abbreviation - The abbreviation of the legal basis.
-   * @property {string|null} url - The URL of the document, or null if not provided.
-   * @property {string|null} fileKey - The unique key of the document, or null if not provided.
-   */
+/**
+ * @typedef {Object} LegalBasis
+ * @property {number} id - The unique identifier of the legal basis.
+ * @property {string} legal_name - The name of the legal document.
+ * @property {Object} subject - The subject associated with the legal basis.
+ * @property {number} subject.subject_id - The ID of the subject.
+ * @property {string} subject.subject_name - The name of the subject.
+ * @property {Array<Object>} aspects - The aspects associated with the legal basis.
+ * @property {number} aspects[].aspect_id - The ID of the aspect.
+ * @property {string} aspects[].aspect_name - The name of the aspect.
+ * @property {string} abbreviation - The abbreviation of the legal document.
+ * @property {string} classification - The classification of the legal document.
+ * @property {string} jurisdiction - The jurisdiction ('Estatal', 'Federal', etc.).
+ * @property {string} [state] - The state associated with the legal basis, if applicable.
+ * @property {string} [municipality] - The municipality associated with the legal basis, if applicable.
+ * @property {string|null} lastReform - The date of the last reform (formatted as dd-MM-yyyy or ISO).
+ * @property {string|null} url - The URL to the legal document.
+ */
 
   /**
-   * @typedef {Object} CreatedLegalBasis
-   * @property {string|number|null} jobId - The ID of the article extraction job, if created; otherwise, null.
-   * @property {Object} legalBasis - The object containing the created legal basis information.
-   * @property {string|number} legalBasis.id - The unique identifier of the legal basis.
-   * @property {string} legalBasis.legalName - The legal basis name.
-   * @property {string} legalBasis.abbreviation - The legal basis abbreviation.
-   * @property {string} legalBasis.subject - The subject associated with the legal basis.
-   * @property {string} legalBasis.aspects - The aspects associated with the legal basis.
-   * @property {string} legalBasis.classification - The legal basis classification.
-   * @property {string} [legalBasis.state] - The state, if applicable.
-   * @property {string} [legalBasis.municipality] - The municipality, if applicable.
-   * @property {string|null} legalBasis.last_reform - The date of the last reform formatted as "dd-MM-yyyy", or null.
-   * @property {string|null} legalBasis.url - The URL of the uploaded document, or null if not provided.
-   * @property {string|null} legalBasis.fileKey - The unique key of the document, or null if not uploaded.
-   */
+ * @typedef {Object} CreatedLegalBasis
+ * @property {string|number|null} jobId - The ID of the article extraction job, if created; otherwise, null.
+ * @property {LegalBasis & { fileKey?: string|null }} legalBasis - The object containing the created legal basis information.
+ */
 
   /**
-   * @typedef {Object} UpdatedLegalBasis
-   * @property {string|number|null} jobId - The ID of the article extraction job, if initiated; otherwise, null.
-   * @property {Object} legalBasis - The object containing the updated legal basis data.
-   * @property {number|string} legalBasis.id - The unique identifier of the legal basis.
-   * @property {string} legalBasis.legalName - The updated legal basis name.
-   * @property {string} legalBasis.abbreviation - The updated legal basis abbreviation.
-   * @property {string} legalBasis.subject - The subject associated with the legal basis.
-   * @property {string} legalBasis.aspects - The aspects associated with the legal basis.
-   * @property {string} legalBasis.classification - The updated legal basis classification.
-   * @property {string} [legalBasis.state] - The updated state, if applicable.
-   * @property {string} [legalBasis.municipality] - The updated municipality, if applicable.
-   * @property {string|null} legalBasis.last_reform - The date of the last reform formatted as "dd-MM-yyyy", or null.
-   * @property {string|null} legalBasis.url - The URL of the updated document, or null if not provided.
-   * @property {string|null} legalBasis.fileKey - The unique key of the updated document, or null.
-   */
+ * @typedef {Object} UpdatedLegalBasis
+ * @property {string|number|null} jobId - The ID of the article extraction job, if updated; otherwise, null.
+ * @property {LegalBasis & { fileKey?: string|null }} legalBasis - The object containing the updated legal basis information.
+ */
 
   /**
    * Creates a new legal basis entry.

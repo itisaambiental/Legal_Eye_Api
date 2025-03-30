@@ -18,7 +18,7 @@ export const createRequirement = async (req, res) => {
   const { userId } = req
   const {
     subjectId,
-    aspectId,
+    aspectsIds,
     requirementNumber,
     requirementName,
     mandatoryDescription,
@@ -42,7 +42,7 @@ export const createRequirement = async (req, res) => {
     }
     const requirement = await RequirementService.create({
       subjectId,
-      aspectId,
+      aspectsIds,
       requirementNumber,
       requirementName,
       mandatoryDescription,
@@ -599,7 +599,7 @@ export const updateRequirement = async (req, res) => {
   const { id } = req.params
   const {
     subjectId,
-    aspectId,
+    aspectsIds,
     requirementNumber,
     requirementName,
     mandatoryDescription,
@@ -623,7 +623,7 @@ export const updateRequirement = async (req, res) => {
     }
     const requirement = await RequirementService.updateById(id, {
       subjectId,
-      aspectId,
+      aspectsIds,
       requirementNumber,
       requirementName,
       mandatoryDescription,

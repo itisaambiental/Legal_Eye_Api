@@ -1196,7 +1196,7 @@ class LegalBasisRepository {
   /**
    * Updates a legal basis record in the database
    * @param {number} legalBasisId - The ID of the legal basis to update.
-     * @param {Object} legalBasis - The data for the legal basis.
+   * @param {Object} legalBasis - The data for the legal basis.
    * @param {string} legalBasis.legalName - The name of the legal basis.
    * @param {string} legalBasis.abbreviation - The abbreviation of the legal basis.
    * @param {number} legalBasis.subjectId - The ID of the subject associated with the legal basis.

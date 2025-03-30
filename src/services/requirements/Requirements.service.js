@@ -11,37 +11,37 @@ import { z } from 'zod'
  */
 class RequirementService {
   /**
-   * @typedef {Object} Requirement
-   * @property {number} id - The unique identifier of the requirement.
-   * @property {string} requirementNumber - The unique number identifying the requirement.
-   * @property {string} requirementName - The name of the requirement.
-   * @property {string} mandatoryDescription - The mandatory description of the requirement.
-   * @property {string} complementaryDescription - The complementary description of the requirement.
-   * @property {string} mandatorySentences - The mandatory legal sentences related to the requirement.
-   * @property {string} complementarySentences - The complementary legal sentences related to the requirement.
-   * @property {string} mandatoryKeywords - Keywords related to the mandatory aspect of the requirement.
-   * @property {string} complementaryKeywords - Keywords related to the complementary aspect of the requirement.
-   * @property {string} condition - The condition type ('Crítica', 'Operativa', 'Recomendación', 'Pendiente').
-   * @property {string} evidence - The type of evidence ('Trámite', 'Registro', 'Específico', 'Documento').
-   * @property {string} periodicity - The periodicity of the requirement ('Anual', '2 años', 'Por evento', 'Única vez').
-   * @property {string} requirementType - The type of requirement.
-   * @property {string} jurisdiction - The jurisdiction ('Estatal', 'Federal', 'Local').
-   * @property {string} [state] - The state associated with the requirement, if applicable.
-   * @property {string} [municipality] - The municipality associated with the requirement, if applicable.
-   * @property {Object} subject - The subject associated with the requirement.
-   * @property {number} subject.subject_id - The subject ID.
-   * @property {string} subject.subject_name - The subject name.
-   * @property {Object} aspect - The aspect associated with the requirement.
-   * @property {number} aspect.aspect_id - The aspect ID.
-   * @property {string} aspect.aspect_name - The aspect name.
-   */
+ * @typedef {Object} Requirement
+  * @property {number} id - The unique identifier of the requirement.
+  * @property {Object} subject - The subject associated with the requirement.
+  * @property {number} subject.subject_id - The ID of the subject.
+  * @property {string} subject.subject_name - The name of the subject.
+  * @property {Array<Object>} aspects - The aspects associated with the requirement.
+  * @property {number} aspects[].aspect_id - The ID of the aspect.
+  * @property {string} aspects[].aspect_name - The name of the aspect.
+  * @property {string} requirement_number - The unique number identifying the requirement.
+  * @property {string} requirement_name - The name of the requirement.
+  * @property {string} mandatory_description - The mandatory description of the requirement.
+  * @property {string} complementary_description - The complementary description of the requirement.
+  * @property {string} mandatory_sentences - The mandatory legal sentences related to the requirement.
+  * @property {string} complementary_sentences - The complementary legal sentences related to the requirement.
+  * @property {string} mandatory_keywords - Keywords related to the mandatory aspect of the requirement.
+  * @property {string} complementary_keywords - Keywords related to the complementary aspect of the requirement.
+  * @property {string} condition - The condition type ('Crítica', 'Operativa', 'Recomendación', 'Pendiente').
+  * @property {string} evidence - The type of evidence ('Trámite', 'Registro', 'Específico', 'Documento').
+  * @property {string} periodicity - The periodicity ('Anual', '2 años', 'Por evento', 'Única vez').
+  * @property {string} requirement_type - The type of requirement.
+  * @property {string} jurisdiction - The jurisdiction ('Estatal', 'Federal', 'Local').
+  * @property {string} [state] - The state associated with the requirement, if applicable.
+  * @property {string} [municipality] - The municipality associated with the requirement, if applicable.
+ */
 
   /**
    * Creates a new requirement.
    *
    * @param {Object} requirement - Parameters for creating a requirement.
    * @param {number} requirement.subjectId - The subject ID.
-   * @param {number} requirement.aspectId - The aspect ID.
+   * @param {number[]} requirement.aspectsIds - The aspects IDs.
    * @param {string} requirement.requirementNumber - The requirement number.
    * @param {string} requirement.requirementName - The requirement name.
    * @param {string} requirement.mandatoryDescription - The mandatory description.
@@ -69,11 +69,14 @@ class RequirementService {
       if (!subjectExists) {
         throw new ErrorUtils(404, 'Subject not found')
       }
-      const aspectExists = await AspectsRepository.findById(
-        parsedRequirement.aspectId
+      const validAspectIds = await AspectsRepository.findByIds(
+        parsedRequirement.aspectsIds
       )
-      if (!aspectExists) {
-        throw new ErrorUtils(404, 'Aspect not found')
+      if (validAspectIds.length !== parsedRequirement.aspectsIds.length) {
+        const notFoundIds = parsedRequirement.aspectsIds.filter(
+          (id) => !validAspectIds.includes(id)
+        )
+        throw new ErrorUtils(404, 'Aspects not found for IDs', { notFoundIds })
       }
       const requirementExistsByNumber =
         await RequirementRepository.existsByRequirementNumber(
@@ -591,7 +594,7 @@ class RequirementService {
    * @param {number} requirementId - The ID of the requirement to update.
    * @param {Object} requirement - Parameters for updating a requirement.
    * @param {number} [requirement.subjectId] - The updated subject ID (optional).
-   * @param {number} [requirement.aspectId] - The updated aspect ID (optional).
+   * @param {number[]} [requirement.aspectsIds] - The updated aspects IDs (optional).
    * @param {string} [requirement.requirementNumber] - The updated requirement number (optional).
    * @param {string} [requirement.requirementName] - The updated requirement name (optional).
    * @param {string} [requirement.mandatoryDescription] - The updated mandatory description (optional).
@@ -627,13 +630,14 @@ class RequirementService {
           throw new ErrorUtils(404, 'Subject not found')
         }
       }
-      if (parsedRequirement.aspectId) {
-        const aspectExists = await AspectsRepository.findById(
-          parsedRequirement.aspectId
+      const validAspectIds = await AspectsRepository.findByIds(
+        parsedRequirement.aspectsIds
+      )
+      if (validAspectIds.length !== parsedRequirement.aspectsIds.length) {
+        const notFoundIds = parsedRequirement.aspectsIds.filter(
+          (id) => !validAspectIds.includes(id)
         )
-        if (!aspectExists) {
-          throw new ErrorUtils(404, 'Aspect not found')
-        }
+        throw new ErrorUtils(404, 'Aspects not found for IDs', { notFoundIds })
       }
       if (parsedRequirement.requirementNumber) {
         const requirementExistsByNumber =

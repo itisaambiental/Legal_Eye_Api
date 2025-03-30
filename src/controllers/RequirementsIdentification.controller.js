@@ -43,7 +43,6 @@ export const startIdentification = async (req, res) => {
     )
     return res.status(201).json({ jobId, requirementsIdentificationId })
   } catch (error) {
-    console.log(error)
     if (error instanceof ErrorUtils) {
       return res.status(error.status).json({
         message: error.message,

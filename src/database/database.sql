@@ -160,7 +160,6 @@ CREATE TABLE IF NOT EXISTS legal_basis_subject_aspect (
 CREATE TABLE IF NOT EXISTS requirements (
     id INT AUTO_INCREMENT PRIMARY KEY,
     subject_id INT NOT NULL,
-    aspect_id INT NOT NULL,
     requirement_number VARCHAR(255) NOT NULL,
     requirement_name VARCHAR(255) NOT NULL,
     mandatory_description LONGTEXT NOT NULL,
@@ -170,8 +169,10 @@ CREATE TABLE IF NOT EXISTS requirements (
     mandatory_keywords LONGTEXT NOT NULL,
     complementary_keywords LONGTEXT NOT NULL,
     requirement_condition ENUM('Crítica', 'Operativa', 'Recomendación', 'Pendiente') NOT NULL,
-    evidence ENUM('Trámite', 'Registro', 'Específico', 'Documento') NOT NULL,
-    periodicity ENUM('Anual', '2 años', 'Por evento', 'Única vez') NOT NULL,
+    evidence ENUM('Trámite', 'Registro', 'Específica', 'Documento') NOT NULL,
+    specify_evidence VARCHAR(255),
+    periodicity ENUM('Anual', '2 años', 'Por evento', 'Única vez', 'Específica') NOT NULL,
+    specify_periodicity VARCHAR(255),
     requirement_type ENUM(
         'Identificación Estatal',
         'Identificación Federal',
@@ -184,9 +185,7 @@ CREATE TABLE IF NOT EXISTS requirements (
     jurisdiction ENUM('Estatal', 'Federal', 'Local') NOT NULL,
     state VARCHAR(255),
     municipality VARCHAR(255),
-    UNIQUE (subject_id, aspect_id, requirement_name),
     FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE RESTRICT, 
-    FOREIGN KEY (aspect_id) REFERENCES aspects(id) ON DELETE RESTRICT, 
     FULLTEXT(mandatory_description),
     FULLTEXT(complementary_description),
     FULLTEXT(mandatory_sentences),
@@ -194,6 +193,25 @@ CREATE TABLE IF NOT EXISTS requirements (
     FULLTEXT(mandatory_keywords),
     FULLTEXT(complementary_keywords)
 );
+
+
+-- Table: requirement_subject_aspect
+-- Description:
+-- This table establishes a many-to-many relationship between 'requirements',
+-- a specific subject, and one or more aspects.
+-- A requirement always belongs to one main subject via 'requirements.subject_id',
+-- but can be associated to multiple aspects (within the same or different subjects).
+
+CREATE TABLE IF NOT EXISTS requirement_subject_aspect (
+    requirement_id INT NOT NULL,
+    subject_id INT NOT NULL,
+    aspect_id INT NOT NULL,
+    PRIMARY KEY (requirement_id, subject_id, aspect_id),
+    FOREIGN KEY (requirement_id) REFERENCES requirements(id) ON DELETE CASCADE,
+    FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE RESTRICT,
+    FOREIGN KEY (aspect_id) REFERENCES aspects(id) ON DELETE RESTRICT
+);
+
 
 -- Table: requirements_identification
 -- Description: This master table records the analysis (identification) that groups the evaluated requirements,
