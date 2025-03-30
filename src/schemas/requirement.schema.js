@@ -116,12 +116,28 @@ const requirementSchema = z
     }),
 
     /**
+     * The type of specifyEvide of the requirement.
+     */
+    specifyEvidence: z
+      .string()
+      .max(255, 'The specifyEvidence field cannot exceed 255 characters')
+      .optional(),
+
+    /**
      * The periodicity of the requirement.
      */
-    periodicity: z.enum(['Anual', '2 años', 'Por evento', 'Única vez'], {
+    periodicity: z.enum(['Anual', '2 años', 'Por evento', 'Única vez', 'Específica'], {
       message:
         'The periodicity must be one of the following: Anual, 2 años, Por evento, Única vez.'
     }),
+
+    /**
+     * The type of specifyPeriodicity of the requirement.
+     */
+    specifyPeriodicity: z
+      .string()
+      .max(255, 'The specifyPeriodicity field cannot exceed 255 characters')
+      .optional(),
 
     /**
      * The type of the requirement.
@@ -216,6 +232,34 @@ const requirementSchema = z
           message: 'Municipality must be provided for Local jurisdiction'
         })
       }
+    }
+    if (data.evidence === 'Específico') {
+      if (!data.specifyEvidence || data.specifyEvidence.trim() === '') {
+        context.addIssue({
+          path: ['specifyEvidence'],
+          message: 'You must specify evidence when "Específico" is selected'
+        })
+      }
+    } else if (data.specifyEvidence && data.specifyEvidence.trim() !== '') {
+      context.addIssue({
+        path: ['specifyEvidence'],
+        message:
+              'The specifyEvidence field must be empty unless evidence is "Específico"'
+      })
+    }
+    if (data.periodicity === 'Específica') {
+      if (!data.specifyPeriodicity || data.specifyPeriodicity.trim() === '') {
+        context.addIssue({
+          path: ['specifyPeriodicity'],
+          message: 'You must specify the periodicity when "Específica" is selected'
+        })
+      }
+    } else if (data.specifyPeriodicity && data.specifyPeriodicity.trim() !== '') {
+      context.addIssue({
+        path: ['specifyPeriodicity'],
+        message:
+              'The specifyPeriodicity field must be empty unless periodicity is "Específica"'
+      })
     }
   })
 
