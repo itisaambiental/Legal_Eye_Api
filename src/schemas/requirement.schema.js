@@ -233,7 +233,7 @@ const requirementSchema = z
         })
       }
     }
-    if (data.evidence === 'Específico') {
+    if (data.evidence === 'Específica') {
       if (!data.specifyEvidence || data.specifyEvidence.trim() === '') {
         context.addIssue({
           path: ['specifyEvidence'],
@@ -244,7 +244,7 @@ const requirementSchema = z
       context.addIssue({
         path: ['specifyEvidence'],
         message:
-              'The specifyEvidence field must be empty unless evidence is "Específico"'
+              'The specifyEvidence field must be empty unless evidence is "Específica"'
       })
     }
     if (data.periodicity === 'Específica') {

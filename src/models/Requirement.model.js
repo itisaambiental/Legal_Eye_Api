@@ -21,8 +21,10 @@ class Requirement {
    * @param {string} mandatoryKeywords - Keywords related to the mandatory aspect of the requirement.
    * @param {string} complementaryKeywords - Keywords related to the complementary aspect of the requirement.
    * @param {string} condition - The condition type ('Crítica', 'Operativa', 'Recomendación', 'Pendiente').
-   * @param {string} evidence - The type of evidence ('Trámite', 'Registro', 'Específico', 'Documento').
-   * @param {string} periodicity - The periodicity of the requirement ('Anual', '2 años', 'Por evento', 'Única vez').
+   * @param {string} evidence - The type of evidence ('Trámite', 'Registro', 'Específica', 'Documento').
+   * @param {string} specifyEvidence - The description of the specific evidence.
+   * @param {string} periodicity - The periodicity of the requirement ('Anual', '2 años', 'Por evento', 'Única vez', 'Específica').
+   * @param {string} specifyPeriodicity - The description of the specific periodicity.
    * @param {string} requirementType - The type of requirement (e.g., 'Identificación Estatal', 'Requerimiento Local').
    * @param {string} jurisdiction - The jurisdiction of the requirement ('Estatal', 'Federal', 'Local').
    * @param {string} state - The state associated with the requirement (if applicable).
@@ -42,7 +44,9 @@ class Requirement {
     complementaryKeywords,
     condition,
     evidence,
+    specifyEvidence,
     periodicity,
+    specifyPeriodicity,
     requirementType,
     jurisdiction,
     state,
@@ -61,7 +65,9 @@ class Requirement {
     this.complementary_keywords = complementaryKeywords
     this.condition = condition
     this.evidence = evidence
+    this.specify_evidence = specifyEvidence
     this.periodicity = periodicity
+    this.specify_periodicity = specifyPeriodicity
     this.requirement_type = requirementType
     this.jurisdiction = jurisdiction
     this.state = state

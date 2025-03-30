@@ -61,6 +61,7 @@ export const createRequirement = async (req, res) => {
     })
     return res.status(201).json({ requirement })
   } catch (error) {
+    console.log(error)
     if (error instanceof ErrorUtils) {
       return res.status(error.status).json({
         message: error.message,

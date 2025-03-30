@@ -28,12 +28,16 @@ class RequirementService {
   * @property {string} mandatory_keywords - Keywords related to the mandatory aspect of the requirement.
   * @property {string} complementary_keywords - Keywords related to the complementary aspect of the requirement.
   * @property {string} condition - The condition type ('Crítica', 'Operativa', 'Recomendación', 'Pendiente').
-  * @property {string} evidence - The type of evidence ('Trámite', 'Registro', 'Específico', 'Documento').
-  * @property {string} periodicity - The periodicity ('Anual', '2 años', 'Por evento', 'Única vez').
+  * @property {string} evidence - The type of evidence ('Trámite', 'Registro', 'Específica', 'Documento').
+  * @property {string} periodicity - The periodicity of the requirement ('Anual', '2 años', 'Por evento', 'Única vez', 'Específica').
   * @property {string} requirement_type - The type of requirement.
   * @property {string} jurisdiction - The jurisdiction ('Estatal', 'Federal', 'Local').
   * @property {string} [state] - The state associated with the requirement, if applicable.
   * @property {string} [municipality] - The municipality associated with the requirement, if applicable.
+ */
+
+  /**
+  * @typedef {import('../../models/Requirement.model.js').default} RequirementModel
  */
 
   /**
@@ -51,8 +55,10 @@ class RequirementService {
    * @param {string} requirement.mandatoryKeywords - Keywords for mandatory aspects.
    * @param {string} requirement.complementaryKeywords - Keywords for complementary aspects.
    * @param {string} requirement.condition - The condition type.
-   * @param {string} requirement.evidence - The evidence type.
-   * @param {string} requirement.periodicity - The periodicity.
+   * @param {string} requirement.evidence - 'Trámite', etc.
+   * @param {string} requirement.specifyEvidence - The description of the specific evidence.
+   * @param {string} requirement.periodicity - 'Anual', etc.
+   * @param {string} requirement.specifyPeriodicity - The description of the specific periodicity.
    * @param {string} requirement.requirementType - The type of requirement.
    * @param {string} requirement.jurisdiction - The jurisdiction type.
    * @param {string} [requirement.state] - The state, if applicable.
@@ -112,43 +118,55 @@ class RequirementService {
   }
 
   /**
-   * Retrieves all requirements from the database.
-   * @returns {Promise<Array<Requirement>>} - A list of all requirements.
-   * @throws {ErrorUtils} - If an error occurs during retrieval.
-   */
+ * Formats a single requirement by concatenating `evidence` and `periodicity`
+ * if their value is 'Específica'. Removes `specify_evidence` and `specify_periodicity` from the output.
+ * @param {RequirementModel} requirement - A single requirement model instance.
+ * @returns {Requirement} - The formatted requirement.
+ */
+  static _formatRequirementWithSpecificValues (requirement) {
+    const formattedRequirement = {
+      ...requirement,
+      evidence:
+      requirement.evidence === 'Específica'
+        ? `${requirement.evidence} - ${requirement.specify_evidence || ''}`.trim()
+        : requirement.evidence,
+      periodicity:
+      requirement.periodicity === 'Específica'
+        ? `${requirement.periodicity} - ${requirement.specify_periodicity || ''}`.trim()
+        : requirement.periodicity
+    }
+    delete formattedRequirement.specify_evidence
+    delete formattedRequirement.specify_periodicity
+
+    return formattedRequirement
+  }
+
+  /**
+ * Formats a list of requirements by applying concatenation rules for 'Específica' values.
+ * @param {RequirementModel[]} requirements - List of requirement model instances.
+ * @returns {Requirement[]} List of formatted requirements.
+ */
+  static _formatRequirementsListWithSpecificValues (requirements) {
+    return requirements.map(RequirementService._formatRequirementWithSpecificValues)
+  }
+
+  /**
+ * Retrieves all requirements from the database.
+ * @returns {Promise<Array<Requirement>>} - A list of all requirements.
+ * @throws {ErrorUtils} - If an error occurs during retrieval.
+ */
   static async getAll () {
     try {
       const requirements = await RequirementRepository.findAll()
       if (!requirements) {
         return []
       }
-      return requirements
+      return RequirementService._formatRequirementsListWithSpecificValues(requirements)
     } catch (error) {
       if (error instanceof ErrorUtils) {
         throw error
       }
       throw new ErrorUtils(500, 'Failed to retrieve requirement records')
-    }
-  }
-
-  /**
-   * Retrieves a requirement entry by its ID.
-   * @param {number} id - The ID of the requirement to retrieve.
-   * @returns {Promise<Requirement>} - The requirement entry.
-   * @throws {ErrorUtils} - If an error occurs during retrieval.
-   */
-  static async getById (id) {
-    try {
-      const requirement = await RequirementRepository.findById(id)
-      if (!requirement) {
-        throw new ErrorUtils(404, 'Requirement not found')
-      }
-      return requirement
-    } catch (error) {
-      if (error instanceof ErrorUtils) {
-        throw error
-      }
-      throw new ErrorUtils(500, 'Failed to retrieve requirement record by ID')
     }
   }
 
@@ -166,7 +184,7 @@ class RequirementService {
       if (!requirements) {
         return []
       }
-      return requirements
+      return RequirementService._formatRequirementsListWithSpecificValues(requirements)
     } catch (error) {
       if (error instanceof ErrorUtils) {
         throw error
@@ -189,7 +207,7 @@ class RequirementService {
       if (!requirements) {
         return []
       }
-      return requirements
+      return RequirementService._formatRequirementsListWithSpecificValues(requirements)
     } catch (error) {
       if (error instanceof ErrorUtils) {
         throw error
@@ -214,7 +232,7 @@ class RequirementService {
       if (!requirements) {
         return []
       }
-      return requirements
+      return RequirementService._formatRequirementsListWithSpecificValues(requirements)
     } catch (error) {
       if (error instanceof ErrorUtils) {
         throw error
@@ -250,7 +268,7 @@ class RequirementService {
       if (!requirements) {
         return []
       }
-      return requirements
+      return RequirementService._formatRequirementsListWithSpecificValues(requirements)
     } catch (error) {
       if (error instanceof ErrorUtils) {
         throw error
@@ -275,7 +293,7 @@ class RequirementService {
       if (!requirements) {
         return []
       }
-      return requirements
+      return RequirementService._formatRequirementWithSpecificValues(requirements)
     } catch (error) {
       if (error instanceof ErrorUtils) {
         throw error
@@ -300,7 +318,7 @@ class RequirementService {
       if (!requirements) {
         return []
       }
-      return requirements
+      return RequirementService._formatRequirementWithSpecificValues(requirements)
     } catch (error) {
       if (error instanceof ErrorUtils) {
         throw error
@@ -326,7 +344,7 @@ class RequirementService {
       if (!requirements) {
         return []
       }
-      return requirements
+      return RequirementService._formatRequirementWithSpecificValues(requirements)
     } catch (error) {
       if (error instanceof ErrorUtils) {
         throw error
@@ -351,7 +369,7 @@ class RequirementService {
       if (!requirements) {
         return []
       }
-      return requirements
+      return RequirementService._formatRequirementWithSpecificValues(requirements)
     } catch (error) {
       if (error instanceof ErrorUtils) {
         throw error
@@ -377,7 +395,7 @@ class RequirementService {
       if (!requirements) {
         return []
       }
-      return requirements
+      return RequirementService._formatRequirementWithSpecificValues(requirements)
     } catch (error) {
       if (error instanceof ErrorUtils) {
         throw error
@@ -401,7 +419,7 @@ class RequirementService {
       if (!requirements) {
         return []
       }
-      return requirements
+      return RequirementService._formatRequirementWithSpecificValues(requirements)
     } catch (error) {
       if (error instanceof ErrorUtils) {
         throw error
@@ -427,7 +445,7 @@ class RequirementService {
       if (!requirements) {
         return []
       }
-      return requirements
+      return RequirementService._formatRequirementWithSpecificValues(requirements)
     } catch (error) {
       if (error instanceof ErrorUtils) {
         throw error
@@ -448,7 +466,7 @@ class RequirementService {
       if (!requirements) {
         return []
       }
-      return requirements
+      return RequirementService._formatRequirementWithSpecificValues(requirements)
     } catch (error) {
       if (error instanceof ErrorUtils) {
         throw error
@@ -474,7 +492,7 @@ class RequirementService {
       if (!requirements) {
         return []
       }
-      return requirements
+      return RequirementService._formatRequirementWithSpecificValues(requirements)
     } catch (error) {
       if (error instanceof ErrorUtils) {
         throw error
@@ -500,7 +518,7 @@ class RequirementService {
       if (!requirements) {
         return []
       }
-      return requirements
+      return RequirementService._formatRequirementWithSpecificValues(requirements)
     } catch (error) {
       if (error instanceof ErrorUtils) {
         throw error
@@ -526,7 +544,7 @@ class RequirementService {
       if (!requirements) {
         return []
       }
-      return requirements
+      return RequirementService._formatRequirementWithSpecificValues(requirements)
     } catch (error) {
       if (error instanceof ErrorUtils) {
         throw error
@@ -550,7 +568,7 @@ class RequirementService {
       if (!requirements) {
         return []
       }
-      return requirements
+      return RequirementService._formatRequirementWithSpecificValues(requirements)
     } catch (error) {
       if (error instanceof ErrorUtils) {
         throw error
@@ -576,7 +594,7 @@ class RequirementService {
       if (!requirements) {
         return []
       }
-      return requirements
+      return RequirementService._formatRequirementWithSpecificValues(requirements)
     } catch (error) {
       if (error instanceof ErrorUtils) {
         throw error
