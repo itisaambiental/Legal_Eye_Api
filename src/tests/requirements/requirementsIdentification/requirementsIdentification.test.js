@@ -1,20 +1,20 @@
 /* eslint-disable no-undef */
-import { api } from '../../config/test.config.js'
-import UserRepository from '../../repositories/User.repository.js'
-import RequirementsIdentificationRepository from '../../repositories/RequirementsIdentification.repository.js'
-import RequirementRepository from '../../repositories/Requirements.repository.js'
-import SubjectsRepository from '../../repositories/Subject.repository.js'
-import AspectsRepository from '../../repositories/Aspects.repository.js'
-import LegalBasisRepository from '../../repositories/LegalBasis.repository.js'
-import ArticlesRepository from '../../repositories/Articles.repository.js'
-import generateRequirementData from '../../utils/generateRequirementData.js'
-import generateLegalBasisData from '../../utils/generateLegalBasisData.js'
-import generateArticleData from '../../utils/generateArticleData.js'
+import { api } from '../../../config/test.config.js'
+import UserRepository from '../../../repositories/User.repository.js'
+import RequirementsIdentificationRepository from '../../../repositories/RequirementsIdentification.repository.js'
+import RequirementRepository from '../../../repositories/Requirements.repository.js'
+import SubjectsRepository from '../../../repositories/Subject.repository.js'
+import AspectsRepository from '../../../repositories/Aspects.repository.js'
+import LegalBasisRepository from '../../../repositories/LegalBasis.repository.js'
+import ArticlesRepository from '../../../repositories/Articles.repository.js'
+import generateRequirementData from '../../../utils/generateRequirementData.js'
+import generateLegalBasisData from '../../../utils/generateLegalBasisData.js'
+import generateArticleData from '../../../utils/generateArticleData.js'
 
 import {
   ADMIN_PASSWORD_TEST,
   ADMIN_GMAIL
-} from '../../config/variables.config.js'
+} from '../../../config/variables.config.js'
 
 const subjectName = 'Seguridad & Higiene'
 const aspectsToCreate = ['Organizacional', 'Técnico', 'Legal']
