@@ -29,7 +29,9 @@ export const createRequirement = async (req, res) => {
     complementaryKeywords,
     condition,
     evidence,
+    specifyEvidence,
     periodicity,
+    specifyPeriodicity,
     requirementType,
     jurisdiction,
     state,
@@ -53,7 +55,9 @@ export const createRequirement = async (req, res) => {
       complementaryKeywords,
       condition,
       evidence,
+      specifyEvidence,
       periodicity,
+      specifyPeriodicity,
       requirementType,
       jurisdiction,
       state,
@@ -61,7 +65,6 @@ export const createRequirement = async (req, res) => {
     })
     return res.status(201).json({ requirement })
   } catch (error) {
-    console.log(error)
     if (error instanceof ErrorUtils) {
       return res.status(error.status).json({
         message: error.message,
@@ -611,7 +614,9 @@ export const updateRequirement = async (req, res) => {
     complementaryKeywords,
     condition,
     evidence,
+    specifyEvidence,
     periodicity,
+    specifyPeriodicity,
     requirementType,
     jurisdiction,
     state,
@@ -635,7 +640,9 @@ export const updateRequirement = async (req, res) => {
       complementaryKeywords,
       condition,
       evidence,
+      specifyEvidence,
       periodicity,
+      specifyPeriodicity,
       requirementType,
       jurisdiction,
       state,

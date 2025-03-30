@@ -19,10 +19,10 @@ class RequirementRepository {
  * @param {string} requirement.complementarySentences
  * @param {string} requirement.mandatoryKeywords
  * @param {string} requirement.complementaryKeywords
- * @param {string} requirement.condition - 'Crítica', 'Operativa', etc.
- * @param {string} requirement.evidence - 'Trámite', etc.
+ * @param {string} requirement.condition
+ * @param {string} requirement.evidence
  * @param {string} requirement.specifyEvidence
- * @param {string} requirement.periodicity - 'Anual', etc.
+ * @param {string} requirement.periodicity
  * @param {string} requirement.specifyPeriodicity
  * @param {string} requirement.requirementType
  * @param {string} requirement.jurisdiction
@@ -63,7 +63,7 @@ INSERT INTO requirements (
   requirement_condition, evidence, specify_evidence, periodicity, specify_periodicity, 
   requirement_type, jurisdiction, state, municipality
 )
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `
 
     try {
@@ -2414,8 +2414,10 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
  * @param {string} [requirement.mandatoryKeywords]
  * @param {string} [requirement.complementaryKeywords]
  * @param {string} [requirement.condition]
- * @param {string} [requirement.evidence]
- * @param {string} [requirement.periodicity]
+ * @param {string} requirement.evidence
+ * @param {string} requirement.specifyEvidence
+ * @param {string} requirement.periodicity
+ * @param {string} requirement.specifyPeriodicity
  * @param {string} [requirement.requirementType]
  * @param {string} [requirement.jurisdiction]
  * @param {string} [requirement.state]

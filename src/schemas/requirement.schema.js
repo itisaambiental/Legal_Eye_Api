@@ -237,7 +237,7 @@ const requirementSchema = z
       if (!data.specifyEvidence || data.specifyEvidence.trim() === '') {
         context.addIssue({
           path: ['specifyEvidence'],
-          message: 'You must specify evidence when "Específico" is selected'
+          message: 'You must specify evidence when "Específica" is selected'
         })
       }
     } else if (data.specifyEvidence && data.specifyEvidence.trim() !== '') {

@@ -5,7 +5,6 @@ import RequirementRepository from '../../repositories/Requirements.repository.js
 import SubjectsRepository from '../../repositories/Subject.repository.js'
 import AspectsRepository from '../../repositories/Aspects.repository.js'
 import generateRequirementData from '../../utils/generateRequirementData.js'
-
 import {
   ADMIN_PASSWORD_TEST,
   ADMIN_GMAIL
@@ -446,6 +445,51 @@ describe('Create a requirement', () => {
       )
     })
 
+    test('Should return 400 if evidence is "Específica" but specifyEvidence is missing', async () => {
+      const requirementData = generateRequirementData({
+        evidence: 'Específica',
+        specifyEvidence: '',
+        subjectId: String(createdSubjectId),
+        aspectsIds: JSON.stringify([createdAspectIds[0]])
+      })
+      const response = await api
+        .post('/api/requirements')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send(requirementData)
+        .expect(400)
+      expect(response.body.errors).toEqual(
+        expect.arrayContaining([
+          {
+            field: 'specifyEvidence',
+            message: expect.stringMatching(/specify evidence/i)
+          }
+        ])
+      )
+    })
+
+    test('Should return 400 if specifyEvidence is filled but evidence is not "Específic.skip"', async () => {
+      const requirementData = generateRequirementData({
+        evidence: 'Documento',
+        specifyEvidence: 'Comprobante oficial',
+        subjectId: String(createdSubjectId),
+        aspectsIds: JSON.stringify([createdAspectIds[0]])
+      })
+      const response = await api
+        .post('/api/requirements')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send(requirementData)
+        .expect(400)
+
+      expect(response.body.errors).toEqual(
+        expect.arrayContaining([
+          {
+            field: 'specifyEvidence',
+            message: expect.stringMatching(/must be empty.*evidence is "Específica"/i)
+          }
+        ])
+      )
+    })
+
     test('Should return 400 if periodicity is not a valid value', async () => {
       const requirementData = generateRequirementData({
         subjectId: String(createdSubjectId),
@@ -464,6 +508,47 @@ describe('Create a requirement', () => {
           { field: 'periodicity', message: expect.stringMatching(/must be one of the following: Anual, 2 años, Por evento, Única vez/i) }
         ])
       )
+    })
+
+    test('Should return 400 if periodicity is "Específica" but specifyPeriodicity is missing', async () => {
+      const requirementData = generateRequirementData({
+        periodicity: 'Específica',
+        specifyPeriodicity: '',
+        subjectId: String(createdSubjectId),
+        aspectsIds: JSON.stringify([createdAspectIds[0]])
+      })
+      const response = await api
+        .post('/api/requirements')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send(requirementData)
+        .expect(400)
+      expect(response.body.errors).toEqual(
+        expect.arrayContaining([
+          {
+            field: 'specifyPeriodicity',
+            message: expect.stringMatching(/specify the periodicity/i)
+          }
+        ])
+      )
+    })
+
+    test('Should return 201 if evidence and periodicity are "Específica" and fields are filled correctly', async () => {
+      const requirementData = generateRequirementData({
+        evidence: 'Específica',
+        specifyEvidence: 'Informe técnico',
+        periodicity: 'Específica',
+        specifyPeriodicity: 'Cada 2 años',
+        subjectId: String(createdSubjectId),
+        aspectsIds: JSON.stringify([createdAspectIds[0]]),
+        jurisdiction: 'Estatal',
+        state: 'Nuevo León'
+      })
+      const response = await api
+        .post('/api/requirements')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send(requirementData)
+      expect(response.status).toBe(201)
+      expect(response.body.requirement).toHaveProperty('id')
     })
 
     test('Should return 400 if requirementType is not a valid value', async () => {
