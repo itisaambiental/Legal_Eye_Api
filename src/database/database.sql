@@ -172,7 +172,6 @@ CREATE TABLE IF NOT EXISTS requirements (
     evidence ENUM('Trámite', 'Registro', 'Específica', 'Documento') NOT NULL,
     specify_evidence VARCHAR(255),
     periodicity ENUM('Anual', '2 años', 'Por evento', 'Única vez', 'Específica') NOT NULL,
-    specify_periodicity VARCHAR(255),
     requirement_type ENUM(
         'Identificación Estatal',
         'Identificación Federal',
@@ -182,9 +181,6 @@ CREATE TABLE IF NOT EXISTS requirements (
         'Requerimiento Estatal',
         'Requerimiento Local'
     ) NOT NULL,
-    jurisdiction ENUM('Estatal', 'Federal', 'Local') NOT NULL,
-    state VARCHAR(255),
-    municipality VARCHAR(255),
     FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE RESTRICT, 
     FULLTEXT(mandatory_description),
     FULLTEXT(complementary_description),
@@ -193,7 +189,6 @@ CREATE TABLE IF NOT EXISTS requirements (
     FULLTEXT(mandatory_keywords),
     FULLTEXT(complementary_keywords)
 );
-
 
 -- Table: requirement_subject_aspect
 -- Description:

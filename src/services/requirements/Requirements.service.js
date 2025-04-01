@@ -33,11 +33,7 @@ class RequirementService {
   * @property {string} formatted_evidence - The formatted evidence.
   * @property {string} periodicity - The specific periodicity.
   * @property {string} specify_periodicity - The description of the specific periodicity.
-  * @property {string} formatted_periodicity - The formatted periodicity.
   * @property {string} requirement_type - The type of requirement.
-  * @property {string} jurisdiction - The jurisdiction ('Estatal', 'Federal', 'Local').
-  * @property {string} [state] - The state associated with the requirement, if applicable.
-  * @property {string} [municipality] - The municipality associated with the requirement, if applicable.
  */
 
   /**
@@ -56,11 +52,7 @@ class RequirementService {
       formatted_evidence:
         requirement.evidence === 'Específica'
           ? `${requirement.evidence} - ${requirement.specify_evidence || ''}`.trim()
-          : requirement.evidence,
-      formatted_periodicity:
-        requirement.periodicity === 'Específica'
-          ? `${requirement.periodicity} - ${requirement.specify_periodicity || ''}`.trim()
-          : requirement.periodicity
+          : requirement.evidence
     }
   }
 
@@ -91,11 +83,7 @@ class RequirementService {
    * @param {string} requirement.evidence - 'Trámite', etc.
    * @param {string} requirement.specifyEvidence - The description of the specific evidence.
    * @param {string} requirement.periodicity - 'Anual', etc.
-   * @param {string} requirement.specifyPeriodicity - The description of the specific periodicity.
    * @param {string} requirement.requirementType - The type of requirement.
-   * @param {string} requirement.jurisdiction - The jurisdiction type.
-   * @param {string} [requirement.state] - The state, if applicable.
-   * @param {string} [requirement.municipality] - The municipality, if applicable.
    * @returns {Promise<Requirement>} - The created requirement.
    * @throws {ErrorUtils} - If an error occurs during validation or creation.
    */

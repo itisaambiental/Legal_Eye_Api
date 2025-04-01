@@ -23,11 +23,7 @@ class RequirementRepository {
  * @param {string} requirement.evidence
  * @param {string} requirement.specifyEvidence
  * @param {string} requirement.periodicity
- * @param {string} requirement.specifyPeriodicity
  * @param {string} requirement.requirementType
- * @param {string} requirement.jurisdiction
- * @param {string} [requirement.state]
- * @param {string} [requirement.municipality]
  * @returns {Promise<Requirement>}
  * @throws {ErrorUtils}
  */
@@ -47,11 +43,7 @@ class RequirementRepository {
       evidence,
       specifyEvidence,
       periodicity,
-      specifyPeriodicity,
-      requirementType,
-      jurisdiction,
-      state,
-      municipality
+      requirementType
     } = requirement
 
     const insertRequirementQuery = `
@@ -60,10 +52,10 @@ INSERT INTO requirements (
   mandatory_description, complementary_description, 
   mandatory_sentences, complementary_sentences, 
   mandatory_keywords, complementary_keywords, 
-  requirement_condition, evidence, specify_evidence, periodicity, specify_periodicity, 
-  requirement_type, jurisdiction, state, municipality
+  requirement_condition, evidence, specify_evidence, periodicity, 
+  requirement_type
 )
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `
 
     try {
@@ -81,11 +73,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         evidence,
         specifyEvidence,
         periodicity,
-        specifyPeriodicity,
-        requirementType,
-        jurisdiction,
-        state,
-        municipality
+        requirementType
       ])
       const requirementId = result.insertId
       if (aspectsIds && aspectsIds.length > 0) {
@@ -129,11 +117,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       r.evidence, 
       r.specify_evidence,
       r.periodicity, 
-      r.specify_periodicity,
-      r.requirement_type, 
-      r.jurisdiction, 
-      r.state, 
-      r.municipality, 
+      r.requirement_type,
       s.id AS subject_id, 
       s.subject_name AS subject_name,
       a.id AS aspect_id, 
@@ -166,11 +150,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             evidence: row.evidence,
             specify_evidence: row.specify_evidence,
             periodicity: row.periodicity,
-            specify_periodicity: row.specify_periodicity,
             requirement_type: row.requirement_type,
-            jurisdiction: row.jurisdiction,
-            state: row.state,
-            municipality: row.municipality,
             subject: {
               subject_id: row.subject_id,
               subject_name: row.subject_name
@@ -204,11 +184,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           req.evidence,
           req.specify_evidence,
           req.periodicity,
-          req.specify_periodicity,
-          req.requirement_type,
-          req.jurisdiction,
-          req.state,
-          req.municipality
+          req.requirement_type
         )
       })
     } catch (error) {
@@ -283,11 +259,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       r.evidence, 
       r.specify_evidence,
       r.periodicity, 
-      r.specify_periodicity,
       r.requirement_type, 
-      r.jurisdiction, 
-      r.state, 
-      r.municipality, 
       s.id AS subject_id, 
       s.subject_name AS subject_name, 
       a.id AS aspect_id, 
@@ -332,11 +304,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         requirement.evidence,
         requirement.specify_evidence,
         requirement.periodicity,
-        requirement.specify_periodicity,
-        requirement.requirement_type,
-        requirement.jurisdiction,
-        requirement.state,
-        requirement.municipality
+        requirement.requirement_type
       )
     } catch (error) {
       console.error('Error retrieving requirement by ID:', error.message)
@@ -368,11 +336,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       r.evidence, 
       r.specify_evidence,
       r.periodicity, 
-      r.specify_periodicity,
-      r.requirement_type, 
-      r.jurisdiction, 
-      r.state, 
-      r.municipality, 
+      r.requirement_type,
       s.id AS subject_id, 
       s.subject_name AS subject_name, 
       a.id AS aspect_id, 
@@ -406,11 +370,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             evidence: row.evidence,
             specify_evidence: row.specify_evidence,
             periodicity: row.periodicity,
-            specify_periodicity: row.specify_periodicity,
             requirement_type: row.requirement_type,
-            jurisdiction: row.jurisdiction,
-            state: row.state,
-            municipality: row.municipality,
             subject: {
               subject_id: row.subject_id,
               subject_name: row.subject_name
@@ -444,11 +404,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           req.evidence,
           req.specify_evidence,
           req.periodicity,
-          req.specify_periodicity,
-          req.requirement_type,
-          req.jurisdiction,
-          req.state,
-          req.municipality
+          req.requirement_type
         )
       })
     } catch (error) {
@@ -480,11 +436,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       r.evidence, 
       r.specify_evidence,
       r.periodicity, 
-      r.specify_periodicity,
       r.requirement_type, 
-      r.jurisdiction, 
-      r.state, 
-      r.municipality, 
       s.id AS subject_id, 
       s.subject_name AS subject_name, 
       a.id AS aspect_id, 
@@ -518,11 +470,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             evidence: row.evidence,
             specify_evidence: row.specify_evidence,
             periodicity: row.periodicity,
-            specify_periodicity: row.specify_periodicity,
             requirement_type: row.requirement_type,
-            jurisdiction: row.jurisdiction,
-            state: row.state,
-            municipality: row.municipality,
             subject: {
               subject_id: row.subject_id,
               subject_name: row.subject_name
@@ -556,11 +504,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           req.evidence,
           req.specify_evidence,
           req.periodicity,
-          req.specify_periodicity,
-          req.requirement_type,
-          req.jurisdiction,
-          req.state,
-          req.municipality
+          req.requirement_type
         )
       })
     } catch (error) {
@@ -591,11 +535,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       r.evidence, 
       r.specify_evidence,
       r.periodicity, 
-      r.specify_periodicity,
       r.requirement_type, 
-      r.jurisdiction, 
-      r.state, 
-      r.municipality, 
       s.id AS subject_id, 
       s.subject_name AS subject_name, 
       a.id AS aspect_id, 
@@ -629,11 +569,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             evidence: row.evidence,
             specify_evidence: row.specify_evidence,
             periodicity: row.periodicity,
-            specify_periodicity: row.specify_periodicity,
             requirement_type: row.requirement_type,
-            jurisdiction: row.jurisdiction,
-            state: row.state,
-            municipality: row.municipality,
             subject: {
               subject_id: row.subject_id,
               subject_name: row.subject_name
@@ -667,11 +603,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           req.evidence,
           req.specify_evidence,
           req.periodicity,
-          req.specify_periodicity,
-          req.requirement_type,
-          req.jurisdiction,
-          req.state,
-          req.municipality
+          req.requirement_type
         )
       })
     } catch (error) {
@@ -702,11 +634,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       r.evidence, 
       r.specify_evidence,
       r.periodicity, 
-      r.specify_periodicity,
       r.requirement_type, 
-      r.jurisdiction, 
-      r.state, 
-      r.municipality, 
       s.id AS subject_id, 
       s.subject_name AS subject_name, 
       a.id AS aspect_id, 
@@ -739,11 +667,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             evidence: row.evidence,
             specify_evidence: row.specify_evidence,
             periodicity: row.periodicity,
-            specify_periodicity: row.specify_periodicity,
             requirement_type: row.requirement_type,
-            jurisdiction: row.jurisdiction,
-            state: row.state,
-            municipality: row.municipality,
             subject: {
               subject_id: row.subject_id,
               subject_name: row.subject_name
@@ -777,11 +701,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           req.evidence,
           req.specify_evidence,
           req.periodicity,
-          req.specify_periodicity,
-          req.requirement_type,
-          req.jurisdiction,
-          req.state,
-          req.municipality
+          req.requirement_type
         )
       )
     } catch (error) {
@@ -814,11 +734,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       r.evidence, 
       r.specify_evidence,
       r.periodicity, 
-      r.specify_periodicity,
       r.requirement_type, 
-      r.jurisdiction, 
-      r.state, 
-      r.municipality, 
       s.id AS subject_id, 
       s.subject_name AS subject_name, 
       a.id AS aspect_id, 
@@ -859,11 +775,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             evidence: row.evidence,
             specify_evidence: row.specify_evidence,
             periodicity: row.periodicity,
-            specify_periodicity: row.specify_periodicity,
             requirement_type: row.requirement_type,
-            jurisdiction: row.jurisdiction,
-            state: row.state,
-            municipality: row.municipality,
             subject: {
               subject_id: row.subject_id,
               subject_name: row.subject_name
@@ -897,11 +809,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           req.evidence,
           req.specify_evidence,
           req.periodicity,
-          req.specify_periodicity,
-          req.requirement_type,
-          req.jurisdiction,
-          req.state,
-          req.municipality
+          req.requirement_type
         )
       )
     } catch (error) {
@@ -932,11 +840,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       r.evidence, 
       r.specify_evidence,
       r.periodicity, 
-      r.specify_periodicity,
       r.requirement_type, 
-      r.jurisdiction, 
-      r.state, 
-      r.municipality, 
       s.id AS subject_id, 
       s.subject_name AS subject_name, 
       a.id AS aspect_id, 
@@ -969,11 +873,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             evidence: row.evidence,
             specify_evidence: row.specify_evidence,
             periodicity: row.periodicity,
-            specify_periodicity: row.specify_periodicity,
             requirement_type: row.requirement_type,
-            jurisdiction: row.jurisdiction,
-            state: row.state,
-            municipality: row.municipality,
             subject: {
               subject_id: row.subject_id,
               subject_name: row.subject_name
@@ -1007,11 +907,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           req.evidence,
           req.specify_evidence,
           req.periodicity,
-          req.specify_periodicity,
-          req.requirement_type,
-          req.jurisdiction,
-          req.state,
-          req.municipality
+          req.requirement_type
         )
       )
     } catch (error) {
@@ -1042,11 +938,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       r.evidence, 
       r.specify_evidence,
       r.periodicity, 
-      r.specify_periodicity,
       r.requirement_type, 
-      r.jurisdiction, 
-      r.state, 
-      r.municipality, 
       s.id AS subject_id, 
       s.subject_name AS subject_name, 
       a.id AS aspect_id, 
@@ -1079,11 +971,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             evidence: row.evidence,
             specify_evidence: row.specify_evidence,
             periodicity: row.periodicity,
-            specify_periodicity: row.specify_periodicity,
             requirement_type: row.requirement_type,
-            jurisdiction: row.jurisdiction,
-            state: row.state,
-            municipality: row.municipality,
             subject: {
               subject_id: row.subject_id,
               subject_name: row.subject_name
@@ -1117,11 +1005,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           req.evidence,
           req.specify_evidence,
           req.periodicity,
-          req.specify_periodicity,
-          req.requirement_type,
-          req.jurisdiction,
-          req.state,
-          req.municipality
+          req.requirement_type
         )
       )
     } catch (error) {
@@ -1152,11 +1036,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       r.evidence, 
       r.specify_evidence,
       r.periodicity, 
-      r.specify_periodicity,
       r.requirement_type, 
-      r.jurisdiction, 
-      r.state, 
-      r.municipality, 
       s.id AS subject_id, 
       s.subject_name AS subject_name, 
       a.id AS aspect_id, 
@@ -1188,11 +1068,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             evidence: row.evidence,
             specify_evidence: row.specify_evidence,
             periodicity: row.periodicity,
-            specify_periodicity: row.specify_periodicity,
             requirement_type: row.requirement_type,
-            jurisdiction: row.jurisdiction,
-            state: row.state,
-            municipality: row.municipality,
             subject: {
               subject_id: row.subject_id,
               subject_name: row.subject_name
@@ -1226,12 +1102,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           req.evidence,
           req.specify_evidence,
           req.periodicity,
-          req.specify_periodicity,
-          req.requirement_type,
-          req.jurisdiction,
-          req.state,
-          req.municipality
-        )
+          req.requirement_type)
       )
     } catch (error) {
       console.error('Error retrieving requirements by mandatory sentences:', error.message)
@@ -1261,11 +1132,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       r.evidence, 
       r.specify_evidence,
       r.periodicity, 
-      r.specify_periodicity,
       r.requirement_type, 
-      r.jurisdiction, 
-      r.state, 
-      r.municipality, 
       s.id AS subject_id, 
       s.subject_name AS subject_name, 
       a.id AS aspect_id, 
@@ -1297,11 +1164,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             evidence: row.evidence,
             specify_evidence: row.specify_evidence,
             periodicity: row.periodicity,
-            specify_periodicity: row.specify_periodicity,
             requirement_type: row.requirement_type,
-            jurisdiction: row.jurisdiction,
-            state: row.state,
-            municipality: row.municipality,
             subject: {
               subject_id: row.subject_id,
               subject_name: row.subject_name
@@ -1335,11 +1198,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           req.evidence,
           req.specify_evidence,
           req.periodicity,
-          req.specify_periodicity,
-          req.requirement_type,
-          req.jurisdiction,
-          req.state,
-          req.municipality
+          req.requirement_type
         )
       )
     } catch (error) {
@@ -1370,11 +1229,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       r.evidence, 
       r.specify_evidence,
       r.periodicity, 
-      r.specify_periodicity,
       r.requirement_type, 
-      r.jurisdiction, 
-      r.state, 
-      r.municipality, 
       s.id AS subject_id, 
       s.subject_name AS subject_name, 
       a.id AS aspect_id, 
@@ -1407,11 +1262,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             evidence: row.evidence,
             specify_evidence: row.specify_evidence,
             periodicity: row.periodicity,
-            specify_periodicity: row.specify_periodicity,
             requirement_type: row.requirement_type,
-            jurisdiction: row.jurisdiction,
-            state: row.state,
-            municipality: row.municipality,
             subject: {
               subject_id: row.subject_id,
               subject_name: row.subject_name
@@ -1445,11 +1296,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           req.evidence,
           req.specify_evidence,
           req.periodicity,
-          req.specify_periodicity,
-          req.requirement_type,
-          req.jurisdiction,
-          req.state,
-          req.municipality
+          req.requirement_type
         )
       )
     } catch (error) {
@@ -1480,11 +1327,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       r.evidence, 
       r.specify_evidence,
       r.periodicity, 
-      r.specify_periodicity,
       r.requirement_type, 
-      r.jurisdiction, 
-      r.state, 
-      r.municipality, 
       s.id AS subject_id, 
       s.subject_name AS subject_name, 
       a.id AS aspect_id, 
@@ -1517,11 +1360,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             evidence: row.evidence,
             specify_evidence: row.specify_evidence,
             periodicity: row.periodicity,
-            specify_periodicity: row.specify_periodicity,
             requirement_type: row.requirement_type,
-            jurisdiction: row.jurisdiction,
-            state: row.state,
-            municipality: row.municipality,
             subject: {
               subject_id: row.subject_id,
               subject_name: row.subject_name
@@ -1555,11 +1394,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           req.evidence,
           req.specify_evidence,
           req.periodicity,
-          req.specify_periodicity,
-          req.requirement_type,
-          req.jurisdiction,
-          req.state,
-          req.municipality
+          req.requirement_type
         )
       )
     } catch (error) {
@@ -1590,11 +1425,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       r.evidence, 
       r.specify_evidence,
       r.periodicity, 
-      r.specify_periodicity,
       r.requirement_type, 
-      r.jurisdiction, 
-      r.state, 
-      r.municipality, 
       s.id AS subject_id, 
       s.subject_name AS subject_name, 
       a.id AS aspect_id, 
@@ -1628,11 +1459,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             evidence: row.evidence,
             specify_evidence: row.specify_evidence,
             periodicity: row.periodicity,
-            specify_periodicity: row.specify_periodicity,
             requirement_type: row.requirement_type,
-            jurisdiction: row.jurisdiction,
-            state: row.state,
-            municipality: row.municipality,
             subject: {
               subject_id: row.subject_id,
               subject_name: row.subject_name
@@ -1666,11 +1493,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           req.evidence,
           req.specify_evidence,
           req.periodicity,
-          req.specify_periodicity,
-          req.requirement_type,
-          req.jurisdiction,
-          req.state,
-          req.municipality
+          req.requirement_type
         )
       )
     } catch (error) {
@@ -1701,11 +1524,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       r.evidence, 
       r.specify_evidence,
       r.periodicity, 
-      r.specify_periodicity,
       r.requirement_type, 
-      r.jurisdiction, 
-      r.state, 
-      r.municipality, 
       s.id AS subject_id, 
       s.subject_name AS subject_name, 
       a.id AS aspect_id, 
@@ -1739,11 +1558,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             evidence: row.evidence,
             specify_evidence: row.specify_evidence,
             periodicity: row.periodicity,
-            specify_periodicity: row.specify_periodicity,
             requirement_type: row.requirement_type,
-            jurisdiction: row.jurisdiction,
-            state: row.state,
-            municipality: row.municipality,
             subject: {
               subject_id: row.subject_id,
               subject_name: row.subject_name
@@ -1777,11 +1592,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           req.evidence,
           req.specify_evidence,
           req.periodicity,
-          req.specify_periodicity,
-          req.requirement_type,
-          req.jurisdiction,
-          req.state,
-          req.municipality
+          req.requirement_type
         )
       )
     } catch (error) {
@@ -1812,11 +1623,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       r.evidence, 
       r.specify_evidence,
       r.periodicity, 
-      r.specify_periodicity,
       r.requirement_type, 
-      r.jurisdiction, 
-      r.state, 
-      r.municipality, 
       s.id AS subject_id, 
       s.subject_name AS subject_name, 
       a.id AS aspect_id, 
@@ -1850,11 +1657,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             evidence: row.evidence,
             specify_evidence: row.specify_evidence,
             periodicity: row.periodicity,
-            specify_periodicity: row.specify_periodicity,
             requirement_type: row.requirement_type,
-            jurisdiction: row.jurisdiction,
-            state: row.state,
-            municipality: row.municipality,
             subject: {
               subject_id: row.subject_id,
               subject_name: row.subject_name
@@ -1888,11 +1691,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           req.evidence,
           req.specify_evidence,
           req.periodicity,
-          req.specify_periodicity,
-          req.requirement_type,
-          req.jurisdiction,
-          req.state,
-          req.municipality
+          req.requirement_type
         )
       )
     } catch (error) {
@@ -1923,11 +1722,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       r.evidence, 
       r.specify_evidence,
       r.periodicity, 
-      r.specify_periodicity,
       r.requirement_type, 
-      r.jurisdiction, 
-      r.state, 
-      r.municipality, 
       s.id AS subject_id, 
       s.subject_name AS subject_name, 
       a.id AS aspect_id, 
@@ -1961,11 +1756,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             evidence: row.evidence,
             specify_evidence: row.specify_evidence,
             periodicity: row.periodicity,
-            specify_periodicity: row.specify_periodicity,
             requirement_type: row.requirement_type,
-            jurisdiction: row.jurisdiction,
-            state: row.state,
-            municipality: row.municipality,
             subject: {
               subject_id: row.subject_id,
               subject_name: row.subject_name
@@ -1999,356 +1790,12 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           req.evidence,
           req.specify_evidence,
           req.periodicity,
-          req.specify_periodicity,
-          req.requirement_type,
-          req.jurisdiction,
-          req.state,
-          req.municipality
+          req.requirement_type
         )
       )
     } catch (error) {
       console.error('Error retrieving requirements by requirement type:', error.message)
       throw new ErrorUtils(500, 'Error retrieving requirements by requirement type')
-    }
-  }
-
-  /**
- * Retrieves requirements filtered by a specific jurisdiction.
- * @param {string} jurisdiction - The jurisdiction to filter by.
- * @returns {Promise<Array<Requirement>|null>} - A list of Requirement instances matching the jurisdiction.
- * @throws {ErrorUtils} - If an error occurs during retrieval.
- */
-  static async findByJurisdiction (jurisdiction) {
-    const query = `
-    SELECT 
-      r.id, 
-      r.requirement_number, 
-      r.requirement_name, 
-      r.mandatory_description, 
-      r.complementary_description, 
-      r.mandatory_sentences, 
-      r.complementary_sentences, 
-      r.mandatory_keywords, 
-      r.complementary_keywords, 
-      r.requirement_condition, 
-      r.evidence, 
-      r.specify_evidence,
-      r.periodicity, 
-      r.specify_periodicity,
-      r.requirement_type, 
-      r.jurisdiction, 
-      r.state, 
-      r.municipality, 
-      s.id AS subject_id, 
-      s.subject_name AS subject_name, 
-      a.id AS aspect_id, 
-      a.aspect_name AS aspect_name
-    FROM requirements r
-    JOIN subjects s ON r.subject_id = s.id
-    LEFT JOIN requirement_subject_aspect rsa ON r.id = rsa.requirement_id
-    LEFT JOIN aspects a ON rsa.aspect_id = a.id
-    WHERE r.jurisdiction = ?
-  `
-
-    try {
-      const [rows] = await pool.query(query, [jurisdiction])
-      if (rows.length === 0) return null
-
-      const requirementsMap = new Map()
-
-      rows.forEach((row) => {
-        if (!requirementsMap.has(row.id)) {
-          requirementsMap.set(row.id, {
-            id: row.id,
-            requirement_number: row.requirement_number,
-            requirement_name: row.requirement_name,
-            mandatory_description: row.mandatory_description,
-            complementary_description: row.complementary_description,
-            mandatory_sentences: row.mandatory_sentences,
-            complementary_sentences: row.complementary_sentences,
-            mandatory_keywords: row.mandatory_keywords,
-            complementary_keywords: row.complementary_keywords,
-            requirement_condition: row.requirement_condition,
-            evidence: row.evidence,
-            specify_evidence: row.specify_evidence,
-            periodicity: row.periodicity,
-            specify_periodicity: row.specify_periodicity,
-            requirement_type: row.requirement_type,
-            jurisdiction: row.jurisdiction,
-            state: row.state,
-            municipality: row.municipality,
-            subject: {
-              subject_id: row.subject_id,
-              subject_name: row.subject_name
-            },
-            aspects: []
-          })
-        }
-
-        if (row.aspect_id !== null) {
-          requirementsMap.get(row.id).aspects.push({
-            aspect_id: row.aspect_id,
-            aspect_name: row.aspect_name
-          })
-        }
-      })
-
-      return Array.from(requirementsMap.values()).map(req =>
-        new Requirement(
-          req.id,
-          req.subject,
-          req.aspects,
-          req.requirement_number,
-          req.requirement_name,
-          req.mandatory_description,
-          req.complementary_description,
-          req.mandatory_sentences,
-          req.complementary_sentences,
-          req.mandatory_keywords,
-          req.complementary_keywords,
-          req.requirement_condition,
-          req.evidence,
-          req.specify_evidence,
-          req.periodicity,
-          req.specify_periodicity,
-          req.requirement_type,
-          req.jurisdiction,
-          req.state,
-          req.municipality
-        )
-      )
-    } catch (error) {
-      console.error('Error retrieving requirements by jurisdiction:', error.message)
-      throw new ErrorUtils(500, 'Error retrieving requirements by jurisdiction')
-    }
-  }
-
-  /**
- * Retrieves requirements filtered by a specific state.
- * @param {string} state - The state to filter by.
- * @returns {Promise<Array<Requirement>|null>} - A list of Requirement instances matching the state.
- * @throws {ErrorUtils} - If an error occurs during retrieval.
- */
-  static async findByState (state) {
-    const query = `
-    SELECT 
-      r.id, 
-      r.requirement_number, 
-      r.requirement_name, 
-      r.mandatory_description, 
-      r.complementary_description, 
-      r.mandatory_sentences, 
-      r.complementary_sentences, 
-      r.mandatory_keywords, 
-      r.complementary_keywords, 
-      r.requirement_condition, 
-      r.evidence, 
-      r.specify_evidence,
-      r.periodicity, 
-      r.specify_periodicity,
-      r.requirement_type, 
-      r.jurisdiction, 
-      r.state, 
-      r.municipality, 
-      s.id AS subject_id, 
-      s.subject_name AS subject_name, 
-      a.id AS aspect_id, 
-      a.aspect_name AS aspect_name
-    FROM requirements r
-    JOIN subjects s ON r.subject_id = s.id
-    LEFT JOIN requirement_subject_aspect rsa ON r.id = rsa.requirement_id
-    LEFT JOIN aspects a ON rsa.aspect_id = a.id
-    WHERE r.state = ?
-  `
-
-    try {
-      const [rows] = await pool.query(query, [state])
-      if (rows.length === 0) return null
-
-      const requirementsMap = new Map()
-      rows.forEach((row) => {
-        if (!requirementsMap.has(row.id)) {
-          requirementsMap.set(row.id, {
-            id: row.id,
-            requirement_number: row.requirement_number,
-            requirement_name: row.requirement_name,
-            mandatory_description: row.mandatory_description,
-            complementary_description: row.complementary_description,
-            mandatory_sentences: row.mandatory_sentences,
-            complementary_sentences: row.complementary_sentences,
-            mandatory_keywords: row.mandatory_keywords,
-            complementary_keywords: row.complementary_keywords,
-            requirement_condition: row.requirement_condition,
-            evidence: row.evidence,
-            specify_evidence: row.specify_evidence,
-            periodicity: row.periodicity,
-            specify_periodicity: row.specify_periodicity,
-            requirement_type: row.requirement_type,
-            jurisdiction: row.jurisdiction,
-            state: row.state,
-            municipality: row.municipality,
-            subject: {
-              subject_id: row.subject_id,
-              subject_name: row.subject_name
-            },
-            aspects: []
-          })
-        }
-
-        if (row.aspect_id !== null) {
-          requirementsMap.get(row.id).aspects.push({
-            aspect_id: row.aspect_id,
-            aspect_name: row.aspect_name
-          })
-        }
-      })
-
-      return Array.from(requirementsMap.values()).map(req =>
-        new Requirement(
-          req.id,
-          req.subject,
-          req.aspects,
-          req.requirement_number,
-          req.requirement_name,
-          req.mandatory_description,
-          req.complementary_description,
-          req.mandatory_sentences,
-          req.complementary_sentences,
-          req.mandatory_keywords,
-          req.complementary_keywords,
-          req.requirement_condition,
-          req.evidence,
-          req.specify_evidence,
-          req.periodicity,
-          req.specify_periodicity,
-          req.requirement_type,
-          req.jurisdiction,
-          req.state,
-          req.municipality
-        )
-      )
-    } catch (error) {
-      console.error('Error retrieving requirements by state:', error.message)
-      throw new ErrorUtils(500, 'Error retrieving requirements by state')
-    }
-  }
-
-  /**
- * Retrieves requirements filtered by state and optionally by municipalities.
- * @param {string} state - The state to filter by.
- * @param {Array<string>} [municipalities] - An array of municipalities to filter by (optional).
- * @returns {Promise<Array<Requirement>|null>} - A list of Requirement instances matching the filters.
- * @throws {ErrorUtils} - If an error occurs during retrieval.
- */
-  static async findByStateAndMunicipalities (state, municipalities = []) {
-    let query = `
-    SELECT 
-      r.id, 
-      r.requirement_number, 
-      r.requirement_name, 
-      r.mandatory_description, 
-      r.complementary_description, 
-      r.mandatory_sentences, 
-      r.complementary_sentences, 
-      r.mandatory_keywords, 
-      r.complementary_keywords, 
-      r.requirement_condition, 
-      r.evidence, 
-      r.specify_evidence,
-      r.periodicity, 
-      r.specify_periodicity,
-      r.requirement_type, 
-      r.jurisdiction, 
-      r.state, 
-      r.municipality, 
-      s.id AS subject_id, 
-      s.subject_name AS subject_name, 
-      a.id AS aspect_id, 
-      a.aspect_name AS aspect_name
-    FROM requirements r
-    JOIN subjects s ON r.subject_id = s.id
-    LEFT JOIN requirement_subject_aspect rsa ON r.id = rsa.requirement_id
-    LEFT JOIN aspects a ON rsa.aspect_id = a.id
-    WHERE r.state = ?
-  `
-
-    const values = [state]
-
-    if (municipalities.length > 0) {
-      const placeholders = municipalities.map(() => '?').join(', ')
-      query += ` AND r.municipality IN (${placeholders})`
-      values.push(...municipalities)
-    }
-
-    try {
-      const [rows] = await pool.query(query, values)
-      if (rows.length === 0) return null
-
-      const requirementsMap = new Map()
-      rows.forEach((row) => {
-        if (!requirementsMap.has(row.id)) {
-          requirementsMap.set(row.id, {
-            id: row.id,
-            requirement_number: row.requirement_number,
-            requirement_name: row.requirement_name,
-            mandatory_description: row.mandatory_description,
-            complementary_description: row.complementary_description,
-            mandatory_sentences: row.mandatory_sentences,
-            complementary_sentences: row.complementary_sentences,
-            mandatory_keywords: row.mandatory_keywords,
-            complementary_keywords: row.complementary_keywords,
-            requirement_condition: row.requirement_condition,
-            evidence: row.evidence,
-            specify_evidence: row.specify_evidence,
-            periodicity: row.periodicity,
-            specify_periodicity: row.specify_periodicity,
-            requirement_type: row.requirement_type,
-            jurisdiction: row.jurisdiction,
-            state: row.state,
-            municipality: row.municipality,
-            subject: {
-              subject_id: row.subject_id,
-              subject_name: row.subject_name
-            },
-            aspects: []
-          })
-        }
-
-        if (row.aspect_id !== null) {
-          requirementsMap.get(row.id).aspects.push({
-            aspect_id: row.aspect_id,
-            aspect_name: row.aspect_name
-          })
-        }
-      })
-
-      return Array.from(requirementsMap.values()).map(req =>
-        new Requirement(
-          req.id,
-          req.subject,
-          req.aspects,
-          req.requirement_number,
-          req.requirement_name,
-          req.mandatory_description,
-          req.complementary_description,
-          req.mandatory_sentences,
-          req.complementary_sentences,
-          req.mandatory_keywords,
-          req.complementary_keywords,
-          req.requirement_condition,
-          req.evidence,
-          req.specify_evidence,
-          req.periodicity,
-          req.specify_periodicity,
-          req.requirement_type,
-          req.jurisdiction,
-          req.state,
-          req.municipality
-        )
-      )
-    } catch (error) {
-      console.error('Error retrieving requirements by state and municipalities:', error.message)
-      throw new ErrorUtils(500, 'Error retrieving requirements by state and municipalities')
     }
   }
 
@@ -2417,11 +1864,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
  * @param {string} requirement.evidence
  * @param {string} requirement.specifyEvidence
  * @param {string} requirement.periodicity
- * @param {string} requirement.specifyPeriodicity
  * @param {string} [requirement.requirementType]
- * @param {string} [requirement.jurisdiction]
- * @param {string} [requirement.state]
- * @param {string} [requirement.municipality]
  * @returns {Promise<Requirement|null>} - The updated Requirement instance or null.
  * @throws {ErrorUtils} - If an error occurs during update.
  */
@@ -2441,11 +1884,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       evidence,
       specifyEvidence,
       periodicity,
-      specifyPeriodicity,
-      requirementType,
-      jurisdiction,
-      state,
-      municipality
+      requirementType
     } = requirement
     const updateRequirementQuery = `
     UPDATE requirements SET
@@ -2462,11 +1901,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       evidence = IFNULL(?, evidence),
       specify_evidence = IFNULL(?, specify_evidence),
       periodicity = IFNULL(?, periodicity),
-      specify_periodicity = IFNULL(?, specify_periodicity),
       requirement_type = IFNULL(?, requirement_type),
-      jurisdiction = IFNULL(?, jurisdiction),
-      state = IFNULL(?, state),
-      municipality = IFNULL(?, municipality)
     WHERE id = ?
   `
 
@@ -2503,11 +1938,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         evidence,
         specifyEvidence,
         periodicity,
-        specifyPeriodicity,
         requirementType,
-        jurisdiction,
-        state,
-        municipality,
         requirementId
       ])
 

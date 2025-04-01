@@ -24,11 +24,7 @@ class Requirement {
    * @param {string} evidence - The type of evidence ('Trámite', 'Registro', 'Específica', 'Documento').
    * @param {string} specifyEvidence - The description of the specific evidence.
    * @param {string} periodicity - The periodicity of the requirement ('Anual', '2 años', 'Por evento', 'Única vez', 'Específica').
-   * @param {string} specifyPeriodicity - The description of the specific periodicity.
    * @param {string} requirementType - The type of requirement (e.g., 'Identificación Estatal', 'Requerimiento Local').
-   * @param {string} jurisdiction - The jurisdiction of the requirement ('Estatal', 'Federal', 'Local').
-   * @param {string} state - The state associated with the requirement (if applicable).
-   * @param {string} municipality - The municipality associated with the requirement (if applicable).
    */
   constructor (
     id,
@@ -46,11 +42,7 @@ class Requirement {
     evidence,
     specifyEvidence,
     periodicity,
-    specifyPeriodicity,
-    requirementType,
-    jurisdiction,
-    state,
-    municipality
+    requirementType
   ) {
     this.id = id
     this.subject = subject
@@ -67,11 +59,7 @@ class Requirement {
     this.evidence = evidence
     this.specify_evidence = specifyEvidence
     this.periodicity = periodicity
-    this.specify_periodicity = specifyPeriodicity
     this.requirement_type = requirementType
-    this.jurisdiction = jurisdiction
-    this.state = state
-    this.municipality = municipality
   }
 }
 
