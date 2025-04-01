@@ -29,7 +29,9 @@ class RequirementService {
   * @property {string} complementary_keywords - Keywords related to the complementary aspect of the requirement.
   * @property {string} condition - The condition type ('Crítica', 'Operativa', 'Recomendación', 'Pendiente').
   * @property {string} evidence - The type of evidence ('Trámite', 'Registro', 'Específica', 'Documento').
-  * @property {string} periodicity - The periodicity of the requirement ('Anual', '2 años', 'Por evento', 'Única vez', 'Específica').
+  * @property {string} requirement.specifyEvidence - The description of the specific evidence.
+  * @property {string} requirement.periodicity - The specific periodicity.
+  * @property {string} requirement.specifyPeriodicity - The description of the specific periodicity.
   * @property {string} requirement_type - The type of requirement.
   * @property {string} jurisdiction - The jurisdiction ('Estatal', 'Federal', 'Local').
   * @property {string} [state] - The state associated with the requirement, if applicable.
@@ -85,8 +87,6 @@ class RequirementService {
         ? `${requirement.periodicity} - ${requirement.specify_periodicity || ''}`.trim()
         : requirement.periodicity
     }
-    delete formattedRequirement.specify_evidence
-    delete formattedRequirement.specify_periodicity
 
     return formattedRequirement
   }
