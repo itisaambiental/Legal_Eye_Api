@@ -66,6 +66,40 @@ class RequirementService {
    * @returns {Promise<Requirement>} - The created requirement.
    * @throws {ErrorUtils} - If an error occurs during validation or creation.
    */
+
+  /**
+ * Formats a single requirement by concatenating `evidence` and `periodicity`
+ * if their value is 'Específica'. Removes `specify_evidence` and `specify_periodicity` from the output.
+ * @param {RequirementModel} requirement - A single requirement model instance.
+ * @returns {Requirement} - The formatted requirement.
+ */
+  static _formatRequirementWithSpecificValues (requirement) {
+    const formattedRequirement = {
+      ...requirement,
+      evidence:
+      requirement.evidence === 'Específica'
+        ? `${requirement.evidence} - ${requirement.specify_evidence || ''}`.trim()
+        : requirement.evidence,
+      periodicity:
+      requirement.periodicity === 'Específica'
+        ? `${requirement.periodicity} - ${requirement.specify_periodicity || ''}`.trim()
+        : requirement.periodicity
+    }
+    delete formattedRequirement.specify_evidence
+    delete formattedRequirement.specify_periodicity
+
+    return formattedRequirement
+  }
+
+  /**
+ * Formats a list of requirements by applying concatenation rules for 'Específica' values.
+ * @param {RequirementModel[]} requirements - List of requirement model instances.
+ * @returns {Requirement[]} List of formatted requirements.
+ */
+  static _formatRequirementsListWithSpecificValues (requirements) {
+    return requirements.map(this._formatRequirementWithSpecificValues)
+  }
+
   static async create (requirement) {
     try {
       const parsedRequirement = requirementSchema.parse(requirement)
@@ -101,7 +135,7 @@ class RequirementService {
       const createdRequirement = await RequirementRepository.create(
         parsedRequirement
       )
-      return createdRequirement
+      return RequirementService._formatRequirementWithSpecificValues(createdRequirement)
     } catch (error) {
       if (error instanceof ErrorUtils) {
         throw error
@@ -115,39 +149,6 @@ class RequirementService {
       }
       throw new ErrorUtils(500, 'Unexpected error during requirement creation')
     }
-  }
-
-  /**
- * Formats a single requirement by concatenating `evidence` and `periodicity`
- * if their value is 'Específica'. Removes `specify_evidence` and `specify_periodicity` from the output.
- * @param {RequirementModel} requirement - A single requirement model instance.
- * @returns {Requirement} - The formatted requirement.
- */
-  static _formatRequirementWithSpecificValues (requirement) {
-    const formattedRequirement = {
-      ...requirement,
-      evidence:
-      requirement.evidence === 'Específica'
-        ? `${requirement.evidence} - ${requirement.specify_evidence || ''}`.trim()
-        : requirement.evidence,
-      periodicity:
-      requirement.periodicity === 'Específica'
-        ? `${requirement.periodicity} - ${requirement.specify_periodicity || ''}`.trim()
-        : requirement.periodicity
-    }
-    delete formattedRequirement.specify_evidence
-    delete formattedRequirement.specify_periodicity
-
-    return formattedRequirement
-  }
-
-  /**
- * Formats a list of requirements by applying concatenation rules for 'Específica' values.
- * @param {RequirementModel[]} requirements - List of requirement model instances.
- * @returns {Requirement[]} List of formatted requirements.
- */
-  static _formatRequirementsListWithSpecificValues (requirements) {
-    return requirements.map(this._formatRequirementWithSpecificValues)
   }
 
   /**
@@ -228,7 +229,7 @@ class RequirementService {
       if (!requirements) {
         return []
       }
-      return RequirementService._formatRequirementsListWithSpecificValues(requirements)
+      return this._formatRequirementsListWithSpecificValues(requirements)
     } catch (error) {
       if (error instanceof ErrorUtils) {
         throw error
@@ -704,7 +705,7 @@ class RequirementService {
         requirementId,
         parsedRequirement
       )
-      return updatedRequirement
+      return RequirementService._formatRequirementWithSpecificValues(updatedRequirement)
     } catch (error) {
       if (error instanceof ErrorUtils) {
         throw error
