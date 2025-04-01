@@ -29,9 +29,11 @@ class RequirementService {
   * @property {string} complementary_keywords - Keywords related to the complementary aspect of the requirement.
   * @property {string} condition - The condition type ('Crítica', 'Operativa', 'Recomendación', 'Pendiente').
   * @property {string} evidence - The type of evidence ('Trámite', 'Registro', 'Específica', 'Documento').
-  * @property {string} requirement.specifyEvidence - The description of the specific evidence.
-  * @property {string} requirement.periodicity - The specific periodicity.
-  * @property {string} requirement.specifyPeriodicity - The description of the specific periodicity.
+  * @property {string} specify_evidence - The description of the specific evidence.
+  * @property {string} formatted_evidence - The formatted evidence.
+  * @property {string} periodicity - The specific periodicity.
+  * @property {string} specify_periodicity - The description of the specific periodicity.
+  * @property {string} formatted_periodicity - The formatted periodicity.
   * @property {string} requirement_type - The type of requirement.
   * @property {string} jurisdiction - The jurisdiction ('Estatal', 'Federal', 'Local').
   * @property {string} [state] - The state associated with the requirement, if applicable.
@@ -41,6 +43,35 @@ class RequirementService {
   /**
   * @typedef {import('../../models/Requirement.model.js').default} RequirementModel
  */
+
+  /**
+ * Formats a single requirement by concatenating `evidence` and `periodicity`
+ * if their value is 'Específica'. Removes `specify_evidence` and `specify_periodicity` from the output.
+ * @param {RequirementModel} requirement - A single requirement model instance.
+ * @returns {Requirement} - The formatted requirement.
+ */
+  static _formatRequirementWithSpecificValues (requirement) {
+    return {
+      ...requirement,
+      formatted_evidence:
+        requirement.evidence === 'Específica'
+          ? `${requirement.evidence} - ${requirement.specify_evidence || ''}`.trim()
+          : requirement.evidence,
+      formatted_periodicity:
+        requirement.periodicity === 'Específica'
+          ? `${requirement.periodicity} - ${requirement.specify_periodicity || ''}`.trim()
+          : requirement.periodicity
+    }
+  }
+
+  /**
+ * Formats a list of requirements by applying concatenation rules for 'Específica' values.
+ * @param {RequirementModel[]} requirements - List of requirement model instances.
+ * @returns {Requirement[]} List of formatted requirements.
+ */
+  static _formatRequirementsListWithSpecificValues (requirements) {
+    return requirements.map(this._formatRequirementWithSpecificValues)
+  }
 
   /**
    * Creates a new requirement.
@@ -68,38 +99,6 @@ class RequirementService {
    * @returns {Promise<Requirement>} - The created requirement.
    * @throws {ErrorUtils} - If an error occurs during validation or creation.
    */
-
-  /**
- * Formats a single requirement by concatenating `evidence` and `periodicity`
- * if their value is 'Específica'. Removes `specify_evidence` and `specify_periodicity` from the output.
- * @param {RequirementModel} requirement - A single requirement model instance.
- * @returns {Requirement} - The formatted requirement.
- */
-  static _formatRequirementWithSpecificValues (requirement) {
-    const formattedRequirement = {
-      ...requirement,
-      evidence:
-      requirement.evidence === 'Específica'
-        ? `${requirement.evidence} - ${requirement.specify_evidence || ''}`.trim()
-        : requirement.evidence,
-      periodicity:
-      requirement.periodicity === 'Específica'
-        ? `${requirement.periodicity} - ${requirement.specify_periodicity || ''}`.trim()
-        : requirement.periodicity
-    }
-
-    return formattedRequirement
-  }
-
-  /**
- * Formats a list of requirements by applying concatenation rules for 'Específica' values.
- * @param {RequirementModel[]} requirements - List of requirement model instances.
- * @returns {Requirement[]} List of formatted requirements.
- */
-  static _formatRequirementsListWithSpecificValues (requirements) {
-    return requirements.map(this._formatRequirementWithSpecificValues)
-  }
-
   static async create (requirement) {
     try {
       const parsedRequirement = requirementSchema.parse(requirement)
