@@ -31,11 +31,7 @@ export const createRequirement = async (req, res) => {
     evidence,
     specifyEvidence,
     periodicity,
-    specifyPeriodicity,
-    requirementType,
-    jurisdiction,
-    state,
-    municipality
+    requirementType
   } = req.body
   try {
     const isAuthorized = await UserService.userExists(userId)
@@ -57,11 +53,7 @@ export const createRequirement = async (req, res) => {
       evidence,
       specifyEvidence,
       periodicity,
-      specifyPeriodicity,
-      requirementType,
-      jurisdiction,
-      state,
-      municipality
+      requirementType
     })
     return res.status(201).json({ requirement })
   } catch (error) {
@@ -501,97 +493,6 @@ export const getRequirementsByRequirementType = async (req, res) => {
 }
 
 /**
- * Retrieves requirements filtered by a specific jurisdiction.
- * @function getRequirementsByJurisdiction
- * @param {import('express').Request} req - Request object, expects { jurisdiction } in query.
- * @param {import('express').Response} res - Response object.
- * @returns {Array<Object>} - A list of requirements matching the jurisdiction.
- */
-export const getRequirementsByJurisdiction = async (req, res) => {
-  const { userId } = req
-  const { jurisdiction } = req.query
-  try {
-    const isAuthorized = await UserService.userExists(userId)
-    if (!isAuthorized) {
-      return res.status(403).json({ message: 'Unauthorized' })
-    }
-    const requirements = await RequirementService.getByJurisdiction(
-      jurisdiction
-    )
-    return res.status(200).json({ requirements })
-  } catch (error) {
-    if (error instanceof ErrorUtils) {
-      return res.status(error.status).json({ message: error.message })
-    }
-    return res.status(500).json({ message: 'Internal Server Error' })
-  }
-}
-
-/**
- * Retrieves requirements filtered by a specific state.
- * @function getRequirementsByState
- * @param {import('express').Request} req - Request object, expects { state } in query.
- * @param {import('express').Response} res - Response object.
- * @returns {Array<Object>} - A list of requirements matching the state.
- */
-export const getRequirementsByState = async (req, res) => {
-  const { userId } = req
-  const { state } = req.query
-  try {
-    const isAuthorized = await UserService.userExists(userId)
-    if (!isAuthorized) {
-      return res.status(403).json({ message: 'Unauthorized' })
-    }
-    const requirements = await RequirementService.getByState(state)
-    return res.status(200).json({ requirements })
-  } catch (error) {
-    if (error instanceof ErrorUtils) {
-      return res.status(error.status).json({ message: error.message })
-    }
-    return res.status(500).json({ message: 'Internal Server Error' })
-  }
-}
-
-/**
- * Retrieves requirements filtered by state and optionally by municipalities.
- * @function getRequirementsByStateAndMunicipalities
- * @param {import('express').Request} req - Request object, expects { state } in query and { municipalities } as an optional array in query.
- * @param {import('express').Response} res - Response object.
- * @returns {Array<Object>} - A list of requirements matching the filters.
- */
-export const getRequirementsByStateAndMunicipalities = async (req, res) => {
-  const { userId } = req
-  const { state } = req.query
-  let { municipalities } = req.query
-  try {
-    const isAuthorized = await UserService.userExists(userId)
-    if (!isAuthorized) {
-      return res.status(403).json({ message: 'Unauthorized' })
-    }
-    municipalities = Array.isArray(municipalities)
-      ? municipalities
-        .map((municipality) => String(municipality).trim())
-        .filter((municipality) => municipality.length > 0)
-      : typeof municipalities === 'string'
-        ? municipalities
-          .split(',')
-          .map((municipality) => String(municipality).trim())
-          .filter((municipality) => municipality.length > 0)
-        : []
-    const requirements = await RequirementService.getByStateAndMunicipalities(
-      state,
-      municipalities
-    )
-    return res.status(200).json({ requirements })
-  } catch (error) {
-    if (error instanceof ErrorUtils) {
-      return res.status(error.status).json({ message: error.message })
-    }
-    return res.status(500).json({ message: 'Internal Server Error' })
-  }
-}
-
-/**
  * Updates an existing requirement by its ID.
  * @function updateRequirementById
  * @param {import('express').Request} req - Request object, expects { id } in params and updated requirement fields in body.
@@ -616,11 +517,7 @@ export const updateRequirement = async (req, res) => {
     evidence,
     specifyEvidence,
     periodicity,
-    specifyPeriodicity,
-    requirementType,
-    jurisdiction,
-    state,
-    municipality
+    requirementType
   } = req.body
   try {
     const isAuthorized = await UserService.userExists(userId)
@@ -642,11 +539,7 @@ export const updateRequirement = async (req, res) => {
       evidence,
       specifyEvidence,
       periodicity,
-      specifyPeriodicity,
-      requirementType,
-      jurisdiction,
-      state,
-      municipality
+      requirementType
     })
     return res.status(200).json({ requirement })
   } catch (error) {
