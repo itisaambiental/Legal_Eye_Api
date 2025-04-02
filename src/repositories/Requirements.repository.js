@@ -1901,7 +1901,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       evidence = IFNULL(?, evidence),
       specify_evidence = IFNULL(?, specify_evidence),
       periodicity = IFNULL(?, periodicity),
-      requirement_type = IFNULL(?, requirement_type),
+      requirement_type = IFNULL(?, requirement_type)
     WHERE id = ?
   `
 
