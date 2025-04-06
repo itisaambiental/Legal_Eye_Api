@@ -142,12 +142,11 @@ export const updateAspect = async (req, res) => {
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-    const aspect = await AspectsService.updateById(
-      id,
+    const aspect = await AspectsService.updateById(id, {
       aspectName,
       abbreviation,
       orderIndex
-    )
+    })
     return res.status(200).json({ aspect })
   } catch (error) {
     if (error instanceof ErrorUtils) {

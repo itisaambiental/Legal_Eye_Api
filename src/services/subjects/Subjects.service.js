@@ -108,34 +108,40 @@ class SubjectsService {
   }
 
   /**
-   * Updates a subject by ID.
-   * @param {number} id - The ID of the subject to update.
-   * @param {string} subjectName - The new name of the subject.
-   * @param {string} abbreviation - The new abbreviation.
-   * @param {number} orderIndex - The new display order.
-   * @returns {Promise<Subject>} - Returns the updated subject data, including `id` and `subjectName`.
-   * @throws {ErrorUtils} - Throws an error if the subject is not found, the name already exists, or an unexpected error occurs.
-   */
-  static async updateById (id, subjectName, abbreviation, orderIndex) {
+ * Updates a subject by ID.
+ * @param {number} id - The ID of the subject to update.
+ * @param {Object} params - The new subject data.
+ * @param {string} params.subjectName - The new name of the subject.
+ * @param {string} params.abbreviation - The new abbreviation.
+ * @param {number} params.orderIndex - The new display order.
+ * @returns {Promise<Subject>} - Returns the updated subject data.
+ * @throws {ErrorUtils} - Throws an error if the subject is not found, the name already exists, or an unexpected error occurs.
+ */
+  static async updateById (id, { subjectName, abbreviation, orderIndex }) {
     try {
       const parsedSubject = subjectSchema.parse({ subjectName, abbreviation, orderIndex })
+
       const currentSubject = await SubjectsRepository.findById(id)
       if (!currentSubject) {
         throw new ErrorUtils(404, 'Subject not found')
       }
+
       const subjectExists = await SubjectsRepository.existsByNameExcludingId(parsedSubject.subjectName, id)
       if (subjectExists) {
         throw new ErrorUtils(409, 'Subject already exists')
       }
+
       const updatedSubject = await SubjectsRepository.update(
         id,
         parsedSubject.subjectName,
         parsedSubject.abbreviation,
         parsedSubject.orderIndex
       )
+
       if (!updatedSubject) {
         throw new ErrorUtils(404, 'Subject not found')
       }
+
       return updatedSubject
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -145,9 +151,11 @@ class SubjectsService {
         }))
         throw new ErrorUtils(400, 'Validation failed', validationErrors)
       }
+
       if (error instanceof ErrorUtils) {
         throw error
       }
+
       throw new ErrorUtils(500, 'Failed to update subject')
     }
   }

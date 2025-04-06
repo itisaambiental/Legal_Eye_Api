@@ -130,15 +130,16 @@ class AspectsService {
   }
 
   /**
-   * Updates an aspect by ID.
-   * @param {number} id - The ID of the aspect to update.
-   * @param {string} aspectName - The new name of the aspect.
-   * @param {string} abbreviation - The new abbreviation of the aspect.
-   * @param {number} orderIndex - The new display order.
-   * @returns {Promise<Aspect>} - The updated aspect data.
-   * @throws {ErrorUtils} - If an error occurs during update.
-   */
-  static async updateById (id, aspectName, abbreviation, orderIndex) {
+ * Updates an aspect by ID.
+ * @param {number} id - The ID of the aspect to update.
+ * @param {Object} params - New aspect data.
+ * @param {string} params.aspectName - The new name of the aspect.
+ * @param {string} params.abbreviation - The new abbreviation.
+ * @param {number} params.orderIndex - The new display order.
+ * @returns {Promise<Aspect>} - The updated aspect data.
+ * @throws {ErrorUtils} - If an error occurs during update.
+ */
+  static async updateById (id, { aspectName, abbreviation, orderIndex }) {
     try {
       const parsedAspect = aspectSchema.parse({ aspectName, abbreviation, orderIndex })
       const currentAspect = await AspectsRepository.findById(id)

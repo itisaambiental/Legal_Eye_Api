@@ -560,9 +560,6 @@ class RequirementService {
    * @param {string} [requirement.periodicity] - The updated periodicity (optional).
    * @param {string} requirement.specifyEvidence - The description of the specific evidence (optional).
    * @param {string} [requirement.requirementType] - The updated requirement type (optional).
-   * @param {string} [requirement.jurisdiction] - The updated jurisdiction (optional).
-   * @param {string} [requirement.state] - The updated state (optional).
-   * @param {string} [requirement.municipality] - The updated municipality (optional).
    * @returns {Promise<Requirement>} - The updated requirement.
    * @throws {ErrorUtils} - If an error occurs during validation or update.
    */
