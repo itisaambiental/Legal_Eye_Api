@@ -42,7 +42,11 @@ beforeAll(async () => {
   const subjectResponse = await api
     .post('/api/subjects')
     .set('Authorization', `Bearer ${tokenAdmin}`)
-    .send({ subjectName })
+    .send({
+      subjectName,
+      abbreviation: 'AMB',
+      orderIndex: 1
+    })
     .expect(201)
     .expect('Content-Type', /application\/json/)
 
@@ -52,7 +56,11 @@ beforeAll(async () => {
     const aspectResponse = await api
       .post(`/api/subjects/${createdSubjectId}/aspects`)
       .set('Authorization', `Bearer ${tokenAdmin}`)
-      .send({ aspectName })
+      .send({
+        aspectName,
+        abbreviation: 'ORG',
+        orderIndex: 1
+      })
       .expect(201)
       .expect('Content-Type', /application\/json/)
 

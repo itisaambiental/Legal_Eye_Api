@@ -17,8 +17,7 @@ export default function generateRequirementData (overrides = {}) {
     condition: 'Crítica',
     evidence: 'Documento',
     periodicity: 'Anual',
-    requirementType: 'Identificación Estatal',
-    jurisdiction: 'Federal'
+    requirementType: 'Identificación Estatal'
   }
 
   const data = { ...defaultData, ...overrides }
