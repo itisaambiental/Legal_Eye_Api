@@ -11,17 +11,24 @@ class SubjectsService {
    * Creates a new Subject entry.
    * @param {Object} params - Parameters for creating a subject.
    * @param {string} params.subjectName - The name of the subject.
+   * @param {string} params.abbreviation - The abbreviation of the subject.
+   * @param {number} params.orderIndex - The display order of the subject.
    * @returns {Promise<Subject>} - The created subject data.
    * @throws {ErrorUtils} - If an error occurs during creation.
    */
-  static async create ({ subjectName }) {
+  static async create ({ subjectName, abbreviation, orderIndex }) {
     try {
-      const parsedSubject = subjectSchema.parse({ subjectName })
+      const parsedSubject = subjectSchema.parse({ subjectName, abbreviation, orderIndex })
+
       const subjectExists = await SubjectsRepository.existsBySubjectName(parsedSubject.subjectName)
       if (subjectExists) {
         throw new ErrorUtils(409, 'Subject already exists')
       }
-      const createdSubject = await SubjectsRepository.create(parsedSubject.subjectName)
+      const createdSubject = await SubjectsRepository.create(
+        parsedSubject.subjectName,
+        parsedSubject.abbreviation,
+        parsedSubject.orderIndex
+      )
       return createdSubject
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -104,12 +111,14 @@ class SubjectsService {
    * Updates a subject by ID.
    * @param {number} id - The ID of the subject to update.
    * @param {string} subjectName - The new name of the subject.
+   * @param {string} abbreviation - The new abbreviation.
+   * @param {number} orderIndex - The new display order.
    * @returns {Promise<Subject>} - Returns the updated subject data, including `id` and `subjectName`.
    * @throws {ErrorUtils} - Throws an error if the subject is not found, the name already exists, or an unexpected error occurs.
    */
-  static async updateById (id, subjectName) {
+  static async updateById (id, subjectName, abbreviation, orderIndex) {
     try {
-      const parsedSubject = subjectSchema.parse({ subjectName })
+      const parsedSubject = subjectSchema.parse({ subjectName, abbreviation, orderIndex })
       const currentSubject = await SubjectsRepository.findById(id)
       if (!currentSubject) {
         throw new ErrorUtils(404, 'Subject not found')
@@ -118,7 +127,12 @@ class SubjectsService {
       if (subjectExists) {
         throw new ErrorUtils(409, 'Subject already exists')
       }
-      const updatedSubject = await SubjectsRepository.updateById(id, parsedSubject.subjectName)
+      const updatedSubject = await SubjectsRepository.update(
+        id,
+        parsedSubject.subjectName,
+        parsedSubject.abbreviation,
+        parsedSubject.orderIndex
+      )
       if (!updatedSubject) {
         throw new ErrorUtils(404, 'Subject not found')
       }

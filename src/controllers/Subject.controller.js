@@ -10,19 +10,23 @@ import UserService from '../services/users/User.service.js'
 /**
  * Creates a new subject.
  * @function createSubject
- * @param {import('express').Request} req - Request object, expects { subjectName } in body.
+ * @param {import('express').Request} req - Request object, expects { subjectName, abbreviation, orderIndex } in body.
  * @param {import('express').Response} res - Response object.
  * @returns {Object} - The created subject data.
  */
 export const createSubject = async (req, res) => {
   const { userId } = req
-  const { subjectName } = req.body
+  const { subjectName, abbreviation, orderIndex } = req.body
   try {
     const isAuthorized = await UserService.userExists(userId)
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-    const subject = await SubjectsService.create({ subjectName })
+    const subject = await SubjectsService.create({
+      subjectName,
+      abbreviation,
+      orderIndex
+    })
     return res.status(201).json({ subject })
   } catch (error) {
     if (error instanceof ErrorUtils) {
@@ -121,20 +125,25 @@ export const getSubjectsByName = async (req, res) => {
 /**
  * Updates a subject by ID.
  * @function updateSubject
- * @param {import('express').Request} req - Request object, expects { subjectName } in body and { id } as URL parameter.
+ * @param {import('express').Request} req - Request object, expects { subjectName, abbreviation, orderIndex } in body and { id } as URL parameter.
  * @param {import('express').Response} res - Response object.
  * @returns {Object} - The updated subject data.
  */
 export const updateSubject = async (req, res) => {
   const { userId } = req
   const { id } = req.params
-  const { subjectName } = req.body
+  const { subjectName, abbreviation, orderIndex } = req.body
   try {
     const isAuthorized = await UserService.userExists(userId)
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-    const subject = await SubjectsService.updateById(id, subjectName)
+    const subject = await SubjectsService.updateById(
+      id,
+      subjectName,
+      abbreviation,
+      orderIndex
+    )
     return res.status(200).json({ subject })
   } catch (error) {
     if (error instanceof ErrorUtils) {

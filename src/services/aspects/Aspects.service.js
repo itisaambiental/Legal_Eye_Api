@@ -13,12 +13,14 @@ class AspectsService {
    * @param {Object} params - Parameters for creating an aspect.
    * @param {number} params.subjectId - The ID of the associated subject.
    * @param {string} params.aspectName - The name of the aspect.
+   * @param {string} params.abbreviation - The abbreviation of the aspect.
+   * @param {number} params.orderIndex - The display order of the aspect.
    * @returns {Promise<Aspect>} - The created aspect data.
    * @throws {ErrorUtils} - If an error occurs during creation.
    */
-  static async create ({ subjectId, aspectName }) {
+  static async create ({ subjectId, aspectName, abbreviation, orderIndex }) {
     try {
-      const parsedAspect = aspectSchema.parse({ aspectName })
+      const parsedAspect = aspectSchema.parse({ aspectName, abbreviation, orderIndex })
       const subjectExists = await SubjectsRepository.findById(subjectId)
       if (!subjectExists) {
         throw new ErrorUtils(404, 'Subject not found')
@@ -32,7 +34,9 @@ class AspectsService {
       }
       const createdAspect = await AspectsRepository.create(
         subjectId,
-        parsedAspect.aspectName
+        parsedAspect.aspectName,
+        parsedAspect.abbreviation,
+        parsedAspect.orderIndex
       )
       return createdAspect
     } catch (error) {
@@ -129,12 +133,14 @@ class AspectsService {
    * Updates an aspect by ID.
    * @param {number} id - The ID of the aspect to update.
    * @param {string} aspectName - The new name of the aspect.
+   * @param {string} abbreviation - The new abbreviation of the aspect.
+   * @param {number} orderIndex - The new display order.
    * @returns {Promise<Aspect>} - The updated aspect data.
    * @throws {ErrorUtils} - If an error occurs during update.
    */
-  static async updateById (id, aspectName) {
+  static async updateById (id, aspectName, abbreviation, orderIndex) {
     try {
-      const parsedAspect = aspectSchema.parse({ aspectName })
+      const parsedAspect = aspectSchema.parse({ aspectName, abbreviation, orderIndex })
       const currentAspect = await AspectsRepository.findById(id)
       if (!currentAspect) {
         throw new ErrorUtils(404, 'Aspect not found')
@@ -149,7 +155,9 @@ class AspectsService {
       }
       const updatedAspect = await AspectsRepository.updateById(
         id,
-        parsedAspect.aspectName
+        parsedAspect.aspectName,
+        parsedAspect.abbreviation,
+        parsedAspect.orderIndex
       )
       if (!updatedAspect) {
         throw new ErrorUtils(404, 'Aspect not found')

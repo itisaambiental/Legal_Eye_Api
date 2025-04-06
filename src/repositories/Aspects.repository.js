@@ -10,16 +10,18 @@ class AspectsRepository {
    * Inserts a new aspect linked to a specific subject into the database.
    * @param {number} subjectId - The ID of the subject to link this aspect to.
    * @param {string} aspectName - The name of the aspect to insert.
+   * @param {string} abbreviation - The abbreviation for the aspect.
+   * @param {number} orderIndex - The display order for the aspect.
    * @returns {Promise<Aspect>} - Returns the created aspect.
    * @throws {ErrorUtils} - If an error occurs during insertion.
    */
-  static async create (subjectId, aspectName) {
+  static async create (subjectId, aspectName, abbreviation, orderIndex) {
     const query = `
-      INSERT INTO aspects (subject_id, aspect_name)
-      VALUES (?, ?)
+      INSERT INTO aspects (subject_id, aspect_name, abbreviation, order_index)
+      VALUES (?, ?, ?, ?)
     `
     try {
-      const [result] = await pool.query(query, [subjectId, aspectName])
+      const [result] = await pool.query(query, [subjectId, aspectName, abbreviation, orderIndex])
       const aspect = await this.findById(result.insertId)
       return aspect
     } catch (error) {
@@ -36,11 +38,13 @@ class AspectsRepository {
    */
   static async findById (id) {
     const query = `
-      SELECT aspects.id, aspects.subject_id, aspects.aspect_name, subjects.subject_name
-      FROM aspects
-      JOIN subjects ON aspects.subject_id = subjects.id
-      WHERE aspects.id = ?
-    `
+    SELECT aspects.id, aspects.subject_id, aspects.aspect_name,
+           aspects.abbreviation, aspects.order_index,
+           subjects.subject_name
+    FROM aspects
+    JOIN subjects ON aspects.subject_id = subjects.id
+    WHERE aspects.id = ?
+  `
     try {
       const [rows] = await pool.query(query, [id])
       if (rows.length === 0) return null
@@ -49,7 +53,9 @@ class AspectsRepository {
         row.id,
         row.aspect_name,
         row.subject_id,
-        row.subject_name
+        row.subject_name,
+        row.abbreviation,
+        row.order_index
       )
     } catch (error) {
       console.error('Error fetching aspect by ID:', error.message)
@@ -67,8 +73,11 @@ class AspectsRepository {
     if (aspectIds.length === 0) {
       return []
     }
+
     const query = `
-    SELECT aspects.id, aspects.subject_id, aspects.aspect_name, subjects.subject_name
+    SELECT aspects.id, aspects.subject_id, aspects.aspect_name,
+           aspects.abbreviation, aspects.order_index,
+           subjects.subject_name
     FROM aspects
     JOIN subjects ON aspects.subject_id = subjects.id
     WHERE aspects.id IN (?)
@@ -81,7 +90,9 @@ class AspectsRepository {
             row.id,
             row.aspect_name,
             row.subject_id,
-            row.subject_name
+            row.subject_name,
+            row.abbreviation,
+            row.order_index
           )
       )
     } catch (error) {
@@ -98,17 +109,28 @@ class AspectsRepository {
    */
   static async findBySubjectId (subjectId) {
     const query = `
-      SELECT aspects.id, aspects.subject_id, aspects.aspect_name, subjects.subject_name
-      FROM aspects
-      JOIN subjects ON aspects.subject_id = subjects.id
-      WHERE aspects.subject_id = ?
-    `
+    SELECT aspects.id, aspects.subject_id, aspects.aspect_name,
+           aspects.abbreviation, aspects.order_index,
+           subjects.subject_name
+    FROM aspects
+    JOIN subjects ON aspects.subject_id = subjects.id
+    WHERE aspects.subject_id = ?
+    ORDER BY aspects.order_index ASC
+  `
     try {
       const [rows] = await pool.query(query, [subjectId])
       if (rows.length === 0) return null
+
       return rows.map(
         (row) =>
-          new Aspect(row.id, row.aspect_name, row.subject_id, row.subject_name)
+          new Aspect(
+            row.id,
+            row.aspect_name,
+            row.subject_id,
+            row.subject_name,
+            row.abbreviation,
+            row.order_index
+          )
       )
     } catch (error) {
       console.error('Error fetching aspects by subject ID:', error.message)
@@ -149,17 +171,28 @@ class AspectsRepository {
   static async findByNameAndSubjectId (aspectName, subjectId) {
     const searchValue = `%${aspectName}%`
     const query = `
-      SELECT aspects.id, aspects.subject_id, aspects.aspect_name, subjects.subject_name
-      FROM aspects
-      JOIN subjects ON aspects.subject_id = subjects.id
-      WHERE aspects.aspect_name LIKE ? AND aspects.subject_id = ?
-    `
+    SELECT aspects.id, aspects.subject_id, aspects.aspect_name,
+           aspects.abbreviation, aspects.order_index,
+           subjects.subject_name
+    FROM aspects
+    JOIN subjects ON aspects.subject_id = subjects.id
+    WHERE aspects.aspect_name LIKE ? AND aspects.subject_id = ?
+    ORDER BY aspects.order_index ASC
+  `
     try {
       const [rows] = await pool.query(query, [searchValue, subjectId])
       if (rows.length === 0) return null
+
       return rows.map(
         (row) =>
-          new Aspect(row.id, row.aspect_name, row.subject_id, row.subject_name)
+          new Aspect(
+            row.id,
+            row.aspect_name,
+            row.subject_id,
+            row.subject_name,
+            row.abbreviation,
+            row.order_index
+          )
       )
     } catch (error) {
       console.error(
@@ -198,17 +231,22 @@ class AspectsRepository {
    * Updates an aspect by its ID, associated with a specific subject.
    * @param {number} id - The ID of the aspect to update.
    * @param {string|null} aspectName - The new name of the aspect, or null to keep the current name.
+   * @param {string|null} abbreviation - The new abbreviation, or null to keep the current abbreviation.
+   * @param {number|null} orderIndex - The new order index, or null to keep the current order.
    * @returns {Promise<boolean|Aspect>} - Returns Aspect if the update is successful, false otherwise.
    * @throws {ErrorUtils} - If an error occurs during update.
    */
-  static async updateById (id, aspectName) {
+  static async updateById (id, aspectName, abbreviation, orderIndex) {
     const query = `
-      UPDATE aspects
-      SET aspect_name = IFNULL(?, aspect_name)
-      WHERE id = ?
-    `
+    UPDATE aspects
+    SET
+      aspect_name = IFNULL(?, aspect_name),
+      abbreviation = IFNULL(?, abbreviation),
+      order_index = IFNULL(?, order_index)
+    WHERE id = ?
+  `
     try {
-      const [rows] = await pool.query(query, [aspectName, id])
+      const [rows] = await pool.query(query, [aspectName, abbreviation, orderIndex, id])
       if (rows.affectedRows === 0) {
         return false
       }

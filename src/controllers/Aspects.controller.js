@@ -10,20 +10,25 @@ import UserService from '../services/users/User.service.js'
 /**
  * Creates a new aspect.
  * @function createAspect
- * @param {import('express').Request} req - Request object, expects { subjectId, aspectName } in body.
+ * @param {import('express').Request} req - Request object, expects { aspectName, abbreviation, orderIndex } in body and { subjectId } in params.
  * @param {import('express').Response} res - Response object.
  * @returns {Object} - The created aspect data.
  */
 export const createAspect = async (req, res) => {
   const { userId } = req
-  const { aspectName } = req.body
+  const { aspectName, abbreviation, orderIndex } = req.body
   const { subjectId } = req.params
   try {
     const isAuthorized = await UserService.userExists(userId)
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-    const aspect = await AspectsService.create({ subjectId, aspectName })
+    const aspect = await AspectsService.create({
+      subjectId,
+      aspectName,
+      abbreviation,
+      orderIndex
+    })
     return res.status(201).json({ aspect })
   } catch (error) {
     if (error instanceof ErrorUtils) {
@@ -124,20 +129,25 @@ export const getAspectsByName = async (req, res) => {
 /**
  * Updates an aspect by ID.
  * @function updateAspect
- * @param {import('express').Request} req - Request object, expects { aspectName } in body and { id } as URL parameter.
+ * @param {import('express').Request} req - Request object, expects { aspectName, abbreviation, orderIndex } in body and { id } as URL parameter.
  * @param {import('express').Response} res - Response object.
  * @returns {Object} - The updated aspect data.
  */
 export const updateAspect = async (req, res) => {
   const { userId } = req
   const { id } = req.params
-  const { aspectName } = req.body
+  const { aspectName, abbreviation, orderIndex } = req.body
   try {
     const isAuthorized = await UserService.userExists(userId)
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-    const aspect = await AspectsService.updateById(id, aspectName)
+    const aspect = await AspectsService.updateById(
+      id,
+      aspectName,
+      abbreviation,
+      orderIndex
+    )
     return res.status(200).json({ aspect })
   } catch (error) {
     if (error instanceof ErrorUtils) {

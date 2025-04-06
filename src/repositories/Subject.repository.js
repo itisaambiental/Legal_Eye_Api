@@ -9,16 +9,18 @@ class SubjectsRepository {
   /**
    * Inserts a new subject into the database.
    * @param {string} subjectName - The name of the subject to insert.
+   * @param {string} abbreviation - The abbreviation of the subject.
+   * @param {number} orderIndex - The order index of the subject.
    * @returns {Promise<Subject>} - Returns the the created Subject.
    * @throws {ErrorUtils} - If an error occurs during insertion.
    */
-  static async create (subjectName) {
+  static async create (subjectName, abbreviation, orderIndex) {
     const query = `
-      INSERT INTO subjects (subject_name)
-      VALUES (?)
+      INSERT INTO subjects (subject_name, abbreviation, order_index)
+      VALUES (?, ?, ?)
     `
     try {
-      const [result] = await pool.query(query, [subjectName])
+      const [result] = await pool.query(query, [subjectName, abbreviation, orderIndex])
       const subject = await this.findById(result.insertId)
       return subject
     } catch (error) {
@@ -35,12 +37,18 @@ class SubjectsRepository {
   static async findAll () {
     try {
       const [rows] = await pool.query(`
-        SELECT id, subject_name
+        SELECT id, subject_name, abbreviation, order_index
         FROM subjects
+        ORDER BY order_index ASC
       `)
       if (rows.length === 0) return null
       return rows.map(
-        (subject) => new Subject(subject.id, subject.subject_name)
+        (subject) => new Subject(
+          subject.id,
+          subject.subject_name,
+          subject.abbreviation,
+          subject.order_index
+        )
       )
     } catch (error) {
       console.error('Error fetching subjects:', error.message)
@@ -58,16 +66,20 @@ class SubjectsRepository {
     try {
       const [rows] = await pool.query(
         `
-        SELECT id, subject_name
+        SELECT id, subject_name, abbreviation, order_index
         FROM subjects
         WHERE id = ?
-      `,
+        `,
         [id]
       )
-
       if (rows.length === 0) return null
       const subject = rows[0]
-      return new Subject(subject.id, subject.subject_name)
+      return new Subject(
+        subject.id,
+        subject.subject_name,
+        subject.abbreviation,
+        subject.order_index
+      )
     } catch (error) {
       console.error('Error fetching subject by ID:', error.message)
       throw new ErrorUtils(500, 'Error fetching subject from the database')
@@ -85,11 +97,18 @@ class SubjectsRepository {
       return []
     }
     const query = `
-    SELECT id, subject_name FROM subjects WHERE id IN (?)
+    SELECT id, subject_name, abbreviation, order_index
+    FROM subjects
+    WHERE id IN (?)
   `
     try {
       const [rows] = await pool.query(query, [subjectIds])
-      return rows.map((row) => ({ id: row.id, name: row.name }))
+      return rows.map((row) => ({
+        id: row.id,
+        name: row.subject_name,
+        abbreviation: row.abbreviation,
+        order_index: row.order_index
+      }))
     } catch (error) {
       console.error('Error finding subjects by IDs:', error.message)
       throw new ErrorUtils(
@@ -154,15 +173,20 @@ class SubjectsRepository {
     try {
       const [rows] = await pool.query(
         `
-          SELECT id, subject_name
-          FROM subjects
-          WHERE subject_name LIKE ?
+        SELECT id, subject_name, abbreviation, order_index
+        FROM subjects
+        WHERE subject_name LIKE ?
         `,
-        [`%${searchValue}%`]
+        [searchValue]
       )
       if (rows.length === 0) return null
       return rows.map(
-        (subject) => new Subject(subject.id, subject.subject_name)
+        (subject) => new Subject(
+          subject.id,
+          subject.subject_name,
+          subject.abbreviation,
+          subject.order_index
+        )
       )
     } catch (error) {
       console.error('Error fetching subjects by partial name:', error.message)
@@ -171,26 +195,25 @@ class SubjectsRepository {
   }
 
   /**
-   * Updates a subject by its ID using IFNULL to preserve existing values.
-   * @param {number} id - The ID of the subject to update.
-   * @param {string|null} subjectName - The new name of the subject, or null to keep the current name.
-   * @returns {Promise<boolean|Subject>} - Returns true if the update is successful, false otherwise.
-   * @throws {ErrorUtils} - If an error occurs during update.
-   */
-  static async updateById (id, subjectName) {
+ * Updates a subject in the database.
+ * @param {number} id - The ID of the subject to update.
+ * @param {string} subjectName - The new name of the subject.
+ * @param {string} abbreviation - The updated abbreviation.
+ * @param {number} orderIndex - The updated display order.
+ * @returns {Promise<Subject|null>} - The updated Subject instance.
+ * @throws {ErrorUtils} - If an error occurs during update.
+ */
+  static async update (id, subjectName, abbreviation, orderIndex) {
     const query = `
-      UPDATE subjects
-      SET subject_name = IFNULL(?, subject_name)
-      WHERE id = ?
-    `
-
+    UPDATE subjects
+    SET subject_name = ?, abbreviation = ?, order_index = ?
+    WHERE id = ?
+  `
     try {
-      const [rows] = await pool.query(query, [subjectName, id])
-      if (rows.affectedRows === 0) {
-        return false
-      }
-      const subject = await this.findById(id)
-      return subject
+      const [result] = await pool.query(query, [subjectName, abbreviation, orderIndex, id])
+      if (result.affectedRows === 0) return null
+
+      return await this.findById(id)
     } catch (error) {
       console.error('Error updating subject:', error.message)
       throw new ErrorUtils(500, 'Error updating subject in the database')
