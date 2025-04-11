@@ -17,6 +17,7 @@ import {
   getLegalBasisByStateAndMunicipalities,
   getLegalBasisBySubject,
   getLegalBasisBySubjectAndAspects,
+  getLegalBasisBySubjectAndFilters,
   getLegalBasisByLastReform,
   updateLegalBasis,
   deleteLegalBasis,
@@ -139,6 +140,52 @@ router.get('/legalBasis/subject/:subjectId', UserExtractor, getLegalBasisBySubje
  * @middleware UserExtractor
  */
 router.get('/legalBasis/subject/:subjectId/aspects', UserExtractor, getLegalBasisBySubjectAndAspects)
+
+/**
+ * Route to retrieve legal basis entries filtered by subject, and optionally by aspects, state, and municipalities.
+ * @method GET
+ * @path /legalBasis/subject/aspects/state/municipalities/query
+ * @description Retrieves legal basis entries filtered by subject and optionally by aspects, state, and municipalities.
+ * @query {number} subjectId - The subject ID to filter by (required).
+ * @query {Array<number>} [aspectIds] - Array of aspect IDs to further filter by (optional).
+ * @query {string} [state] - The state to filter by (optional).
+ * @query {Array<string>} [municipalities] - Array of municipalities to filter by (optional, requires state).
+ * @middleware UserExtractor
+ */
+router.get(
+  '/legalBasis/subject/aspects/state/municipalities/query',
+  UserExtractor,
+  getLegalBasisBySubjectAndFilters
+)
+
+/**
+ * Route to retrieve legal basis entries filtered by subject and optionally by aspects, state, municipalities, and jurisdiction.
+ * @method GET
+ * @path /legalBasis/subject/aspects/state/municipalities/query
+ * @description Retrieves legal basis entries filtered by:
+ * - subject (required)
+ * - aspects (optional)
+ * - jurisdiction (optional: Federal, Estatal, Local)
+ * - state (optional, required for Estatal and Local)
+ * - municipalities (optional, required for Local only)
+ *
+ * Applies validation rules:
+ * - Federal → ❌state, ❌municipalities
+ * - Estatal → ✅state, ❌municipalities
+ * - Local   → ✅state, ✅municipalities
+ *
+ * @query {number} subjectId - The subject ID to filter by (required).
+ * @query {Array<number>} [aspectIds] - Array of aspect IDs to further filter by.
+ * @query {string} [jurisdiction] - The jurisdiction type (Federal, Estatal, Local).
+ * @query {string} [state] - The state to filter by.
+ * @query {Array<string>} [municipalities] - Array of municipalities to filter by (requires state if Local).
+ * @middleware UserExtractor
+ */
+router.get(
+  '/legalBasis/subject/aspects/state/municipalities/query',
+  UserExtractor,
+  getLegalBasisBySubjectAndFilters
+)
 
 /**
  * Route to retrieve legal basis entries filtered by a date range for the last_reform field.

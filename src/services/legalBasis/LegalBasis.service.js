@@ -730,6 +730,114 @@ class LegalBasisService {
   }
 
   /**
+ * Retrieves legal basis entries filtered by subject, and optionally by aspects, state, municipalities, and jurisdiction.
+ *
+ * Applies validation rules based on the selected jurisdiction:
+ * - "Federal": state and municipalities must be empty.
+ * - "Estatal": state must be provided, municipalities must be empty.
+ * - "Local": both state and municipalities must be provided.
+ *
+ * @param {number} subjectId - The subject ID to filter by.
+ * @param {Array<number>} [aspectIds=[]] - Optional array of aspect IDs to further filter by.
+ * @param {string|null} [state=null] - Optional state filter.
+ * @param {Array<string>} [municipalities=[]] - Optional municipalities filter.
+ * @param {string|null} [jurisdiction=null] - Optional jurisdiction filter (Federal, Estatal, Local).
+ * @returns {Promise<Array<LegalBasis>>} - A list of legal basis entries matching the filters.
+ * @throws {ErrorUtils} - If validation fails or query errors occur.
+ */
+  static async getBySubjectAspectStateMunicipality (subjectId, aspectIds = [], state = null, municipalities = [], jurisdiction = null) {
+    try {
+      const subject = await SubjectsRepository.findById(subjectId)
+      if (!subject) {
+        throw new ErrorUtils(404, 'Subject not found')
+      }
+      if (aspectIds.length > 0) {
+        const existingAspects = await AspectsRepository.findByIds(aspectIds)
+        if (existingAspects.length !== aspectIds.length) {
+          const notFoundIds = aspectIds.filter(
+            (id) => !existingAspects.some((aspect) => aspect.id === id)
+          )
+          throw new ErrorUtils(404, 'Aspects not found for IDs', { notFoundIds })
+        }
+      }
+      if (!jurisdiction) {
+        throw new ErrorUtils(400, 'Jurisdiction is required')
+      }
+
+      switch (jurisdiction) {
+        case 'Federal':
+          if (state || (municipalities && municipalities.length > 0)) {
+            throw new ErrorUtils(400, 'Federal jurisdiction should not have state or municipalities')
+          }
+          break
+        case 'Estatal':
+          if (!state) {
+            throw new ErrorUtils(400, 'Estatal jurisdiction requires state')
+          }
+          if (municipalities && municipalities.length > 0) {
+            throw new ErrorUtils(400, 'Estatal jurisdiction should not include municipalities')
+          }
+          break
+        case 'Local':
+          if (!state || !municipalities || municipalities.length === 0) {
+            throw new ErrorUtils(400, 'Local jurisdiction requires state and at least one municipality')
+          }
+          break
+        default:
+          throw new ErrorUtils(400, 'Invalid jurisdiction')
+      }
+      const legalBasis = await LegalBasisRepository.findByIdBySubjectAspectStateMunicipality(
+        subjectId,
+        aspectIds,
+        state,
+        municipalities,
+        jurisdiction
+      )
+      if (!legalBasis) return []
+      const legalBases = await Promise.all(
+        legalBasis.map(async (legalBasis) => {
+          let documentUrl = null
+          if (legalBasis.url) {
+            documentUrl = await FileService.getFile(legalBasis.url)
+          }
+
+          let formattedLastReform = null
+          if (legalBasis.lastReform) {
+            formattedLastReform = format(
+              new Date(legalBasis.lastReform),
+              'dd-MM-yyyy',
+              { locale: es }
+            )
+          }
+          return {
+            id: legalBasis.id,
+            legal_name: legalBasis.legal_name,
+            subject: legalBasis.subject,
+            aspects: legalBasis.aspects,
+            classification: legalBasis.classification,
+            jurisdiction: legalBasis.jurisdiction,
+            state: legalBasis.state,
+            municipality: legalBasis.municipality,
+            last_reform: formattedLastReform,
+            abbreviation: legalBasis.abbreviation,
+            url: documentUrl,
+            fileKey: legalBasis.url
+          }
+        })
+      )
+      return legalBases
+    } catch (error) {
+      if (error instanceof ErrorUtils) {
+        throw error
+      }
+      throw new ErrorUtils(
+        500,
+        'Failed to retrieve legal basis records by subject, aspects, state, municipality, and jurisdiction'
+      )
+    }
+  }
+
+  /**
    * Retrieves legal basis entries filtered by a date range for the last_reform.
    * Both 'from' and 'to' are optional. If provided, they can be in 'YYYY-MM-DD' or 'DD-MM-YYYY'.
    *
