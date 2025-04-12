@@ -867,73 +867,38 @@ class LegalBasisRepository {
   }
 
   /**
-   * Retrieves legal basis records filtered by subject, and optionally by aspects, state, municipalities, and jurisdiction.
-   *
-   * This function supports dynamic filtering based on the following criteria:
-   * - `subjectId` (required): Only legal_basis records belonging to this subject will be returned.
-   * - `aspectIds` (optional): Only legal_basis entries associated with these aspect IDs will be included.
-   * - `state` (optional): If provided, filters legal_basis by exact state match.
-   * - `municipalities` (optional): If provided, filters legal_basis by matching any of the given municipalities.
-   * - `jurisdiction` (optional): If provided, adds jurisdiction-specific filters.
-   *
-   * The resulting legal_basis entries include their associated subject and all linked aspects.
+   * Retrieves legal basis records filtered by a specific subject.
+   * @param {number} subjectId - The subject ID to filter by.
+   * @returns {Promise<Array<LegalBasis|null>>} - A list of legal basis records filtered by the subject.
+   * @throws {ErrorUtils} - If an error occurs during retrieval.
    */
-  static async findByIdBySubjectAspectStateMunicipality (subjectId, aspectIds = [], state = null, municipalities = [], jurisdiction = null) {
-    let query = `
-      SELECT
-        lb.id,
-        lb.legal_name,
-        lb.abbreviation,
-        lb.classification,
-        lb.jurisdiction,
-        lb.state,
-        lb.municipality,
-        lb.last_reform,
-        lb.url,
-        s.id AS subject_id,
-        s.subject_name,
-        a.id AS aspect_id,
-        a.aspect_name
-      FROM legal_basis lb
-      JOIN subjects s ON lb.subject_id = s.id
-      LEFT JOIN legal_basis_subject_aspect lbsa ON lb.id = lbsa.legal_basis_id
-      LEFT JOIN aspects a ON lbsa.aspect_id = a.id
-      WHERE lb.subject_id = ?
-    `
-    const values = [subjectId]
-    if (jurisdiction) {
-      query += ' AND lb.jurisdiction = ?'
-      values.push(jurisdiction)
-      if (jurisdiction === 'Federal') {
-        query += ' AND lb.state IS NULL AND lb.municipality IS NULL'
-      }
-      if (jurisdiction === 'Estatal') {
-        query += ' AND lb.state IS NOT NULL AND lb.municipality IS NULL'
-      }
-      if (jurisdiction === 'Local') {
-        query += ' AND lb.state IS NOT NULL AND lb.municipality IS NOT NULL'
-      }
-    }
-    if (state) {
-      query += ' AND lb.state = ?'
-      values.push(state)
-    }
-    if (municipalities.length > 0) {
-      const placeholders = municipalities.map(() => '?').join(', ')
-      query += ` AND lb.municipality IN (${placeholders})`
-      values.push(...municipalities)
-    }
-    if (aspectIds.length > 0) {
-      const placeholders = aspectIds.map(() => '?').join(', ')
-      query += ` AND a.id IN (${placeholders})`
-      values.push(...aspectIds)
-    }
+  static async findBySubject (subjectId) {
+    const query = `
+    SELECT 
+      legal_basis.id, 
+      legal_basis.legal_name, 
+      legal_basis.abbreviation, 
+      legal_basis.classification, 
+      legal_basis.jurisdiction, 
+      legal_basis.state, 
+      legal_basis.municipality, 
+      legal_basis.last_reform, 
+      legal_basis.url, 
+      subjects.id AS subject_id, 
+      subjects.subject_name AS subject_name,
+      aspects.id AS aspect_id, 
+      aspects.aspect_name AS aspect_name
+    FROM legal_basis
+    JOIN subjects ON legal_basis.subject_id = subjects.id
+    LEFT JOIN legal_basis_subject_aspect ON legal_basis.id = legal_basis_subject_aspect.legal_basis_id
+    LEFT JOIN aspects ON legal_basis_subject_aspect.aspect_id = aspects.id
+    WHERE legal_basis.subject_id = ?
+  `
     try {
-      const [rows] = await pool.query(query, values)
+      const [rows] = await pool.query(query, [subjectId])
       if (rows.length === 0) return null
-
       const legalBasisMap = new Map()
-      rows.forEach(row => {
+      rows.forEach((row) => {
         if (!legalBasisMap.has(row.id)) {
           legalBasisMap.set(row.id, {
             id: row.id,
@@ -959,9 +924,10 @@ class LegalBasisRepository {
           })
         }
       })
+
       const legalBasisArray = Array.from(legalBasisMap.values())
       return legalBasisArray.map(
-        legalBasis =>
+        (legalBasis) =>
           new LegalBasis(
             legalBasis.id,
             legalBasis.legal_name,
@@ -977,8 +943,8 @@ class LegalBasisRepository {
           )
       )
     } catch (error) {
-      console.error('Error in multiple filter search:', error.message)
-      throw new ErrorUtils(500, 'Error retrieving legal basis with multiple filters')
+      console.error('Error retrieving legal basis by subject:', error.message)
+      throw new ErrorUtils(500, 'Error retrieving legal basis by subject')
     }
   }
 
@@ -1180,6 +1146,131 @@ class LegalBasisRepository {
         500,
         'Error retrieving legal basis by last reform range'
       )
+    }
+  }
+
+  /**
+ * Retrieves legal basis records using any combination of filters provided.
+ *
+ * @param {Object} filters - The filtering criteria.
+ * @param {string} [filters.jurisdiction] - Jurisdiction value to filter by.
+ * @param {string} [filters.state] - State name to filter by.
+ * @param {Array<string>} [filters.municipalities] - List of municipalities to filter by.
+ * @param {number} [filters.subjectId] - Subject ID to filter by.
+ * @param {Array<number>} [filters.aspectIds] - List of aspect IDs to filter by.
+ *
+ * @returns {Promise<Array<LegalBasis>>} - A list of legal basis records matching the provided filters.
+ * @throws {ErrorUtils} - If an error occurs during retrieval.
+ */
+  static async findLegalBasisByCriteria (filters = {}) {
+    const {
+      jurisdiction,
+      state,
+      municipalities,
+      subjectId,
+      aspectIds
+    } = filters
+
+    let query = `
+    SELECT
+      lb.id,
+      lb.legal_name,
+      lb.abbreviation,
+      lb.classification,
+      lb.jurisdiction,
+      lb.state,
+      lb.municipality,
+      lb.last_reform,
+      lb.url,
+      s.id AS subject_id,
+      s.subject_name,
+      a.id AS aspect_id,
+      a.aspect_name
+    FROM legal_basis lb
+    JOIN subjects s ON lb.subject_id = s.id
+    LEFT JOIN legal_basis_subject_aspect lbsa ON lb.id = lbsa.legal_basis_id
+    LEFT JOIN aspects a ON lbsa.aspect_id = a.id
+    WHERE 1 = 1
+  `
+    const values = []
+
+    if (jurisdiction) {
+      query += ' AND lb.jurisdiction = ?'
+      values.push(jurisdiction)
+    }
+
+    if (state) {
+      query += ' AND lb.state = ?'
+      values.push(state)
+    }
+
+    if (municipalities && municipalities.length > 0) {
+      const placeholders = municipalities.map(() => '?').join(', ')
+      query += ` AND lb.municipality IN (${placeholders})`
+      values.push(...municipalities)
+    }
+
+    if (subjectId) {
+      query += ' AND lb.subject_id = ?'
+      values.push(subjectId)
+    }
+
+    if (aspectIds && aspectIds.length > 0) {
+      const placeholders = aspectIds.map(() => '?').join(', ')
+      query += ` AND a.id IN (${placeholders})`
+      values.push(...aspectIds)
+    }
+
+    try {
+      const [rows] = await pool.query(query, values)
+      if (rows.length === 0) return null
+
+      const legalBasisMap = new Map()
+
+      rows.forEach(row => {
+        if (!legalBasisMap.has(row.id)) {
+          legalBasisMap.set(row.id, {
+            id: row.id,
+            legal_name: row.legal_name,
+            abbreviation: row.abbreviation,
+            classification: row.classification,
+            jurisdiction: row.jurisdiction,
+            state: row.state,
+            municipality: row.municipality,
+            lastReform: row.last_reform,
+            url: row.url,
+            subject: {
+              subject_id: row.subject_id,
+              subject_name: row.subject_name
+            },
+            aspects: []
+          })
+        }
+
+        if (row.aspect_id !== null) {
+          legalBasisMap.get(row.id).aspects.push({
+            aspect_id: row.aspect_id,
+            aspect_name: row.aspect_name
+          })
+        }
+      })
+
+      return Array.from(legalBasisMap.values()).map(legalBasis => new LegalBasis(
+        legalBasis.id,
+        legalBasis.legal_name,
+        legalBasis.subject,
+        legalBasis.aspects,
+        legalBasis.abbreviation,
+        legalBasis.classification,
+        legalBasis.jurisdiction,
+        legalBasis.state,
+        legalBasis.municipality,
+        legalBasis.lastReform,
+        legalBasis.url
+      ))
+    } catch (error) {
+      console.error('Error in filter search:', error.message)
+      throw new ErrorUtils(500, 'Error retrieving legal basis with filters')
     }
   }
 

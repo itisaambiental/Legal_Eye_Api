@@ -14,36 +14,37 @@ import { es } from 'date-fns/locale'
  * Service class for handling Legal Basis operations.
  */
 class LegalBasisService {
-/**
- * @typedef {Object} LegalBasis
- * @property {number} id - The unique identifier of the legal basis.
- * @property {string} legal_name - The name of the legal document.
- * @property {Object} subject - The subject associated with the legal basis.
- * @property {number} subject.subject_id - The ID of the subject.
- * @property {string} subject.subject_name - The name of the subject.
- * @property {Array<Object>} aspects - The aspects associated with the legal basis.
- * @property {number} aspects[].aspect_id - The ID of the aspect.
- * @property {string} aspects[].aspect_name - The name of the aspect.
- * @property {string} abbreviation - The abbreviation of the legal document.
- * @property {string} classification - The classification of the legal document.
- * @property {string} jurisdiction - The jurisdiction ('Estatal', 'Federal', etc.).
- * @property {string} [state] - The state associated with the legal basis, if applicable.
- * @property {string} [municipality] - The municipality associated with the legal basis, if applicable.
- * @property {string|null} lastReform - The date of the last reform (formatted as dd-MM-yyyy or ISO).
- * @property {string|null} url - The URL to the legal document.
- */
+  /**
+   * @typedef {Object} LegalBasis
+   * @property {number} id - The unique identifier of the legal basis.
+   * @property {string} legal_name - The name of the legal document.
+   * @property {Object} subject - The subject associated with the legal basis.
+   * @property {number} subject.subject_id - The ID of the subject.
+   * @property {string} subject.subject_name - The name of the subject.
+   * @property {Array<Object>} aspects - The aspects associated with the legal basis.
+   * @property {number} aspects[].aspect_id - The ID of the aspect.
+   * @property {string} aspects[].aspect_name - The name of the aspect.
+   * @property {string} abbreviation - The abbreviation of the legal document.
+   * @property {string} classification - The classification of the legal document.
+   * @property {string} jurisdiction - The jurisdiction ('Estatal', 'Federal', etc.).
+   * @property {string} [state] - The state associated with the legal basis, if applicable.
+   * @property {string} [municipality] - The municipality associated with the legal basis, if applicable.
+   * @property {string|null} lastReform - The date of the last reform (formatted as dd-MM-yyyy or ISO).
+   * @property {string|null} url - The URL to the legal document.
+   * @property {string|null} fileKey - The key of the file in S3 system.
+   */
 
   /**
- * @typedef {Object} CreatedLegalBasis
- * @property {string|number|null} jobId - The ID of the article extraction job, if created; otherwise, null.
- * @property {LegalBasis & { fileKey?: string|null }} legalBasis - The object containing the created legal basis information.
- */
+   * @typedef {Object} CreatedLegalBasis
+   * @property {string|number|null} jobId - The ID of the article extraction job, if created; otherwise, null.
+   * @property {LegalBasis & { fileKey?: string|null }} legalBasis - The object containing the created legal basis information.
+   */
 
   /**
- * @typedef {Object} UpdatedLegalBasis
- * @property {string|number|null} jobId - The ID of the article extraction job, if updated; otherwise, null.
- * @property {LegalBasis & { fileKey?: string|null }} legalBasis - The object containing the updated legal basis information.
- */
+   * @typedef {Object} UpdatedLegalBasis
+   * @property {string|number|null} jobId - The ID of the article extraction job, if updated; otherwise, null.
+   * @property {LegalBasis & { fileKey?: string|null }} legalBasis - The object containing the updated legal basis information.
+   */
 
   /**
    * Creates a new legal basis entry.
@@ -730,77 +731,45 @@ class LegalBasisService {
   }
 
   /**
- * Retrieves legal basis entries filtered by subject, and optionally by aspects, state, municipalities, and jurisdiction.
- *
- * Applies validation rules based on the selected jurisdiction:
- * - "Federal": state and municipalities must be empty.
- * - "Estatal": state must be provided, municipalities must be empty.
- * - "Local": both state and municipalities must be provided.
- *
- * @param {number} subjectId - The subject ID to filter by.
- * @param {Array<number>} [aspectIds=[]] - Optional array of aspect IDs to further filter by.
- * @param {string|null} [state=null] - Optional state filter.
- * @param {Array<string>} [municipalities=[]] - Optional municipalities filter.
- * @param {string|null} [jurisdiction=null] - Optional jurisdiction filter (Federal, Estatal, Local).
- * @returns {Promise<Array<LegalBasis>>} - A list of legal basis entries matching the filters.
- * @throws {ErrorUtils} - If validation fails or query errors occur.
- */
-  static async getBySubjectAspectStateMunicipality (subjectId, aspectIds = [], state = null, municipalities = [], jurisdiction = null) {
+   * Retrieves legal basis entries by dynamic filters.
+   *
+   * @param {Object} filters - The filtering criteria.
+   * @param {string} [filters.jurisdiction] - Optional jurisdiction value.
+   * @param {string} [filters.state] - Optional state name.
+   * @param {Array<string>} [filters.municipalities] - Optional array of municipalities.
+   * @param {number} [filters.subjectId] - Optional subject ID.
+   * @param {Array<number>} [filters.aspectIds] - Optional array of aspect IDs.
+   * @returns {Promise<Array<LegalBasis>>} - A list of filtered and formatted legal basis records.
+   * @throws {ErrorUtils} - If an error occurs during retrieval.
+   */
+  static async getLegalBasisByCriteria (filters = {}) {
     try {
-      const subject = await SubjectsRepository.findById(subjectId)
-      if (!subject) {
-        throw new ErrorUtils(404, 'Subject not found')
-      }
-      if (aspectIds.length > 0) {
-        const existingAspects = await AspectsRepository.findByIds(aspectIds)
-        if (existingAspects.length !== aspectIds.length) {
-          const notFoundIds = aspectIds.filter(
-            (id) => !existingAspects.some((aspect) => aspect.id === id)
-          )
-          throw new ErrorUtils(404, 'Aspects not found for IDs', { notFoundIds })
-        }
-      }
-      if (!jurisdiction) {
-        throw new ErrorUtils(400, 'Jurisdiction is required')
-      }
-      switch (jurisdiction) {
-        case 'Federal':
-          if (state || (municipalities && municipalities.length > 0)) {
-            throw new ErrorUtils(400, 'Federal jurisdiction should not have state or municipalities')
-          }
-          break
-        case 'Estatal':
-          if (!state) {
-            throw new ErrorUtils(400, 'Estatal jurisdiction requires state')
-          }
-          if (municipalities && municipalities.length > 0) {
-            throw new ErrorUtils(400, 'Estatal jurisdiction should not include municipalities')
-          }
-          break
-        case 'Local':
-          if (!state || !municipalities || municipalities.length === 0) {
-            throw new ErrorUtils(400, 'Local jurisdiction requires state and at least one municipality')
-          }
-          break
-        default:
-          throw new ErrorUtils(400, 'Invalid jurisdiction')
-      }
-      const legalBasis = await LegalBasisRepository.findByIdBySubjectAspectStateMunicipality(
-        subjectId,
-        aspectIds,
+      const {
+        jurisdiction,
         state,
         municipalities,
-        jurisdiction
-      )
-      if (!legalBasis) {
-        return []
-      }
+        subjectId,
+        aspectIds
+      } = filters
+
+      const legalBasis =
+        await LegalBasisRepository.findLegalBasisByCriteria({
+          jurisdiction,
+          state,
+          municipalities,
+          subjectId,
+          aspectIds
+        })
+
+      if (!legalBasis) return []
+
       const legalBases = await Promise.all(
         legalBasis.map(async (legalBasis) => {
           let documentUrl = null
           if (legalBasis.url) {
             documentUrl = await FileService.getFile(legalBasis.url)
           }
+
           let formattedLastReform = null
           if (legalBasis.lastReform) {
             formattedLastReform = format(
@@ -809,6 +778,7 @@ class LegalBasisService {
               { locale: es }
             )
           }
+
           return {
             id: legalBasis.id,
             legal_name: legalBasis.legal_name,
@@ -825,14 +795,14 @@ class LegalBasisService {
           }
         })
       )
+
       return legalBases
     } catch (error) {
-      if (error instanceof ErrorUtils) {
-        throw error
-      }
+      if (error instanceof ErrorUtils) throw error
+
       throw new ErrorUtils(
         500,
-        'Failed to retrieve legal basis records by subject, aspects, state, municipality, and jurisdiction'
+        'Failed to retrieve legal basis records with filters'
       )
     }
   }
@@ -845,7 +815,7 @@ class LegalBasisService {
    * @param {string} [from] - Start date.
    * @param {string} [to] - End date.
    * @returns {Promise<Array<LegalBasis>>} - A list of legal basis entries filtered by the date range.
-   * @throws {ErrorUtils} - If an error occurs during retrieval or date validation.
+   * @throws {ErrorUtils} - If an error occurs during retrieval.
    */
   static async getByLastReform (from, to) {
     try {
@@ -1067,24 +1037,34 @@ class LegalBasisService {
   }
 
   /**
- * Deletes a Legal base by ID.
- * @param {number} legalBasisId - The ID of the Legal base to delete.
- * @returns {Promise<{ success: boolean }>} - An object indicating the deletion was successful.
- * @throws {ErrorUtils} - If an error occurs during deletion.
- */
+   * Deletes a Legal base by ID.
+   * @param {number} legalBasisId - The ID of the Legal base to delete.
+   * @returns {Promise<{ success: boolean }>} - An object indicating the deletion was successful.
+   * @throws {ErrorUtils} - If an error occurs during deletion.
+   */
   static async deleteById (legalBasisId) {
     try {
       const legalBasis = await LegalBasisRepository.findById(legalBasisId)
       if (!legalBasis) {
         throw new ErrorUtils(404, 'LegalBasis not found')
       }
-      const { hasPendingJobs: hasPendingArticleExtractionJobs } = await extractArticles.hasPendingExtractionJobs(legalBasisId)
+      const { hasPendingJobs: hasPendingArticleExtractionJobs } =
+        await extractArticles.hasPendingExtractionJobs(legalBasisId)
       if (hasPendingArticleExtractionJobs) {
-        throw new ErrorUtils(409, 'Cannot delete LegalBasis with pending Article Extraction jobs')
+        throw new ErrorUtils(
+          409,
+          'Cannot delete LegalBasis with pending Article Extraction jobs'
+        )
       }
-      const { hasPendingJobs: hasPendingRequirementIdentificationJobs } = await RequirementsIdentificationService.hasPendingLegalBasisJobs(legalBasisId)
+      const { hasPendingJobs: hasPendingRequirementIdentificationJobs } =
+        await RequirementsIdentificationService.hasPendingLegalBasisJobs(
+          legalBasisId
+        )
       if (hasPendingRequirementIdentificationJobs) {
-        throw new ErrorUtils(409, 'Cannot delete LegalBasis with pending Requirement Identification jobs')
+        throw new ErrorUtils(
+          409,
+          'Cannot delete LegalBasis with pending Requirement Identification jobs'
+        )
       }
       if (legalBasis.url) {
         await FileService.deleteFile(legalBasis.url)
@@ -1103,11 +1083,11 @@ class LegalBasisService {
   }
 
   /**
- * Deletes multiple Legal Basis records by their IDs.
- * @param {Array<number>} legalBasisIds - An array of IDs of the Legal Basis records to delete.
- * @returns {Promise<{ success: boolean }>} - An object indicating the deletion was successful.
- * @throws {ErrorUtils} - If any error occurs during the deletion process.
- */
+   * Deletes multiple Legal Basis records by their IDs.
+   * @param {Array<number>} legalBasisIds - An array of IDs of the Legal Basis records to delete.
+   * @returns {Promise<{ success: boolean }>} - An object indicating the deletion was successful.
+   * @throws {ErrorUtils} - If any error occurs during the deletion process.
+   */
   static async deleteBatch (legalBasisIds) {
     try {
       const legalBasis = await LegalBasisRepository.findByIds(legalBasisIds)
@@ -1115,15 +1095,21 @@ class LegalBasisService {
         const notFoundIds = legalBasisIds.filter(
           (id) => !legalBasis.some((legalBase) => legalBase.id === id)
         )
-        throw new ErrorUtils(404, 'LegalBasis not found for IDs', { notFoundIds })
+        throw new ErrorUtils(404, 'LegalBasis not found for IDs', {
+          notFoundIds
+        })
       }
       const pendingArticleExtractionJobs = []
       const pendingRequirementIdentificationJobs = []
       const urlsToDelete = []
       await Promise.all(
         legalBasis.map(async (legalBase) => {
-          const { hasPendingJobs: hasPendingArticleExtractionJobs } = await extractArticles.hasPendingExtractionJobs(legalBase.id)
-          const { hasPendingJobs: hasPendingRequirementIdentificationJobs } = await RequirementsIdentificationService.hasPendingLegalBasisJobs(legalBase.id)
+          const { hasPendingJobs: hasPendingArticleExtractionJobs } =
+            await extractArticles.hasPendingExtractionJobs(legalBase.id)
+          const { hasPendingJobs: hasPendingRequirementIdentificationJobs } =
+            await RequirementsIdentificationService.hasPendingLegalBasisJobs(
+              legalBase.id
+            )
           if (hasPendingArticleExtractionJobs) {
             pendingArticleExtractionJobs.push({
               id: legalBase.id,
@@ -1155,10 +1141,10 @@ class LegalBasisService {
           { legalBases: pendingRequirementIdentificationJobs }
         )
       }
-      await Promise.all(
-        urlsToDelete.map((url) => FileService.deleteFile(url))
+      await Promise.all(urlsToDelete.map((url) => FileService.deleteFile(url)))
+      const legalBasisDeleted = await LegalBasisRepository.deleteBatch(
+        legalBasisIds
       )
-      const legalBasisDeleted = await LegalBasisRepository.deleteBatch(legalBasisIds)
       if (!legalBasisDeleted) {
         throw new ErrorUtils(404, 'LegalBasis not found')
       }
@@ -1167,7 +1153,10 @@ class LegalBasisService {
       if (error instanceof ErrorUtils) {
         throw error
       }
-      throw new ErrorUtils(500, 'Unexpected error during batch Legal Basis deletion')
+      throw new ErrorUtils(
+        500,
+        'Unexpected error during batch Legal Basis deletion'
+      )
     }
   }
 }

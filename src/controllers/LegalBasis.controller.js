@@ -270,8 +270,7 @@ export const getLegalBasisByState = async (req, res) => {
  */
 export const getLegalBasisByStateAndMunicipalities = async (req, res) => {
   const { userId } = req
-  const { state } = req.query
-  let { municipalities } = req.query
+  const { state, municipalities } = req.query
   if (municipalities && municipalities.length > 0 && !state) {
     return res.status(400).json({
       message: 'State is required if municipalities are provided'
@@ -282,7 +281,7 @@ export const getLegalBasisByStateAndMunicipalities = async (req, res) => {
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-    municipalities = Array.isArray(municipalities)
+    const municipalitiesList = Array.isArray(municipalities)
       ? municipalities
         .map((municipality) => String(municipality).trim())
         .filter((municipality) => municipality.length > 0)
@@ -294,7 +293,7 @@ export const getLegalBasisByStateAndMunicipalities = async (req, res) => {
         : []
     const legalBasis = await LegalBasisService.getByStateAndMunicipalities(
       state,
-      municipalities
+      municipalitiesList
     )
     return res.status(200).json({ legalBasis })
   } catch (error) {
@@ -345,21 +344,20 @@ export const getLegalBasisBySubject = async (req, res) => {
  */
 export const getLegalBasisBySubjectAndAspects = async (req, res) => {
   const { userId } = req
-  const { subjectId } = req.params
-  let { aspectIds } = req.query
+  const { subjectId, aspectIds } = req.params
   try {
     const isAuthorized = await UserService.userExists(userId)
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-    aspectIds = Array.isArray(aspectIds)
+    const aspects = Array.isArray(aspectIds)
       ? aspectIds.map(Number).filter(Number.isInteger)
       : typeof aspectIds === 'string'
         ? aspectIds.split(',').map(Number).filter(Number.isInteger)
         : []
     const legalBasis = await LegalBasisService.getBySubjectAndAspects(
       subjectId,
-      aspectIds
+      aspects
     )
     return res.status(200).json({ legalBasis })
   } catch (error) {
@@ -374,38 +372,44 @@ export const getLegalBasisBySubjectAndAspects = async (req, res) => {
 }
 
 /**
- * Retrieves legal basis entries by subject, and optionally filtered by aspects, state, municipalities, and jurisdiction.
- * @function getLegalBasisBySubjectAndFilters
+ * Retrieves legal basis entries by filters.
+ * @function getLegalBasisByCriteria
  * @param {import('express').Request} req - Request object, expects { subjectId, aspectIds, state, municipalities, jurisdiction } in query parameters.
  * @param {import('express').Response} res - Response object.
  * @returns {Object} - A list of filtered legal basis entries.
  */
-export const getLegalBasisBySubjectAndFilters = async (req, res) => {
+export const getLegalBasisByCriteria = async (req, res) => {
   const { userId } = req
-  const { subjectId, state, jurisdiction } = req.query
-  let { aspectIds, municipalities } = req.query
-  aspectIds = Array.isArray(aspectIds)
-    ? aspectIds.map((id) => parseInt(id)).filter((id) => !isNaN(id))
-    : typeof aspectIds === 'string'
-      ? aspectIds.split(',').map((id) => parseInt(id)).filter((id) => !isNaN(id))
-      : []
-  municipalities = Array.isArray(municipalities)
-    ? municipalities.map((m) => String(m).trim()).filter((m) => m.length > 0)
-    : typeof municipalities === 'string'
-      ? municipalities.split(',').map((m) => String(m).trim()).filter((m) => m.length > 0)
-      : []
+  const {
+    jurisdiction,
+    state,
+    municipalities,
+    subjectId,
+    aspectIds
+  } = req.query
   try {
     const isAuthorized = await UserService.userExists(userId)
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-    const legalBasis = await LegalBasisService.getBySubjectAspectStateMunicipality(
-      subjectId,
-      aspectIds,
+    const municipalitiesList = Array.isArray(municipalities)
+      ? municipalities.map((m) => String(m).trim()).filter(Boolean)
+      : typeof municipalities === 'string'
+        ? municipalities.split(',').map((m) => m.trim()).filter(Boolean)
+        : []
+
+    const aspects = Array.isArray(aspectIds)
+      ? aspectIds.map(Number).filter(Number.isInteger)
+      : typeof aspectIds === 'string'
+        ? aspectIds.split(',').map(Number).filter(Number.isInteger)
+        : []
+    const legalBasis = await LegalBasisService.getLegalBasisByCriteria({
+      jurisdiction,
       state,
-      municipalities,
-      jurisdiction
-    )
+      municipalities: municipalitiesList,
+      subjectId,
+      aspectIds: aspects
+    })
     return res.status(200).json({ legalBasis })
   } catch (error) {
     if (error instanceof ErrorUtils) {
