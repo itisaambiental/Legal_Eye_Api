@@ -33,7 +33,6 @@ class RequirementService {
   * @property {string} formatted_evidence - The formatted evidence.
   * @property {string} periodicity - The specific periodicity.
   * @property {string} specify_periodicity - The description of the specific periodicity.
-  * @property {string} requirement_type - The type of requirement.
  */
 
   /**
@@ -83,7 +82,6 @@ class RequirementService {
    * @param {string} requirement.evidence - 'Trámite', etc.
    * @param {string} requirement.specifyEvidence - The description of the specific evidence.
    * @param {string} requirement.periodicity - 'Anual', etc.
-   * @param {string} requirement.requirementType - The type of requirement.
    * @returns {Promise<Requirement>} - The created requirement.
    * @throws {ErrorUtils} - If an error occurs during validation or creation.
    */
@@ -514,32 +512,6 @@ class RequirementService {
   }
 
   /**
-   * Retrieves requirements filtered by a specific requirement type.
-   * @param {string} requirementType - The requirement type to filter by.
-   * @returns {Promise<Array<Requirement>>} - A list of Requirement instances matching the requirement type.
-   * @throws {ErrorUtils} - If an error occurs during retrieval.
-   */
-  static async getByRequirementType (requirementType) {
-    try {
-      const requirements = await RequirementRepository.findByRequirementType(
-        requirementType
-      )
-      if (!requirements) {
-        return []
-      }
-      return this._formatRequirementsListWithSpecificValues(requirements)
-    } catch (error) {
-      if (error instanceof ErrorUtils) {
-        throw error
-      }
-      throw new ErrorUtils(
-        500,
-        'Failed to retrieve requirements by requirement type'
-      )
-    }
-  }
-
-  /**
    * Updates an existing requirement by its ID.
    *
    * @param {number} requirementId - The ID of the requirement to update.
@@ -559,7 +531,6 @@ class RequirementService {
    * @param {string} requirement.specifyPeriodicity - The description of the specific periodicity (optional).
    * @param {string} [requirement.periodicity] - The updated periodicity (optional).
    * @param {string} requirement.specifyEvidence - The description of the specific evidence (optional).
-   * @param {string} [requirement.requirementType] - The updated requirement type (optional).
    * @returns {Promise<Requirement>} - The updated requirement.
    * @throws {ErrorUtils} - If an error occurs during validation or update.
    */

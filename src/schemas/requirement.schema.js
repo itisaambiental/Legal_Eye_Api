@@ -141,27 +141,7 @@ const requirementSchema = z
     periodicity: z.enum(['Anual', '2 años', 'Por evento', 'Única vez', 'Específica'], {
       message:
         'The periodicity must be one of the following: Anual, 2 años, Por evento, Única vez.'
-    }),
-
-    /**
-     * Type of the requirement.
-     * Must be one of the predefined options for requirement type.
-     */
-    requirementType: z.enum(
-      [
-        'Identificación Estatal',
-        'Identificación Federal',
-        'Identificación Local',
-        'Requerimiento Compuesto',
-        'Requerimiento Compuesto e Identificación',
-        'Requerimiento Estatal',
-        'Requerimiento Local'
-      ],
-      {
-        message:
-          'The requirement type must be one of the allowed options.'
-      }
-    )
+    })
   })
   .superRefine((data, context) => {
     /**

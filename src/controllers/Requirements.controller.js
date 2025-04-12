@@ -30,8 +30,7 @@ export const createRequirement = async (req, res) => {
     condition,
     evidence,
     specifyEvidence,
-    periodicity,
-    requirementType
+    periodicity
   } = req.body
   try {
     const isAuthorized = await UserService.userExists(userId)
@@ -52,8 +51,7 @@ export const createRequirement = async (req, res) => {
       condition,
       evidence,
       specifyEvidence,
-      periodicity,
-      requirementType
+      periodicity
     })
     return res.status(201).json({ requirement })
   } catch (error) {
@@ -466,33 +464,6 @@ export const getRequirementsByPeriodicity = async (req, res) => {
 }
 
 /**
- * Retrieves requirements filtered by a specific requirement type.
- * @function getRequirementsByRequirementType
- * @param {import('express').Request} req - Request object, expects { requirementType } in query.
- * @param {import('express').Response} res - Response object.
- * @returns {Array<Object>} - A list of requirements matching the requirement type.
- */
-export const getRequirementsByRequirementType = async (req, res) => {
-  const { userId } = req
-  const { requirementType } = req.query
-  try {
-    const isAuthorized = await UserService.userExists(userId)
-    if (!isAuthorized) {
-      return res.status(403).json({ message: 'Unauthorized' })
-    }
-    const requirements = await RequirementService.getByRequirementType(
-      requirementType
-    )
-    return res.status(200).json({ requirements })
-  } catch (error) {
-    if (error instanceof ErrorUtils) {
-      return res.status(error.status).json({ message: error.message })
-    }
-    return res.status(500).json({ message: 'Internal Server Error' })
-  }
-}
-
-/**
  * Updates an existing requirement by its ID.
  * @function updateRequirementById
  * @param {import('express').Request} req - Request object, expects { id } in params and updated requirement fields in body.
@@ -516,8 +487,7 @@ export const updateRequirement = async (req, res) => {
     condition,
     evidence,
     specifyEvidence,
-    periodicity,
-    requirementType
+    periodicity
   } = req.body
   try {
     const isAuthorized = await UserService.userExists(userId)
@@ -538,8 +508,7 @@ export const updateRequirement = async (req, res) => {
       condition,
       evidence,
       specifyEvidence,
-      periodicity,
-      requirementType
+      periodicity
     })
     return res.status(200).json({ requirement })
   } catch (error) {

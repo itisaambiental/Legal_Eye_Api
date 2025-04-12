@@ -23,7 +23,6 @@ class RequirementRepository {
  * @param {string} requirement.evidence
  * @param {string} requirement.specifyEvidence
  * @param {string} requirement.periodicity
- * @param {string} requirement.requirementType
  * @returns {Promise<Requirement>}
  * @throws {ErrorUtils}
  */
@@ -42,8 +41,7 @@ class RequirementRepository {
       condition,
       evidence,
       specifyEvidence,
-      periodicity,
-      requirementType
+      periodicity
     } = requirement
 
     const insertRequirementQuery = `
@@ -52,10 +50,9 @@ INSERT INTO requirements (
   mandatory_description, complementary_description, 
   mandatory_sentences, complementary_sentences, 
   mandatory_keywords, complementary_keywords, 
-  requirement_condition, evidence, specify_evidence, periodicity, 
-  requirement_type
+  requirement_condition, evidence, specify_evidence, periodicity
 )
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `
 
     try {
@@ -72,8 +69,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         condition,
         evidence,
         specifyEvidence,
-        periodicity,
-        requirementType
+        periodicity
       ])
       const requirementId = result.insertId
       if (aspectsIds && aspectsIds.length > 0) {
@@ -117,7 +113,6 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       r.evidence, 
       r.specify_evidence,
       r.periodicity, 
-      r.requirement_type,
       s.id AS subject_id, 
       s.subject_name AS subject_name,
       a.id AS aspect_id, 
@@ -150,7 +145,6 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             evidence: row.evidence,
             specify_evidence: row.specify_evidence,
             periodicity: row.periodicity,
-            requirement_type: row.requirement_type,
             subject: {
               subject_id: row.subject_id,
               subject_name: row.subject_name
@@ -183,8 +177,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           req.requirement_condition,
           req.evidence,
           req.specify_evidence,
-          req.periodicity,
-          req.requirement_type
+          req.periodicity
         )
       })
     } catch (error) {
@@ -259,7 +252,6 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       r.evidence, 
       r.specify_evidence,
       r.periodicity, 
-      r.requirement_type, 
       s.id AS subject_id, 
       s.subject_name AS subject_name, 
       a.id AS aspect_id, 
@@ -303,8 +295,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         requirement.requirement_condition,
         requirement.evidence,
         requirement.specify_evidence,
-        requirement.periodicity,
-        requirement.requirement_type
+        requirement.periodicity
       )
     } catch (error) {
       console.error('Error retrieving requirement by ID:', error.message)
@@ -336,7 +327,6 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       r.evidence, 
       r.specify_evidence,
       r.periodicity, 
-      r.requirement_type,
       s.id AS subject_id, 
       s.subject_name AS subject_name, 
       a.id AS aspect_id, 
@@ -370,7 +360,6 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             evidence: row.evidence,
             specify_evidence: row.specify_evidence,
             periodicity: row.periodicity,
-            requirement_type: row.requirement_type,
             subject: {
               subject_id: row.subject_id,
               subject_name: row.subject_name
@@ -403,8 +392,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           req.requirement_condition,
           req.evidence,
           req.specify_evidence,
-          req.periodicity,
-          req.requirement_type
+          req.periodicity
         )
       })
     } catch (error) {
@@ -436,7 +424,6 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       r.evidence, 
       r.specify_evidence,
       r.periodicity, 
-      r.requirement_type, 
       s.id AS subject_id, 
       s.subject_name AS subject_name, 
       a.id AS aspect_id, 
@@ -470,7 +457,6 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             evidence: row.evidence,
             specify_evidence: row.specify_evidence,
             periodicity: row.periodicity,
-            requirement_type: row.requirement_type,
             subject: {
               subject_id: row.subject_id,
               subject_name: row.subject_name
@@ -503,8 +489,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           req.requirement_condition,
           req.evidence,
           req.specify_evidence,
-          req.periodicity,
-          req.requirement_type
+          req.periodicity
         )
       })
     } catch (error) {
@@ -535,7 +520,6 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       r.evidence, 
       r.specify_evidence,
       r.periodicity, 
-      r.requirement_type, 
       s.id AS subject_id, 
       s.subject_name AS subject_name, 
       a.id AS aspect_id, 
@@ -569,7 +553,6 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             evidence: row.evidence,
             specify_evidence: row.specify_evidence,
             periodicity: row.periodicity,
-            requirement_type: row.requirement_type,
             subject: {
               subject_id: row.subject_id,
               subject_name: row.subject_name
@@ -602,8 +585,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           req.requirement_condition,
           req.evidence,
           req.specify_evidence,
-          req.periodicity,
-          req.requirement_type
+          req.periodicity
         )
       })
     } catch (error) {
@@ -634,7 +616,6 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       r.evidence, 
       r.specify_evidence,
       r.periodicity, 
-      r.requirement_type, 
       s.id AS subject_id, 
       s.subject_name AS subject_name, 
       a.id AS aspect_id, 
@@ -667,7 +648,6 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             evidence: row.evidence,
             specify_evidence: row.specify_evidence,
             periodicity: row.periodicity,
-            requirement_type: row.requirement_type,
             subject: {
               subject_id: row.subject_id,
               subject_name: row.subject_name
@@ -700,8 +680,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           req.requirement_condition,
           req.evidence,
           req.specify_evidence,
-          req.periodicity,
-          req.requirement_type
+          req.periodicity
         )
       )
     } catch (error) {
@@ -734,7 +713,6 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       r.evidence, 
       r.specify_evidence,
       r.periodicity, 
-      r.requirement_type, 
       s.id AS subject_id, 
       s.subject_name AS subject_name, 
       a.id AS aspect_id, 
@@ -775,7 +753,6 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             evidence: row.evidence,
             specify_evidence: row.specify_evidence,
             periodicity: row.periodicity,
-            requirement_type: row.requirement_type,
             subject: {
               subject_id: row.subject_id,
               subject_name: row.subject_name
@@ -808,8 +785,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           req.requirement_condition,
           req.evidence,
           req.specify_evidence,
-          req.periodicity,
-          req.requirement_type
+          req.periodicity
         )
       )
     } catch (error) {
@@ -840,7 +816,6 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       r.evidence, 
       r.specify_evidence,
       r.periodicity, 
-      r.requirement_type, 
       s.id AS subject_id, 
       s.subject_name AS subject_name, 
       a.id AS aspect_id, 
@@ -873,7 +848,6 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             evidence: row.evidence,
             specify_evidence: row.specify_evidence,
             periodicity: row.periodicity,
-            requirement_type: row.requirement_type,
             subject: {
               subject_id: row.subject_id,
               subject_name: row.subject_name
@@ -906,8 +880,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           req.requirement_condition,
           req.evidence,
           req.specify_evidence,
-          req.periodicity,
-          req.requirement_type
+          req.periodicity
         )
       )
     } catch (error) {
@@ -937,8 +910,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       r.requirement_condition, 
       r.evidence, 
       r.specify_evidence,
-      r.periodicity, 
-      r.requirement_type, 
+      r.periodicity,
       s.id AS subject_id, 
       s.subject_name AS subject_name, 
       a.id AS aspect_id, 
@@ -971,7 +943,6 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             evidence: row.evidence,
             specify_evidence: row.specify_evidence,
             periodicity: row.periodicity,
-            requirement_type: row.requirement_type,
             subject: {
               subject_id: row.subject_id,
               subject_name: row.subject_name
@@ -1004,8 +975,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           req.requirement_condition,
           req.evidence,
           req.specify_evidence,
-          req.periodicity,
-          req.requirement_type
+          req.periodicity
         )
       )
     } catch (error) {
@@ -1036,7 +1006,6 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       r.evidence, 
       r.specify_evidence,
       r.periodicity, 
-      r.requirement_type, 
       s.id AS subject_id, 
       s.subject_name AS subject_name, 
       a.id AS aspect_id, 
@@ -1068,7 +1037,6 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             evidence: row.evidence,
             specify_evidence: row.specify_evidence,
             periodicity: row.periodicity,
-            requirement_type: row.requirement_type,
             subject: {
               subject_id: row.subject_id,
               subject_name: row.subject_name
@@ -1101,8 +1069,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           req.requirement_condition,
           req.evidence,
           req.specify_evidence,
-          req.periodicity,
-          req.requirement_type)
+          req.periodicity)
       )
     } catch (error) {
       console.error('Error retrieving requirements by mandatory sentences:', error.message)
@@ -1132,7 +1099,6 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       r.evidence, 
       r.specify_evidence,
       r.periodicity, 
-      r.requirement_type, 
       s.id AS subject_id, 
       s.subject_name AS subject_name, 
       a.id AS aspect_id, 
@@ -1164,7 +1130,6 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             evidence: row.evidence,
             specify_evidence: row.specify_evidence,
             periodicity: row.periodicity,
-            requirement_type: row.requirement_type,
             subject: {
               subject_id: row.subject_id,
               subject_name: row.subject_name
@@ -1197,8 +1162,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           req.requirement_condition,
           req.evidence,
           req.specify_evidence,
-          req.periodicity,
-          req.requirement_type
+          req.periodicity
         )
       )
     } catch (error) {
@@ -1229,7 +1193,6 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       r.evidence, 
       r.specify_evidence,
       r.periodicity, 
-      r.requirement_type, 
       s.id AS subject_id, 
       s.subject_name AS subject_name, 
       a.id AS aspect_id, 
@@ -1262,7 +1225,6 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             evidence: row.evidence,
             specify_evidence: row.specify_evidence,
             periodicity: row.periodicity,
-            requirement_type: row.requirement_type,
             subject: {
               subject_id: row.subject_id,
               subject_name: row.subject_name
@@ -1295,8 +1257,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           req.requirement_condition,
           req.evidence,
           req.specify_evidence,
-          req.periodicity,
-          req.requirement_type
+          req.periodicity
         )
       )
     } catch (error) {
@@ -1327,7 +1288,6 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       r.evidence, 
       r.specify_evidence,
       r.periodicity, 
-      r.requirement_type, 
       s.id AS subject_id, 
       s.subject_name AS subject_name, 
       a.id AS aspect_id, 
@@ -1360,7 +1320,6 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             evidence: row.evidence,
             specify_evidence: row.specify_evidence,
             periodicity: row.periodicity,
-            requirement_type: row.requirement_type,
             subject: {
               subject_id: row.subject_id,
               subject_name: row.subject_name
@@ -1393,8 +1352,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           req.requirement_condition,
           req.evidence,
           req.specify_evidence,
-          req.periodicity,
-          req.requirement_type
+          req.periodicity
         )
       )
     } catch (error) {
@@ -1425,7 +1383,6 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       r.evidence, 
       r.specify_evidence,
       r.periodicity, 
-      r.requirement_type, 
       s.id AS subject_id, 
       s.subject_name AS subject_name, 
       a.id AS aspect_id, 
@@ -1459,7 +1416,6 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             evidence: row.evidence,
             specify_evidence: row.specify_evidence,
             periodicity: row.periodicity,
-            requirement_type: row.requirement_type,
             subject: {
               subject_id: row.subject_id,
               subject_name: row.subject_name
@@ -1492,8 +1448,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           req.requirement_condition,
           req.evidence,
           req.specify_evidence,
-          req.periodicity,
-          req.requirement_type
+          req.periodicity
         )
       )
     } catch (error) {
@@ -1524,7 +1479,6 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       r.evidence, 
       r.specify_evidence,
       r.periodicity, 
-      r.requirement_type, 
       s.id AS subject_id, 
       s.subject_name AS subject_name, 
       a.id AS aspect_id, 
@@ -1558,7 +1512,6 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             evidence: row.evidence,
             specify_evidence: row.specify_evidence,
             periodicity: row.periodicity,
-            requirement_type: row.requirement_type,
             subject: {
               subject_id: row.subject_id,
               subject_name: row.subject_name
@@ -1591,8 +1544,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           req.requirement_condition,
           req.evidence,
           req.specify_evidence,
-          req.periodicity,
-          req.requirement_type
+          req.periodicity
         )
       )
     } catch (error) {
@@ -1623,7 +1575,6 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       r.evidence, 
       r.specify_evidence,
       r.periodicity, 
-      r.requirement_type, 
       s.id AS subject_id, 
       s.subject_name AS subject_name, 
       a.id AS aspect_id, 
@@ -1657,7 +1608,6 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             evidence: row.evidence,
             specify_evidence: row.specify_evidence,
             periodicity: row.periodicity,
-            requirement_type: row.requirement_type,
             subject: {
               subject_id: row.subject_id,
               subject_name: row.subject_name
@@ -1690,112 +1640,12 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           req.requirement_condition,
           req.evidence,
           req.specify_evidence,
-          req.periodicity,
-          req.requirement_type
+          req.periodicity
         )
       )
     } catch (error) {
       console.error('Error retrieving requirements by periodicity:', error.message)
       throw new ErrorUtils(500, 'Error retrieving requirements by periodicity')
-    }
-  }
-
-  /**
- * Retrieves requirements filtered by a specific requirement type.
- * @param {string} requirementType - The requirement type to filter by.
- * @returns {Promise<Array<Requirement>|null>} - A list of Requirement instances matching the requirement type.
- * @throws {ErrorUtils} - If an error occurs during retrieval.
- */
-  static async findByRequirementType (requirementType) {
-    const query = `
-    SELECT 
-      r.id, 
-      r.requirement_number, 
-      r.requirement_name, 
-      r.mandatory_description, 
-      r.complementary_description, 
-      r.mandatory_sentences, 
-      r.complementary_sentences, 
-      r.mandatory_keywords, 
-      r.complementary_keywords, 
-      r.requirement_condition, 
-      r.evidence, 
-      r.specify_evidence,
-      r.periodicity, 
-      r.requirement_type, 
-      s.id AS subject_id, 
-      s.subject_name AS subject_name, 
-      a.id AS aspect_id, 
-      a.aspect_name AS aspect_name
-    FROM requirements r
-    JOIN subjects s ON r.subject_id = s.id
-    LEFT JOIN requirement_subject_aspect rsa ON r.id = rsa.requirement_id
-    LEFT JOIN aspects a ON rsa.aspect_id = a.id
-    WHERE r.requirement_type = ?
-  `
-
-    try {
-      const [rows] = await pool.query(query, [requirementType])
-      if (rows.length === 0) return null
-
-      const requirementsMap = new Map()
-
-      rows.forEach((row) => {
-        if (!requirementsMap.has(row.id)) {
-          requirementsMap.set(row.id, {
-            id: row.id,
-            requirement_number: row.requirement_number,
-            requirement_name: row.requirement_name,
-            mandatory_description: row.mandatory_description,
-            complementary_description: row.complementary_description,
-            mandatory_sentences: row.mandatory_sentences,
-            complementary_sentences: row.complementary_sentences,
-            mandatory_keywords: row.mandatory_keywords,
-            complementary_keywords: row.complementary_keywords,
-            requirement_condition: row.requirement_condition,
-            evidence: row.evidence,
-            specify_evidence: row.specify_evidence,
-            periodicity: row.periodicity,
-            requirement_type: row.requirement_type,
-            subject: {
-              subject_id: row.subject_id,
-              subject_name: row.subject_name
-            },
-            aspects: []
-          })
-        }
-
-        if (row.aspect_id !== null) {
-          requirementsMap.get(row.id).aspects.push({
-            aspect_id: row.aspect_id,
-            aspect_name: row.aspect_name
-          })
-        }
-      })
-
-      return Array.from(requirementsMap.values()).map(req =>
-        new Requirement(
-          req.id,
-          req.subject,
-          req.aspects,
-          req.requirement_number,
-          req.requirement_name,
-          req.mandatory_description,
-          req.complementary_description,
-          req.mandatory_sentences,
-          req.complementary_sentences,
-          req.mandatory_keywords,
-          req.complementary_keywords,
-          req.requirement_condition,
-          req.evidence,
-          req.specify_evidence,
-          req.periodicity,
-          req.requirement_type
-        )
-      )
-    } catch (error) {
-      console.error('Error retrieving requirements by requirement type:', error.message)
-      throw new ErrorUtils(500, 'Error retrieving requirements by requirement type')
     }
   }
 
@@ -1864,7 +1714,6 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
  * @param {string} requirement.evidence
  * @param {string} requirement.specifyEvidence
  * @param {string} requirement.periodicity
- * @param {string} [requirement.requirementType]
  * @returns {Promise<Requirement|null>} - The updated Requirement instance or null.
  * @throws {ErrorUtils} - If an error occurs during update.
  */
@@ -1883,8 +1732,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       condition,
       evidence,
       specifyEvidence,
-      periodicity,
-      requirementType
+      periodicity
     } = requirement
     const updateRequirementQuery = `
     UPDATE requirements SET
@@ -1900,8 +1748,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       requirement_condition = IFNULL(?, requirement_condition),
       evidence = IFNULL(?, evidence),
       specify_evidence = IFNULL(?, specify_evidence),
-      periodicity = IFNULL(?, periodicity),
-      requirement_type = IFNULL(?, requirement_type)
+      periodicity = IFNULL(?, periodicity)
     WHERE id = ?
   `
 
@@ -1938,7 +1785,6 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         evidence,
         specifyEvidence,
         periodicity,
-        requirementType,
         requirementId
       ])
 
