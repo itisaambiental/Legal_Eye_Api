@@ -384,65 +384,28 @@ export const getLegalBasisBySubjectAndFilters = async (req, res) => {
   const { userId } = req
   const { subjectId, state, jurisdiction } = req.query
   let { aspectIds, municipalities } = req.query
-
-  if (!subjectId) {
-    return res.status(400).json({ message: 'subjectId is required' })
-  }
-
-  // Normalize aspectIds
   aspectIds = Array.isArray(aspectIds)
     ? aspectIds.map((id) => parseInt(id)).filter((id) => !isNaN(id))
     : typeof aspectIds === 'string'
       ? aspectIds.split(',').map((id) => parseInt(id)).filter((id) => !isNaN(id))
       : []
-
-  // Normalize municipalities
   municipalities = Array.isArray(municipalities)
     ? municipalities.map((m) => String(m).trim()).filter((m) => m.length > 0)
     : typeof municipalities === 'string'
       ? municipalities.split(',').map((m) => String(m).trim()).filter((m) => m.length > 0)
       : []
-
-  // Jurisdiction-based validation
-  if (jurisdiction === 'Federal') {
-    if (state || municipalities.length > 0) {
-      return res.status(400).json({
-        message: 'Federal jurisdiction should not include state or municipalities'
-      })
-    }
-  } else if (jurisdiction === 'Estatal') {
-    if (!state) {
-      return res.status(400).json({
-        message: 'Estatal jurisdiction requires state'
-      })
-    }
-    if (municipalities.length > 0) {
-      return res.status(400).json({
-        message: 'Estatal jurisdiction should not include municipalities'
-      })
-    }
-  } else if (jurisdiction === 'Local') {
-    if (!state || municipalities.length === 0) {
-      return res.status(400).json({
-        message: 'Local jurisdiction requires both state and municipalities'
-      })
-    }
-  }
-
   try {
     const isAuthorized = await UserService.userExists(userId)
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-
     const legalBasis = await LegalBasisService.getBySubjectAspectStateMunicipality(
-      parseInt(subjectId),
+      subjectId,
       aspectIds,
-      state || null,
+      state,
       municipalities,
-      jurisdiction || null
+      jurisdiction
     )
-
     return res.status(200).json({ legalBasis })
   } catch (error) {
     if (error instanceof ErrorUtils) {

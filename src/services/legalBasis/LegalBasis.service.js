@@ -763,7 +763,6 @@ class LegalBasisService {
       if (!jurisdiction) {
         throw new ErrorUtils(400, 'Jurisdiction is required')
       }
-
       switch (jurisdiction) {
         case 'Federal':
           if (state || (municipalities && municipalities.length > 0)) {
@@ -793,14 +792,15 @@ class LegalBasisService {
         municipalities,
         jurisdiction
       )
-      if (!legalBasis) return []
+      if (!legalBasis) {
+        return []
+      }
       const legalBases = await Promise.all(
         legalBasis.map(async (legalBasis) => {
           let documentUrl = null
           if (legalBasis.url) {
             documentUrl = await FileService.getFile(legalBasis.url)
           }
-
           let formattedLastReform = null
           if (legalBasis.lastReform) {
             formattedLastReform = format(
