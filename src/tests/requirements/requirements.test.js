@@ -99,7 +99,6 @@ describe('Create a requirement', () => {
         ? requirementData.specifyEvidence
         : null,
       periodicity: requirementData.periodicity,
-      requirement_type: requirementData.requirementType,
       subject: {
         subject_id: createdSubjectId,
         subject_name: subjectName
@@ -515,27 +514,6 @@ describe('Create a requirement', () => {
         ])
       )
     })
-    test('Should return 400 if requirementType is not a valid value', async () => {
-      const requirementData = generateRequirementData({
-        subjectId: String(createdSubjectId),
-        aspectsIds: JSON.stringify([createdAspectIds[0]]),
-        requirementType: 'Invalid Type'
-      })
-      const response = await api
-        .post('/api/requirements')
-        .set('Authorization', `Bearer ${tokenAdmin}`)
-        .send(requirementData)
-        .expect(400)
-
-      expect(response.body.errors).toEqual(
-        expect.arrayContaining([
-          {
-            field: 'requirementType',
-            message: expect.stringMatching(/requirement type must be one of/i)
-          }
-        ])
-      )
-    })
     test('Should create requirement with specify_evidence when evidence is "Específica"', async () => {
       const requirementData = generateRequirementData({
         subjectId: String(createdSubjectId),
@@ -635,7 +613,6 @@ describe('Get All Requirements', () => {
         ? createdRequirement.specify_evidence
         : null,
       periodicity: createdRequirement.periodicity,
-      requirement_type: createdRequirement.requirement_type,
       subject: expect.objectContaining({
         subject_id: createdSubjectId,
         subject_name: subjectName
@@ -703,7 +680,6 @@ describe('Get Requirement By ID', () => {
         ? createdRequirement.specify_evidence
         : null,
       periodicity: createdRequirement.periodicity,
-      requirement_type: createdRequirement.requirement_type,
       subject: expect.objectContaining({
         subject_id: createdSubjectId,
         subject_name: subjectName
@@ -801,7 +777,6 @@ describe('Get Requirements By Number', () => {
         ? createdRequirement.specify_evidence
         : null,
       periodicity: createdRequirement.periodicity,
-      requirement_type: createdRequirement.requirement_type,
       subject: expect.objectContaining({
         subject_id: createdSubjectId,
         subject_name: subjectName
@@ -889,7 +864,6 @@ describe('Get Requirements By Name', () => {
         ? createdRequirement.specify_evidence
         : null,
       periodicity: createdRequirement.periodicity,
-      requirement_type: createdRequirement.requirement_type,
       subject: expect.objectContaining({
         subject_id: createdSubjectId,
         subject_name: subjectName
@@ -1048,7 +1022,6 @@ describe('Get Requirements By Subject And Aspects', () => {
         ? createdRequirement.specify_evidence
         : null,
       periodicity: createdRequirement.periodicity,
-      requirement_type: createdRequirement.requirement_type,
       subject: expect.objectContaining({
         subject_id: createdSubjectId,
         subject_name: subjectName
@@ -1164,7 +1137,6 @@ describe('Get Requirements By Mandatory Description', () => {
         ? createdRequirement.specify_evidence
         : null,
       periodicity: createdRequirement.periodicity,
-      requirement_type: createdRequirement.requirement_type,
       subject: expect.objectContaining({
         subject_id: createdSubjectId,
         subject_name: subjectName
@@ -1248,7 +1220,6 @@ describe('Get Requirements By Complementary Description', () => {
         ? createdRequirement.specify_evidence
         : null,
       periodicity: createdRequirement.periodicity,
-      requirement_type: createdRequirement.requirement_type,
       subject: expect.objectContaining({
         subject_id: createdSubjectId,
         subject_name: subjectName
@@ -1333,7 +1304,6 @@ describe('Get Requirements By Mandatory Sentences', () => {
         ? createdRequirement.specify_evidence
         : null,
       periodicity: createdRequirement.periodicity,
-      requirement_type: createdRequirement.requirement_type,
       subject: expect.objectContaining({
         subject_id: createdSubjectId,
         subject_name: subjectName
@@ -1419,7 +1389,6 @@ describe('Get Requirements By Complementary Sentences', () => {
         ? createdRequirement.specify_evidence
         : null,
       periodicity: createdRequirement.periodicity,
-      requirement_type: createdRequirement.requirement_type,
       subject: expect.objectContaining({
         subject_id: createdSubjectId,
         subject_name: subjectName
@@ -1507,7 +1476,6 @@ describe('Get Requirements By Mandatory Keywords', () => {
         ? createdRequirement.specify_evidence
         : null,
       periodicity: createdRequirement.periodicity,
-      requirement_type: createdRequirement.requirement_type,
       subject: expect.objectContaining({
         subject_id: createdSubjectId,
         subject_name: subjectName
@@ -1596,7 +1564,6 @@ describe('Get Requirements By Complementary Keywords', () => {
         ? createdRequirement.specify_evidence
         : null,
       periodicity: createdRequirement.periodicity,
-      requirement_type: createdRequirement.requirement_type,
       subject: expect.objectContaining({
         subject_id: createdSubjectId,
         subject_name: subjectName
@@ -1684,7 +1651,6 @@ describe('Get Requirements By Condition', () => {
         ? createdRequirement.specify_evidence
         : null,
       periodicity: createdRequirement.periodicity,
-      requirement_type: createdRequirement.requirement_type,
       subject: expect.objectContaining({
         subject_id: createdSubjectId,
         subject_name: subjectName
@@ -1772,7 +1738,6 @@ describe('Get Requirements By Evidence', () => {
         ? createdRequirement.specify_evidence
         : null,
       periodicity: createdRequirement.periodicity,
-      requirement_type: createdRequirement.requirement_type,
       subject: expect.objectContaining({
         subject_id: createdSubjectId,
         subject_name: subjectName
@@ -1860,7 +1825,6 @@ describe('Get Requirements By Periodicity', () => {
         ? createdRequirement.specify_evidence
         : null,
       periodicity: testPeriodicity,
-      requirement_type: createdRequirement.requirement_type,
       subject: expect.objectContaining({
         subject_id: createdSubjectId,
         subject_name: subjectName
@@ -1878,91 +1842,6 @@ describe('Get Requirements By Periodicity', () => {
     const response = await api
       .get('/api/requirements/search/periodicity')
       .query({ periodicity: testPeriodicity })
-      .expect(401)
-      .expect('Content-Type', /application\/json/)
-
-    expect(response.body.error).toMatch(/token missing or invalid/i)
-  })
-})
-
-describe('Get Requirements By Requirement Type', () => {
-  let createdRequirement
-  const testRequirementType = 'Identificación Estatal'
-
-  beforeEach(async () => {
-    await RequirementRepository.deleteAll()
-  })
-
-  test('Should return an empty array when no requirements match the given requirement type', async () => {
-    const response = await api
-      .get('/api/requirements/search/type')
-      .set('Authorization', `Bearer ${tokenAdmin}`)
-      .query({ requirementType: testRequirementType })
-      .expect(200)
-      .expect('Content-Type', /application\/json/)
-
-    expect(response.body.requirements).toBeInstanceOf(Array)
-    expect(response.body.requirements).toHaveLength(0)
-  })
-
-  test('Should return the requirement after creating one with the given requirement type', async () => {
-    const requirementData = generateRequirementData({
-      subjectId: String(createdSubjectId),
-      aspectsIds: JSON.stringify([createdAspectIds[0]]),
-      requirementType: testRequirementType
-    })
-
-    const createResponse = await api
-      .post('/api/requirements')
-      .set('Authorization', `Bearer ${tokenAdmin}`)
-      .send(requirementData)
-      .expect(201)
-      .expect('Content-Type', /application\/json/)
-
-    createdRequirement = createResponse.body.requirement
-
-    const response = await api
-      .get('/api/requirements/search/type')
-      .set('Authorization', `Bearer ${tokenAdmin}`)
-      .query({ requirementType: testRequirementType })
-      .expect(200)
-      .expect('Content-Type', /application\/json/)
-
-    const { requirements } = response.body
-
-    expect(requirements).toBeInstanceOf(Array)
-    expect(requirements).toHaveLength(1)
-    expect(requirements[0]).toMatchObject({
-      id: createdRequirement.id,
-      requirement_number: createdRequirement.requirement_number,
-      requirement_name: createdRequirement.requirement_name,
-      mandatory_description: createdRequirement.mandatory_description,
-      complementary_description: createdRequirement.complementary_description,
-      mandatory_sentences: createdRequirement.mandatory_sentences,
-      complementary_sentences: createdRequirement.complementary_sentences,
-      mandatory_keywords: createdRequirement.mandatory_keywords,
-      complementary_keywords: createdRequirement.complementary_keywords,
-      condition: createdRequirement.condition,
-      evidence: createdRequirement.evidence,
-      periodicity: createdRequirement.periodicity,
-      requirement_type: testRequirementType,
-      subject: expect.objectContaining({
-        subject_id: createdSubjectId,
-        subject_name: subjectName
-      }),
-      aspects: expect.arrayContaining([
-        expect.objectContaining({
-          aspect_id: createdAspectIds[0],
-          aspect_name: aspectsToCreate[0]
-        })
-      ])
-    })
-  })
-
-  test('Should return 401 if user is unauthorized', async () => {
-    const response = await api
-      .get('/api/requirements/search/type')
-      .query({ requirementType: testRequirementType })
       .expect(401)
       .expect('Content-Type', /application\/json/)
 
@@ -2028,7 +1907,6 @@ describe('Update a requirement', () => {
         ? updatedData.specify_evidence
         : null,
       periodicity: updatedData.periodicity,
-      requirement_type: updatedData.requirementType,
       subject: expect.objectContaining({
         subject_id: createdSubjectId,
         subject_name: subjectName
