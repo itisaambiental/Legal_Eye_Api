@@ -20,10 +20,10 @@ class Requirement {
    * @param {string} complementarySentences - The complementary legal sentences related to the requirement.
    * @param {string} mandatoryKeywords - Keywords related to the mandatory aspect of the requirement.
    * @param {string} complementaryKeywords - Keywords related to the complementary aspect of the requirement.
-   * @param {string} condition - The condition type ('Crítica', 'Operativa', 'Recomendación', 'Pendiente').
-   * @param {string} evidence - The type of evidence ('Trámite', 'Registro', 'Específica', 'Documento').
+   * @param {string} condition - The condition type.
+   * @param {string} evidence - The type of evidencet.
    * @param {string} specifyEvidence - The description of the specific evidence.
-   * @param {string} periodicity - The periodicity of the requirement ('Anual', '2 años', 'Por evento', 'Única vez', 'Específica').
+   * @param {string} periodicity - The periodicity of the requirement.
    */
   constructor (
     id,
@@ -40,7 +40,7 @@ class Requirement {
     condition,
     evidence,
     specifyEvidence,
-    periodicity,
+    periodicity
   ) {
     this.id = id
     this.subject = subject

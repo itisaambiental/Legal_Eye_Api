@@ -8,7 +8,7 @@ class RequirementsIdentification {
      * @param {number} id - The ID of the requirements identification.
      * @param {string} identificationName - The name of the identification/analysis.
      * @param {string} identificationDescription - Description of the analysis.
-     * @param {string} status - The status of the analysis ('Active', 'Completed', 'Failed').
+     * @param {string} status - The status of the analysis.
      * @param {number|null} userId - The ID of the user who created the analysis.
      * @param {Date} createdAt - The timestamp when the analysis was created.
      */

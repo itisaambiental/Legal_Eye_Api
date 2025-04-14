@@ -10,7 +10,7 @@ class Article {
    * @param {string} articleName - The title of the article.
    * @param {string} description - The content of the article.
    * @param {number} articleOrder - The order of the article.
-   * @param {string} [classification=null] - Classification of the article ('Obligatory' or 'Complementary').
+   * @param {string} [classification=null] - Classification of the article.
    */
   constructor (id, legalBasisId, articleName, description, articleOrder, classification = null) {
     this.id = id
