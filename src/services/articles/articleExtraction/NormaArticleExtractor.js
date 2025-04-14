@@ -6,9 +6,11 @@ import { convert } from 'html-to-text'
 import ErrorUtils from '../../../utils/Error.js'
 
 /**
- * Class extending ArticleExtractor to extract articles from laws texts.
- * Processes the text, cleans inconsistent formats, and extracts articles,
- * chapters, titles, sections, annexes, and transitory provisions in a structured manner.
+ * Class extending ArticleExtractor to extract articles from Mexican Official Standards (NOMs).
+ * It processes the technical text of the standard, cleans formatting inconsistencies,
+ * and extracts structured content based on hierarchical numerals (e.g., 6, 6.1, 6.1.1)
+ * and centered headings (e.g., PREFACIO, ÍNDICE, CONSIDERANDO, CONTENIDO, TRANSITORIOS, ANEXO, APENDICE).
+ * Each major numeral root or standalone centered title is treated as a distinct article.
  */
 class NormaArticleExtractor extends ArticleExtractor {
   /**
@@ -75,39 +77,46 @@ class NormaArticleExtractor extends ArticleExtractor {
    * @returns {string} - The cleaned text.
    */
   _cleanText (text) {
-    const articleKeywordRegex =
-      /\b[Aa]\s*R\s*T\s*[ÍIíi]\s*C\s*U\s*L\s*O\s*(\d+[A-Z]*|[IVXLCDM]+)\b/gi
-    const chapterKeywordRegex =
-      /\b[Cc]\s*[ÁAáa]\s*[Pp]\s*[ÍIíi]\s*[Tt]\s*[Uu]\s*[Ll]\s*[Oo]\s*(\d+[A-Z]*|[IVXLCDM]+)\b/gi
-    const titleKeywordRegex =
-      /\b[Tt]\s*[ÍIíi]\s*[Tt]\s*[Uu]\s*[Ll]\s*[Oo]\s*(\d+[A-Z]*|[IVXLCDM]+)\b/gi
-    const sectionKeywordRegex =
-      /\b[Ss]\s*[Ee]\s*[Cc]\s*[Cc]\s*[ÍIíi]\s*[ÓOóo]\s*[Nn]\s*(\d+[A-Z]*|[IVXLCDM]+)\b/gi
-    const transientKeywordRegex =
-      /\b(?:\w+\s+)*[Tt][Rr][Aa][Nn][Ss][Ii][Tt][Oo][Rr][Ii][AaOo](?:\s*[SsAa])?\s*(\d+[A-Z]*|[IVXLCDM]+)?\b/gi
-    const annexKeywordRegex =
-      /\b[Aa]\s*[Nn]\s*[Ee]\s*[Xx]\s*[Oo]\s*(\d+[A-Z]*|[IVXLCDM]+)?\b/gi
-    const ellipsisTextRegex = /[^.]+\s*\.{3,}\s*/g
-    const singleEllipsisRegex = /\s*\.{3,}\s*/g
+    const raw = text
+      .replace(/\r\n/g, '\n')
+      .replace(/\t+/g, '')
+      .replace(/[ ]{2,}/g, ' ')
+      .replace(/[ \t]+\n/g, '\n')
+      .replace(/\n{2,}/g, '\n')
+      .trim()
 
-    return text
-      .replace(articleKeywordRegex, 'ARTÍCULO $1')
-      .replace(chapterKeywordRegex, 'CAPÍTULO $1')
-      .replace(sectionKeywordRegex, 'SECCIÓN $1')
-      .replace(titleKeywordRegex, 'TÍTULO $1')
-      .replace(transientKeywordRegex, 'TRANSITORIO $1')
-      .replace(annexKeywordRegex, 'ANEXO $1')
-      .replace(ellipsisTextRegex, '')
-      .replace(singleEllipsisRegex, '')
+    const transientKeywordRegex = /\b(?:\w+\s+)*[Tt][Rr][Aa][Nn][Ss][Ii][Tt][Oo][Rr][Ii][AaOo](?:\s*[SsAa])?\s*(\d+[A-Z]*|[IVXLCDM]+)?\b/
+    const annexKeywordRegex = /\b[Aa]\s*[Nn]\s*[Ee]\s*[Xx]\s*[Oo]\s*(\d+[A-Z]*|[IVXLCDM]+)?\b/
+    const appendixKeywordRegex = /^\s*[Aa][Pp](?:[ÉEéè]?)?[Nn][Dd][Ii][Cc][Ee](?:\s+(\d+[A-Z]*|[IVXLCDM]+))?\s*$/i
+
+    const prefaceKeywordRegex = /^\s*[Pp][Rr][Ee][Ff][Aa][Cc][Ii][Oo]\s*$/
+    const consideringKeywordRegex = /^\s*[Cc][Oo][Nn][Ss][Ii][Dd][Ee][Rr][Aa][Nn][Dd][Oo]\s*$/
+    const contentKeywordRegex = /^\s*[Cc][Oo][Nn][Tt][Ee][Nn][Ii][Dd][Oo]\s*$/
+    const indexKeywordRegex = /^\s*[ÍIíi][Nn][Dd][ÍIíi][Cc][Ee]\s*$/i
+
+    const lines = raw.split('\n')
+    const cleanedLines = lines.map(line => {
+      return line
+        .replace(transientKeywordRegex, (_, num) => `TRANSITORIO${num ? ' ' + num : ''}`)
+        .replace(annexKeywordRegex, (_, num) => `ANEXO${num ? ' ' + num : ''}`)
+        .replace(appendixKeywordRegex, (_, num) => `APÉNDICE${num ? ' ' + num : ''}`)
+        .replace(prefaceKeywordRegex, 'PREFACIO')
+        .replace(consideringKeywordRegex, 'CONSIDERANDO')
+        .replace(contentKeywordRegex, 'CONTENIDO')
+        .replace(indexKeywordRegex, 'ÍNDICE')
+        .trim()
+    })
+
+    return cleanedLines.join('\n').trim()
   }
 
   /**
  * @param {string} text - Text to process and extract articles from.
- * @returns {Promise<Array<Article>>} - List of article objects.
+ * @returns {Promise<Array<Article>>} - List of article objects.co
  */
   async _extractArticles (text) {
     text = this._cleanText(text)
-
+    console.log('Text to process:', text)
     const articlePatternString =
     '(?:^|\\n)\\s*(' +
     '(?:c[áa]p[ií]tulo)\\s+\\S+|' +

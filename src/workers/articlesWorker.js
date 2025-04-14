@@ -40,6 +40,7 @@ const CONCURRENCY = Number(CONCURRENCY_EXTRACT_ARTICLES || 1)
  */
 articlesQueue.process(CONCURRENCY, async (job, done) => {
   const { legalBasisId, intelligenceLevel } = job.data
+  console.log(legalBasisId)
   try {
     const currentJob = await articlesQueue.getJob(job.id)
     if (!currentJob) {
