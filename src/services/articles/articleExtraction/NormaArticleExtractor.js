@@ -116,18 +116,17 @@ class NormaArticleExtractor extends ArticleExtractor {
  */
   async _extractArticles (text) {
     text = this._cleanText(text)
-
     const articlePatternString =
-      '(?:^|\\n)\\s*(' +
-      '(?:[Tt][Rr][Aa][Nn][Ss][Ii][Tt][Oo][Rr][Ii][OoSs]?(?:\\s+\\S+)?)|' +
-      '(?:[Aa][Nn][Ee][Xx][Oo](?:\\s+\\S+)?)|' +
-      '(?:[Aa][Pp][ÉÉEÉéè]?[Nn][Dd][Ii][Cc][Ee](?:\\s+\\S+)?)|' +
-      '(?:[Pp][Rr][Ee][Ff][Aa][Cc][Ii][Oo])|' +
-      '(?:[Cc][Oo][Nn][Ss][Ii][Dd][Ee][Rr][Aa][Nn][Dd][Oo])|' +
-      '(?:[Cc][Oo][Nn][Tt][Ee][Nn][Ii][Dd][Oo])|' +
-      '(?:[ÍIíi][Nn][Dd][ÍIíi][Cc][Ee])' +
-      ')'
-
+    '(?:^|\n)\\s*(' +
+    '(?:[Tt][Rr][Aa][Nn][Ss][Ii][Tt][Oo][Rr][Ii][OoSs]?(?:\\s+\\S+)?)|' +
+    '(?:[Aa][Nn][Ee][Xx][Oo](?:\\s+\\S+)?)|' +
+    '(?:[Aa][Pp][ÉÉEÉéè]?[Nn][Dd][Ii][Cc][Ee](?:\\s+\\S+)?)|' +
+    '(?:[Pp][Rr][Ee][Ff][Aa][Cc][Ii][Oo])|' +
+    '(?:[Cc][Oo][Nn][Ss][Ii][Dd][Ee][Rr][Aa][Nn][Dd][Oo])|' +
+    '(?:[Cc][Oo][Nn][Tt][Ee][Nn][Ii][Dd][Oo])|' +
+    '(?:[ÍIíi][Nn][Dd][ÍIíi][Cc][Ee])|' +
+    '(?:\\d+(?:\\.\\d+)*\\s+[^\n]+)' +
+    ')'
     const articlePattern = new RegExp(articlePatternString, 'i')
     const regexes = [
       /^(?:[Tt][Rr][Aa][Nn][Ss][Ii][Tt][Oo][Rr][Ii][OoSs]?(?:\s+\S+)?)$/i,
@@ -136,10 +135,12 @@ class NormaArticleExtractor extends ArticleExtractor {
       /^(?:[Pp][Rr][Ee][Ff][Aa][Cc][Ii][Oo])$/i,
       /^(?:[Cc][Oo][Nn][Ss][Ii][Dd][Ee][Rr][Aa][Nn][Dd][Oo])$/i,
       /^(?:[Cc][Oo][Nn][Tt][Ee][Nn][Ii][Dd][Oo])$/i,
-      /^(?:[ÍIíi][Nn][Dd][ÍIíi][Cc][Ee])$/i
+      /^(?:[ÍIíi][Nn][Dd][ÍIíi][Cc][Ee])$/i,
+      /^\d+(?:\.\d+)*\s+[^\n]+$/ // ✅ agregado
     ]
 
     const matches = text.split(articlePattern)
+    console.log('🧪 Total matches:', matches)
     const articles = []
     let order = 1
     let lastResult = { isValid: true, reason: null }
@@ -158,7 +159,7 @@ class NormaArticleExtractor extends ArticleExtractor {
         const previousArticle = `${previousTitle} ${previousContent}`.trim()
         const currentArticle = `${currentTitle} ${currentContent}`.trim()
         const nextArticle = `${nextTitle} ${nextContent}`.trim()
-
+        console.log('🧪 Current article:', currentArticle)
         const currentArticleData = this._createArticleToVerify(
           currentTitle,
           lastResult,
@@ -236,6 +237,8 @@ class NormaArticleExtractor extends ArticleExtractor {
    * @returns {Promise<ValidationResult>} - An object indicating if the article is valid and optionally the reason why it is considered invalid.
    */
   async _verifyArticle (article) {
+    console.log('🧪 Enviando artículo a verificación:', article.title)
+    console.log('Contenido:', article.currentArticle.slice(0, 300))
     const prompt = this._buildVerifyPrompt(this.name, article)
     const request = {
       model: this.model,
@@ -264,6 +267,8 @@ class NormaArticleExtractor extends ArticleExtractor {
             await new Promise((resolve) => setTimeout(resolve, backoffTime))
             return attemptRequest(retryCount + 1)
           } else {
+            console.error('❌ Error en OpenAI _verifyArticle:')
+            console.error(error)
             throw new ErrorUtils(500, 'Article Processing Error', error)
           }
         }
