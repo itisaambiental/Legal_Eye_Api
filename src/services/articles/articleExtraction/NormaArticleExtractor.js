@@ -101,49 +101,117 @@ class NormaArticleExtractor extends ArticleExtractor {
   async _extractArticles (text) {
     const lines = this._cleanText(text).split('\n')
     const articles = []
-    const keywordRegex = /^(ÍNDICE|CONTENIDO|CONSIDERANDO|PREFACIO|TRANSITORIOS?|ANEXO(?:\s+[IVXLCDM]+)?|APÉNDICE(?:\s+[A-Z])?)$/i
-    const numeralRegex = /^\d+(?:\.\d+)*\s+/
+
+    const keywordRegex = /^(ÍNDICE|CONTENIDO|PREFACIO|TRANSITORIOS?|ANEXO(?:\s+[IVXLCDM]+)?|APÉNDICE(?:\s+[A-Z])?)$/i
+    const startKeywordRegex = /^CONSIDERANDO$/i
+    const numeralRegex = /^(\d+(?:\.\d+)*)(\s+.+)?$/
+    const tablaRegex = /^TABLA\s+\d+/i
+    const isPageHeaderOrFooter = (line) =>
+      /^p[aá]gina\s+\d+\s+de\s+\d+/i.test(line) ||
+      /^\d+\s+de\s+\d+$/i.test(line) ||
+      /^https?:\/\//i.test(line) ||
+      /^DOF\s*-/i.test(line) ||
+      /^Diario\s+Oficial/i.test(line) ||
+      /https:\/\/dof\.gob\.mx/i.test(line)
+
     let currentTitle = ''
     let currentContent = []
-    let foundFirstNumeral = false
     let order = 1
+    let currentNumeralRoot = null
+    let activeBlockType = null
+    let insideFixedBlock = false
+    let collecting = false
+    const seenArticles = new Set()
 
     const pushArticle = () => {
-      if (currentTitle && currentContent.length > 0) {
+      const content = currentContent.join('\n').trim()
+      const hash = `${currentTitle}::${content}`
+      if (currentTitle && content.length > 0 && !seenArticles.has(hash)) {
         articles.push({
           title: currentTitle,
-          article: currentContent.join('\n').trim(),
+          article: content,
           plainArticle: '',
           order: order++
         })
+        seenArticles.add(hash)
       }
     }
 
+    // 🧼 Elimina encabezado antes de CONSIDERANDO
+    const startIdx = lines.findIndex((line) =>
+      startKeywordRegex.test(line.trim()) || keywordRegex.test(line.trim())
+    )
+    if (startIdx > 0) lines.splice(0, startIdx)
+
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i].trim()
-      if (!line) continue
+      if (!line || isPageHeaderOrFooter(line)) continue
 
+      const isStartKeyword = startKeywordRegex.test(line)
       const isKeyword = keywordRegex.test(line)
-      const isNumeral = numeralRegex.test(line)
+      const numeralMatch = line.match(numeralRegex)
+      const isNumeral = Boolean(numeralMatch)
+      const isTabla = tablaRegex.test(line)
 
+      // CONSIDERANDO bloque
+      if (isStartKeyword) {
+        pushArticle()
+        currentTitle = line
+        currentContent = []
+        activeBlockType = 'CONSIDERANDO'
+        collecting = true
+        insideFixedBlock = false
+        continue
+      }
+
+      // INDICE, ANEXO, TRANSITORIOS, etc.
       if (isKeyword) {
         pushArticle()
         currentTitle = line
         currentContent = []
-        foundFirstNumeral = false
-      } else if (isNumeral) {
-        if (!foundFirstNumeral && currentTitle && /^(ÍNDICE|CONTENIDO)$/i.test(currentTitle)) {
-          currentContent.push(line)
-        } else {
+        activeBlockType = 'KEYWORD'
+        insideFixedBlock = /^(TRANSITORIOS?|ANEXO|APÉNDICE)/i.test(line)
+        collecting = true
+        continue
+      }
+
+      // Detener CONSIDERANDO o INDICE al encontrar primer numeral
+      if (isNumeral && collecting && (activeBlockType === 'CONSIDERANDO' || activeBlockType === 'KEYWORD')) {
+        pushArticle()
+        currentTitle = line
+        currentContent = []
+        currentNumeralRoot = numeralMatch[1]
+        activeBlockType = 'NUMERAL'
+        collecting = false
+        continue
+      }
+
+      // Agrupación por raíz
+      if (isNumeral && activeBlockType === 'NUMERAL') {
+        const root = numeralMatch[1].split('.')[0]
+        if (root !== currentNumeralRoot) {
           pushArticle()
           currentTitle = line
           currentContent = []
-          foundFirstNumeral = true
+          currentNumeralRoot = root
+        } else {
+          currentContent.push(line)
+          continue
         }
-      } else {
+      }
+
+      // Si estamos dentro de ANEXO o TRANSITORIOS, todo se agrega
+      if (insideFixedBlock) {
+        currentContent.push(line)
+        continue
+      }
+
+      // Si es tabla o estamos recolectando en bloque
+      if (isTabla || collecting || activeBlockType === 'NUMERAL') {
         currentContent.push(line)
       }
     }
+
     pushArticle()
     return articles
   }
