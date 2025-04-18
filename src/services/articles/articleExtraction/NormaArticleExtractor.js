@@ -51,168 +51,182 @@ class NormaArticleExtractor extends ArticleExtractor {
    * Method to extract articles from the text.
    */
   async extractArticles () {
-    try {
-      const articles = await this._extractArticles(this.text)
-      const totalArticles = articles.length
-      const correctedArticles = []
-      let currentProgress = 0
-
-      for (const article of articles) {
-        if (await this.job.isFailed()) {
-          throw new ErrorUtils(500, 'Job was canceled')
-        }
-        try {
-          const correctedArticle = await this._correctArticle(article)
-          correctedArticle.plainArticle = convert(correctedArticle.article)
-          correctedArticles.push(correctedArticle)
-        } catch (error) {
-          console.error('❌ Error corrigiendo artículo:', article.title)
-          console.error(error)
-          continue
-        }
-        currentProgress += 1
-        this.updateProgress(currentProgress, totalArticles)
+    const articles = await this._extractArticles(this.text)
+    const totalArticles = articles.length
+    const correctedArticles = []
+    let currentProgress = 0
+    for (const article of articles) {
+      if (await this.job.isFailed()) {
+        throw new ErrorUtils(500, 'Job was canceled')
       }
-      return correctedArticles
-    } catch (error) {
-      console.error('🔥 Error global en extractArticles:', error)
-      throw new ErrorUtils(500, 'Error inesperado durante la extracción de artículos', error)
+      try {
+        const correctedArticle = await this._correctArticle(article)
+        correctedArticle.plainArticle = convert(correctedArticle.article)
+        correctedArticles.push(correctedArticle)
+      } catch (error) {
+        continue
+      }
+      currentProgress += 1
+      this.updateProgress(currentProgress, totalArticles)
     }
+    return correctedArticles
   }
 
   /**
-   * @param {string} text - The text to clean.
-   * @returns {string} - The cleaned text.
-   */
+ * @param {string} text - The text to clean.
+ * @returns {string} - The cleaned text.
+ */
   _cleanText (text) {
+    const titleKeywordRegex = /\b[Tt]\s*[ÍIíi]\s*[Tt]\s*[Uu]\s*[Ll]\s*[Oo]\s*(\d+[A-Z]*|[IVXLCDM]+)\b/gi
+    const sectionKeywordRegex = /\b[Ss]\s*[Ee]\s*[Cc]\s*[Cc]\s*[ÍIíi]\s*[ÓOóo]\s*[Nn]\s*(\d+[A-Z]*|[IVXLCDM]+)\b/gi
+    const transientKeywordRegex = /\b(?:\w+\s+)*[Tt][Rr][Aa][Nn][Ss][Ii][Tt][Oo][Rr][Ii][AaOo](?:\s*[SsAa])?\s*(\d+[A-Z]*|[IVXLCDM]+)?\b/gi
+    const annexKeywordRegex = /\b[Aa]\s*[Nn]\s*[Ee]\s*[Xx]\s*[Oo]\s*(\d+[A-Z]*|[IVXLCDM]+)?\b/gi
+
+    const appendixKeywordRegex = /\b[Aa]\s*[Pp]\s*[EeÉé]\s*[Nn]\s*[Dd]\s*[IiÍí]\s*[Cc]\s*[Ee]\s*(\d+[A-Z]*|[IVXLCDM]+)?\b/gi
+    const contentKeywordRegex = /\b[Cc]\s*[OoÓó]\s*[Nn]\s*[Tt]\s*[Ee]\s*[Nn]\s*[IiÍí]\s*[Dd]\s*[Oo]\s*(\d+[A-Z]*|[IVXLCDM]+)?\b/gi
+    const indexKeywordRegex = /\b[ÍIíi]\s*[Nn]\s*[Dd]\s*[IiÍí]\s*[Cc]\s*[Ee]\s*(\d+[A-Z]*|[IVXLCDM]+)?\b/gi
+
+    const ellipsisTextRegex = /[^.]+\s*\.{3,}\s*/g
+    const singleEllipsisRegex = /\s*\.{3,}\s*/g
+
     return text
-      .replace(/\r\n/g, '\n')
-      .replace(/\t+/g, '')
-      .replace(/[ ]{2,}/g, ' ')
-      .replace(/[ \t]+\n/g, '\n')
-      .replace(/\n{2,}/g, '\n')
-      .trim()
+      .replace(titleKeywordRegex, 'TÍTULO $1')
+      .replace(sectionKeywordRegex, 'SECCIÓN $1')
+      .replace(transientKeywordRegex, 'TRANSITORIO $1')
+      .replace(annexKeywordRegex, 'ANEXO $1')
+      .replace(appendixKeywordRegex, 'APÉNDICE $1')
+      .replace(contentKeywordRegex, 'CONTENIDO $1')
+      .replace(indexKeywordRegex, 'ÍNDICE $1')
+      .replace(ellipsisTextRegex, '')
+      .replace(singleEllipsisRegex, '')
   }
 
   /**
  * @param {string} text - Text to process and extract articles from.
- * @returns {Promise<Array<Article>>} - List of article objects.co
+ * @returns {Promise<Array<Article>>} - List of article objects.
  */
   async _extractArticles (text) {
-    const lines = this._cleanText(text).split('\n')
+    text = this._cleanText(text)
+
+    const articlePatternString =
+    '(?:^|\\n)\\s*(' +
+      '(?:c[áa]p[ií]tulo)\\s+[^\n]+|' +
+      '(?:t[ií]tulo)\\s+[^\n]+|' +
+      '(?:secci[oó]n)\\s+[^\n]+|' +
+      '(?:ap[eé]ndice)\\s+[^\n]+|' +
+      '(?:transitori[oa][s]?)\\s+[^\n]+|' +
+      '(?:anexo)\\s+[^\n]+|' +
+      '(?:considerando)\\s+[^\n]+|' +
+      '(?:contenido)\\s+[^\n]+|' +
+      '(?:[ÍIíi]ndice)\\s+[^\n]+|' +
+      '(?:\\d+(?:\\.\\d+)*\\.?\\s*[^\n]+)' +
+    ')'
+
+    const articlePattern = new RegExp(articlePatternString, 'im')
+
+    const regexes = [
+      /^(?:c[áa]p[ií]tulo)\s+[^\n]+$/im,
+      /^(?:t[ií]tulo)\s+[^\n]+$/im,
+      /^(?:secci[oó]n)\s+[^\n]+$/im,
+      /^(?:ap[eé]ndice)\s+[^\n]+$/im,
+      /^(?:transitori[oa][s]?)\s+[^\n]+$/im,
+      /^(?:anexo)\s+[^\n]+$/im,
+      /^(?:considerando)\s+[^\n]+$/im,
+      /^(?:contenido)\s+[^\n]+$/im,
+      /^(?:[ÍIíi]ndice)\s+[^\n]+$/im,
+      /^\d+(?:\.\d+)*\.?\s*[^\n]+$/m
+    ]
+
+    const matches = text.split(articlePattern)
     const articles = []
-
-    const keywordRegex = /^(ÍNDICE|CONTENIDO|PREFACIO|TRANSITORIOS?|ANEXO(?:\s+[IVXLCDM]+)?|APÉNDICE(?:\s+[A-Z])?)$/i
-    const startKeywordRegex = /^CONSIDERANDO$/i
-    const numeralRegex = /^(\d+(?:\.\d+)*)(\s+.+)?$/
-    const tablaRegex = /^TABLA\s+\d+/i
-    const isPageHeaderOrFooter = (line) =>
-      /^p[aá]gina\s+\d+\s+de\s+\d+/i.test(line) ||
-      /^\d+\s+de\s+\d+$/i.test(line) ||
-      /^https?:\/\//i.test(line) ||
-      /^DOF\s*-/i.test(line) ||
-      /^Diario\s+Oficial/i.test(line) ||
-      /https:\/\/dof\.gob\.mx/i.test(line)
-
-    let currentTitle = ''
-    let currentContent = []
     let order = 1
-    let currentNumeralRoot = null
-    let activeBlockType = null
-    let insideFixedBlock = false
-    let collecting = false
-    const seenArticles = new Set()
+    let lastResult = { isValid: true, reason: null }
+    let lastArticle = null
+    let isConcatenating = false
 
-    const pushArticle = () => {
-      const content = currentContent.join('\n').trim()
-      const hash = `${currentTitle}::${content}`
-      if (currentTitle && content.length > 0 && !seenArticles.has(hash)) {
-        articles.push({
-          title: currentTitle,
-          article: content,
-          plainArticle: '',
-          order: order++
-        })
-        seenArticles.add(hash)
-      }
-    }
+    for (let i = 1; i < matches.length; i++) {
+      const previousTitle = i > 1 ? matches[i - 2]?.trim() : ''
+      const previousContent = i > 1 ? matches[i - 1]?.trim() : ''
+      const currentTitle = matches[i].trim()
+      const currentContent = i + 1 < matches.length ? matches[i + 1].trim() : ''
+      const nextTitle = i + 2 < matches.length ? matches[i + 2].trim() : ''
+      const nextContent = i + 3 < matches.length ? matches[i + 3].trim() : ''
 
-    // 🧼 Elimina encabezado antes de CONSIDERANDO
-    const startIdx = lines.findIndex((line) =>
-      startKeywordRegex.test(line.trim()) || keywordRegex.test(line.trim())
-    )
-    if (startIdx > 0) lines.splice(0, startIdx)
+      if (regexes.some((rx) => rx.test(currentTitle))) {
+        const previousArticle = `${previousTitle} ${previousContent}`.trim()
+        const currentArticle = `${currentTitle} ${currentContent}`.trim()
+        const nextArticle = `${nextTitle} ${nextContent}`.trim()
 
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i].trim()
-      if (!line || isPageHeaderOrFooter(line)) continue
+        const currentArticleData = this._createArticleToVerify(
+          currentTitle,
+          lastResult,
+          previousArticle,
+          currentArticle,
+          nextArticle,
+          order++
+        )
+        try {
+          const { isValid, reason } = await this._verifyArticle(currentArticleData)
 
-      const isStartKeyword = startKeywordRegex.test(line)
-      const isKeyword = keywordRegex.test(line)
-      const numeralMatch = line.match(numeralRegex)
-      const isNumeral = Boolean(numeralMatch)
-      const isTabla = tablaRegex.test(line)
-
-      // CONSIDERANDO bloque
-      if (isStartKeyword) {
-        pushArticle()
-        currentTitle = line
-        currentContent = []
-        activeBlockType = 'CONSIDERANDO'
-        collecting = true
-        insideFixedBlock = false
-        continue
-      }
-
-      // INDICE, ANEXO, TRANSITORIOS, etc.
-      if (isKeyword) {
-        pushArticle()
-        currentTitle = line
-        currentContent = []
-        activeBlockType = 'KEYWORD'
-        insideFixedBlock = /^(TRANSITORIOS?|ANEXO|APÉNDICE)/i.test(line)
-        collecting = true
-        continue
-      }
-
-      // Detener CONSIDERANDO o INDICE al encontrar primer numeral
-      if (isNumeral && collecting && (activeBlockType === 'CONSIDERANDO' || activeBlockType === 'KEYWORD')) {
-        pushArticle()
-        currentTitle = line
-        currentContent = []
-        currentNumeralRoot = numeralMatch[1]
-        activeBlockType = 'NUMERAL'
-        collecting = false
-        continue
-      }
-
-      // Agrupación por raíz
-      if (isNumeral && activeBlockType === 'NUMERAL') {
-        const root = numeralMatch[1].split('.')[0]
-        if (root !== currentNumeralRoot) {
-          pushArticle()
-          currentTitle = line
-          currentContent = []
-          currentNumeralRoot = root
-        } else {
-          currentContent.push(line)
-          continue
+          if (isValid) {
+            if (lastArticle) {
+              articles.push(lastArticle)
+              lastArticle = null
+            }
+            articles.push({
+              title: currentArticleData.title,
+              article: currentArticleData.currentArticle,
+              plainArticle: currentArticleData.plainArticle,
+              order: currentArticleData.order
+            })
+            isConcatenating = false
+          } else {
+            if (reason === 'IsIncomplete') {
+              if (lastArticle && lastResult.reason === 'IsIncomplete') {
+                lastArticle.article += ` ${currentArticleData.currentArticle}`
+              } else {
+                lastArticle = {
+                  title: currentArticleData.title,
+                  article: currentArticleData.currentArticle,
+                  plainArticle: currentArticleData.plainArticle,
+                  order: currentArticleData.order
+                }
+              }
+              isConcatenating = true
+            } else if (reason === 'IsContinuation') {
+              if (
+                lastResult.reason === 'IsIncomplete' ||
+              (isConcatenating && lastResult.reason === 'IsContinuation')
+              ) {
+                if (lastArticle) {
+                  lastArticle.article += ` ${currentArticleData.currentArticle}`
+                }
+                isConcatenating = true
+              } else {
+                if (lastArticle) {
+                  articles.push(lastArticle)
+                  lastArticle = null
+                }
+                isConcatenating = false
+              }
+            }
+          }
+          lastResult = { isValid, reason }
+        } catch (error) {
+          articles.push({
+            title: currentArticleData.title,
+            article: currentArticleData.currentArticle,
+            plainArticle: currentArticleData.plainArticle,
+            order: currentArticleData.order
+          })
         }
       }
-
-      // Si estamos dentro de ANEXO o TRANSITORIOS, todo se agrega
-      if (insideFixedBlock) {
-        currentContent.push(line)
-        continue
-      }
-
-      // Si es tabla o estamos recolectando en bloque
-      if (isTabla || collecting || activeBlockType === 'NUMERAL') {
-        currentContent.push(line)
-      }
     }
 
-    pushArticle()
+    if (lastArticle) {
+      articles.push(lastArticle)
+    }
+
     return articles
   }
 
@@ -225,7 +239,14 @@ class NormaArticleExtractor extends ArticleExtractor {
    * @param {number} order - Order of the article.
    * @returns {ArticleToVerify} - The article to verify.
    */
-  _createArticleToVerify (title, previousLastResult, previousContent, currentContent, nextContent, order) {
+  _createArticleToVerify (
+    title,
+    previousLastResult,
+    previousContent,
+    currentContent,
+    nextContent,
+    order
+  ) {
     return {
       title,
       previousArticle: {
@@ -240,34 +261,43 @@ class NormaArticleExtractor extends ArticleExtractor {
   }
 
   /**
-   * @param {ArticleToVerify} article - The article to verify.
-   * @returns {Promise<ValidationResult>} - An object indicating if the article is valid and optionally the reason why it is considered invalid.
-   */
+     * @param {ArticleToVerify} article - The article to verify.
+     * @returns {Promise<ValidationResult>} - An object indicating if the article is valid and optionally the reason why it is considered invalid.
+     */
   async _verifyArticle (article) {
-    console.log('🧪 Enviando artículo a verificación:', article.title)
-    console.log('Contenido:', article.currentArticle.slice(0, 300))
     const prompt = this._buildVerifyPrompt(this.name, article)
     const request = {
       model: this.model,
       messages: [
         {
           role: 'system',
-          content: 'You are a legal expert who is specialized in confirming the validity of the legal provisions extracted from legal documents. Note: Although your instructions are in English, the provisions provided will be in Spanish.'
+          content:
+              'You are a legal expert who is specialized in confirming the validity of the legal provisions extracted from legal documents. Note: Although your instructions are in English, the provisions provided will be in Spanish.'
         },
         { role: 'user', content: prompt }
       ],
       temperature: 0,
-      response_format: zodResponseFormat(ArticleVerificationSchema, 'article_verification')
+      response_format: zodResponseFormat(
+        ArticleVerificationSchema,
+        'article_verification'
+      )
     }
-
     const attemptRequest = async (retryCount = 0) => {
       try {
         const response = await openai.chat.completions.create(request)
-        return ArticleVerificationSchema.parse(JSON.parse(response.choices[0].message.content))
+        const content = ArticleVerificationSchema.parse(
+          JSON.parse(response.choices[0].message.content)
+        )
+        return content
       } catch (error) {
-        if (error.status === 429 && retryCount < 3) {
-          await new Promise(resolve => setTimeout(resolve, Math.pow(2, retryCount) * 1000))
-          return attemptRequest(retryCount + 1)
+        if (error.status === 429) {
+          if (retryCount < 3) {
+            const backoffTime = Math.pow(2, retryCount) * 1000
+            await new Promise((resolve) => setTimeout(resolve, backoffTime))
+            return attemptRequest(retryCount + 1)
+          } else {
+            throw new ErrorUtils(500, 'Article Processing Error', error)
+          }
         }
         throw new ErrorUtils(500, 'Article Processing Error', error)
       }
@@ -278,83 +308,183 @@ class NormaArticleExtractor extends ArticleExtractor {
   /**
  * Constructs a verification prompt for evaluating a legal provision.
  *
+/**
  * @param {string} legalName - The name of the legal base.
  * @param {ArticleToVerify} article - The article for which the verification prompt is built.
  * @returns {string} - The constructed prompt.
  */
   _buildVerifyPrompt (legalName, article) {
+    console.log(article)
     return `
 You are a regulatory expert in chemical safety and compliance. Your task is to validate provisions extracted from Mexican Official Standards (Normas Oficiales Mexicanas - NOMs) in the chemical field.
 
 ### Evaluation Context:
 - **NOM Standard:** "${legalName}"
-- **Previous Section:** "${article.previousArticle.content}" 
-(Validation: { "isValid": ${article.previousArticle.lastResult.isValid}, "reason": "${article.previousArticle.lastResult.reason}" })
+- **Previous Section:** "${article.previousArticle.content}"
+  (Validation: { "isValid": ${article.previousArticle.lastResult.isValid}, "reason": ${article.previousArticle.lastResult.reason === null ? 'null' : `"${article.previousArticle.lastResult.reason}"`} })
 - **Current Section (To be evaluated):** "${article.currentArticle}"
 - **Next Section:** "${article.nextArticle}"
 
+### **Important Note on Text Evaluation**
+- **Headers and Footnotes:** Please disregard any **headers** or **footnotes** (e.g., page numbers, publication dates, and references to external sources) present in the article or legal text. These elements are part of the document layout but **are not** considered part of the legal provision itself.
+- **Content of the Provision:** Focus solely on the **legal content** itself, i.e. the specific rule, directive, or principle outlined in the body of the article or provision.
+- **Order of Provisions:** If the **Previous**, **Current**, and **Next** follow a coherent logical sequence, they **must** be classified as **VALID**.
+- **Classification Rules:**
+  1. If the article is classified as **VALID** (\`isValid: true\`), then the field \`reason\` **must** be \`null\`.  
+  2. If the article is classified as **INVALID** (\`isValid: false\`), then the field \`reason\` **must** be one of:
+     - \`"IsContinuation"\` → The provision continues an earlier incomplete section.
+     - \`"IsIncomplete"\`   → The provision is abruptly cut off or clearly unfinished, lacking a concluding idea.
+
+## Normative Categories for "Normas" (Validación)
+
+1. **Index (INDICE)**
+   - Titles starting with **"INDICE"** denote the table of contents, listing all main headings until the next marker.
+   - **Always** classified **VALID**.
+   - **Example – Valid Index**  
+     - **Title:** \`INDICE\`  
+     - **Content:**
+       \`\`\`text
+       1. OBJETIVO Y CAMPO DE APLICACION
+       2. REFERENCIAS NORMATIVAS
+       3. TERMINOS Y DEFINICIONES
+       …
+       10. OBSERVANCIA DE ESTA NORMA
+       TRANSITORIOS
+       APENDICE NORMATIVO: PUERTOS DE MUESTREO
+       \`\`\`
+     → \`{ "isValid": true, "reason": null }\`
+
+2. **Content (CONTENIDO)**
+   - Titles starting with **"CONTENIDO"** introduce a summary of sections.
+   - **Always** classified **VALID**.
+   - **Example: Valid Content**  
+     - **Title:** \`CONTENIDO\` 
+     - **Content:**
+       \`\`\`text
+       0. Introducción
+       1. Objetivo y campo de aplicación
+       2. Referencias
+       3. Definiciones
+       4. Especificaciones
+       5. Muestreo y métodos de prueba
+       6. Evaluación de la conformidad
+       7. Grado de concordancia con normas y lineamientos internacionales
+       8. Bibliografía
+       9. Observancia de esta Norma
+       Anexos
+       I Opciones para la reducción de atracción de vectores
+       II Método de muestreo de lodos y biosólidos
+       III Método para la cuantificación de coliformes fecales en lodos y biosólidos
+       IV Método para la cuantificación de Salmonella spp., en lodos y biosólidos
+       V Método para la cuantificación de huevos de helmintos en lodos y biosólidos
+       VI Método para la cuantificación de metales pesados en biosólidos
+       VII Contenido de la bitácora de control de lodos y biosólidos
+       \`\`\`
+      \`{ "isValid": true, "reason": null }\`
+   - **Example: Incomplete Content**  
+     - **Title:** \`CONTENIDO. Se presenta la relación de secciones…\`  
+     - **Content:** Abruptly cut off mid‑list  
+     → \`{ "isValid": false, "reason": "IsIncomplete" }\`
+
+3. **Preface (PREFACIO)**
+   - A narrative introduction by the issuing authority.
+   - Must end with a complete, coherent statement.
+   - **Example: Valid Preface**  
+     - **Title:** \`PREFACIO\`  
+     - **Content:**
+       \`\`\`text
+       En la elaboracion de la presente Norma Oficial Mexicana participaron:
+       1. Comision Nacional del Agua (CONAGUA)
+       2. Comision Federal para la Proteccion contra Riesgos Sanitarios (COFEPRIS)
+       …
+       6. Secretaria de Medio Ambiente y Recursos Naturales (SEMARNAT)
+       \`\`\`
+     → \`{ "isValid": true, "reason": null }\`
+   - **Example: Incomplete Preface**  
+     - **Title:** \`PREFACIO. Esta Norma tiene por objeto…\`  
+     - **Content:** Cut off before naming participants  
+     → \`{ "isValid": false, "reason": "IsIncomplete" }\`
+
+4. **Introduction (INTRODUCCION)**
+   - Presents context, justification and scope.
+   - **Example: Valid Introduction**  
+     - **Title:** \`0. Introduccion\`  
+     - **Content:**
+       \`\`\`text
+       La necesidad de obtener agua en cantidades economicamente explotables ha originado la perforacion de…
+       Con el objeto de minimizar este riesgo y establecer los requisitos minimos, se expide la presente Norma.
+       \`\`\`
+     → \`{ "isValid": true, "reason": null }\`
+   - **Example: Incomplete Introduction**  
+     - **Title:** \`INTRODUCCION. Ante la creciente demanda…\`  
+     - **Content:** Stops mid-justification  
+     → \`{ "isValid": false, "reason": "IsIncomplete" }\`
+
+5. **Transitory Provisions (TRANSITORIOS)**
+   - Marked with **TRANSITORIOS** or numbered **PRIMERO**, **SEGUNDO**, etc.
+   - Regulate entry into force and deadlines.
+   - **Example: Valid Transitory**  
+     - **Title:** \`TRANSITORIOS\`  
+     - **Content:**
+       \`\`\`text
+       PRIMERO. Entrara en vigor a los 365 dias de su publicacion.
+       SEGUNDO. Los parametros de tablas 1 y 2 entraran en vigor el 3 de abril de 2023.
+       TERCERO. Toxicidad aguda entrara en vigor al cuarto ano.
+       …
+       SEPTIMO. Deroga la NOM-001-SEMARNAT-1996.
+       \`\`\`
+     → \`{ "isValid": true, "reason": null }\`
+   - **Example: Incomplete Transitory**  
+     - **Title:** \`TRANSITORIO PRIMERO. Entrara en vigor…\`  
+     - **Content:** Missing date and rest  
+     → \`{ "isValid": false, "reason": "IsIncomplete" }\`
+
+6. **Annex / Appendix (ANEXO / APENDICE)**
+   - Titles **ANEXO A. …** or **APENDICE NORMATIVO: …**, containing supplementary tables or methods.
+   - **Example: Valid Annex**  
+     - **Title:** \`APENDICE NORMATIVO: PUERTOS DE MUESTREO\`  
+     - **Content:** Detailed sampling port instructions  
+     → \`{ "isValid": true, "reason": null }\`
+   - **Example: Valid Annex**  
+     - **Title:** \`ANEXO I OPCIONES PARA LA REDUCCION DE ATRACCION DE VECTORES\`  
+     - **Content:** List of 9 control options  
+     → \`{ "isValid": true, "reason": null }\`
+
+7. **Numeral Sections (Numerales)**
+   - Titles beginning with a numeral (e.g. \`1.\`, \`1.1\`, \`4.1.10\`, \`11.1\`).
+   - Define clauses like Objetivo, Definiciones, Especificaciones.
+   - **Example: Valid Numeral**  
+     - **Title:** \`1. Objetivo y campo de aplicacion\`  
+     - **Content:**
+       \`\`\`text
+       Esta Norma Oficial Mexicana establece los limites maximos permisibles de contaminantes…
+       \`\`\`
+     → \`{ "isValid": true, "reason": null }\`
+   - **Example: Incomplete Numeral**  
+     - **Title:** \`2. Referencias normativas\`  
+     - **Content:**
+       \`\`\`text
+       2.1. Norma Mexicana NMX-AA-003-1980, Aguas residuales-Muestreo (cancela a la NMX-AA-003-1975).
+       \`\`\`
+     → \`{ "isValid": false, "reason": "IsIncomplete" }\`
+
 ---
 
-### ✅ Valid Provision Criteria
-Mark the current section as **VALID** if:
-- It expresses a complete instruction, rule, or technical guideline.
-- It introduces safety measures, chemical handling protocols, classification systems, etc.
-- It is a numeral (e.g., 5, 5.1, 5.1.1...) that introduces a new scope, concept, or criteria.
-- It is a heading or structural section (e.g., "PREFACIO", "ANEXO", "OBJETIVO") with or without accompanying text.
+### **Invalid Legal Provisions**
 
----
+#### **IsIncomplete**
+- A section is **incomplete** if it is cut off or clearly unfinished.
+- **Example:**
+  - **Prev:** \`"INDICE. 1. OBJETIVO… 6. MUESTRE"\`
+  - **Curr:** \`"6. Muestreo"\`
+  - → \`{ "isValid": false, "reason": "IsIncomplete" }\`
 
-### ❌ Invalid Provision Criteria
-
-- **IsIncomplete**:
-  - Lacks a complete directive, technical idea, or closes abruptly.
-  - May be the beginning of a list but is missing key elements.
-
-- **IsContinuation**:
-  - Only applies when the **Previous Section** is marked as **IsIncomplete**.
-  - Should not be evaluated independently but as a continuation of the previous.
-
----
-
-### 🧪 Examples in Chemical NOM Context
-
-#### ✅ **Example 1 - Valid:**
-- **Previous Provision:** "3. DEFINICIONES"
-- **Current Provision:** "4. CLASIFICACIÓN DE SUSTANCIAS PELIGROSAS"
-- **Next Provision:** "4.1 Sustancias inflamables"
-- **Reasoning:** The current provision introduces a key section related to classification. It is complete and serves as a technical boundary for what follows.
-
----
-
-#### ✅ **Example 2 - Valid:**
-- **Previous Provision:** "4.2.2 Límites de exposición para vapores orgánicos."
-- **Current Provision:** "4.2.3 Para compuestos volátiles con punto de ebullición menor a 37.5 °C, deberá aplicarse ventilación localizada."
-- **Next Provision:** "4.2.4 Límites de exposición para compuestos corrosivos."
-- **Reasoning:** This is a complete, enforceable instruction regarding exposure control.
-
----
-
-#### ❌ **Example 3 - Incomplete:**
-- **Previous Provision:** "5.2.1 Los envases deberán estar"
-- **Current Provision:** "5.2.2 Etiquetados conforme a lo establecido en..."
-- **Next Provision:** "5.2.3 Deberán cumplir con los requisitos de resistencia química."
-- **Reasoning:** The previous provision is cut off, suggesting that "5.2.1" is incomplete. Even if "5.2.2" introduces a new rule, it's better to treat it as part of the same group.
-
----
-
-#### ❌ **Example 4 - Continuation:**
-- **Previous Provision:** "5.1.4 El operador debe realizar pruebas de hermeticidad en los..."
-- **Current Provision:** "dispositivos antes de su uso con solventes clorados."
-- **Next Provision:** "5.1.5 Las áreas deben estar ventiladas adecuadamente."
-- **Reasoning:** The current section cannot stand alone. It completes the previous one and should be marked as **IsContinuation**.
-
----
-
-### Final Notes
-- The provision must be evaluated **as written**, considering only the text presented.
-- Do not hallucinate additional context — assess what is visible.
-- If the section introduces a new numeral or heading and presents valid content, mark it as **Valid**.
-- If it depends on a previous incomplete sentence, mark it as **IsContinuation**.
+#### **IsContinuation**
+- If the **Previous** was marked **IsIncomplete**, then the **Current** must be \`{ "isValid": false, "reason": "IsContinuation" }\`.
+- **Example:**
+  - **Prev:** \`"INDICE. …6. MUESTRE"\` (IsIncomplete)
+  - **Curr:** \`"6. Muestreo"\`
+  - → \`{ "isValid": false, "reason": "IsContinuation" }\`
 `
   }
 
