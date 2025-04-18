@@ -1,5 +1,3 @@
-// EmailService.js
-
 import transporter from '../../config/email.config.js'
 import ErrorUtils from '../../utils/Error.js'
 import { EMAIL_USER, APP_URL } from '../../config/variables.config.js'
@@ -35,6 +33,7 @@ class EmailService {
 
       await transporter.sendMail(mailOptions)
     } catch (error) {
+      console.error('Error sending email:', error)
       throw new ErrorUtils(500, 'Error sending email', error)
     }
   }
@@ -91,6 +90,52 @@ class EmailService {
              Para iniciar sesión, visita: ${APP_URL}`,
       html: `<p>Tu nueva contraseña es: <strong>${newPassword}</strong></p>
              <p>Para iniciar sesión, <a href="${APP_URL}" target="_blank">haz clic aquí</a>.</p>`
+    }
+  }
+
+  /**
+ * Generates an email notifying the user that the article extraction was successful.
+ * @param {string} gmail - The Gmail address of the user.
+ * @param {string} legalBasisName - The name of the legal basis.
+ * @param {number} legalBasisId - The ID of the legal basis.
+ * @returns {EmailData}
+ */
+  static generateArticleExtractionSuccessEmail (gmail, legalBasisName, legalBasisId) {
+    const articleUrl = `${APP_URL}/legal_basis/${legalBasisId}/articles`
+
+    return {
+      to: gmail,
+      subject: 'Extracción de artículos completada con éxito',
+      text: `La extracción de artículos para el fundamento legal "${legalBasisName}" ha sido exitosa.
+Puedes consultar los artículos en: ${articleUrl}`,
+      html: `<p>La extracción de artículos para el fundamento legal 
+             <strong>${legalBasisName}</strong> ha sido <strong>exitosa</strong>.</p>
+           <p style="margin-top: 20px;">
+             <a href="${articleUrl}" target="_blank"
+               style="display: inline-block; padding: 10px 20px; background-color: #113c53; color: white;
+               text-decoration: none; border-radius: 5px;">
+               Ver artículos
+             </a>
+           </p>`
+    }
+  }
+
+  /**
+ * Generates an email notifying the user that the article extraction failed.
+ * @param {string} gmail - The Gmail address of the user.
+ * @param {string} legalBasisName - The name of the legal basis.
+ * @param {string} reason - Reason why the extraction failed.
+ * @returns {EmailData}
+ */
+  static generateArticleExtractionFailureEmail (gmail, legalBasisName, reason) {
+    return {
+      to: gmail,
+      subject: 'Error en la extracción de artículos',
+      text: `La extracción de artículos para el fundamento legal "${legalBasisName}" ha fallado.
+Razón: ${reason}`,
+      html: `<p>La extracción de artículos para el fundamento legal 
+             <strong>${legalBasisName}</strong> ha <strong>fallado</strong>.</p>
+           <p>Razón: <em>${reason}</em></p>`
     }
   }
 }

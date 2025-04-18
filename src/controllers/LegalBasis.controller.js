@@ -37,6 +37,7 @@ export const createLegalBasis = async (req, res) => {
       return res.status(403).json({ message: 'Unauthorized' })
     }
     const { jobId, legalBasis } = await LegalBasisService.create(
+      userId,
       {
         legalName,
         abbreviation,
@@ -344,7 +345,8 @@ export const getLegalBasisBySubject = async (req, res) => {
  */
 export const getLegalBasisBySubjectAndAspects = async (req, res) => {
   const { userId } = req
-  const { subjectId, aspectIds } = req.params
+  const { subjectId } = req.params
+  const { aspectIds } = req.query
   try {
     const isAuthorized = await UserService.userExists(userId)
     if (!isAuthorized) {
@@ -489,6 +491,7 @@ export const updateLegalBasis = async (req, res) => {
       return res.status(403).json({ message: 'Unauthorized' })
     }
     const { jobId, legalBasis } = await LegalBasisService.updateById(
+      userId,
       id,
       {
         legalName,

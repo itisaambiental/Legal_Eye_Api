@@ -17,6 +17,7 @@ let createdSubjectId
 const createdSubjectIds = []
 const createdAspectIds = []
 
+const timeout = 20000
 beforeAll(async () => {
   await RequirementRepository.deleteAll()
   await LegalBasisRepository.deleteAll()
@@ -32,7 +33,7 @@ beforeAll(async () => {
     .expect(200)
     .expect('Content-Type', /application\/json/)
   tokenAdmin = response.body.token
-})
+}, timeout)
 
 describe('Subjects API tests', () => {
   describe('POST /subjects - Create a new subject', () => {
@@ -98,19 +99,21 @@ describe('Subjects API tests', () => {
 
       expect(response.body.message).toMatch(/Subject already exists/i)
     })
-    test('Should return 400 if abbreviation is missing', async () => {
+
+    test('Should return 400 if abbreviation is too long', async () => {
       const response = await api
         .post('/api/subjects')
         .set('Authorization', `Bearer ${tokenAdmin}`)
         .send({
-          subjectName: 'Missing Abbreviation',
-          abbreviation: '',
+          subjectName: 'Too Long Abbreviation',
+          abbreviation: 'ABCDEFGHIJK', // 11 characters
           orderIndex: 1
         })
         .expect(400)
       expect(response.body.message).toMatch(/Validation failed/i)
       expect(response.body.errors.some(e => e.field === 'abbreviation')).toBe(true)
     })
+
     test('Should return 400 if orderIndex is 0', async () => {
       const response = await api
         .post('/api/subjects')
@@ -314,19 +317,22 @@ describe('Subjects API tests', () => {
 
       expect(response.body.error).toMatch(/token missing or invalid/i)
     })
-    test('Should return 400 if abbreviation is empty during update', async () => {
+
+    test('Should return 400 if abbreviation is too long during update', async () => {
       const response = await api
         .patch(`/api/subject/${createdSubjectId}`)
         .set('Authorization', `Bearer ${tokenAdmin}`)
         .send({
           subjectName: 'Update Test',
-          abbreviation: '',
+          abbreviation: 'ABCDEFGHIJK',
           orderIndex: 1
         })
         .expect(400)
+
       expect(response.body.message).toMatch(/Validation failed/i)
       expect(response.body.errors.some(e => e.field === 'abbreviation')).toBe(true)
     })
+
     test('Should return 400 if orderIndex is 0 during update', async () => {
       const response = await api
         .patch(`/api/subject/${createdSubjectId}`)
@@ -563,6 +569,7 @@ describe('Subjects API tests', () => {
     })
 
     describe('After removing all legal bases', () => {
+      const timeout = 20000
       beforeAll(async () => {
         for (const legalBasis of createdLegalBases) {
           await api
@@ -570,7 +577,7 @@ describe('Subjects API tests', () => {
             .set('Authorization', `Bearer ${tokenAdmin}`)
             .expect(204)
         }
-      })
+      }, timeout)
 
       test('Should block deletion if subjects are still associated with requirements', async () => {
         const response = await api
@@ -583,6 +590,7 @@ describe('Subjects API tests', () => {
       })
 
       describe('After removing all requirements', () => {
+        const timeout = 20000
         beforeAll(async () => {
           for (const req of createdRequirements) {
             await api
@@ -590,7 +598,7 @@ describe('Subjects API tests', () => {
               .set('Authorization', `Bearer ${tokenAdmin}`)
               .expect(204)
           }
-        })
+        }, timeout)
 
         test('Should return 401 if the user is unauthorized', async () => {
           const response = await api

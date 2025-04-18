@@ -19,6 +19,7 @@ let tokenAdmin
 let createdSubjectId
 const createdAspectIds = []
 
+const timeout = 20000
 beforeAll(async () => {
   await RequirementRepository.deleteAll()
   await LegalBasisRepository.deleteAll()
@@ -63,7 +64,7 @@ beforeAll(async () => {
     const { aspect } = aspectResponse.body
     createdAspectIds.push(aspect.id)
   }
-})
+}, timeout)
 afterEach(() => {
   jest.restoreAllMocks()
 })

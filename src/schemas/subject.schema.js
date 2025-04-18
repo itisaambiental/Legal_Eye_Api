@@ -2,7 +2,8 @@ import { z } from 'zod'
 
 /**
  * Zod validation schema for Subject.
- * Ensures the subject name, abbreviation and order_index meet format and length requirements.
+ * Ensures the subject name and order_index meet format and length requirements.
+ * The abbreviation is optional but still validated if provided.
  */
 const subjectSchema = z.object({
   subjectName: z
@@ -13,7 +14,7 @@ const subjectSchema = z.object({
   abbreviation: z
     .string()
     .max(10, { message: 'The abbreviation cannot exceed 10 characters' })
-    .min(1, { message: 'The abbreviation cannot be empty' }),
+    .optional(),
 
   orderIndex: z.preprocess(
     (value) => (typeof value === 'string' ? Number(value) : value),

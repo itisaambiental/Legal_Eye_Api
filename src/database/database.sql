@@ -46,10 +46,12 @@ CREATE TABLE IF NOT EXISTS verification_codes (
 -- Columns:
 -- - id: Unique identifier for each subject, auto-incremented.
 -- - subject_name: Name of the subject, such as 'Environmental', 'Security', etc.
+-- - abbreviation: Optional short code for the subject.
+-- - order_index: Optional ordering index for display purposes.
 CREATE TABLE IF NOT EXISTS subjects (
     id INT AUTO_INCREMENT PRIMARY KEY,
     subject_name VARCHAR(255) NOT NULL,
-    abbreviation VARCHAR(10) NOT NULL,
+    abbreviation VARCHAR(10),
     order_index INT DEFAULT 0
 );
 
@@ -59,13 +61,14 @@ CREATE TABLE IF NOT EXISTS subjects (
 -- - id: Unique identifier for each aspect, auto-incremented.
 -- - subject_id: Foreign key referencing the 'subjects' table.
 -- - aspect_name: Name of the aspect related to the subject.
+-- - abbreviation: Optional short code for the aspect.
+-- - order_index: Optional ordering index for display purposes.
 CREATE TABLE IF NOT EXISTS aspects (
-    id INT AUTO_INCREMENT,
+    id INT AUTO_INCREMENT PRIMARY KEY,
     subject_id INT NOT NULL,
     aspect_name VARCHAR(255) NOT NULL,
-    abbreviation VARCHAR(10) NOT NULL,
-    order_index INT DEFAULT 0
-    PRIMARY KEY (id),
+    abbreviation VARCHAR(10),
+    order_index INT DEFAULT 0,
     UNIQUE KEY (subject_id, id), 
     FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE CASCADE
 );

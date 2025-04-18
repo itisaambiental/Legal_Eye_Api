@@ -17,6 +17,7 @@ let createdSubjectId
 let createdAspectId
 const createdAspectIds = []
 
+const timeout = 20000
 beforeAll(async () => {
   await RequirementRepository.deleteAll()
   await LegalBasisRepository.deleteAll()
@@ -45,7 +46,7 @@ beforeAll(async () => {
     .expect('Content-Type', /application\/json/)
 
   createdSubjectId = subjectResponse.body.subject.id
-})
+}, timeout)
 
 describe('Aspects API tests', () => {
   describe('POST /subjects/:subjectId/aspects - Create a new aspect', () => {
@@ -127,13 +128,14 @@ describe('Aspects API tests', () => {
 
       expect(response.body.message).toMatch(/Subject not found/i)
     })
-    test('Should return 400 if abbreviation is missing', async () => {
+
+    test('Should return 400 if abbreviation is too long', async () => {
       const response = await api
         .post(`/api/subjects/${createdSubjectId}/aspects`)
         .set('Authorization', `Bearer ${tokenAdmin}`)
         .send({
-          aspectName: 'Aspect Without Abbr',
-          abbreviation: '',
+          aspectName: 'Aspect With Long Abbr',
+          abbreviation: 'ABCDEFGHIJK', // 11 characters
           orderIndex: 1
         })
         .expect(400)
@@ -401,19 +403,22 @@ describe('Aspects API - PATCH /aspect/:id', () => {
 
     expect(response.body.message).toMatch(/Aspect not found/i)
   })
-  test('Should return 400 if abbreviation is empty during update', async () => {
+
+  test('Should return 400 if abbreviation is too long during update', async () => {
     const response = await api
       .patch(`/api/aspect/${createdAspectId}`)
       .set('Authorization', `Bearer ${tokenAdmin}`)
       .send({
         aspectName: 'Updated Aspect',
-        abbreviation: '',
+        abbreviation: 'ABCDEFGHIJK',
         orderIndex: 2
       })
       .expect(400)
+
     expect(response.body.message).toMatch(/Validation failed/i)
     expect(response.body.errors.some(e => e.field === 'abbreviation')).toBe(true)
   })
+
   test('Should return 400 if orderIndex is 0 during update', async () => {
     const response = await api
       .patch(`/api/aspect/${createdAspectId}`)
@@ -612,6 +617,7 @@ describe('DELETE /aspects/batch - Delete multiple aspects with dependencies', ()
   })
 
   describe('After removing all legal bases', () => {
+    const timeout = 20000
     beforeAll(async () => {
       for (const legalBasis of createdLegalBases) {
         await api
@@ -619,7 +625,7 @@ describe('DELETE /aspects/batch - Delete multiple aspects with dependencies', ()
           .set('Authorization', `Bearer ${tokenAdmin}`)
           .expect(204)
       }
-    })
+    }, timeout)
 
     test('Should block deletion if aspects are still associated with requirements', async () => {
       const response = await api
@@ -632,6 +638,7 @@ describe('DELETE /aspects/batch - Delete multiple aspects with dependencies', ()
     })
 
     describe('After removing all requirements', () => {
+      const timeout = 20000
       beforeAll(async () => {
         for (const req of createdRequirements) {
           await api
@@ -639,7 +646,7 @@ describe('DELETE /aspects/batch - Delete multiple aspects with dependencies', ()
             .set('Authorization', `Bearer ${tokenAdmin}`)
             .expect(204)
         }
-      })
+      }, timeout)
 
       test('Should return 401 if the user is unauthorized', async () => {
         const response = await api
