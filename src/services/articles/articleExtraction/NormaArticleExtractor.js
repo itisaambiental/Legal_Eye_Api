@@ -79,52 +79,235 @@ class NormaArticleExtractor extends ArticleExtractor {
   _cleanText (text) {
     const contentKeywordRegex = /\b[Cc]\s*[OoÓó]\s*[Nn]\s*[Tt]\s*[Ee]\s*[Nn]\s*[IiÍí]\s*[Dd]\s*[Oo]\b/gi
     const indexKeywordRegex = /\b[ÍIíi]\s*[Nn]\s*[Dd]\s*[IiÍí]\s*[Cc]\s*[Ee]\b/gi
-
+    const sectionKeywordRegex =
+    /\b[Ss]\s*[Ee]\s*[Cc]\s*[Cc]\s*[ÍIíi]\s*[ÓOóo]\s*[Nn]\s*(\d+[A-Z]*|[IVXLCDM]+)\b/gi
+    const transientKeywordRegex =
+    /\b(?:\w+\s+)*[Tt][Rr][Aa][Nn][Ss][Ii][Tt][Oo][Rr][Ii][AaOo](?:\s*[SsAa])?\s*(\d+[A-Z]*|[IVXLCDM]+)?\b/gi
+    const annexKeywordRegex =
+    /\b[Aa]\s*[Nn]\s*[Ee]\s*[Xx]\s*[Oo]\s*(\d+[A-Z]*|[IVXLCDM]+)?\b/gi
     const ellipsisTextRegex = /[^.]+\s*\.{3,}\s*/g
     const singleEllipsisRegex = /\s*\.{3,}\s*/g
 
     return text
       .replace(contentKeywordRegex, 'CONTENIDO')
       .replace(indexKeywordRegex, 'ÍNDICE')
+      .replace(sectionKeywordRegex, 'SECCIÓN $1')
+      .replace(transientKeywordRegex, 'TRANSITORIO $1')
+      .replace(annexKeywordRegex, 'ANEXO $1')
       .replace(ellipsisTextRegex, '')
       .replace(singleEllipsisRegex, '')
   }
 
   /**
  * @param {string} text - Text to process and extract articles from.
- * @returns {Promise<Array<Article>>} - List of article objects.
+ * @returns {Promise<Array<Article>>} - Array of extracted articles.
  */
   async _extractArticles (text) {
     text = this._cleanText(text)
-
     const lines = text.split('\n').map(line => line.trim()).filter(Boolean)
-    let startIndex = -1
-    let endIndex = -1
-    let firstIndexLine = null
     const indexRegex = /^\s*(ÍNDICE|CONTENIDO)\s*$/i
-    for (let i = 0; i < lines.length; i++) {
-      if (indexRegex.test(lines[i])) {
-        startIndex = i
-        break
+
+    const articlePatternString =
+    '(?:^|\\n)\\s*(' +
+    '(?:secci[oó]n)\\s+\\S+|' +
+    '(?:transitori[oa][s]?)\\s+\\S+|' +
+    '(?:anexo)\\s+\\S+' +
+    ')'
+
+    const articlePattern = new RegExp(articlePatternString, 'i')
+    const articleRegexes = [
+      /^(?:secci[oó]n)\s+\S+$/i,
+      /^(?:transitori[oa][s]?)\s+\S+$/i,
+      /^(?:anexo)\s+\S+$/i
+    ]
+
+    const articles = []
+    let order = 1
+    const lastResult = { isValid: true, reason: null }
+    const indexLine = lines.findIndex(line => indexRegex.test(line))
+    if (indexLine > 0) {
+      const preIndexText = lines.slice(0, indexLine).join('\n')
+      const preSegments = preIndexText.split(articlePattern)
+
+      for (let i = 1; i < preSegments.length; i += 2) {
+        const currentTitle = preSegments[i].trim()
+        const currentContent = (preSegments[i + 1] || '').trim()
+        const currentArticle = `${currentTitle} ${currentContent}`.trim()
+
+        const prevTitle = i > 1 ? preSegments[i - 2]?.trim() : ''
+        const prevContent = i > 1 ? preSegments[i - 1]?.trim() : ''
+        const nextTitle = i + 2 < preSegments.length ? preSegments[i + 2]?.trim() : ''
+        const nextContent = i + 3 < preSegments.length ? preSegments[i + 3]?.trim() : ''
+
+        const previousArticle = `${prevTitle} ${prevContent}`.trim()
+        const nextArticle = `${nextTitle} ${nextContent}`.trim()
+
+        if (articleRegexes.some(r => r.test(currentTitle))) {
+          const currentArticleData = this._createArticleToVerify(
+            currentTitle,
+            lastResult,
+            previousArticle,
+            currentArticle,
+            nextArticle,
+            order++
+          )
+
+          articles.push({
+            title: currentArticleData.title,
+            article: currentArticleData.currentArticle,
+            plainArticle: currentArticleData.plainArticle,
+            order: currentArticleData.order
+          })
+        }
       }
     }
-    if (startIndex === -1) return null
-    firstIndexLine = lines[startIndex + 1]
-    if (!firstIndexLine) return null
-
-    for (let i = startIndex + 2; i < lines.length; i++) {
-      if (lines[i] === firstIndexLine) {
-        endIndex = i
-        break
+    const tryExtractFrom = async (startFromIndex = indexLine >= 0 ? indexLine : 0) => {
+      let startIndex = -1
+      let endIndex = -1
+      for (let i = startFromIndex; i < lines.length; i++) {
+        if (indexRegex.test(lines[i])) {
+          startIndex = i
+          break
+        }
       }
+      if (startIndex === -1 || startIndex + 1 >= lines.length) {
+        throw new ErrorUtils(500, 'Article Processing Error')
+      }
+      const firstIndexLine = lines[startIndex + 1]
+      for (let i = startIndex + 2; i < lines.length; i++) {
+        if (lines[i] === firstIndexLine) {
+          endIndex = i
+          break
+        }
+      }
+      if (endIndex === -1) {
+        return tryExtractFrom(startIndex + 1)
+      }
+      const indexBlock = lines.slice(startIndex + 1, endIndex).join('\n')
+      const result = await this._cleanIndex(indexBlock)
+      if (!result.isValid) {
+        return tryExtractFrom(startIndex + 1)
+      }
+      const numerals = result.numerals
+      const escapedPatterns = numerals.map(title => {
+        const parts = title.split('.')
+        const num = parts[0].trim()
+        const rest = parts.slice(1).join('.').trim()
+        return `${num}\\.\\s+${rest.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`
+      })
+      const pattern = new RegExp(`^\\s*(${escapedPatterns.join('|')})\\b`, 'gm')
+      const matches = [...text.matchAll(pattern)]
+      for (let i = 0; i < matches.length; i++) {
+        const start = matches[i].index
+        const end = i + 1 < matches.length ? matches[i + 1].index : text.length
+        const numeral = matches[i][1]
+        const content = text.slice(start, end).trim()
+
+        const previousTitle = i > 0 ? matches[i - 1][1] : ''
+        const previousContent = i > 0 ? text.slice(matches[i - 1].index, matches[i].index).trim() : ''
+        const nextTitle = i + 1 < matches.length ? matches[i + 1][1] : ''
+        const nextContent = i + 1 < matches.length
+          ? text.slice(matches[i + 1].index, matches[i + 2]?.index || text.length).trim()
+          : ''
+        const previousArticle = `${previousTitle} ${previousContent}`.trim()
+        const nextArticle = `${nextTitle} ${nextContent}`.trim()
+        if (i === matches.length - 1) {
+          const segments = content.split(articlePattern)
+          const matchesInContent = [...content.matchAll(new RegExp(articlePatternString, 'ig'))]
+          let wasSubArticlePushed = false
+          if (matchesInContent.length > 0) {
+            const firstIndex = matchesInContent[0].index
+            const introContent = content.slice(0, firstIndex).trim()
+
+            if (introContent) {
+              const currentArticleData = this._createArticleToVerify(
+                numeral,
+                lastResult,
+                previousArticle,
+                introContent,
+                nextArticle,
+                order++
+              )
+              articles.push({
+                title: currentArticleData.title,
+                article: currentArticleData.currentArticle,
+                plainArticle: currentArticleData.plainArticle,
+                order: currentArticleData.order
+              })
+              wasSubArticlePushed = true
+            }
+          }
+          for (let j = 1; j < segments.length; j += 2) {
+            const currentTitle = segments[j].trim()
+            const currentContent = (segments[j + 1] || '').trim()
+            const currentArticle = `${currentTitle} ${currentContent}`.trim()
+
+            const prevTitle = j > 1 ? segments[j - 2]?.trim() : ''
+            const prevContent = j > 1 ? segments[j - 1]?.trim() : ''
+            const nextTitle = j + 2 < segments.length ? segments[j + 2]?.trim() : ''
+            const nextContent = j + 3 < segments.length ? segments[j + 3]?.trim() : ''
+
+            const previousSubArticle = `${prevTitle} ${prevContent}`.trim()
+            const nextSubArticle = `${nextTitle} ${nextContent}`.trim()
+
+            if (articleRegexes.some(r => r.test(currentTitle))) {
+              const currentArticleData = this._createArticleToVerify(
+                currentTitle,
+                lastResult,
+                previousSubArticle,
+                currentArticle,
+                nextSubArticle,
+                order++
+              )
+              articles.push({
+                title: currentArticleData.title,
+                article: currentArticleData.currentArticle,
+                plainArticle: currentArticleData.plainArticle,
+                order: currentArticleData.order
+              })
+              wasSubArticlePushed = true
+            }
+          }
+
+          if (!wasSubArticlePushed) {
+            const currentArticleData = this._createArticleToVerify(
+              numeral,
+              lastResult,
+              previousArticle,
+              content,
+              nextArticle,
+              order++
+            )
+            articles.push({
+              title: currentArticleData.title,
+              article: currentArticleData.currentArticle,
+              plainArticle: currentArticleData.plainArticle,
+              order: currentArticleData.order
+            })
+          }
+        } else {
+          const currentArticleData = this._createArticleToVerify(
+            numeral,
+            lastResult,
+            previousArticle,
+            content,
+            nextArticle,
+            order++
+          )
+
+          articles.push({
+            title: currentArticleData.title,
+            article: currentArticleData.currentArticle,
+            plainArticle: currentArticleData.plainArticle,
+            order: currentArticleData.order
+          })
+        }
+      }
+
+      return articles
     }
 
-    if (endIndex === -1) return null
-
-    const indexBlock = lines.slice(startIndex + 1, endIndex).join('\n')
-
-    const matches = await this._cleanIndex(indexBlock)
-    console.log(matches)
+    return tryExtractFrom()
   }
 
   /**
@@ -159,7 +342,7 @@ class NormaArticleExtractor extends ArticleExtractor {
 
   /**
  * @param {string} indexText - The raw index text to clean.
- * @returns {Promise<string[]>} - An array of numeral titles extracted from the index.
+ * @returns {Promise<{ numerals: string[], isValid: boolean }>} - Cleaned numerals and index validity.
  */
   async _cleanIndex (indexText) {
     const prompt = this._buildCleanIndexPrompt(indexText)
@@ -168,7 +351,8 @@ class NormaArticleExtractor extends ArticleExtractor {
       messages: [
         {
           role: 'system',
-          content: 'You are a text processing expert specialized in analyzing index sections of Mexican Official Standards (NOMs). Note: Although your instructions are in English, the index sections provided will be in Spanish.'
+          content:
+          'You are a text processing expert specialized in analyzing index sections of Mexican Official Standards (NOMs). Note: Although your instructions are in English, the index sections provided will be in Spanish.'
         },
         { role: 'user', content: prompt }
       ],
@@ -184,13 +368,12 @@ class NormaArticleExtractor extends ArticleExtractor {
         )
         return content
       } catch (error) {
-        console.log(error)
         if (error.status === 429 && retryCount < 3) {
           const backoffTime = Math.pow(2, retryCount) * 1000
           await new Promise(resolve => setTimeout(resolve, backoffTime))
           return attemptRequest(retryCount + 1)
         }
-        throw new ErrorUtils(500, 'Index Cleaning Error', error)
+        throw new ErrorUtils(500, 'Article Processing Error', error)
       }
     }
 
@@ -213,11 +396,35 @@ Given the raw index text below:
 ${index}
 """
 
-Clean it by removing headers, footers, page numbers, and any extraneous content. Then:
-1. Produce a cleaned index containing only the numbered sections (numerals 0., 1., 2., ...), each on its own line.
-2. Extract an array of strings listing each numeral title in order.
+Your task is to:
+1. Clean the index by removing headers, footers, page numbers, links, administrative notes, and any irrelevant content.
+2. Identify and extract only the **numerically ordered** sections such as:
+   - "0. Introducción"
+   - "1. Objeto y Ámbito de validez"
+   - "2. Referencias"
+   - "3. Definiciones"
+   - "4. Requisitos técnicos"
+   - etc.
 
-Do NOT include annexes, transitory provisions, appendices, or any non-numeral sections in the array.
+Rules to determine "isValid":
+- Return "isValid": true **only** if:
+  - The index has at least **3 numeric sections** with a clear order (e.g., "1. Introducción", "2. Objeto...", etc.).
+  - Each line begins with a **number followed by a period and a space**, like "3. Requisitos...".
+  - The list is consistent, structured, and technical in nature (e.g., related to definitions, scope, requirements).
+- Return "isValid": false if:
+  - The text contains non-numeric items, administrative notes, legal announcements, dependencies, pages, or bullet points.
+  - The content resembles a government bulletin, administrative circular, or includes entities like "Secretaría de...", "Delegación...", or page numbers.
+
+Examples of **invalid index content**:
+- Viene de la Pág. 1
+- Secretaría de Seguridad Pública
+-  Aviso por el que se da a conocer...
+- MA-11000-16/10
+- Padrones de Personas Beneficia...
+
+Important:
+- Exclude annexes, transitory provisions, appendices, and **any unnumbered or unordered sections** from the "numerals" list.
+- Each valid numeral must be returned as a **clean string**, preserving accents and original order.
 `
   }
 
@@ -458,85 +665,140 @@ Apply these segmentation and validation rules to every section of the NOM.
    */
   _buildCorrectPrompt (legalName, article) {
     return `
-  You are a technical reviewer and documentation specialist with expertise in Mexican Official Standards (Normas Oficiales Mexicanas, NOMs), specifically in the area of chemistry and industrial regulation. Your task is to correct and format extracted sections of NOMs using clear and professional HTML formatting for use in a legal-technical platform.
-  
-  ### Standard Reference:
-  - **Norma Oficial Mexicana:** "${legalName}"
-  
-  ### Input:
-  {
+Analyze the content of "${article.title}" within the legal basis titled "${legalName}". Then, help format and correct the following article using professional HTML structure and styles:
+
+{
   "title": "${article.title}",
   "article": "${article.article}",
   "plainArticle": "${article.plainArticle}",
   "order": ${article.order}
-  }
-  
-  ---
-  
-  ### Instructions:
-  
-  1. **plainArticle**:
-   - Always leave the value as an empty string: "".
-  
-  2. **Title**:
-   - The "title" must only include the section heading such as "APÉNDICE I", "TRANSITORIO PRIMERO", or hierarchical numerals like "6.1.1 Métodos químicos".
-   - Do not include HTML tags in the title.
-   - If the heading contains a clear numeral (e.g. "6", "6.1", "6.1.1.1") and a short title, preserve it.
-   - Titles must not contain content or explanatory sentences.
-   - Apply consistent formatting for numbering (Arabic or Roman) and qualifiers (Bis, Ter, etc.).
-  
-  #### Examples:
-   - "6 Métodos de Muestreo"
-   - "6.1 Sustancias Volátiles"
-   - "TRANSITORIO PRIMERO"
-   - "APÉNDICE I"
-   - "ÍNDICE"
-   - "PREFACIO"
-  
-  3. **Article (Body)**:
-   - Structure the content using semantic HTML:
-     - Use <p> for paragraphs
-     - Use <h2> or <h3> for subsections
-     - Use <ul>/<ol> and <li> for lists
-     - Use <table> when presenting data or conditions
-     - Use <b> or <i> for emphasis
-   - Break down long paragraphs for readability
-   - Ensure chemical or technical terms are preserved with correct symbols or notation (e.g., "H₂O", "pH", "°C")
-   - If the article contains procedural steps, use numbered or bulleted lists
-   - Do **not** create new content—only complete ideas if obviously truncated.
-  
-  #### Example Output (Chemical NOM):
-  **title:** 6.1 Sustancias Volátiles  
-  **article:**
-  <p>Las sustancias volátiles deberán analizarse utilizando métodos previamente validados por el laboratorio, conforme a los procedimientos establecidos por la autoridad competente.</p>
-  <p>El análisis se realizará bajo condiciones controladas de temperatura (<i>25 ± 2 °C</i>) y presión atmosférica estándar.</p>
-  <ul>
-    <li>Utilizar columnas GC-MS calibradas</li>
-    <li>Realizar duplicados para validar resultados</li>
-  </ul>
-  
-  ---
-  
-  4. **Annexes, Appendices, and Transitory Provisions**:
-   - Format annexes and appendices as short structured references.
-   - Transitory provisions should list each condition separately using bold identifiers (e.g., "PRIMERO.", "SEGUNDO.").
-  
-  #### Example:
-  **title:** TRANSITORIOS  
-  **article:**
-  <p><b>PRIMERO.</b> Esta Norma entrará en vigor 60 días naturales después de su publicación en el Diario Oficial de la Federación.</p>
-  <p><b>SEGUNDO.</b> Los laboratorios tendrán un periodo de adecuación de 180 días.</p>
-  
-  ---
-  
-  5. **General Guidelines**:
-   - Do not add new sections, headers, or fictional definitions.
-   - Ensure clean semantic structure, proper line spacing, and punctuation.
-   - Maintain technical neutrality and avoid interpreting the regulation content.
-   - If tables are found, use proper HTML tags: <table>, <thead>, <tbody>, <tr>, <td>, etc.
-   - Output must be **entirely in Spanish**, preserving the original intent and regulatory integrity.
-  
-  Return the corrected version of the article in this same format.
+}
+
+### Instructions:
+
+1. **plainArticle**:
+   - The "plainArticle" field must always remain as an empty string ("").
+   - Do not modify or populate this field with any content.
+
+2. **Title**:
+   - The title field should only state the numeral, section, or annex number.
+   - If the article content begins with a **numeral indicator** (e.g., "1.1", "3.3", "bis", "ter", "quater", "quinquies", "sexies", "septies", "octies", "novies", "nonies", "decies", "undecies", "duodecies", "terdecies", "quaterdecies", "quindecies"), **or an ordinal numeral** (e.g., "décimo", "undécimo", "duodécimo", "trigésimo", "cuadragésimo", "quincuagésimo", "sexagésimo", "septuagésimo", "octogésimo", "nonagésimo", "centésimo"), "Check if the numeral indicator is being used as part of the article’s legal meaning. If removing it does not change the meaning, move it to the title field.  If the numeral indicator is an essential part of the article’s meaning, keep it within the content.".
+   - This applies to **numerals, sections,annex and transitories,**.
+   - Ensure that titles are concise and formatted consistently.
+   - Do not use HTML tags in titles.
+
+#### Examples (in Spanish):
+- **0. Introducción**, **1. Objeto y Ámbito de validez**, **2. Campo de aplicación**
+- **3. Referencias normativas**, **4. Definiciones**, **SECCIÓN I**, **5. Clasificación**
+- **6. Requisitos técnicos**, **7. Métodos de prueba**, **SECCIÓN II**
+- **8. Inspección**, **9. Muestreo**, **10. Marcado, etiquetado y embalaje**
+- **ANEXO A**, **ANEXO B**, **11. Almacenamiento**
+- **12. Bibliografía**, **13. Concordancia con normas internacionales**
+- **TRANSITORIO PRIMERO**, **TRANSITORIO SEGUNDO**, **ANEXO C**
+- **14. Vigencia**, **SECCIÓN FINAL**, **ANEXO D**
+
+**Output (Unformatted HTML):**  
+- 0. Introducción, 1. Objeto y Ámbito de validez, 2. Campo de aplicación  
+- 3. Referencias normativas, 4. Definiciones, SECCIÓN I, 5. Clasificación  
+- 6. Requisitos técnicos, 7. Métodos de prueba, SECCIÓN II  
+- 8. Inspección, 9. Muestreo, 10. Marcado, etiquetado y embalaje  
+- ANEXO A, ANEXO B, 11. Almacenamiento  
+- 12. Bibliografía, 13. Concordancia con normas internacionales  
+- TRANSITORIO PRIMERO, TRANSITORIO SEGUNDO, ANEXO C  
+- 14. Vigencia, SECCIÓN FINAL, ANEXO D
+
+
+3. **Numerals**:
+   - Review and correct long paragraphs, ensuring each explains a specific concept or legal provision.
+   - Divide content into sections or subsections for clarity, using appropriate HTML tags:
+     - <h2>, <h3> for headings
+     - <p> for paragraphs
+     - <ul> and <li> for lists
+   - Use <b> for emphasis, <i> for additional context, and <span> for inline styles where necessary.
+   - Complete truncated words or sentences without altering their meaning.
+
+  #### Example (in Spanish):
+   **title:** Introducción, 1 
+   **article:** Esta Norma Oficial Mexicana establece los requisitos mínimos de construcción que se deben cumplir
+  durante la perforación de pozos para la extracción de aguas nacionales y trabajos asociados, con objeto
+  deevitar la contaminación de los acuíferos.
+   **order:** 1
+
+  **Article Output (Formatted in HTML):**  
+   **title:** Introducción, 1    // Titles should not have HTML tags.
+   **article:** <p>Esta <i>Norma Oficial Mexicana</i> establece los requisitos mínimos de construcción que se deben cumplir  durante la perforación de pozos para la extracción de aguas nacionales y trabajos asociados,</p>  
+   <p>con objeto de evitar la contaminación de los acuíferos.</p>
+   **order:** 1
+
+  4. Sections, and Annexes:
+   - Ensure headings are concise and formatted with appropriate text structure.
+   - Titles should be short and precise, containing only the grouping heading without including articles or detailed content.
+   - If any articles are included, remove them from the chapter, section, title, or annex.
+   - Please do not create or write random definitions within the Sections, and Annexes. Just make sure you are working with the information that is being shared with you. 
+
+   - Sections, and Annexes should follow the structure:
+     - SECTION # + Section Name
+     - ANNEX # + Annex Name
+
+   ATTENTION:
+   - Section, and Annex names should be short.
+   - Do not include additional information in these headings.
+
+    Examples:
+
+    Example 2 (Section in Spanish):
+    title: SECCIÓN PRIMERA
+    article: DISPOSICIONES COMUNES
+    order: 6
+
+    Output (Formatted):
+    title: SECCIÓN PRIMERA
+    article: DISPOSICIONES COMUNES
+    order: 6
+
+    Example 4 (Annex in Spanish) - NEW:
+    title: ANEXO IV
+    article: REQUISITOS TÉCNICOS PARA LA EVALUACIÓN DE IMPACTO AMBIENTAL
+    order: 1
+
+    Output (Formatted):
+    title: ANEXO IV
+    article: REQUISITOS TÉCNICOS PARA LA EVALUACIÓN DE IMPACTO AMBIENTAL
+    order: 1
+
+5. **Transitory Provisions**:
+   - Format temporary provisions clearly, specifying effective dates and adaptation periods.
+   - Use <table> tags to organize conditions, dates, and timelines when needed.
+
+   #### Example (in Spanish):
+    **title:** TRANSITORIOS  
+    **article:**  
+      PRIMERO. El presente Decreto entrará en vigor al día siguiente de su publicación en el Periódico Oficial del Estado.  
+      SEGUNDO. Se derogan todas las disposiciones que se opongan al presente Decreto.  
+    **order:** 200
+
+  **Output (Formatted in HTML):**
+    **title:** TRANSITORIOS   // Titles should not have HTML tags.
+    **article:**  
+     <p><b>PRIMERO.</b> El presente Decreto entrará en vigor al día siguiente de su publicación en el Periódico Oficial del Estado.</p>  
+     <p><b>SEGUNDO.</b> Se derogan todas las disposiciones que se opongan al presente Decreto.</p>  
+    **order:** 200
+
+6. **Others (if applicable)**:
+   - Review for general coherence, structure, and formatting.
+   - Apply HTML styles to maintain clarity, readability, and a professional appearance.
+
+### Additional Formatting Guidelines:
+
+- Please do not create or write random definitions within the article. Just make sure you are working with the information that is being shared with you. 
+- Use consistent and professional formatting, such as proper indentation for nested elements.
+- **Never delete, omit, or ignore numbered or lettered fractions** (e.g., 1.1, 1.1.2, I.A, a), i), etc.) found in the articles.
+- Respect spaces, punctuation (e.g., periods, hyphens), and line breaks for clarity.
+- The text contains footnotes or headers that is not relevant to the context. This information that is out of context is removed. (Remove footnotes and headers)
+- Ensure all text ends with complete ideas but but without making up or creating new things.
+- Maintain any existing tables or columns using <table>, <thead>, <tbody>, and <tr> tags.
+- Use semantic HTML wherever possible to improve readability and structure.
+- Return the corrected object in **Spanish**, preserving the original meaning of the text.
   `
   }
 }

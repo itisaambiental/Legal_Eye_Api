@@ -82,10 +82,11 @@ const singleArticleModelSchema = z.object({
 })
 
 /**
-* Zod validation schema for the Index response.
+ * Zod validation schema for the Index response.
  */
 const IndexResponseSchema = z.object({
-  numerals: z.array(z.string())
+  numerals: z.array(z.string()),
+  isValid: z.boolean()
 })
 
 export { singleArticleSchema, articlesSchema, ArticleVerificationSchema, singleArticleModelSchema, IndexResponseSchema }

@@ -314,7 +314,9 @@ You are a legal expert who confirms the validity of legal provisions:
 - **Headers and Footnotes:** Please disregard any **headers** or **footnotes** (e.g., page numbers, publication dates, and references to external sources) present in the article or legal text. These elements are often part of the document layout but are not considered part of the legal provision itself.
 - **Content of the Provision:** Focus on the **legal content** itself, i.e., the specific rule, directive, or principle outlined in the body of the article or provision.
 - **Order of Provisions:** If the **Previous Provision**, **Current Provision**, and **Next Provision** follow the correct **logical order** and are connected in a coherent sequence, they must always be classified as **VALID**.
+- **Classification Caution:** Be **extremely careful** when classifying a provision as invalid. If there is **any doubt**, lean towards classifying it as **VALID** to avoid **accidentally skipping** or omitting an article from analysis. Every provision must be evaluated **meticulously** to ensure completeness.
 - 1- If the article is classified as VALID (isValid: true), then the field reason must be null. 
+
   2- If the article is classified as INVALID (isValid: false), then the field reason must always contain a specific value from the following options:
     "IsContinuation" → The provision is a direct continuation of a previous incomplete provision.
     "IsIncomplete" → The provision is abruptly cut off or clearly unfinished, lacking a concluding idea.
@@ -643,6 +645,7 @@ Analyze the content of "${article.title}" within the legal basis titled "${legal
 
 - Please do not create or write random definitions within the article. Just make sure you are working with the information that is being shared with you. 
 - Use consistent and professional formatting, such as proper indentation for nested elements.
+- **Never delete, omit, or ignore numbered or lettered fractions** (e.g., 1.1, 1.1.2, I.A, a), i), etc.) found in the articles.
 - Respect spaces, punctuation (e.g., periods, hyphens), and line breaks for clarity.
 - The text contains footnotes or headers that is not relevant to the context. This information that is out of context is removed. (Remove footnotes and headers)
 - Ensure all text ends with complete ideas but but without making up or creating new things.

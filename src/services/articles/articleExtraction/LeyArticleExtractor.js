@@ -308,8 +308,14 @@ You are a legal expert who confirms the validity of legal provisions:
 - **Headers and Footnotes:** Please disregard any **headers** or **footnotes** (e.g., page numbers, publication dates, and references to external sources) present in the article or legal text. These elements are often part of the document layout but are not considered part of the legal provision itself.
 - **Content of the Provision:** Focus on the **legal content** itself, i.e., the specific rule, directive, or principle outlined in the body of the article or provision.
 - **Order of Provisions:** If the **Previous Provision**, **Current Provision**, and **Next Provision** follow the correct **logical order** and are connected in a coherent sequence, they must always be classified as **VALID**.
+- **Classification Caution:** Be **extremely careful** when classifying a provision as invalid. If there is **any doubt**, lean towards classifying it as **VALID** to avoid **accidentally skipping** or omitting an article from analysis. Every provision must be evaluated **meticulously** to ensure completeness.
+- 1- If the article is classified as VALID (isValid: true), then the field reason must be null. 
 
-## **Valid Legal Provision**
+  2- If the article is classified as INVALID (isValid: false), then the field reason must always contain a specific value from the following options:
+    "IsContinuation" → The provision is a direct continuation of a previous incomplete provision.
+    "IsIncomplete" → The provision is abruptly cut off or clearly unfinished, lacking a concluding idea.
+
+    ## **Valid Legal Provision**
 
 1. **Articles (Artículos)**:
  - If the current article ends with a clear, logical idea, whether short or long, it should be considered valid. A clear idea is one that presents a complete rule, principle, or directive, even if brief.
@@ -432,7 +438,7 @@ You are a legal expert who confirms the validity of legal provisions:
        - **Current Provision:** "ARTÍCULO 35 de la Ley, son coordinados por la Secretaría, su Secretario Técnico podrá ser un representante de la instancia coordinadora sectorial de la federación se integran con representantes de los gobiernos municipales que conforman su región, quienes conforman la comisión ejecutiva, y con representantes de las organizaciones productivas y sociales con incidencia en la mayor parte o en la totalidad del territorio de la región, en conjunto con las instituciones federales y estatales que apoyan proyectos y acciones para el desarrollo económico, social ambiental de alcance microregional o regional."
        - **Next Provision:** "ARTÍCULO 13.- En concordancia con el ARTÍCULO 37 de la Ley, los Consejos Municipales son las instancias encargadas de la formulación participativa del Programa Estratégico Municipal de Desarrollo Rural Sustentable, mismo que deberá actualizarse anualmente con un programa de trabajo sectorial, el cual servirá de sustento formal a los gobiernos municipales para la inclusión de los rubros de inversión para el sector rural en sus programas operativos anuales."
        - **Reasoning:** The **Current Provision** is a clear continuation of the **Previous Provision**, and should be marked as **IsContinuation**. Even though the article number changed, the content logically continues from the previous article, and thus it is treated as a continuation.
-   `
+    `
   }
 
   /**
@@ -486,160 +492,161 @@ You are a legal expert who confirms the validity of legal provisions:
    */
   _buildCorrectPrompt (legalName, article) {
     return `
-Analyze the content of "${article.title}" within the legal basis titled "${legalName}". Then, help format and correct the following article using professional HTML structure and styles:
-
-{
-"title": "${article.title}",
-"article": "${article.article}",
-"plainArticle": "${article.plainArticle}",
-"order": ${article.order}
-}
-
-### Instructions:
-
-1. **plainArticle**:
- - The "plainArticle" field must always remain as an empty string ("").
- - Do not modify or populate this field with any content.
-
-2. **Title**:
- - The title field should only state the article, title, section, or chapter number.
- - If the article content begins with a **numeral indicator** (e.g., "bis", "ter", "quater", "quinquies", "sexies", "septies", "octies", "novies", "nonies", "decies", "undecies", "duodecies", "terdecies", "quaterdecies", "quindecies"), **or an ordinal numeral** (e.g., "décimo", "undécimo", "duodécimo", "trigésimo", "cuadragésimo", "quincuagésimo", "sexagésimo", "septuagésimo", "octogésimo", "nonagésimo", "centésimo"), "Check if the numeral indicator is being used as part of the article’s legal meaning. If removing it does not change the meaning, move it to the title field.  If the numeral indicator is an essential part of the article’s meaning, keep it within the content.".
- - This applies to **articles, chapters, sections, titles, annex and transitories,**.
- - Ensure that titles are concise and formatted consistently.
- - Do not use HTML tags in titles.
-
-#### Examples (in Spanish):
- - **ARTÍCULO 1 Bis**, **SECCIÓN 2**, **CAPÍTULO 3**
- - **Artículo I Ter**, **Artículo II**, **Sección III**, **CAPÍTULO IV**
- - **Artículo 1 Bis**, **Artículo 2**, **SECCIÓN 3 Ter**, **Capítulo 4 Bis**
- - **Capítulo Tercero**, **Sección Cuarta**, **Artículo Primero Sexies**
- - **TÍTULO I**, **Título I Bis**, **Título VII**, **Título VIII Quater**
- - **CAPÍTULO DÉCIMO SEGUNDO**, **CAPÍTULO DÉCIMO TERCERO**, **CAPÍTULO TRIGÉSIMO PRIMERO**
- - **SECCIÓN UNDÉCIMA**, **SECCIÓN VIGÉSIMA, **TRANSITORIO PRIMERO**, **ANEXO 1**
- - **TÍTULO CUADRAGÉSIMO**, **TÍTULO QUINCUAGÉSIMO SEXTO**, **TRANSITORIO SEGUNDO**, **ANEXO II**
-
-**Output (Unformatted HTML):**  
- // Titles should not have HTML tags.
- - ARTÍCULO 1 Bis, Sección 2, Capítulo 3
- - Artículo I Ter - Artículo II, Sección III, CAPÍTULO IV
- - Artículo 1 Bis - Artículo 2, SECCIÓN 3 Ter, Capítulo 4 Bis
- - Capítulo Tercero, Sección Cuarta, Artículo Primero Sexies
- - TÍTULO I, Título I Bis, Título VII, Título VIII Quater
- - CAPÍTULO DÉCIMO SEGUNDO, CAPÍTULO DÉCIMO TERCERO, CAPÍTULO TRIGÉSIMO PRIMERO
- - SECCIÓN UNDÉCIMA, SECCIÓN VIGÉSIMA, TRANSITORIO PRIMERO, ANEXO 1
- - TÍTULO CUADRAGÉSIMO, TÍTULO QUINCUAGÉSIMO SEXTO, TRANSITORIO SEGUNDO, ANEXO II
-
-3. **Articles**:
- - Review and correct long paragraphs, ensuring each explains a specific concept or legal provision.
- - Divide content into sections or subsections for clarity, using appropriate HTML tags:
-   - <h2>, <h3> for headings
-   - <p> for paragraphs
-   - <ul> and <li> for lists
- - Use <b> for emphasis, <i> for additional context, and <span> for inline styles where necessary.
- - Complete truncated words or sentences without altering their meaning.
-
-#### Example (in Spanish):
- **title:** ARTÍCULO 1 
- **article:** La Secretaría podrá establecer una vigencia en las autorizaciones que ésta emita en materia de impacto ambiental y, en su caso, de riesgo ambiental. En tales casos, el promovente deberá tramitar la renovación correspondiente conforme a los criterios que la Secretaría determine.
- **order:** 1
-
-**Article Output (Formatted in HTML):**  
- **title:** ARTÍCULO 1   // Titles should not have HTML tags.
- **article:** <p>La Secretaría podrá establecer una <b>vigencia</b> en las autorizaciones que ésta emita en materia de <i>impacto ambiental</i> y, en su caso, de riesgo ambiental.</p>  
- <p>En tales casos, el promovente deberá tramitar la renovación correspondiente conforme a los criterios que la Secretaría determine.</p>
- **order:** 1
-
-4. Chapters, Titles, Sections, and Annexes:
- - Ensure headings are concise and formatted with appropriate text structure.
- - Titles should be short and precise, containing only the grouping heading without including articles or detailed content.
- - If any articles are included, remove them from the chapter, section, title, or annex.
- - Please do not create or write random definitions within the Chapters, Titles, Sections, and Annexes. Just make sure you are working with the information that is being shared with you. 
-
- - Chapters, Titles, Sections, and Annexes should follow the structure:
-   - TITLE # + Title Name
-   - CHAPTER # + Chapter Name
-   - SECTION # + Section Name
-   - ANNEX # + Annex Name
-
- ATTENTION:
- - Title, Chapter, Section, and Annex names should be short.
- - Do not include additional information in these headings.
-
-  Examples:
-
-  Example 1 (Chapter in Spanish):
-  title: CAPÍTULO TERCERO
-  article: DEL COMITÉ ESTATAL DE EMERGENCIAS Y DESASTRES. La Ley del Agua para el Estado de Puebla tiene como finalidad regular el uso, conservación y protección del agua, asegurando su disponibilidad y calidad para las generaciones presentes y futuras.
-  order: 3
-
-  Output (Formatted):
-  title: CAPÍTULO TERCERO
-  article: DEL COMITÉ ESTATAL DE EMERGENCIAS Y DESASTRES
-  order: 3
-
-  Example 2 (Section in Spanish):
-  title: SECCIÓN PRIMERA
-  article: DISPOSICIONES COMUNES
-  order: 6
-
-  Output (Formatted):
-  title: SECCIÓN PRIMERA
-  article: DISPOSICIONES COMUNES
-  order: 6
-
-  Example 3 (Title in Spanish):
-  title: TÍTULO I
-  article: DISPOSICIONES GENERALES
-  order: 1
-
-  Output (Formatted):
-  title: TÍTULO I
-  article: DISPOSICIONES GENERALES
-  order: 1
-
-  Example 4 (Annex in Spanish) - NEW:
-  title: ANEXO IV
-  article: REQUISITOS TÉCNICOS PARA LA EVALUACIÓN DE IMPACTO AMBIENTAL
-  order: 1
-
-  Output (Formatted):
-  title: ANEXO IV
-  article: REQUISITOS TÉCNICOS PARA LA EVALUACIÓN DE IMPACTO AMBIENTAL
-  order: 1
-
-5. **Transitory Provisions**:
- - Format temporary provisions clearly, specifying effective dates and adaptation periods.
- - Use <table> tags to organize conditions, dates, and timelines when needed.
-
- #### Example (in Spanish):
-  **title:** TRANSITORIOS  
-  **article:**  
-    PRIMERO. El presente Decreto entrará en vigor al día siguiente de su publicación en el Periódico Oficial del Estado.  
-    SEGUNDO. Se derogan todas las disposiciones que se opongan al presente Decreto.  
-  **order:** 200
-
-**Output (Formatted in HTML):**
-  **title:** TRANSITORIOS   // Titles should not have HTML tags.
-  **article:**  
-   <p><b>PRIMERO.</b> El presente Decreto entrará en vigor al día siguiente de su publicación en el Periódico Oficial del Estado.</p>  
-   <p><b>SEGUNDO.</b> Se derogan todas las disposiciones que se opongan al presente Decreto.</p>  
-  **order:** 200
-
-6. **Others (if applicable)**:
- - Review for general coherence, structure, and formatting.
- - Apply HTML styles to maintain clarity, readability, and a professional appearance.
-
-### Additional Formatting Guidelines:
-
-- Please do not create or write random definitions within the article. Just make sure you are working with the information that is being shared with you. 
-- Use consistent and professional formatting, such as proper indentation for nested elements.
-- Respect spaces, punctuation (e.g., periods, hyphens), and line breaks for clarity.
-- The text contains footnotes or headers that is not relevant to the context. This information that is out of context is removed. (Remove footnotes and headers)
-- Ensure all text ends with complete ideas but but without making up or creating new things.
-- Maintain any existing tables or columns using <table>, <thead>, <tbody>, and <tr> tags.
-- Use semantic HTML wherever possible to improve readability and structure.
-- Return the corrected object in **Spanish**, preserving the original meaning of the text.
-`
+  Analyze the content of "${article.title}" within the legal basis titled "${legalName}". Then, help format and correct the following article using professional HTML structure and styles:
+  
+  {
+    "title": "${article.title}",
+    "article": "${article.article}",
+    "plainArticle": "${article.plainArticle}",
+    "order": ${article.order}
+  }
+  
+  ### Instructions:
+  
+  1. **plainArticle**:
+     - The "plainArticle" field must always remain as an empty string ("").
+     - Do not modify or populate this field with any content.
+  
+  2. **Title**:
+     - The title field should only state the article, title, section, or chapter number.
+     - If the article content begins with a **numeral indicator** (e.g., "bis", "ter", "quater", "quinquies", "sexies", "septies", "octies", "novies", "nonies", "decies", "undecies", "duodecies", "terdecies", "quaterdecies", "quindecies"), **or an ordinal numeral** (e.g., "décimo", "undécimo", "duodécimo", "trigésimo", "cuadragésimo", "quincuagésimo", "sexagésimo", "septuagésimo", "octogésimo", "nonagésimo", "centésimo"), "Check if the numeral indicator is being used as part of the article’s legal meaning. If removing it does not change the meaning, move it to the title field.  If the numeral indicator is an essential part of the article’s meaning, keep it within the content.".
+     - This applies to **articles, chapters, sections, titles, annex and transitories,**.
+     - Ensure that titles are concise and formatted consistently.
+     - Do not use HTML tags in titles.
+  
+    #### Examples (in Spanish):
+     - **ARTÍCULO 1 Bis**, **SECCIÓN 2**, **CAPÍTULO 3**
+     - **Artículo I Ter**, **Artículo II**, **Sección III**, **CAPÍTULO IV**
+     - **Artículo 1 Bis**, **Artículo 2**, **SECCIÓN 3 Ter**, **Capítulo 4 Bis**
+     - **Capítulo Tercero**, **Sección Cuarta**, **Artículo Primero Sexies**
+     - **TÍTULO I**, **Título I Bis**, **Título VII**, **Título VIII Quater**
+     - **CAPÍTULO DÉCIMO SEGUNDO**, **CAPÍTULO DÉCIMO TERCERO**, **CAPÍTULO TRIGÉSIMO PRIMERO**
+     - **SECCIÓN UNDÉCIMA**, **SECCIÓN VIGÉSIMA, **TRANSITORIO PRIMERO**, **ANEXO 1**
+     - **TÍTULO CUADRAGÉSIMO**, **TÍTULO QUINCUAGÉSIMO SEXTO**, **TRANSITORIO SEGUNDO**, **ANEXO II**
+  
+    **Output (Unformatted HTML):**  
+     // Titles should not have HTML tags.
+     - ARTÍCULO 1 Bis, Sección 2, Capítulo 3
+     - Artículo I Ter - Artículo II, Sección III, CAPÍTULO IV
+     - Artículo 1 Bis - Artículo 2, SECCIÓN 3 Ter, Capítulo 4 Bis
+     - Capítulo Tercero, Sección Cuarta, Artículo Primero Sexies
+     - TÍTULO I, Título I Bis, Título VII, Título VIII Quater
+     - CAPÍTULO DÉCIMO SEGUNDO, CAPÍTULO DÉCIMO TERCERO, CAPÍTULO TRIGÉSIMO PRIMERO
+     - SECCIÓN UNDÉCIMA, SECCIÓN VIGÉSIMA, TRANSITORIO PRIMERO, ANEXO 1
+     - TÍTULO CUADRAGÉSIMO, TÍTULO QUINCUAGÉSIMO SEXTO, TRANSITORIO SEGUNDO, ANEXO II
+  
+  3. **Articles**:
+     - Review and correct long paragraphs, ensuring each explains a specific concept or legal provision.
+     - Divide content into sections or subsections for clarity, using appropriate HTML tags:
+       - <h2>, <h3> for headings
+       - <p> for paragraphs
+       - <ul> and <li> for lists
+     - Use <b> for emphasis, <i> for additional context, and <span> for inline styles where necessary.
+     - Complete truncated words or sentences without altering their meaning.
+  
+    #### Example (in Spanish):
+     **title:** ARTÍCULO 1 
+     **article:** La Secretaría podrá establecer una vigencia en las autorizaciones que ésta emita en materia de impacto ambiental y, en su caso, de riesgo ambiental. En tales casos, el promovente deberá tramitar la renovación correspondiente conforme a los criterios que la Secretaría determine.
+     **order:** 1
+  
+    **Article Output (Formatted in HTML):**  
+     **title:** ARTÍCULO 1   // Titles should not have HTML tags.
+     **article:** <p>La Secretaría podrá establecer una <b>vigencia</b> en las autorizaciones que ésta emita en materia de <i>impacto ambiental</i> y, en su caso, de riesgo ambiental.</p>  
+     <p>En tales casos, el promovente deberá tramitar la renovación correspondiente conforme a los criterios que la Secretaría determine.</p>
+     **order:** 1
+  
+    4. Chapters, Titles, Sections, and Annexes:
+     - Ensure headings are concise and formatted with appropriate text structure.
+     - Titles should be short and precise, containing only the grouping heading without including articles or detailed content.
+     - If any articles are included, remove them from the chapter, section, title, or annex.
+     - Please do not create or write random definitions within the Chapters, Titles, Sections, and Annexes. Just make sure you are working with the information that is being shared with you. 
+  
+     - Chapters, Titles, Sections, and Annexes should follow the structure:
+       - TITLE # + Title Name
+       - CHAPTER # + Chapter Name
+       - SECTION # + Section Name
+       - ANNEX # + Annex Name
+  
+     ATTENTION:
+     - Title, Chapter, Section, and Annex names should be short.
+     - Do not include additional information in these headings.
+  
+      Examples:
+  
+      Example 1 (Chapter in Spanish):
+      title: CAPÍTULO TERCERO
+      article: DEL COMITÉ ESTATAL DE EMERGENCIAS Y DESASTRES. La Ley del Agua para el Estado de Puebla tiene como finalidad regular el uso, conservación y protección del agua, asegurando su disponibilidad y calidad para las generaciones presentes y futuras.
+      order: 3
+  
+      Output (Formatted):
+      title: CAPÍTULO TERCERO
+      article: DEL COMITÉ ESTATAL DE EMERGENCIAS Y DESASTRES
+      order: 3
+  
+      Example 2 (Section in Spanish):
+      title: SECCIÓN PRIMERA
+      article: DISPOSICIONES COMUNES
+      order: 6
+  
+      Output (Formatted):
+      title: SECCIÓN PRIMERA
+      article: DISPOSICIONES COMUNES
+      order: 6
+  
+      Example 3 (Title in Spanish):
+      title: TÍTULO I
+      article: DISPOSICIONES GENERALES
+      order: 1
+  
+      Output (Formatted):
+      title: TÍTULO I
+      article: DISPOSICIONES GENERALES
+      order: 1
+  
+      Example 4 (Annex in Spanish) - NEW:
+      title: ANEXO IV
+      article: REQUISITOS TÉCNICOS PARA LA EVALUACIÓN DE IMPACTO AMBIENTAL
+      order: 1
+  
+      Output (Formatted):
+      title: ANEXO IV
+      article: REQUISITOS TÉCNICOS PARA LA EVALUACIÓN DE IMPACTO AMBIENTAL
+      order: 1
+  
+  5. **Transitory Provisions**:
+     - Format temporary provisions clearly, specifying effective dates and adaptation periods.
+     - Use <table> tags to organize conditions, dates, and timelines when needed.
+  
+     #### Example (in Spanish):
+      **title:** TRANSITORIOS  
+      **article:**  
+        PRIMERO. El presente Decreto entrará en vigor al día siguiente de su publicación en el Periódico Oficial del Estado.  
+        SEGUNDO. Se derogan todas las disposiciones que se opongan al presente Decreto.  
+      **order:** 200
+  
+    **Output (Formatted in HTML):**
+      **title:** TRANSITORIOS   // Titles should not have HTML tags.
+      **article:**  
+       <p><b>PRIMERO.</b> El presente Decreto entrará en vigor al día siguiente de su publicación en el Periódico Oficial del Estado.</p>  
+       <p><b>SEGUNDO.</b> Se derogan todas las disposiciones que se opongan al presente Decreto.</p>  
+      **order:** 200
+  
+  6. **Others (if applicable)**:
+     - Review for general coherence, structure, and formatting.
+     - Apply HTML styles to maintain clarity, readability, and a professional appearance.
+  
+  ### Additional Formatting Guidelines:
+  
+  - Please do not create or write random definitions within the article. Just make sure you are working with the information that is being shared with you. 
+  - Use consistent and professional formatting, such as proper indentation for nested elements.
+  - **Never delete, omit, or ignore numbered or lettered fractions** (e.g., 1.1, 1.1.2, I.A, a), i), etc.) found in the articles.
+  - Respect spaces, punctuation (e.g., periods, hyphens), and line breaks for clarity.
+  - The text contains footnotes or headers that is not relevant to the context. This information that is out of context is removed. (Remove footnotes and headers)
+  - Ensure all text ends with complete ideas but but without making up or creating new things.
+  - Maintain any existing tables or columns using <table>, <thead>, <tbody>, and <tr> tags.
+  - Use semantic HTML wherever possible to improve readability and structure.
+  - Return the corrected object in **Spanish**, preserving the original meaning of the text.
+    `
   }
 }
 
