@@ -81,4 +81,11 @@ const singleArticleModelSchema = z.object({
   order: z.number()
 })
 
-export { singleArticleSchema, articlesSchema, ArticleVerificationSchema, singleArticleModelSchema }
+/**
+* Zod validation schema for the Index response.
+ */
+const IndexResponseSchema = z.object({
+  numerals: z.array(z.string())
+})
+
+export { singleArticleSchema, articlesSchema, ArticleVerificationSchema, singleArticleModelSchema, IndexResponseSchema }

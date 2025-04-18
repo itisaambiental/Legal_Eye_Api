@@ -50,6 +50,7 @@ const CONCURRENCY = Number(CONCURRENCY_EXTRACT_ARTICLES || 1)
 articlesQueue.process(CONCURRENCY, async (job, done) => {
   /** @type {ArticleExtractorJobData} */
   const { userId, legalBasisId, intelligenceLevel } = job.data
+  console.log(job.id)
   try {
     const currentJob = await articlesQueue.getJob(job.id)
     if (!currentJob) throw new ErrorUtils(404, 'Job not found')
@@ -103,7 +104,6 @@ articlesQueue.process(CONCURRENCY, async (job, done) => {
           legalBase.legal_name,
           error.message
         )
-        console.error('Error generating email:', emailData)
         await emailQueue.add(emailData)
       }
     } catch (notifyError) {
