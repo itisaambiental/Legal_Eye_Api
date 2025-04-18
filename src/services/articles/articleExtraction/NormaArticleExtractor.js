@@ -308,184 +308,149 @@ class NormaArticleExtractor extends ArticleExtractor {
   /**
  * Constructs a verification prompt for evaluating a legal provision.
  *
-/**
  * @param {string} legalName - The name of the legal base.
  * @param {ArticleToVerify} article - The article for which the verification prompt is built.
  * @returns {string} - The constructed prompt.
  */
   _buildVerifyPrompt (legalName, article) {
-    console.log(article)
     return `
-You are a regulatory expert in chemical safety and compliance. Your task is to validate provisions extracted from Mexican Official Standards (Normas Oficiales Mexicanas - NOMs) in the chemical field.
+You are a legal expert who confirms the validity of legal provisions:
 
 ### Evaluation Context:
-- **NOM Standard:** "${legalName}"
-- **Previous Section:** "${article.previousArticle.content}"
-  (Validation: { "isValid": ${article.previousArticle.lastResult.isValid}, "reason": ${article.previousArticle.lastResult.reason === null ? 'null' : `"${article.previousArticle.lastResult.reason}"`} })
-- **Current Section (To be evaluated):** "${article.currentArticle}"
-- **Next Section:** "${article.nextArticle}"
+- **Legal Base:** "${legalName}"
+- **Previous Provision:** "${article.previousArticle.content}" 
+(Validation: { "isValid": ${article.previousArticle.lastResult.isValid}, "reason": "${article.previousArticle.lastResult.reason}" })
+- **Current Provision(To be evaluated):** "${article.currentArticle}"
+- **Next Provision:** "${article.nextArticle}"
 
 ### **Important Note on Text Evaluation**
-- **Headers and Footnotes:** Please disregard any **headers** or **footnotes** (e.g., page numbers, publication dates, and references to external sources) present in the article or legal text. These elements are part of the document layout but **are not** considered part of the legal provision itself.
-- **Content of the Provision:** Focus solely on the **legal content** itself, i.e. the specific rule, directive, or principle outlined in the body of the article or provision.
-- **Order of Provisions:** If the **Previous**, **Current**, and **Next** follow a coherent logical sequence, they **must** be classified as **VALID**.
-- **Classification Rules:**
-  1. If the article is classified as **VALID** (\`isValid: true\`), then the field \`reason\` **must** be \`null\`.  
-  2. If the article is classified as **INVALID** (\`isValid: false\`), then the field \`reason\` **must** be one of:
-     - \`"IsContinuation"\` → The provision continues an earlier incomplete section.
-     - \`"IsIncomplete"\`   → The provision is abruptly cut off or clearly unfinished, lacking a concluding idea.
+- **Headers and Footnotes:** Please disregard any **headers** or **footnotes** (e.g., page numbers, publication dates, and references to external sources) present in the article or legal text. These elements are often part of the document layout but are not considered part of the legal provision itself.
+- **Content of the Provision:** Focus on the **legal content** itself, i.e., the specific rule, directive, or principle outlined in the body of the article or provision.
+- **Order of Provisions:** If the **Previous Provision**, **Current Provision**, and **Next Provision** follow the correct **logical order** and are connected in a coherent sequence, they must always be classified as **VALID**.
 
-## Normative Categories for "Normas" (Validación)
 
-1. **Index (INDICE)**
-   - Titles starting with **"INDICE"** denote the table of contents, listing all main headings until the next marker.
-   - **Always** classified **VALID**.
-   - **Example – Valid Index**  
-     - **Title:** \`INDICE\`  
-     - **Content:**
-       \`\`\`text
-       1. OBJETIVO Y CAMPO DE APLICACION
-       2. REFERENCIAS NORMATIVAS
-       3. TERMINOS Y DEFINICIONES
-       …
-       10. OBSERVANCIA DE ESTA NORMA
-       TRANSITORIOS
-       APENDICE NORMATIVO: PUERTOS DE MUESTREO
-       \`\`\`
-     → \`{ "isValid": true, "reason": null }\`
+1. **Numerals (Numerales)**:
+ - If the current article ends with a clear, logical idea, whether short or long, it should be considered valid. A clear idea is one that presents a complete rule, principle, or directive, even if brief.
+ - Must establish legal norms such as obligations, rights, prohibitions, or principles.
+ - Should have a clear legal structure.
+ - It must contain a specific legal rule or directive rather than just referencing other articles.
+ - If the previous article is valid, the current article should be evaluated independently and should not be marked as IsContinuation even if the structure suggests continuity.
+  - **Example 1:**
+  - **Previous Provision:** "CAPÍTULO PRIMERO DE LA NATURALEZA, OBJETO Y DEFINICIONES"
+  - **Current Provision:** "ARTÍCULO 5.La operación y funcionamiento del Consejo estará establecido en su Reglamento Interno."
+  - **Next Provision:** "ARTÍCULO 6.La conformación de los Comités Especiales señalados en el artículo 22 de la Ley será determinada en el seno del Consejo."
+  - **Example 2:**
+  - **Previous Provision:** "ARTÍCULO 7.El Consejo para su mejor funcionamiento podrá constituir Consejos Forestales Regionales, para lo cual emitirá la convocatoria respectiva, en la que se establecerán las bases para la elección y número de representantes de cada sector, así como los integrantes del mismo."
+  - **Current Provision:** "TÍTULO PRIMERO DISPOSICIONES GENERALES"
+  - **Next Provision:** "ARTÍCULO 8.EI Consejo promoverá la constitución de Consejos Forestales Municipales, en aquellos municipios de vocación forestal, los cuales se formarán e integrarán de la misma manera que los Consejos Forestales Regionales 4 de 70 Aprobación 2008/04/15 Publicación 2008/05/21 Vigencia 2008/05/22 Expidió Poder Ejecutivo del Estado de Morelos Periódico Oficial 4613 "Tierra y Libertad" UIENES-LA-T Reglamento de la Ley de Desarrollo Forestal Sustentable del Estado de Morelos MORELOS Consejería Jurídica del Poder Ejecutivo del Estado de Morelos Última Reforma: Texto original Dirección General de Legislación 2018 2024 Subdirección de Jurismática"
+  - **Example 3:**
+  - **Previous Provision:** "ARTÍCULO 9. Los convenios de concertación que en materia forestal celebre el Estado con personas físicas y morales del sector social y privado, podrán versar sobre la instrumentación de programas forestales, el fomento a la educación, cultura, capacitación, servicios ambientales e investigación forestales, así como respecto de las labores de vigilancia y demás programas operativos establecidos en esta Ley."
+  - **Current Provision:** "ARTÍCULO 10. Se preverá que en el seguimiento y evaluación de los resultados que se obtengan por la ejecución de los convenios a que se refiere este capítulo, intervenga el Consejo Forestal Estatal."
+  - **Next Provision:** "SECCIÓN II. DISPOSICIONES GENERALES"
 
-2. **Content (CONTENIDO)**
-   - Titles starting with **"CONTENIDO"** introduce a summary of sections.
-   - **Always** classified **VALID**.
-   - **Example: Valid Content**  
-     - **Title:** \`CONTENIDO\` 
-     - **Content:**
-       \`\`\`text
-       0. Introducción
-       1. Objetivo y campo de aplicación
-       2. Referencias
-       3. Definiciones
-       4. Especificaciones
-       5. Muestreo y métodos de prueba
-       6. Evaluación de la conformidad
-       7. Grado de concordancia con normas y lineamientos internacionales
-       8. Bibliografía
-       9. Observancia de esta Norma
-       Anexos
-       I Opciones para la reducción de atracción de vectores
-       II Método de muestreo de lodos y biosólidos
-       III Método para la cuantificación de coliformes fecales en lodos y biosólidos
-       IV Método para la cuantificación de Salmonella spp., en lodos y biosólidos
-       V Método para la cuantificación de huevos de helmintos en lodos y biosólidos
-       VI Método para la cuantificación de metales pesados en biosólidos
-       VII Contenido de la bitácora de control de lodos y biosólidos
-       \`\`\`
-      \`{ "isValid": true, "reason": null }\`
-   - **Example: Incomplete Content**  
-     - **Title:** \`CONTENIDO. Se presenta la relación de secciones…\`  
-     - **Content:** Abruptly cut off mid‑list  
-     → \`{ "isValid": false, "reason": "IsIncomplete" }\`
+2. **Chapters (Capítulos), Titles (Títulos), and Sections (Secciones)**:
+ - If the current provision is a structural marker (e.g., Chapter [Capítulo], Section [Sección], Title [Título], Annex [Anexo], or Transitory Provision [Transitorio]) and it presents a complete, logically coherent provision, it must always be classified as VALID.
+ - If the previous provision is a structural marker (e.g., Chapter [Capítulo], Section [Sección], Title [Título], Annex [Anexo], or Transitory Provision [Transitorio]) and it presents a complete, logically coherent provision, the current provision  must always be classified as VALID.
+ - Must be part of a structured legal framework.
+ - **Example 1:**
+   - **Previous Provision:** "CAPÍTULO I CONSEJO FORESTAL DEL ESTADO DE MORELOS"
+   - **Current Provision:** "ARTÍCULO 4. Para la elección de los representantes de los sectores que conforme a la Ley deben formar parte del Consejo, la Comisión publicará en dos diarios de mayor circulación en el Estado, la convocatoria que establezca las bases sobre las cuales cada sector habrá de elegir sus representantes."
+   - **Next Provision:** "ARTÍCULO 5. Las normas administrativas se aplican a todas las entidades y organismos públicos, garantizando la coherencia en su funcionamiento."
+   - **Example 2:**
+   - **Previous Provision:** "SECCIÓN II. DISPOSICIONES GENERALES"
+   - **Current Provision:** "ARTÍCULO 1. Las disposiciones generales se rigen por los principios de transparencia y eficiencia en la administración pública."
+   - **Next Provision:** "ARTÍCULO 3.Para los efectos del presente Reglamento, se consideran las definiciones contenidas en la Ley General de Desarrollo Forestal Sustentable y la Ley de Desarrollo Forestal Sustentable del Estado de Morelos."
+   - **Example 3:**
+   - **Previous Provision:** "TÍTULO: NORMAS ADMINISTRATIVAS"
+   - **Current Provision:** "ARTÍCULO 5. Las normas administrativas se aplican a todas las entidades y organismos públicos, garantizando la coherencia en su funcionamiento."
+   - **Next Provision:** "ARTÍCULO 6.La conformación de los Comités Especiales señalados en el artículo 22 de la Ley será determinada en el seno del Consejo."
+   - **Example 4:**
+   - **Previous Provision:** "TÍTULO PRIMERO DISPOSICIONES GENERALES"
+   - **Current Provision:** "CAPÍTULO PRIMERO DE LA NATURALEZA, OBJETO Y DEFINICIONES"
+   - **Next Provision:** "SECCIÓN II. DISPOSICIONES GENERALES"
+  - **Example 5:**
+   - **Previous Provision:** "TÍTULO PRIMERO DISPOSICIONES GENERALES"
+   - **Current Provision:** "SECCIÓN II. DISPOSICIONES GENERALES"
+   - **Next Provision:** "CAPÍTULO PRIMERO DE LA NATURALEZA, OBJETO Y DEFINICIONES"
+  - **Example 6:**
+   - **Previous Provision:** "CAPÍTULO PRIMERO DE LA NATURALEZA, OBJETO Y DEFINICIONES"
+   - **Current Provision:** "TÍTULO PRIMERO DISPOSICIONES GENERALES"
+   - **Next Provision:** "ARTÍCULO 5.La operación y funcionamiento del Consejo estará establecido en su Reglamento Interno."
+  - **Example 7:**
+   - **Previous Provision:** "ARTÍCULO 3.Para los efectos del presente Reglamento, se consideran las definiciones contenidas en la Ley General de Desarrollo Forestal Sustentable y la Ley de Desarrollo Forestal Sustentable del Estado de Morelos."
+   - **Current Provision:** "TÍTULO PRIMERO DISPOSICIONES GENERALES"
+   - **Next Provision:** "CAPÍTULO I CONSEJO FORESTAL DEL ESTADO DE MORELOS"
+   - **Example 8:**
+   - **Previous Provision:** "TÍTULO SEGUNDO ORGANIZACIÓN Y ADMINISTRACIÓN DEL SECTOR PÚBLICO FORESTAL"
+   - **Current Provision:** "CAPÍTULO I CONSEJO FORESTAL DEL ESTADO DE MORELOS"
+   - **Next Provision:** "SECCIÓN II. DISPOSICIONES GENERALES"
+ - **Example 9:**
+   - **Previous Provision:** "CAPÍTULO I CONSEJO FORESTAL DEL ESTADO DE MORELOS"
+   - **Current Provision:** "SECCIÓN II. DISPOSICIONES GENERALES"
+   - **Next Provision:** "ARTÍCULO 6.La conformación de los Comités Especiales señalados en el artículo 22 de la Ley será determinada en el seno del Consejo."
+ - **Example 10:**
+   - **Previous Provision:** "ARTÍCULO 5.La operación y funcionamiento del Consejo estará establecido en su Reglamento Interno."
+   - **Current Provision:** "CAPÍTULO I CONSEJO FORESTAL DEL ESTADO DE MORELOS"
+   - **Next Provision:** "TÍTULO SEGUNDO ORGANIZACIÓN Y ADMINISTRACIÓN DEL SECTOR PÚBLICO FORESTAL"
 
-3. **Preface (PREFACIO)**
-   - A narrative introduction by the issuing authority.
-   - Must end with a complete, coherent statement.
-   - **Example: Valid Preface**  
-     - **Title:** \`PREFACIO\`  
-     - **Content:**
-       \`\`\`text
-       En la elaboracion de la presente Norma Oficial Mexicana participaron:
-       1. Comision Nacional del Agua (CONAGUA)
-       2. Comision Federal para la Proteccion contra Riesgos Sanitarios (COFEPRIS)
-       …
-       6. Secretaria de Medio Ambiente y Recursos Naturales (SEMARNAT)
-       \`\`\`
-     → \`{ "isValid": true, "reason": null }\`
-   - **Example: Incomplete Preface**  
-     - **Title:** \`PREFACIO. Esta Norma tiene por objeto…\`  
-     - **Content:** Cut off before naming participants  
-     → \`{ "isValid": false, "reason": "IsIncomplete" }\`
+3. **Annexes (Anexos)**:
+ - If the current provision is a structural marker (e.g., Chapter [Capítulo], Section [Sección], Title [Título], Annex [Anexo], or Transitory Provision [Transitorio]) and it presents a complete, logically coherent provision, it must always be classified as VALID.
+ - If the previous provision is a structural marker (e.g., Chapter [Capítulo], Section [Sección], Title [Título], Annex [Anexo], or Transitory Provision [Transitorio]) and it presents a complete, logically coherent provision, the current provision  must always be classified as VALID.
+ - Must provide additional information that supports or complements the legal text.
+ - **Example 1:**
+   - **Previous Provision:** "ANEXO A. REGULACIÓN COMPLEMENTARIA"
+   - **Current Provision:** "ARTÍCULO 3. Este anexo establece las regulaciones complementarias para la implementación de las políticas públicas definidas en el cuerpo principal de la ley."
+   - **Next Provision:** "TÍTULO SEGUNDO ORGANIZACIÓN Y ADMINISTRACIÓN DEL SECTOR PÚBLICO FORESTAL"
+   - **Example 2:**
+   - **Previous Provision:** "ARTÍCULO 3. Este anexo establece las regulaciones complementarias para la implementación de las políticas públicas definidas en el cuerpo principal de la ley."
+   - **Current Provision:** "ANEXO A. REGULACIÓN COMPLEMENTARIA"
+   - **Next Provision:** "CAPÍTULO I CONSEJO FORESTAL DEL ESTADO DE MORELOS"
 
-4. **Introduction (INTRODUCCION)**
-   - Presents context, justification and scope.
-   - **Example: Valid Introduction**  
-     - **Title:** \`0. Introduccion\`  
-     - **Content:**
-       \`\`\`text
-       La necesidad de obtener agua en cantidades economicamente explotables ha originado la perforacion de…
-       Con el objeto de minimizar este riesgo y establecer los requisitos minimos, se expide la presente Norma.
-       \`\`\`
-     → \`{ "isValid": true, "reason": null }\`
-   - **Example: Incomplete Introduction**  
-     - **Title:** \`INTRODUCCION. Ante la creciente demanda…\`  
-     - **Content:** Stops mid-justification  
-     → \`{ "isValid": false, "reason": "IsIncomplete" }\`
+4. **Transitory Provisions (Disposiciones Transitorias)**:
+ - If the current provision is a structural marker (e.g., Chapter [Capítulo], Section [Sección], Title [Título], Annex [Anexo], or Transitory Provision [Transitorio]) and it presents a complete, logically coherent provision, it must always be classified as VALID.
+ - If the previous provision is a structural marker (e.g., Chapter [Capítulo], Section [Sección], Title [Título], Annex [Anexo], or Transitory Provision [Transitorio]) and it presents a complete, logically coherent provision, the current provision  must always be classified as VALID.
+ - Must establish rules for the transition or application of the legal document.
+ - **Example 1:**
+   - **Previous Provision:** "TRANSITORIO PRIMERO. Disposiciones transitorias sobre la implementación de nuevas normativas."
+   - **Current Provision:** "ARTÍCULO 2. Durante el periodo de transición, se aplicarán las siguientes medidas para asegurar la continuidad en la gestión pública."
+   - **Next Provision:** "ARTÍCULO 3.Para los efectos del presente Reglamento, se consideran las definiciones contenidas en la Ley General de Desarrollo Forestal Sustentable y la Ley de Desarrollo Forestal Sustentable del Estado de Morelos."
+   - **Example 2:**
+   - **Previous Provision:** "ARTÍCULO 2. Durante el periodo de transición, se aplicarán las siguientes medidas para asegurar la continuidad en la gestión pública."
+   - **Current Provision:** "TRANSITORIO PRIMERO. Disposiciones transitorias sobre la implementación de nuevas normativas"
+   - **Next Provision:** "TÍTULO SEGUNDO ORGANIZACIÓN Y ADMINISTRACIÓN DEL SECTOR PÚBLICO FORESTAL"
 
-5. **Transitory Provisions (TRANSITORIOS)**
-   - Marked with **TRANSITORIOS** or numbered **PRIMERO**, **SEGUNDO**, etc.
-   - Regulate entry into force and deadlines.
-   - **Example: Valid Transitory**  
-     - **Title:** \`TRANSITORIOS\`  
-     - **Content:**
-       \`\`\`text
-       PRIMERO. Entrara en vigor a los 365 dias de su publicacion.
-       SEGUNDO. Los parametros de tablas 1 y 2 entraran en vigor el 3 de abril de 2023.
-       TERCERO. Toxicidad aguda entrara en vigor al cuarto ano.
-       …
-       SEPTIMO. Deroga la NOM-001-SEMARNAT-1996.
-       \`\`\`
-     → \`{ "isValid": true, "reason": null }\`
-   - **Example: Incomplete Transitory**  
-     - **Title:** \`TRANSITORIO PRIMERO. Entrara en vigor…\`  
-     - **Content:** Missing date and rest  
-     → \`{ "isValid": false, "reason": "IsIncomplete" }\`
 
-6. **Annex / Appendix (ANEXO / APENDICE)**
-   - Titles **ANEXO A. …** or **APENDICE NORMATIVO: …**, containing supplementary tables or methods.
-   - **Example: Valid Annex**  
-     - **Title:** \`APENDICE NORMATIVO: PUERTOS DE MUESTREO\`  
-     - **Content:** Detailed sampling port instructions  
-     → \`{ "isValid": true, "reason": null }\`
-   - **Example: Valid Annex**  
-     - **Title:** \`ANEXO I OPCIONES PARA LA REDUCCION DE ATRACCION DE VECTORES\`  
-     - **Content:** List of 9 control options  
-     → \`{ "isValid": true, "reason": null }\`
-
-7. **Numeral Sections (Numerales)**
-   - Titles beginning with a numeral (e.g. \`1.\`, \`1.1\`, \`4.1.10\`, \`11.1\`).
-   - Define clauses like Objetivo, Definiciones, Especificaciones.
-   - **Example: Valid Numeral**  
-     - **Title:** \`1. Objetivo y campo de aplicacion\`  
-     - **Content:**
-       \`\`\`text
-       Esta Norma Oficial Mexicana establece los limites maximos permisibles de contaminantes…
-       \`\`\`
-     → \`{ "isValid": true, "reason": null }\`
-   - **Example: Incomplete Numeral**  
-     - **Title:** \`2. Referencias normativas\`  
-     - **Content:**
-       \`\`\`text
-       2.1. Norma Mexicana NMX-AA-003-1980, Aguas residuales-Muestreo (cancela a la NMX-AA-003-1975).
-       \`\`\`
-     → \`{ "isValid": false, "reason": "IsIncomplete" }\`
-
----
-
-### **Invalid Legal Provisions**
-
-#### **IsIncomplete**
-- A section is **incomplete** if it is cut off or clearly unfinished.
-- **Example:**
-  - **Prev:** \`"INDICE. 1. OBJETIVO… 6. MUESTRE"\`
-  - **Curr:** \`"6. Muestreo"\`
-  - → \`{ "isValid": false, "reason": "IsIncomplete" }\`
-
-#### **IsContinuation**
-- If the **Previous** was marked **IsIncomplete**, then the **Current** must be \`{ "isValid": false, "reason": "IsContinuation" }\`.
-- **Example:**
-  - **Prev:** \`"INDICE. …6. MUESTRE"\` (IsIncomplete)
-  - **Curr:** \`"6. Muestreo"\`
-  - → \`{ "isValid": false, "reason": "IsContinuation" }\`
-`
+   ### **Invalid Legal Provisions:**
+   Mark the provision as **INVALID** if it clearly meets one of the following conditions:
+   
+   #### **IsIncomplete:**
+   - **Definition:** An article is considered **incomplete** if it is abruptly cut off or clearly unfinished, lacking a concluding idea. If an article ends without delivering a complete directive, rule, or idea, it is deemed incomplete.
+   - **Note:** An article **is not considered incomplete** if it ends with a **clear, logical, and complete idea** even if it is short. A brief statement or directive that is logically conclusive and understandable is sufficient.
+   - **Example of IsIncomplete:**
+      - **Previous Provision:** "ARTÍCULO 6. Las atribuciones gubernamentales, en materia de conservación, protección, restauración, producción, ordenación, cultivo, manejo y aprovechamiento de los ecosistemas forestales que son objeto de esta ley, serán ejercidas, de conformidad con la distribución que hace la misma, sin perjuicio de lo que se disponga en otros ordenamientos aplicables. Para efecto de la coordinación de acciones, siempre que exista transferencia de atribuciones, el Gobierno del Estado y los gobiernos municipales deberán celebrar convenios entre ellos y/o con la federación, en los casos y las materias que se precisan en la presente ley."
+      - **Current Provision:** "ARTÍCULO 7. El Estado podrá suscribir convenios o acuerdos de coordinación con la Federación con el objeto de que en el ámbito territorial de su competencia asuma las funciones previstas en el artículo 24 de la Ley General. El Gobierno del Estado y los Municipios podrán celebrar convenios de coordinación en materia forestal con la finalidad de que estos últimos, en el ámbito de su competencia territorial asuman algunas de las funciones previstas en el..."
+      - **Next Provision:** "ARTÍCULO 24. Las funciones que se describen a continuación, serán asumidas por los Gobiernos de los Estados y Municipios conforme a los convenios establecidos con la Federación."
+      - **Reasoning:** The current article is **incomplete** because it leaves the clause unfinished. The specific functions to be assumed are missing.
+   
+   #### **IsContinuation:**
+   - **Definition:** If the **Previous Provision** has been marked as **invalid** with the reason **IsIncomplete**, then the **Current Provision** should **always** be considered **INVALID** and marked as **IsContinuation**, even if it seems to continue logically. This ensures that any unfinished provision is treated as a continuation of the previous one.
+   - **Note:** The current article can only be marked as **IsContinuation** if the **Previous Provision** was already invalidated for **IsIncomplete**.
+     
+   - **Reasoning:** The **Previous Provision** was cut off or left unfinished, so the **Current Provision** should not be evaluated independently. It must be treated as a continuation of the incomplete thought in the **Previous Provision**.
+   
+   - **Examples of IsContinuation:**
+     - **Example 1:**
+       - **Previous Provision:** "ARTÍCULO 7. El Estado podrá suscribir convenios o acuerdos de coordinación con la Federación con el objeto de que en el ámbito territorial de su competencia asuma las funciones previstas en el artículo 24 de la Ley General. El Gobierno del Estado y los Municipios podrán celebrar convenios de coordinación en materia forestal con la finalidad de que estos últimos, en el ámbito de su competencia territorial asuman algunas de las funciones previstas en el..."
+       - **Current Provision:** "ARTÍCULO 24. Las funciones que se describen a continuación, serán asumidas por los Gobiernos de los Estados y Municipios conforme a los convenios establecidos con la Federación."
+       - **Next Provision:** "ARTÍCULO 8.El Consejo promoverá la constitución de Consejos Forestales Municipales, en aquellos municipios de vocación forestal, los cuales se formarán e integrarán de la misma manera que los Consejos Forestales Regionales."
+       - **Reasoning:** The **Current Provision** is a direct continuation of the **Previous Provision**, and therefore, it is marked as **IsContinuation**.
+   
+     - **Example 2:**
+       - **Previous Provision:** "ARTÍCULO 12.- Los Consejos Regionales tienen las atribuciones que les confiere el"
+       - **Current Provision:** "ARTÍCULO 35 de la Ley, son coordinados por la Secretaría, su Secretario Técnico podrá ser un representante de la instancia coordinadora sectorial de la federación se integran con representantes de los gobiernos municipales que conforman su región, quienes conforman la comisión ejecutiva, y con representantes de las organizaciones productivas y sociales con incidencia en la mayor parte o en la totalidad del territorio de la región, en conjunto con las instituciones federales y estatales que apoyan proyectos y acciones para el desarrollo económico, social ambiental de alcance microregional o regional."
+       - **Next Provision:** "ARTÍCULO 13.- En concordancia con el ARTÍCULO 37 de la Ley, los Consejos Municipales son las instancias encargadas de la formulación participativa del Programa Estratégico Municipal de Desarrollo Rural Sustentable, mismo que deberá actualizarse anualmente con un programa de trabajo sectorial, el cual servirá de sustento formal a los gobiernos municipales para la inclusión de los rubros de inversión para el sector rural en sus programas operativos anuales."
+       - **Reasoning:** The **Current Provision** is a clear continuation of the **Previous Provision**, and should be marked as **IsContinuation**. Even though the article number changed, the content logically continues from the previous article, and thus it is treated as a continuation.
+   `
   }
 
   /**
