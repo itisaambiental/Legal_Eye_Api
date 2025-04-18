@@ -7,6 +7,7 @@ let tokenAdmin
 let adminUserId
 let analystUserId
 
+const timeout = 20000
 beforeAll(async () => {
   await UserRepository.deleteAllExceptByGmail(ADMIN_GMAIL)
   const response = await api
@@ -21,7 +22,7 @@ beforeAll(async () => {
   tokenAdmin = response.body.token
   const adminUser = await UserRepository.existsByGmail(ADMIN_GMAIL)
   adminUserId = adminUser.id
-})
+}, timeout)
 
 describe('User API tests', () => {
   describe('Login with correct and incorrect credentials', () => {

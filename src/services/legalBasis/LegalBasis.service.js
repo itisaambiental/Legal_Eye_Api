@@ -49,6 +49,7 @@ class LegalBasisService {
   /**
    * Creates a new legal basis entry.
    *
+   * @param {number} userId - The ID of the user creating the legal basis.
    * @param {Object} legalBasis - Parameters for creating a legal basis.
    * @param {string} legalBasis.legalName - The legal basis name.
    * @param {string} legalBasis.abbreviation - The legal basis abbreviation.
@@ -65,7 +66,7 @@ class LegalBasisService {
    * @returns {Promise<CreatedLegalBasis>} A promise that resolves with an object containing the jobId (if applicable) and the created legal basis data.
    * @throws {ErrorUtils} If an error occurs during validation or creation.
    */
-  static async create (legalBasis, document) {
+  static async create (userId, legalBasis, document) {
     try {
       const parsedlegalBasis = legalBasisSchema.parse({
         ...legalBasis,
@@ -126,6 +127,7 @@ class LegalBasisService {
         documentUrl = await FileService.getFile(documentKey)
         if (parsedlegalBasis.extractArticles) {
           const job = await articlesQueue.add({
+            userId,
             legalBasisId: createdLegalBasis.id,
             intelligenceLevel: parsedlegalBasis.intelligenceLevel
           })
@@ -869,6 +871,7 @@ class LegalBasisService {
   /**
    * Updates an existing legal basis entry.
    *
+   * @param {number} userId - The ID of the user updating the legal basis.
    * @param {number} legalBasisId - The ID of the legal basis to update.
    * @param {Object} legalBasis - Parameters for creating a legal basis.
    * @param {string} legalBasis.legalName - The legal basis name.
@@ -887,7 +890,7 @@ class LegalBasisService {
    * @returns {Promise<UpdatedLegalBasis>} A promise that resolves with an object containing the jobId (if an extraction job is initiated) and the updated legal basis data.
    * @throws {ErrorUtils} If an error occurs during validation or update processing.
    */
-  static async updateById (legalBasisId, legalBasis, document) {
+  static async updateById (userId, legalBasisId, legalBasis, document) {
     try {
       const parsedlegalBasis = legalBasisSchema.parse({
         ...legalBasis,
@@ -1000,6 +1003,7 @@ class LegalBasisService {
         documentUrl = await FileService.getFile(documentKey)
         if (parsedlegalBasis.extractArticles) {
           const job = await articlesQueue.add({
+            userId,
             legalBasisId: updatedLegalBasis.id,
             intelligenceLevel: parsedlegalBasis.intelligenceLevel
           })

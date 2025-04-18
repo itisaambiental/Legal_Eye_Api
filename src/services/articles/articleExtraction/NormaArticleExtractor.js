@@ -314,7 +314,6 @@ class NormaArticleExtractor extends ArticleExtractor {
  * @returns {string} - The constructed prompt.
  */
   _buildVerifyPrompt (legalName, article) {
-    console.log(article)
     return `
 You are a regulatory expert in chemical safety and compliance. Your task is to validate provisions extracted from Mexican Official Standards (Normas Oficiales Mexicanas - NOMs) in the chemical field.
 

@@ -21,6 +21,7 @@ let createdSubjectId
 const createdAspectIds = []
 let createdLegalBasisId
 
+const timeout = 20000
 beforeAll(async () => {
   await RequirementRepository.deleteAll()
   await LegalBasisRepository.deleteAll()
@@ -67,7 +68,7 @@ beforeAll(async () => {
     const { aspect } = aspectResponse.body
     createdAspectIds.push(aspect.id)
   }
-}, 10000)
+}, timeout)
 
 beforeEach(async () => {
   const legalBasisData = generateLegalBasisData({

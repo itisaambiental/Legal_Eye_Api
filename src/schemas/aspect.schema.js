@@ -2,7 +2,8 @@ import { z } from 'zod'
 
 /**
  * Zod validation schema for Aspect creation.
- * Ensures that the aspect name, abbreviation, and order index meet format and length requirements.
+ * Ensures that the aspect name and order index meet format and length requirements.
+ * The abbreviation is optional but still validated if provided.
  */
 const aspectSchema = z.object({
   aspectName: z
@@ -13,7 +14,7 @@ const aspectSchema = z.object({
   abbreviation: z
     .string()
     .max(10, { message: 'The abbreviation cannot exceed 10 characters' })
-    .min(1, { message: 'The abbreviation cannot be empty' }),
+    .optional(),
 
   orderIndex: z.preprocess(
     (value) => (typeof value === 'string' ? Number(value) : value),

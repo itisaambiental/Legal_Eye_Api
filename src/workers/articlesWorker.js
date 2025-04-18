@@ -4,11 +4,20 @@ import ErrorUtils from '../utils/Error.js'
 import DocumentService from '../services/files/Document.service.js'
 import LegalBasisRepository from '../repositories/LegalBasis.repository.js'
 import ArticlesService from '../services/articles/Articles.service.js'
+import UserRepository from '../repositories/User.repository.js'
+import EmailService from '../services/email/Email.service.js'
 import { CONCURRENCY_EXTRACT_ARTICLES } from '../config/variables.config.js'
+import emailQueue from './emailWorker.js'
+
+/**
+ * @typedef {Object} ArticleExtractorJobData
+ * @property {number} userId - ID of the user who initiated the extraction.
+ * @property {number} legalBasisId - ID of the legal basis to extract articles from.
+ * @property {'High'|'Low'} [intelligenceLevel] - Optional intelligence level to choose AI model.
+ */
 
 /**
  * AI Models.
- * @type {Object}
  */
 const models = {
   High: 'gpt-4o',
@@ -16,46 +25,40 @@ const models = {
 }
 
 /**
- * Returns the appropriate model based on the provided intelligence level.
- *
- * @param {string|null|undefined} intelligenceLevel - The intelligence level, expected to be 'High' or 'Low'.
- * @returns {string} - Returns 'gpt-4o' if intelligenceLevel is 'High'; otherwise, returns 'gpt-4o-mini'.
+ * Selects the appropriate model.
+ * @param {string|null|undefined} intelligenceLevel
+ * @returns {string}
  */
 function getModel (intelligenceLevel) {
   return intelligenceLevel === 'High' ? models.High : models.Low
 }
 
-/**
- * Maximum number of asynchronous operations possible in parallel.
- */
 const CONCURRENCY = Number(CONCURRENCY_EXTRACT_ARTICLES || 1)
 
 /**
- * Worker for processing articles jobs from the articles queue.
- * Listens to the articles queue and processes the articles data.
+ * Worker for processing article extraction jobs.
+ * Steps:
+ * 1. Validates job and dependencies.
+ * 2. Downloads and parses document.
+ * 3. Extracts articles.
+ * 4. Inserts into DB.
+ * 5. Notifies user of success or failure.
  *
- * @param {import('bull').Job} job - The job object containing data to be processed.
- * @param {import('bull').ProcessCallbackFunction} done - Callback function to signal job completion.
- * @throws {ErrorUtils} - Throws an error if any step in the job processing fails.
+ * @param {import('bull').Job<import('bull').Job>} job
+ * @param {import('bull').ProcessCallbackFunction} done
  */
 articlesQueue.process(CONCURRENCY, async (job, done) => {
-  const { legalBasisId, intelligenceLevel } = job.data
+  /** @type {ArticleExtractorJobData} */
+  const { userId, legalBasisId, intelligenceLevel } = job.data
+  console.log(job.id)
   try {
     const currentJob = await articlesQueue.getJob(job.id)
-    if (!currentJob) {
-      return done(new ErrorUtils(404, 'Job not found'))
-    }
-    if (await currentJob.isFailed()) {
-      return done(new ErrorUtils(500, 'Job was canceled'))
-    }
+    if (!currentJob) throw new ErrorUtils(404, 'Job not found')
+    if (await currentJob.isFailed()) throw new ErrorUtils(500, 'Job was canceled')
     const legalBase = await LegalBasisRepository.findById(legalBasisId)
-    if (!legalBase) {
-      return done(new ErrorUtils(404, 'LegalBasis not found'))
-    }
+    if (!legalBase) throw new ErrorUtils(404, 'LegalBasis not found')
     const { error, success, text } = await DocumentService.process(legalBase.url)
-    if (!success) {
-      return done(new ErrorUtils(500, 'Document Processing Error', error))
-    }
+    if (!success) throw new ErrorUtils(500, 'Document Processing Error', error)
     const model = getModel(intelligenceLevel)
     const extractor = ArticleExtractorFactory.getExtractor(
       legalBase.classification,
@@ -64,28 +67,50 @@ articlesQueue.process(CONCURRENCY, async (job, done) => {
       model,
       currentJob
     )
-    if (!extractor) {
-      return done(new ErrorUtils(400, 'Invalid Classification'))
-    }
+    if (!extractor) throw new ErrorUtils(400, 'Invalid Classification')
     const extractedArticles = await extractor.extractArticles()
     if (!extractedArticles || extractedArticles.length === 0) {
-      return done(new ErrorUtils(500, 'Article Processing Error'))
+      throw new ErrorUtils(500, 'Article Processing Error')
     }
-    if (await currentJob.isFailed()) {
-      return done(new ErrorUtils(500, 'Job was canceled'))
-    }
+    if (await currentJob.isFailed()) throw new ErrorUtils(500, 'Job was canceled')
     const insertionSuccess = await ArticlesService.createMany(
       legalBase.id,
       extractedArticles
     )
-    if (!insertionSuccess) {
-      return done(new ErrorUtils(500, 'Failed to insert articles'))
+    if (!insertionSuccess) throw new ErrorUtils(500, 'Failed to insert articles')
+    try {
+      const user = await UserRepository.findById(userId)
+      if (user) {
+        const emailData = EmailService.generateArticleExtractionSuccessEmail(
+          user.gmail,
+          legalBase.legal_name,
+          legalBase.id
+        )
+        console.log('Email data:', emailData)
+        await emailQueue.add(emailData)
+      }
+    } catch (notifyErr) {
+      console.error('Error sending notification email:', notifyErr)
     }
+
     done(null)
   } catch (error) {
-    if (error instanceof ErrorUtils) {
-      return done(error)
+    try {
+      const user = await UserRepository.findById(userId)
+      const legalBase = await LegalBasisRepository.findById(legalBasisId)
+      if (user && legalBase) {
+        const emailData = EmailService.generateArticleExtractionFailureEmail(
+          user.gmail,
+          legalBase.legal_name,
+          error.message
+        )
+        console.error('Error generating email:', emailData)
+        await emailQueue.add(emailData)
+      }
+    } catch (notifyError) {
+      console.error('Error sending notification email:', notifyError)
     }
+    if (error instanceof ErrorUtils) return done(error)
     return done(new ErrorUtils(500, 'Unexpected error during article processing'))
   }
 })
