@@ -56,11 +56,12 @@ class LeyArticleExtractor extends ArticleExtractor {
     const articles = await this._extractArticles(this.text)
     const totalArticles = articles.length
     const correctedArticles = []
-    let currentProgress = 0
-    for (const article of articles) {
+
+    for (let i = 0; i < totalArticles; i++) {
       if (await this.job.isFailed()) {
         throw new ErrorUtils(500, 'Job was canceled')
       }
+      const article = articles[i]
       try {
         const correctedArticle = await this._correctArticle(article)
         correctedArticle.plainArticle = convert(correctedArticle.article)
@@ -71,9 +72,9 @@ class LeyArticleExtractor extends ArticleExtractor {
           plainArticle: convert(article.article)
         })
       }
-      currentProgress += 1
-      this.updateProgress(currentProgress, totalArticles)
+      this.updateProgress(i + 1, totalArticles, 50, 100)
     }
+
     return correctedArticles
   }
 
@@ -85,15 +86,13 @@ class LeyArticleExtractor extends ArticleExtractor {
     const ellipsisTextRegex = /[^.]+\s*\.{3,}\s*/g
     const singleEllipsisRegex = /\s*\.{3,}\s*/g
 
-    return text
-      .replace(ellipsisTextRegex, '')
-      .replace(singleEllipsisRegex, '')
+    return text.replace(ellipsisTextRegex, '').replace(singleEllipsisRegex, '')
   }
 
   /**
- * @param {string} text - Full document text to process and extract sections from.
- * @returns {Promise<Array<Article>>} - Ordered array of validated article objects.
- */
+   * @param {string} text - Full document text to process and extract sections from.
+   * @returns {Promise<Array<Article>>} - Ordered array of validated article objects.
+   */
   async _extractArticles (text) {
     try {
       const documentText = this._cleanText(text)
@@ -103,7 +102,7 @@ class LeyArticleExtractor extends ArticleExtractor {
       }
 
       const headingRegex = this._buildHeadingRegex(sections)
-      const matches = Array.from(documentText.matchAll(headingRegex), m => ({
+      const matches = Array.from(documentText.matchAll(headingRegex), (m) => ({
         header: m[0],
         start: m.index
       }))
@@ -121,12 +120,23 @@ class LeyArticleExtractor extends ArticleExtractor {
         const prevStart = i > 0 ? matches[i - 1].start : 0
         const prevEnd = start
         const previousTitle = i > 0 ? matches[i - 1].header : ''
-        const previousContent = documentText.slice(prevStart + previousTitle.length, prevEnd).trim()
+        const previousContent = documentText
+          .slice(prevStart + previousTitle.length, prevEnd)
+          .trim()
 
-        const nextTitle = i + 1 < matches.length - 1 ? matches[i + 1].header : ''
-        const nextContent = i + 2 < matches.length
-          ? documentText.slice(matches[i + 1].start + nextTitle.length, matches[i + 2].start).trim()
-          : documentText.slice(matches[i + 1].start + nextTitle.length).trim()
+        const nextTitle =
+          i + 1 < matches.length - 1 ? matches[i + 1].header : ''
+        const nextContent =
+          i + 2 < matches.length
+            ? documentText
+              .slice(
+                matches[i + 1].start + nextTitle.length,
+                matches[i + 2].start
+              )
+              .trim()
+            : documentText
+              .slice(matches[i + 1].start + nextTitle.length)
+              .trim()
 
         const previousArticle = `${previousTitle} ${previousContent}`.trim()
         const nextArticle = `${nextTitle} ${nextContent}`.trim()
@@ -212,11 +222,11 @@ class LeyArticleExtractor extends ArticleExtractor {
   }
 
   /**
- * Builds the user‑facing prompt for extracting **only** top‑level and unnumbered section headings.
- *
- * @param {string} text - The full text of the document.
- * @returns {string} The formatted prompt.
- */
+   * Builds the user‑facing prompt for extracting **only** top‑level and unnumbered section headings.
+   *
+   * @param {string} text - The full text of the document.
+   * @returns {string} The formatted prompt.
+   */
   _buildSectionsPrompt (text) {
     return `
   Extract all legal section headings and their sub-divisions from a legal document (law, code, regulation), based strictly on the body content (not from any index or table of contents):
@@ -285,15 +295,17 @@ class LeyArticleExtractor extends ArticleExtractor {
  */
   async _validateExtractedArticles (rawArticles) {
     const validated = []
+    const totalArticles = rawArticles.length
     let lastResult = { isValid: true, reason: null }
     let lastArticle = null
     let isConcatenating = false
 
-    for (const currentArticleData of rawArticles) {
+    for (let i = 0; i < totalArticles; i++) {
+      const currentArticleData = rawArticles[i]
+
       try {
-        const { isValid, reason } = await this._verifyArticle(
-          currentArticleData
-        )
+        const { isValid, reason } = await this._verifyArticle(currentArticleData)
+
         if (isValid) {
           if (lastArticle) {
             validated.push(lastArticle)
@@ -306,35 +318,33 @@ class LeyArticleExtractor extends ArticleExtractor {
             order: currentArticleData.order
           })
           isConcatenating = false
-        } else {
-          if (reason === 'IsIncomplete') {
-            if (lastArticle && lastResult.reason === 'IsIncomplete') {
+        } else if (reason === 'IsIncomplete') {
+          if (lastArticle && lastResult.reason === 'IsIncomplete') {
+            lastArticle.article += ` ${currentArticleData.currentArticle}`
+          } else {
+            lastArticle = {
+              title: currentArticleData.title,
+              article: currentArticleData.currentArticle,
+              plainArticle: currentArticleData.plainArticle,
+              order: currentArticleData.order
+            }
+          }
+          isConcatenating = true
+        } else if (reason === 'IsContinuation') {
+          if (
+            lastResult.reason === 'IsIncomplete' ||
+          (isConcatenating && lastResult.reason === 'IsContinuation')
+          ) {
+            if (lastArticle) {
               lastArticle.article += ` ${currentArticleData.currentArticle}`
-            } else {
-              lastArticle = {
-                title: currentArticleData.title,
-                article: currentArticleData.currentArticle,
-                plainArticle: currentArticleData.plainArticle,
-                order: currentArticleData.order
-              }
             }
             isConcatenating = true
-          } else if (reason === 'IsContinuation') {
-            if (
-              lastResult.reason === 'IsIncomplete' ||
-            (isConcatenating && lastResult.reason === 'IsContinuation')
-            ) {
-              if (lastArticle) {
-                lastArticle.article += ` ${currentArticleData.currentArticle}`
-              }
-              isConcatenating = true
-            } else {
-              if (lastArticle) {
-                validated.push(lastArticle)
-                lastArticle = null
-              }
-              isConcatenating = false
+          } else {
+            if (lastArticle) {
+              validated.push(lastArticle)
+              lastArticle = null
             }
+            isConcatenating = false
           }
         }
 
@@ -347,6 +357,8 @@ class LeyArticleExtractor extends ArticleExtractor {
           order: currentArticleData.order
         })
       }
+
+      this.updateProgress(i + 1, totalArticles, 0, 50)
     }
 
     if (lastArticle) {
@@ -403,7 +415,10 @@ class LeyArticleExtractor extends ArticleExtractor {
         { role: 'user', content: prompt }
       ],
       temperature: 0,
-      response_format: zodResponseFormat(articleVerificationSchema, 'article_verification')
+      response_format: zodResponseFormat(
+        articleVerificationSchema,
+        'article_verification'
+      )
     }
     const attemptRequest = async (retryCount = 0) => {
       try {
@@ -429,12 +444,12 @@ class LeyArticleExtractor extends ArticleExtractor {
   }
 
   /**
- * Constructs a verification prompt for evaluating a legal provision.
- *
- * @param {string} legalName - The name of the legal base.
- * @param {ArticleToVerify} article - The article for which the verification prompt is built.
- * @returns {string} - The constructed prompt.
- */
+   * Constructs a verification prompt for evaluating a legal provision.
+   *
+   * @param {string} legalName - The name of the legal base.
+   * @param {ArticleToVerify} article - The article for which the verification prompt is built.
+   * @returns {string} - The constructed prompt.
+   */
   _buildVerifyPrompt (legalName, article) {
     return `
 You are a legal expert who confirms the validity of legal provisions:

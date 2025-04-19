@@ -55,11 +55,12 @@ class NormaArticleExtractor extends ArticleExtractor {
     const articles = await this._extractArticles(this.text)
     const totalArticles = articles.length
     const correctedArticles = []
-    let currentProgress = 0
-    for (const article of articles) {
+
+    for (let i = 0; i < totalArticles; i++) {
       if (await this.job.isFailed()) {
         throw new ErrorUtils(500, 'Job was canceled')
       }
+      const article = articles[i]
       try {
         const correctedArticle = await this._correctArticle(article)
         correctedArticle.plainArticle = convert(correctedArticle.article)
@@ -70,9 +71,9 @@ class NormaArticleExtractor extends ArticleExtractor {
           plainArticle: convert(article.article)
         })
       }
-      currentProgress += 1
-      this.updateProgress(currentProgress, totalArticles)
+      this.updateProgress(i + 1, totalArticles, 50, 100)
     }
+
     return correctedArticles
   }
 
@@ -88,9 +89,9 @@ class NormaArticleExtractor extends ArticleExtractor {
   }
 
   /**
- * @param {string} text - Full document text to process and extract sections from.
- * @returns {Promise<Array<Article>>} - Ordered array of validated article objects.
- */
+   * @param {string} text - Full document text to process and extract sections from.
+   * @returns {Promise<Array<Article>>} - Ordered array of validated article objects.
+   */
   async _extractArticles (text) {
     try {
       const documentText = this._cleanText(text)
@@ -100,7 +101,7 @@ class NormaArticleExtractor extends ArticleExtractor {
       }
 
       const headingRegex = this._buildHeadingRegex(sections)
-      const matches = Array.from(documentText.matchAll(headingRegex), m => ({
+      const matches = Array.from(documentText.matchAll(headingRegex), (m) => ({
         header: m[0],
         start: m.index
       }))
@@ -118,12 +119,23 @@ class NormaArticleExtractor extends ArticleExtractor {
         const prevStart = i > 0 ? matches[i - 1].start : 0
         const prevEnd = start
         const previousTitle = i > 0 ? matches[i - 1].header : ''
-        const previousContent = documentText.slice(prevStart + previousTitle.length, prevEnd).trim()
+        const previousContent = documentText
+          .slice(prevStart + previousTitle.length, prevEnd)
+          .trim()
 
-        const nextTitle = i + 1 < matches.length - 1 ? matches[i + 1].header : ''
-        const nextContent = i + 2 < matches.length
-          ? documentText.slice(matches[i + 1].start + nextTitle.length, matches[i + 2].start).trim()
-          : documentText.slice(matches[i + 1].start + nextTitle.length).trim()
+        const nextTitle =
+          i + 1 < matches.length - 1 ? matches[i + 1].header : ''
+        const nextContent =
+          i + 2 < matches.length
+            ? documentText
+              .slice(
+                matches[i + 1].start + nextTitle.length,
+                matches[i + 2].start
+              )
+              .trim()
+            : documentText
+              .slice(matches[i + 1].start + nextTitle.length)
+              .trim()
 
         const previousArticle = `${previousTitle} ${previousContent}`.trim()
         const nextArticle = `${nextTitle} ${nextContent}`.trim()
@@ -279,15 +291,19 @@ ${text}
    */
   async _validateExtractedArticles (rawArticles) {
     const validated = []
+    const totalArticles = rawArticles.length
     let lastResult = { isValid: true, reason: null }
     let lastArticle = null
     let isConcatenating = false
 
-    for (const currentArticleData of rawArticles) {
+    for (let i = 0; i < totalArticles; i++) {
+      const currentArticleData = rawArticles[i]
+
       try {
         const { isValid, reason } = await this._verifyArticle(
           currentArticleData
         )
+
         if (isValid) {
           if (lastArticle) {
             validated.push(lastArticle)
@@ -300,35 +316,33 @@ ${text}
             order: currentArticleData.order
           })
           isConcatenating = false
-        } else {
-          if (reason === 'IsIncomplete') {
-            if (lastArticle && lastResult.reason === 'IsIncomplete') {
+        } else if (reason === 'IsIncomplete') {
+          if (lastArticle && lastResult.reason === 'IsIncomplete') {
+            lastArticle.article += ` ${currentArticleData.currentArticle}`
+          } else {
+            lastArticle = {
+              title: currentArticleData.title,
+              article: currentArticleData.currentArticle,
+              plainArticle: currentArticleData.plainArticle,
+              order: currentArticleData.order
+            }
+          }
+          isConcatenating = true
+        } else if (reason === 'IsContinuation') {
+          if (
+            lastResult.reason === 'IsIncomplete' ||
+            (isConcatenating && lastResult.reason === 'IsContinuation')
+          ) {
+            if (lastArticle) {
               lastArticle.article += ` ${currentArticleData.currentArticle}`
-            } else {
-              lastArticle = {
-                title: currentArticleData.title,
-                article: currentArticleData.currentArticle,
-                plainArticle: currentArticleData.plainArticle,
-                order: currentArticleData.order
-              }
             }
             isConcatenating = true
-          } else if (reason === 'IsContinuation') {
-            if (
-              lastResult.reason === 'IsIncomplete' ||
-              (isConcatenating && lastResult.reason === 'IsContinuation')
-            ) {
-              if (lastArticle) {
-                lastArticle.article += ` ${currentArticleData.currentArticle}`
-              }
-              isConcatenating = true
-            } else {
-              if (lastArticle) {
-                validated.push(lastArticle)
-                lastArticle = null
-              }
-              isConcatenating = false
+          } else {
+            if (lastArticle) {
+              validated.push(lastArticle)
+              lastArticle = null
             }
+            isConcatenating = false
           }
         }
 
@@ -341,6 +355,8 @@ ${text}
           order: currentArticleData.order
         })
       }
+
+      this.updateProgress(i + 1, totalArticles, 0, 50)
     }
 
     if (lastArticle) {

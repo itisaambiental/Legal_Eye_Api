@@ -205,14 +205,18 @@ class ArticleExtractor {
   }
 
   /**
-   * Updates the progress of the job.
-   * @param {number} current - The current number of processed articles.
-   * @param {number} total - The total number of articles to process.
-   */
-  updateProgress (current, total) {
-    let progress = Math.floor((current / total) * 100)
-    progress = Math.max(0, Math.min(progress, 100))
-    this.job.progress(progress)
+ * Updates the progress of a job, supporting multiple weighted phases.
+ *
+ * @param {number} current - Steps completed in the current phase.
+ * @param {number} total - Total steps in the current phase.
+ * @param {number} phaseStart - Percentage where this phase begins (0–100).
+ * @param {number} phaseEnd - Percentage where this phase ends (0–100).
+ */
+  updateProgress (current, total, phaseStart = 0, phaseEnd = 100) {
+    const phaseRange = phaseEnd - phaseStart
+    const phaseProgress = Math.floor((current / total) * phaseRange)
+    const totalProgress = Math.max(0, Math.min(phaseStart + phaseProgress, 100))
+    this.job.progress(totalProgress)
   }
 }
 
