@@ -810,7 +810,7 @@ Analyze the content of "${article.title}" within the legal basis titled "${legal
     **order:** 300
 
   7- **Tables**:
-     - Whenever you encounter a <table> anywhere in the document—whether under a numeral, in the main content, in an annex, or in any other section—**always** include its title immediately **before** the `<table>` tag.
+     - Whenever you encounter a <table> anywhere in the document—whether under a numeral, in the main content, in an annex, or in any other section—**always** include its title immediately **before** the <table> tag.
      - If the title consists of multiple lines (e.g. “TABLA X” on one line y subtítulo en la siguiente), preserve todas las líneas en el mismo orden.
  
    #### Example 1 (in a numeral):

@@ -87,6 +87,55 @@ class ArticleExtractor {
   }
 
   /**
+   * Abstract method to extract high-level section titles from the text.
+   * This method should return a list of section headings (e.g., numerals, annexes, appendices)
+   * and a boolean indicating whether the document has a valid structure.
+   *
+   * @param {string} _text - The cleaned full text of the document.
+   * @returns {Promise<{ sections: string[], isValid: boolean }>} - Extracted section titles and validity flag.
+   * @throws {Error} If not implemented in a subclass.
+   */
+  async _extractSections (_text) {
+    throw new Error('Method "_extractSections" must be implemented')
+  }
+
+  /**
+     * Abstract method to build a regular expression that matches any of the given section headings.
+     * This is typically used to find where each section begins in the document.
+     *
+     * @param {string[]} _sections - Array of section headings extracted from the document.
+     * @returns {RegExp} - Regular expression to match section headings at line starts.
+     * @throws {Error} If not implemented in a subclass.
+     */
+  _buildHeadingRegex (_sections) {
+    throw new Error('Method "_buildHeadingRegex" must be implemented')
+  }
+
+  /**
+     * Abstract method to generate a prompt for extracting top-level section headings.
+     * This prompt is typically passed to an LLM to identify all relevant section headers from the text body.
+     *
+     * @param {string} _text - The full text of the document to analyze.
+     * @returns {string} - The formatted prompt used for section extraction.
+     * @throws {Error} If not implemented in a subclass.
+     */
+  _buildSectionsPrompt (_text) {
+    throw new Error('Method "_buildSectionsPrompt" must be implemented')
+  }
+
+  /**
+     * Abstract method to validate and clean extracted articles.
+     * Should process a list of articles, handling incomplete or continuation fragments.
+     *
+     * @param {Array<ArticleToVerify>} _rawArticles - List of raw articles extracted with full context.
+     * @returns {Promise<Array<Article>>} - List of validated and cleaned articles.
+     * @throws {Error} If not implemented in a subclass.
+     */
+  async _validateExtractedArticles (_rawArticles) {
+    throw new Error('Method "_validateExtractedArticles" must be implemented')
+  }
+
+  /**
    * Abstract method to create an article.
    * Subclasses must override this method to define how articles are created.
    * @param {string} _title - Title of the article.

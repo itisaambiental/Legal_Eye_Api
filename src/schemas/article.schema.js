@@ -48,7 +48,7 @@ const articlesSchema = z
 */
 const articleVerificationSchema = z.object({
   isValid: z.boolean(),
-  reason: z.enum(['IsContinuation', 'IsIncomplete', 'Other']).optional()
+  reason: z.enum(['IsContinuation', 'IsIncomplete', 'Other']).nullable()
 })
 
 /**

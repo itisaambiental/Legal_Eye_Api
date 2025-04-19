@@ -2,7 +2,8 @@ import ArticleExtractor from './ArticleExtractor.js'
 import openai from '../../../config/openapi.config.js'
 import {
   articleVerificationSchema,
-  singleArticleModelSchema
+  singleArticleModelSchema,
+  sectionsResponseSchema
 } from '../../../schemas/article.schema.js'
 import { zodResponseFormat } from 'openai/helpers/zod'
 import { convert } from 'html-to-text'
@@ -81,143 +82,278 @@ class ReglamentoArticleExtractor extends ArticleExtractor {
    * @returns {string} - The cleaned text.
    */
   _cleanText (text) {
-    const articleKeywordRegex =
-      /\b[Aa]\s*R\s*T\s*[ÍIíi]\s*C\s*U\s*L\s*O\s*(\d+[A-Z]*|[IVXLCDM]+)\b/gi
-    const chapterKeywordRegex =
-      /\b[Cc]\s*[ÁAáa]\s*[Pp]\s*[ÍIíi]\s*[Tt]\s*[Uu]\s*[Ll]\s*[Oo]\s*(\d+[A-Z]*|[IVXLCDM]+)\b/gi
-    const titleKeywordRegex =
-      /\b[Tt]\s*[ÍIíi]\s*[Tt]\s*[Uu]\s*[Ll]\s*[Oo]\s*(\d+[A-Z]*|[IVXLCDM]+)\b/gi
-    const sectionKeywordRegex =
-      /\b[Ss]\s*[Ee]\s*[Cc]\s*[Cc]\s*[ÍIíi]\s*[ÓOóo]\s*[Nn]\s*(\d+[A-Z]*|[IVXLCDM]+)\b/gi
-    const transientKeywordRegex =
-      /\b(?:\w+\s+)*[Tt][Rr][Aa][Nn][Ss][Ii][Tt][Oo][Rr][Ii][AaOo](?:\s*[SsAa])?\s*(\d+[A-Z]*|[IVXLCDM]+)?\b/gi
-    const annexKeywordRegex =
-      /\b[Aa]\s*[Nn]\s*[Ee]\s*[Xx]\s*[Oo]\s*(\d+[A-Z]*|[IVXLCDM]+)?\b/gi
     const ellipsisTextRegex = /[^.]+\s*\.{3,}\s*/g
     const singleEllipsisRegex = /\s*\.{3,}\s*/g
 
     return text
-      .replace(articleKeywordRegex, 'ARTÍCULO $1')
-      .replace(chapterKeywordRegex, 'CAPÍTULO $1')
-      .replace(sectionKeywordRegex, 'SECCIÓN $1')
-      .replace(titleKeywordRegex, 'TÍTULO $1')
-      .replace(transientKeywordRegex, 'TRANSITORIO $1')
-      .replace(annexKeywordRegex, 'ANEXO $1')
       .replace(ellipsisTextRegex, '')
       .replace(singleEllipsisRegex, '')
   }
 
   /**
- * @param {string} text - Text to process and extract articles from.
- * @returns {Promise<Array<Article>>} - List of article objects.
+ * @param {string} text - Full document text to process and extract sections from.
+ * @returns {Promise<Array<Article>>} - Ordered array of validated article objects.
  */
   async _extractArticles (text) {
-    text = this._cleanText(text)
+    try {
+      const documentText = this._cleanText(text)
+      const { sections, isValid } = await this._extractSections(documentText)
+      if (!isValid) {
+        throw new ErrorUtils(500, 'Article Processing Error')
+      }
 
-    const articlePatternString =
-    '(?:^|\\n)\\s*(' +
-    '(?:c[áa]p[ií]tulo)\\s+\\S+|' +
-    '(?:t[ií]tulo)\\s+\\S+|' +
-    '(?:secci[oó]n)\\s+\\S+|' +
-    '(?:art[ií]culo)\\s+\\S+|' +
-    '(?:transitori[oa][s]?)\\s+\\S+|' +
-    '(?:anexo)\\s+\\S+' +
-    ')'
+      const headingRegex = this._buildHeadingRegex(sections)
+      const matches = Array.from(documentText.matchAll(headingRegex), m => ({
+        header: m[0],
+        start: m.index
+      }))
+      matches.push({ start: documentText.length })
 
-    const articlePattern = new RegExp(articlePatternString, 'i')
-    const regexes = [
-      /^(?:c[áa]p[ií]tulo)\s+\S+$/i,
-      /^(?:t[ií]tulo)\s+\S+$/i,
-      /^(?:secci[oó]n)\s+\S+$/i,
-      /^(?:art[ií]culo)\s+\S+$/i,
-      /^(?:transitori[oa][s]?)\s+\S+$/i,
-      /^(?:anexo)\s+\S+$/i
-    ]
+      const rawArticles = []
+      const lastResult = { isValid: true, reason: null }
+      let order = 1
 
-    const matches = text.split(articlePattern)
-    const articles = []
-    let order = 1
+      for (let i = 0; i < matches.length - 1; i++) {
+        const { header, start } = matches[i]
+        const end = matches[i + 1].start
+        const content = documentText.slice(start + header.length, end).trim()
+
+        const prevStart = i > 0 ? matches[i - 1].start : 0
+        const prevEnd = start
+        const previousTitle = i > 0 ? matches[i - 1].header : ''
+        const previousContent = documentText.slice(prevStart + previousTitle.length, prevEnd).trim()
+
+        const nextTitle = i + 1 < matches.length - 1 ? matches[i + 1].header : ''
+        const nextContent = i + 2 < matches.length
+          ? documentText.slice(matches[i + 1].start + nextTitle.length, matches[i + 2].start).trim()
+          : documentText.slice(matches[i + 1].start + nextTitle.length).trim()
+
+        const previousArticle = `${previousTitle} ${previousContent}`.trim()
+        const nextArticle = `${nextTitle} ${nextContent}`.trim()
+
+        const articleToVerify = this._createArticleToVerify(
+          header,
+          lastResult,
+          previousArticle,
+          content,
+          nextArticle,
+          order++
+        )
+
+        rawArticles.push(articleToVerify)
+      }
+
+      const articles = await this._validateExtractedArticles(rawArticles)
+      return articles
+    } catch (error) {
+      throw new ErrorUtils(500, 'Article Processing Error', error)
+    }
+  }
+
+  /**
+   * Build a regular expression to match any of the given section headings.
+   * @param {string[]} sections - Array of section heading strings.
+   * @returns {RegExp} - Regex to match headings at start of a line.
+   */
+  _buildHeadingRegex (sections) {
+    const escapeForRegex = (str) =>
+      str.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')
+    const pattern = sections.map(escapeForRegex).join('|')
+    return new RegExp(`^(?:${pattern})`, 'gim')
+  }
+
+  /**
+
+/**
+* Extracts all standalone section headings from a Mexican Official Standard (NOM) document.
+*
+* @param {string} text - The full text of the NOM document in Spanish.
+* @returns {Promise<{ sections: string[], isValid: boolean }>}
+*   An object containing:
+*   - sections: an array of extracted headings (numbered or unnumbered), in original order.
+*   - isValid: true if the text looks like a valid NOM with separable sections; false otherwise.
+*/
+  async _extractSections (text) {
+    const prompt = this._buildSectionsPrompt(text)
+    const request = {
+      model: this.model,
+      messages: [
+        {
+          role: 'system',
+          content: [
+            'You are an expert in parsing legal documents(regulations).',
+            'Given a Spanish legal document, extract all standalone headings — such as articles, titles, chapters, sections, annexes and transitory provisions — in their original order.',
+            'Ignore headers, footers, page numbers, and non-structural content.'
+          ].join(' ')
+        },
+        { role: 'user', content: prompt }
+      ],
+      temperature: 0,
+      response_format: zodResponseFormat(sectionsResponseSchema, 'sections')
+    }
+    const attemptRequest = async (retryCount = 0) => {
+      try {
+        const response = await openai.chat.completions.create(request)
+        const content = sectionsResponseSchema.parse(
+          JSON.parse(response.choices[0].message.content)
+        )
+        return content
+      } catch (error) {
+        if (error.status === 429 && retryCount < 3) {
+          const backoffTime = Math.pow(2, retryCount) * 1000
+          await new Promise((resolve) => setTimeout(resolve, backoffTime))
+          return attemptRequest(retryCount + 1)
+        }
+        throw new ErrorUtils(500, 'Article Processing Error', error)
+      }
+    }
+
+    return attemptRequest()
+  }
+
+  /**
+ * Builds the user‑facing prompt for extracting **only** top‑level and unnumbered section headings.
+ *
+ * @param {string} text - The full text of the document.
+ * @returns {string} The formatted prompt.
+ */
+  _buildSectionsPrompt (text) {
+    return `
+  Extract all legal section headings and their sub-divisions from a legal document (law, code, regulation), based strictly on the body content (not from any index or table of contents):
+  
+  • Valid section headers include, but are not limited to:
+    - "TÍTULO I", "TÍTULO PRIMERO"
+    - "CAPÍTULO I", "CAPÍTULO PRIMERO"
+    - "SECCIÓN I", "SECCIÓN PRIMERA"
+    - "ARTÍCULO 1", "ARTÍCULO PRIMERO"
+    - "ARTÍCULO 3.1", "ARTÍCULO 7-B", "ARTÍCULO 12 bis", "ARTÍCULO 15 ter"
+    - "TRANSITORIOS", "DISPOSICIONES TRANSITORIAS"
+    - "ANEXO A", "ANEXO I"
+    - "APÉNDICE A", "APÉNDICE NORMATIVO"
+    - Other structural headers such as "LIBRO PRIMERO", "PARTE GENERAL", etc.
+  
+  • You MUST extract sub-numbered and compound article identifiers such as:
+    - "ARTÍCULO 2.1", "ARTÍCULO 4-B", "ARTÍCULO 10 bis" — treat each of these as **independent headers**.
+    - These sub-articles are legal subdivisions and must be listed as standalone headings.
+  
+  • Preserve original **accents**, **punctuation**, and **order** of appearance.
+  • Ignore any **page numbers**, **headers**, **footers**, **marginal notes**, or **index references**.
+  • Do NOT rely on any index or table of contents—extract based solely on the actual content flow.
+  
+  • Consider the document valid (isValid: true) if it contains at least one extractable section or sub-article heading as defined above.
+  
+  Return your answer as valid JSON in the following format:
+  
+  \`\`\`json
+  {
+    "sections": [ /* array of heading strings */ ],
+    "isValid": /* true if the document contains at least one heading */
+  }
+  \`\`\`
+  
+  Example sections array:
+
+  \`\`\`
+  [
+    "TÍTULO PRIMERO",
+    "CAPÍTULO I",
+    "ARTÍCULO 1",
+    "ARTÍCULO 1.1",
+    "ARTÍCULO 2 bis",
+    "CAPÍTULO II",
+    "ARTÍCULO 4",
+    "ARTÍCULO 4-A",
+    "TRANSITORIOS",
+    "ANEXO A",
+    "ANEXO B"
+  ]
+  \`\`\`
+  
+  Document text:
+  """
+  ${text}
+  """
+  `
+  }
+
+  /**
+ * Validate a list of articles using _verifyArticle.
+ * Groups incomplete and continuations.
+ *
+ * @param {Array<ArticleToVerify>} rawArticles
+ * @returns {Promise<Array<Article>>}
+ */
+  async _validateExtractedArticles (rawArticles) {
+    const validated = []
     let lastResult = { isValid: true, reason: null }
     let lastArticle = null
     let isConcatenating = false
 
-    for (let i = 1; i < matches.length; i++) {
-      const previousTitle = i > 1 ? matches[i - 2]?.trim() : ''
-      const previousContent = i > 1 ? matches[i - 1]?.trim() : ''
-      const currentTitle = matches[i].trim()
-      const currentContent =
-      i + 1 < matches.length ? matches[i + 1].trim() : ''
-      const nextTitle = i + 2 < matches.length ? matches[i + 2].trim() : ''
-      const nextContent = i + 3 < matches.length ? matches[i + 3].trim() : ''
-      if (regexes.some((regex) => regex.test(currentTitle))) {
-        const previousArticle = `${previousTitle} ${previousContent}`.trim()
-        const currentArticle = `${currentTitle} ${currentContent}`.trim()
-        const nextArticle = `${nextTitle} ${nextContent}`.trim()
-        const currentArticleData = this._createArticleToVerify(
-          currentTitle,
-          lastResult,
-          previousArticle,
-          currentArticle,
-          nextArticle,
-          order++
+    for (const currentArticleData of rawArticles) {
+      try {
+        const { isValid, reason } = await this._verifyArticle(
+          currentArticleData
         )
-        try {
-          const { isValid, reason } = await this._verifyArticle(currentArticleData)
-          if (isValid) {
-            if (lastArticle) {
-              articles.push(lastArticle)
-              lastArticle = null
-            }
-            articles.push({
-              title: currentArticleData.title,
-              article: currentArticleData.currentArticle,
-              plainArticle: currentArticleData.plainArticle,
-              order: currentArticleData.order
-            })
-            isConcatenating = false
-          } else {
-            if (reason === 'IsIncomplete') {
-              if (lastArticle && lastResult.reason === 'IsIncomplete') {
-                lastArticle.article += ` ${currentArticleData.currentArticle}`
-              } else {
-                lastArticle = {
-                  title: currentArticleData.title,
-                  article: currentArticleData.currentArticle,
-                  plainArticle: currentArticleData.plainArticle,
-                  order: currentArticleData.order
-                }
-              }
-              isConcatenating = true
-            } else if (reason === 'IsContinuation') {
-              if (lastResult.reason === 'IsIncomplete' || (isConcatenating && lastResult.reason === 'IsContinuation')) {
-                if (lastArticle) {
-                  lastArticle.article += ` ${currentArticleData.currentArticle}`
-                }
-                isConcatenating = true
-              } else {
-                if (lastArticle) {
-                  articles.push(lastArticle)
-                  lastArticle = null
-                }
-                isConcatenating = false
-              }
-            }
+        if (isValid) {
+          if (lastArticle) {
+            validated.push(lastArticle)
+            lastArticle = null
           }
-          lastResult = { isValid, reason }
-        } catch (error) {
-          articles.push({
+          validated.push({
             title: currentArticleData.title,
             article: currentArticleData.currentArticle,
             plainArticle: currentArticleData.plainArticle,
             order: currentArticleData.order
           })
+          isConcatenating = false
+        } else {
+          if (reason === 'IsIncomplete') {
+            if (lastArticle && lastResult.reason === 'IsIncomplete') {
+              lastArticle.article += ` ${currentArticleData.currentArticle}`
+            } else {
+              lastArticle = {
+                title: currentArticleData.title,
+                article: currentArticleData.currentArticle,
+                plainArticle: currentArticleData.plainArticle,
+                order: currentArticleData.order
+              }
+            }
+            isConcatenating = true
+          } else if (reason === 'IsContinuation') {
+            if (
+              lastResult.reason === 'IsIncomplete' ||
+            (isConcatenating && lastResult.reason === 'IsContinuation')
+            ) {
+              if (lastArticle) {
+                lastArticle.article += ` ${currentArticleData.currentArticle}`
+              }
+              isConcatenating = true
+            } else {
+              if (lastArticle) {
+                validated.push(lastArticle)
+                lastArticle = null
+              }
+              isConcatenating = false
+            }
+          }
         }
+
+        lastResult = { isValid, reason }
+      } catch (error) {
+        validated.push({
+          title: currentArticleData.title,
+          article: currentArticleData.currentArticle,
+          plainArticle: currentArticleData.plainArticle,
+          order: currentArticleData.order
+        })
       }
     }
+
     if (lastArticle) {
-      articles.push(lastArticle)
+      validated.push(lastArticle)
     }
-    return articles
+
+    return validated
   }
 
   /**

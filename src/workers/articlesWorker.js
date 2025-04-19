@@ -34,7 +34,6 @@ const CONCURRENCY = Number(CONCURRENCY_EXTRACT_ARTICLES || 1)
 articlesQueue.process(CONCURRENCY, async (job, done) => {
   /** @type {ArticleExtractorJobData} */
   const { userId, legalBasisId, intelligenceLevel } = job.data
-  console.log(job.id)
   try {
     const currentJob = await articlesQueue.getJob(job.id)
     if (!currentJob) throw new ErrorUtils(404, 'Job not found')
