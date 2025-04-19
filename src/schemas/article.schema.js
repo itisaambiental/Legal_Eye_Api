@@ -48,7 +48,7 @@ const articlesSchema = z
 */
 const ArticleVerificationSchema = z.object({
   isValid: z.boolean(),
-  reason: z.enum(['IsContinuation', 'IsIncomplete']).optional()
+  reason: z.enum(['IsContinuation', 'IsIncomplete', 'Other']).optional()
 })
 
 /**
@@ -86,7 +86,8 @@ const singleArticleModelSchema = z.object({
  */
 const IndexResponseSchema = z.object({
   numerals: z.array(z.string()),
-  isValid: z.boolean()
+  isValid: z.boolean(),
+  hasSubNumerals: z.boolean()
 })
 
 export { singleArticleSchema, articlesSchema, ArticleVerificationSchema, singleArticleModelSchema, IndexResponseSchema }

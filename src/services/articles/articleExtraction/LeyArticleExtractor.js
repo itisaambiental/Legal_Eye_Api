@@ -62,7 +62,10 @@ class LeyArticleExtractor extends ArticleExtractor {
         correctedArticle.plainArticle = convert(correctedArticle.article)
         correctedArticles.push(correctedArticle)
       } catch (error) {
-        continue
+        correctedArticles.push({
+          ...article,
+          plainArticle: convert(article.article)
+        })
       }
       currentProgress += 1
       this.updateProgress(currentProgress, totalArticles)

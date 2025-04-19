@@ -15,7 +15,7 @@ import ErrorUtils from '../../../utils/Error.js'
 class NormaArticleExtractor extends ArticleExtractor {
   /**
    * @typedef {Object} Article
-   * @property {string} title - The title of the article, chapter, section, annex, or transitory provision.
+   * @property {string} title - The title of the article, appendix, section, annex, or transitory provision.
    * @property {string} article - The content of the article.
    * @property {string} plainArticle - Plain text of the article.
    * @property {number} order - Order of the article.
@@ -39,7 +39,7 @@ class NormaArticleExtractor extends ArticleExtractor {
 
   /**
    * @typedef {Object} ArticleToVerify
-   * @property {string} title - The title of the article, title, chapter, section, annex, or transitory provision.
+   * @property {string} title - The title of the article, title, appendix, section, annex, or transitory provision.
    * @property {PreviousArticle} previousArticle - Object containing the content and validation result of the previous article.
    * @property {string} currentArticle - Main content of the article to be analyzed.
    * @property {string} nextArticle - Content of the next article.
@@ -64,7 +64,10 @@ class NormaArticleExtractor extends ArticleExtractor {
         correctedArticle.plainArticle = convert(correctedArticle.article)
         correctedArticles.push(correctedArticle)
       } catch (error) {
-        continue
+        correctedArticles.push({
+          ...article,
+          plainArticle: convert(article.article)
+        })
       }
       currentProgress += 1
       this.updateProgress(currentProgress, totalArticles)
@@ -85,6 +88,7 @@ class NormaArticleExtractor extends ArticleExtractor {
     /\b(?:\w+\s+)*[Tt][Rr][Aa][Nn][Ss][Ii][Tt][Oo][Rr][Ii][AaOo](?:\s*[SsAa])?\s*(\d+[A-Z]*|[IVXLCDM]+)?\b/gi
     const annexKeywordRegex =
     /\b[Aa]\s*[Nn]\s*[Ee]\s*[Xx]\s*[Oo]\s*(\d+[A-Z]*|[IVXLCDM]+)?\b/gi
+    const appendixKeywordRegex = /\b[AaÁá][Pp][ÉéEe]?[Nn][Dd][Ii][Cc][Ee]?[Ss]?\s*(\d+[A-Z]*|[IVXLCDM]+)?\b/gi
     const ellipsisTextRegex = /[^.]+\s*\.{3,}\s*/g
     const singleEllipsisRegex = /\s*\.{3,}\s*/g
 
@@ -94,6 +98,7 @@ class NormaArticleExtractor extends ArticleExtractor {
       .replace(sectionKeywordRegex, 'SECCIÓN $1')
       .replace(transientKeywordRegex, 'TRANSITORIO $1')
       .replace(annexKeywordRegex, 'ANEXO $1')
+      .replace(appendixKeywordRegex, 'APÉNDICE $1')
       .replace(ellipsisTextRegex, '')
       .replace(singleEllipsisRegex, '')
   }
@@ -111,17 +116,18 @@ class NormaArticleExtractor extends ArticleExtractor {
     '(?:^|\\n)\\s*(' +
     '(?:secci[oó]n)\\s+\\S+|' +
     '(?:transitori[oa][s]?)\\s+\\S+|' +
-    '(?:anexo)\\s+\\S+' +
+    '(?:anexo)\\s+\\S+|' +
+    '(?:ap[eé]ndice[s]?)\\s+\\S+' +
     ')'
-
     const articlePattern = new RegExp(articlePatternString, 'i')
     const articleRegexes = [
       /^(?:secci[oó]n)\s+\S+$/i,
       /^(?:transitori[oa][s]?)\s+\S+$/i,
-      /^(?:anexo)\s+\S+$/i
+      /^(?:anexo)\s+\S+$/i,
+      /^(?:ap[eé]ndice[s]?)\s+\S+$/i
     ]
 
-    const articles = []
+    const rawArticles = []
     let order = 1
     const lastResult = { isValid: true, reason: null }
     const indexLine = lines.findIndex(line => indexRegex.test(line))
@@ -151,13 +157,7 @@ class NormaArticleExtractor extends ArticleExtractor {
             nextArticle,
             order++
           )
-
-          articles.push({
-            title: currentArticleData.title,
-            article: currentArticleData.currentArticle,
-            plainArticle: currentArticleData.plainArticle,
-            order: currentArticleData.order
-          })
+          rawArticles.push(currentArticleData)
         }
       }
     }
@@ -184,18 +184,14 @@ class NormaArticleExtractor extends ArticleExtractor {
         return tryExtractFrom(startIndex + 1)
       }
       const indexBlock = lines.slice(startIndex + 1, endIndex).join('\n')
-      const result = await this._cleanIndex(indexBlock)
-      if (!result.isValid) {
+      const { isValid, numerals } = await this._cleanIndex(indexBlock)
+      if (!isValid) {
         return tryExtractFrom(startIndex + 1)
       }
-      const numerals = result.numerals
-      const escapedPatterns = numerals.map(title => {
-        const parts = title.split('.')
-        const num = parts[0].trim()
-        const rest = parts.slice(1).join('.').trim()
-        return `${num}\\.\\s+${rest.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`
-      })
-      const pattern = new RegExp(`^\\s*(${escapedPatterns.join('|')})\\b`, 'gm')
+      const escapedPatterns = numerals.map(t =>
+        t.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&')
+      )
+      const pattern = new RegExp(`(^|\\n)\\s*(${escapedPatterns.join('|')})\\b`, 'g')
       const matches = [...text.matchAll(pattern)]
       for (let i = 0; i < matches.length; i++) {
         const start = matches[i].index
@@ -228,12 +224,7 @@ class NormaArticleExtractor extends ArticleExtractor {
                 nextArticle,
                 order++
               )
-              articles.push({
-                title: currentArticleData.title,
-                article: currentArticleData.currentArticle,
-                plainArticle: currentArticleData.plainArticle,
-                order: currentArticleData.order
-              })
+              rawArticles.push(currentArticleData)
               wasSubArticlePushed = true
             }
           }
@@ -259,12 +250,7 @@ class NormaArticleExtractor extends ArticleExtractor {
                 nextSubArticle,
                 order++
               )
-              articles.push({
-                title: currentArticleData.title,
-                article: currentArticleData.currentArticle,
-                plainArticle: currentArticleData.plainArticle,
-                order: currentArticleData.order
-              })
+              rawArticles.push(currentArticleData)
               wasSubArticlePushed = true
             }
           }
@@ -278,12 +264,7 @@ class NormaArticleExtractor extends ArticleExtractor {
               nextArticle,
               order++
             )
-            articles.push({
-              title: currentArticleData.title,
-              article: currentArticleData.currentArticle,
-              plainArticle: currentArticleData.plainArticle,
-              order: currentArticleData.order
-            })
+            rawArticles.push(currentArticleData)
           }
         } else {
           const currentArticleData = this._createArticleToVerify(
@@ -294,20 +275,90 @@ class NormaArticleExtractor extends ArticleExtractor {
             nextArticle,
             order++
           )
+          rawArticles.push(currentArticleData)
+        }
+      }
+      return rawArticles
+    }
 
-          articles.push({
+    const result = await tryExtractFrom()
+    const articles = await this._validateExtractedArticles(result)
+    return articles
+  }
+
+  /**
+ * Validate a list of articles using _verifyArticle.
+ * Groups incomplete and continuations.
+ *
+ * @param {Array<ArticleToVerify>} rawArticles
+ * @returns {Promise<Array<Article>>}
+ */
+  async _validateExtractedArticles (rawArticles) {
+    const validated = []
+    let lastResult = { isValid: true, reason: null }
+    let lastArticle = null
+    let isConcatenating = false
+
+    for (const currentArticleData of rawArticles) {
+      try {
+        const { isValid, reason } = await this._verifyArticle(currentArticleData)
+        if (isValid) {
+          if (lastArticle) {
+            validated.push(lastArticle)
+            lastArticle = null
+          }
+          validated.push({
             title: currentArticleData.title,
             article: currentArticleData.currentArticle,
             plainArticle: currentArticleData.plainArticle,
             order: currentArticleData.order
           })
+          isConcatenating = false
+        } else {
+          if (reason === 'IsIncomplete') {
+            if (lastArticle && lastResult.reason === 'IsIncomplete') {
+              lastArticle.article += ` ${currentArticleData.currentArticle}`
+            } else {
+              lastArticle = {
+                title: currentArticleData.title,
+                article: currentArticleData.currentArticle,
+                plainArticle: currentArticleData.plainArticle,
+                order: currentArticleData.order
+              }
+            }
+            isConcatenating = true
+          } else if (reason === 'IsContinuation') {
+            if (lastResult.reason === 'IsIncomplete' || (isConcatenating && lastResult.reason === 'IsContinuation')) {
+              if (lastArticle) {
+                lastArticle.article += ` ${currentArticleData.currentArticle}`
+              }
+              isConcatenating = true
+            } else {
+              if (lastArticle) {
+                validated.push(lastArticle)
+                lastArticle = null
+              }
+              isConcatenating = false
+            }
+          }
         }
-      }
 
-      return articles
+        lastResult = { isValid, reason }
+      } catch (error) {
+        validated.push({
+          title: currentArticleData.title,
+          article: currentArticleData.currentArticle,
+          plainArticle: currentArticleData.plainArticle,
+          order: currentArticleData.order
+        })
+      }
     }
 
-    return tryExtractFrom()
+    if (lastArticle) {
+      validated.push(lastArticle)
+    }
+
+    return validated
   }
 
   /**
@@ -342,7 +393,7 @@ class NormaArticleExtractor extends ArticleExtractor {
 
   /**
  * @param {string} indexText - The raw index text to clean.
- * @returns {Promise<{ numerals: string[], isValid: boolean }>} - Cleaned numerals and index validity.
+ * @returns {Promise<{ numerals: string[], isValid: boolean, hasSubNumerals: boolean }>} - Cleaned numerals and index validity.
  */
   async _cleanIndex (indexText) {
     const prompt = this._buildCleanIndexPrompt(indexText)
@@ -381,14 +432,15 @@ class NormaArticleExtractor extends ArticleExtractor {
   }
 
   /**
- * Constructs a prompt to clean the given index text and extract only numerals.
+ * Builds the prompt that cleans the index and extracts its numerals.
  *
- * @param {string} index - The index text extracted from the document.
- * @returns {string} - The prompt to send to the OpenAI API.
+ * @param {string} index - Raw index text.
+ * @returns {string} - Prompt for the OpenAI API.
  */
   _buildCleanIndexPrompt (index) {
     return `
-You are a text processing expert specialized in analyzing the index (Índice/Contenido) sections of Mexican Official Standards (NOMs).
+You are a text‑processing expert specialized in the index (Índice/Contenido)
+sections of Mexican Official Standards (NOMs).
 
 Given the raw index text below:
 
@@ -396,42 +448,47 @@ Given the raw index text below:
 ${index}
 """
 
-Your task is to:
-1. Clean the index by removing headers, footers, page numbers, links, administrative notes, and any irrelevant content.
-2. Identify and extract only the **numerically ordered** sections such as:
-   - "0. Introducción"
-   - "1. Objeto y Ámbito de validez"
-   - "2. Referencias"
-   - "3. Definiciones"
-   - "4. Requisitos técnicos"
-   - etc.
+Your task:
 
-Rules to determine "isValid":
-- Return "isValid": true **only** if:
-  - The index has at least **3 numeric sections** with a clear order (e.g., "1. Introducción", "2. Objeto...", etc.).
-  - Each line begins with a **number followed by a period and a space**, like "3. Requisitos...".
-  - The list is consistent, structured, and technical in nature (e.g., related to definitions, scope, requirements).
-- Return "isValid": false if:
-  - The text contains non-numeric items, administrative notes, legal announcements, dependencies, pages, or bullet points.
-  - The content resembles a government bulletin, administrative circular, or includes entities like "Secretaría de...", "Delegación...", or page numbers.
+1. Remove headers, footers, page numbers, links, administrative notes and
+   any irrelevant content.
+2. **Return every numeral exactly as it appears, including the text that follows
+   the number preserve original order, accents, and punctuation.  
+   
+   •First‑level examples →  
+     "0. Introducción"  
+     "1. Fundamentos y Motivación"  
+     "2. Referencias"
 
-Examples of **invalid index content**:
-- Viene de la Pág. 1
-- Secretaría de Seguridad Pública
--  Aviso por el que se da a conocer...
-- MA-11000-16/10
-- Padrones de Personas Beneficia...
+   •Sub‑numeral examples →  
+     "1.1 Antecedentes"  
+     "1.1.1 Fundamentación Jurídica"  
+     "4.4.1.2 Distribución de Usos del Suelo"
 
-Important:
-- Exclude annexes, transitory provisions, appendices, and **any unnumbered or unordered sections** from the "numerals" list.
-- Each valid numeral must be returned as a **clean string**, preserving accents and original order.
+
+**Important constraints**
+
+* **Never invent** new numerals (neither first‑level nor hierarchical).  
+  Return only those that already exist in the index.
+* Annexes, transitory provisions, appendices, or unnumbered items must be
+  excluded from the array.
+
+**isValid rules**
+
+Return \`"isValid": true\` only if:
+
+* They keep the original order from the document.
+* Set “hasSubNumerals” to true if at least one entry appears in the list whose number contains an extra period (e.g., “1.1”, “4.4.1”). Otherwise return false.
+
+Return \`"isValid": false\` if the text is mostly administrative notes,
+page references, or lacks the required numerals.
 `
   }
 
   /**
      * @param {ArticleToVerify} article - The article to verify.
      * @returns {Promise<ValidationResult>} - An object indicating if the article is valid and optionally the reason why it is considered invalid.
-     */
+   */
   async _verifyArticle (article) {
     const prompt = this._buildVerifyPrompt(this.name, article)
     const request = {
@@ -474,143 +531,153 @@ Important:
   }
 
   /**
-  * Constructs a verification prompt for evaluating a legal provision.
-  *
-  /**
+ * Constructs a verification prompt for evaluating a legal provision.
+ *
  * @param {string} legalName - The name of the legal base.
  * @param {ArticleToVerify} article - The article for which the verification prompt is built.
  * @returns {string} - The constructed prompt.
  */
   _buildVerifyPrompt (legalName, article) {
     return `
-You are a regulatory expert in chemical safety and compliance. Your task is to validate provisions extracted from Mexican Official Standards (Normas Oficiales Mexicanas – NOMs) in the chemical field.
+You are a legal expert who confirms the validity of legal provisions:
 
-### 0. Segmentation Rules
-1. **End of Index/Content**  
-   After a title matching /^ÍNDICE\b/i or /^CONTENIDO\b/i, collect all subsequent list lines until you see the very first repetition of the root numeral (e.g. “0. Introducción”). That repeated numeral marks the end of the Index/Content block and the start of actual articles.
+### Evaluation Context:
+- **Legal Base:** "${legalName}"
+- **Previous Provision:** "${article.previousArticle.content}" 
+(Validation: { "isValid": ${article.previousArticle.lastResult.isValid}, "reason": "${article.previousArticle.lastResult.reason}" })
+- **Current Provision(To be evaluated):** "${article.currentArticle}"
+- **Next Provision:** "${article.nextArticle}"
 
-2. **Numeral‑based Articles**  
-   * A new article begins at any line matching // ^[0-9]+\\.
-   • **Group** that root line and **all** its sub‑levels (1.1, 1.1.2, etc.) **and** any embedded tables (TABLA 1, TABLA 2) into **one** article.  
-   • Do **not** split sub‑levels or table rows into separate articles.
+### **Important Note on Text Evaluation**
+- **Headers and Footnotes:** Please disregard any **headers** or **footnotes** (e.g., page numbers, publication dates, and references to external sources) present in the article or legal text. These elements are often part of the document layout but are not considered part of the legal provision itself.
+- **Content of the Provision:** Focus on the **legal content** itself, i.e., the specific rule, directive, or principle outlined in the body of the article or provision.
+- **Order of Provisions:** If the **Previous Provision**, **Current Provision**, and **Next Provision** follow the correct **logical order** and are connected in a coherent sequence, they must always be classified as **VALID**.
+- **Classification Caution:** Be **extremely careful** when classifying a provision as invalid. If there is **any doubt**, lean towards classifying it as **VALID** to avoid **accidentally skipping** or omitting an article from analysis. Every provision must be evaluated **meticulously** to ensure completeness.
 
-3. **End of Articles**  
-   A numeral article ends when you hit one of these markers (case‑insensitive):  
-   – TRANSITORIOS  
-   – ANEXO or APÉNDICE  
+- **Numerals from Index or Table of Contents (Índice o Contenido):**  
+  - If the current provision contains only a numeral or subnumeral along with its title as presented in the index or table of contents, without additional legal text (no specific rules, directives, principles, obligations, prohibitions, or rights explicitly stated), it must always be classified as **INVALID** with the reason **"Other"**.  
+  - Such provisions serve merely as structural placeholders or titles and do not constitute complete legal provisions for evaluation.  
 
----
+##### Example of Other:
+- **Previous Provision:** "1. Objetivo y campo de aplicación"
+- **Current Provision:** "2. Definiciones"
+- **Next Provision:** "3. Especificaciones generales"
 
-### 1. Evaluation Context:
-– NOM Standard: "${legalName}"  
-– Previous Section: "${article.previousArticle.content}"  
-  (Validation: { isValid: ${article.previousArticle.lastResult.isValid}, reason: ${article.previousArticle.lastResult.reason === null ? 'null' : `"${article.previousArticle.lastResult.reason}"`} })  
-– Current Section: "${article.currentArticle}"  
-– Next Section: "${article.nextArticle}"
+- **Reasoning:** The current provision ("2. Definiciones") contains only a numeral and a title, identical to how it appears in the index or table of contents, with no accompanying legal text or detailed content. Therefore, it must be marked as **INVALID** with the reason **Other**.
 
-### 2. Important Note on Text Evaluation
-– Ignore headers, footers, page numbers, dates, external references.  
-– Focus only on the body of the provision.  
-– If Previous, Current and Next form a coherent sequence → VALID.
+- 1- If the article is classified as VALID (isValid: true), then the field reason must be null. 
 
-### 3. Classification Rules
-1. VALID → { isValid: true, reason: null }  
-2. INVALID → { isValid: false, reason: "<rule>" }, where <rule> is:
-   – IsIncomplete → the section is clearly cut off or unfinished.  
-   – IsContinuation → follows a previously IsIncomplete section.
+  2- If the article is classified as INVALID (isValid: false), then the field reason must always contain a specific value from the following options:
+    "IsContinuation" → The provision is a direct continuation of a previous incomplete provision.
+    "IsIncomplete" → The provision is abruptly cut off or clearly unfinished, lacking a concluding idea.
 
----
+    ## **Valid Legal Provision**
 
-### 4. Normative Categories with Examples
+1. **Numerals or Subnumerals (Numerales o Subnumerales)**:
+- If the current numeral or subnumeral ends with a clear, logical idea, whether short or long, it should be considered valid. A clear idea is one that presents a complete rule, principle, or directive, even if brief.
+- Must establish legal norms such as obligations, rights, prohibitions, or principles.
+- Should have a clear legal structure.
+- It must contain a specific legal rule or directive rather than just referencing other articles.
+- If the previous numeral or subnumeral is valid, the current article should be evaluated independently and should not be marked as \`IsContinuation\` even if the structure suggests continuity.
 
-**A. CONSIDERANDO**  
-– Title /^CONSIDERANDO\b/i → always VALID.  
-  Example:  
-    CONSIDERANDO  
-    …toda persona tiene derecho…  
-  Result: { isValid: true, reason: null }
+#### Example 1:
+- **Previous Provision:** "1.1 Introducción general al sistema normativo"
+- **Current Provision:** "4.1.1 Toda instalación deberá cumplir con las disposiciones establecidas en esta Norma para efectos de inspección."
+- **Next Provision:** "9.1.2 La revisión periódica deberá realizarse al menos una vez cada doce meses."
 
-**B. Index / Content (ÍNDICE / CONTENIDO)**  
-– Title matches /^ÍNDICE\b/i or /^CONTENIDO\b/i.  
-– Group into a single article all list lines until the repeated root numeral.  
-– Never split or invent text.  
-– Always VALID.  
-  Example:
-    ÍNDICE  
-    0. Introducción  
-    1. Objetivo y campo de aplicación  
-    …  
-    VII Contenido de la bitácora…  
-    0. Introducción  ← end of index  
-  Result: { isValid: true, reason: null }
+#### Example 2:
+- **Previous Provision:** "4.3 Evaluación de riesgos"
+- **Current Provision:** "3.3.1 El responsable técnico deberá realizar una evaluación documental y física de todos los componentes del sistema."
+- **Next Provision:** "2.3.2 Los resultados deberán ser archivados y estar disponibles ante cualquier autoridad competente."
 
-**C. Preface (PREFACIO)**  
-– A narrative intro by the issuer.  
-– Must end listing all participants.  
-  Valid Example:  
-    PREFACIO  
-    En la elaboración participaron:  
-    1. CONAGUA  
-    …  
-    6. SEMARNAT  
-  → { isValid: true, reason: null }  
-  Incomplete Example (cuts off):  
-    PREFACIO  
-    Esta Norma tiene por objeto…  
-  → { isValid: false, reason: IsIncomplete }
+#### Example 3:
+- **Previous Provision:** "93.2.5 Disposiciones de seguridad"
+- **Current Provision:** "2.2.6 No se permitirá el uso de materiales inflamables en zonas de operación crítica."
+- **Next Provision:** "1.3 Supervisión operativa y técnica"
 
-**D. Introduction (INTRODUCCION)**  
-– Context, justification, scope.  
-  Valid:  
-    0. Introducción  
-    La necesidad de obtener…  
-    …  
-    se expide la presente Norma.  
-  → { isValid: true, reason: null }  
-  Incomplete (cuts off mid‑justification):  
-    INTRODUCCION  
-    Ante la creciente demanda…  
-  → { isValid: false, reason: IsIncomplete }
+2. **Appendices (Apéndices), and Sections (Secciones)**:
+ - If the current provision is a structural marker (e.g., Section [Sección], Appendix (Apéndices), Annex [Anexo], or Transitory Provision [Transitorio]) and it presents a complete, logically coherent provision, it must always be classified as VALID.
+ - If the previous provision is a structural marker (e.g., Section [Sección], Appendix (Apéndices), Annex [Anexo], or Transitory Provision [Transitorio]) and it presents a complete, logically coherent provision, the current provision  must always be classified as VALID.
+ - Must be part of a structured legal framework.
+#### Example 1:
+- **Previous Provision:** "1.1 Introducción general al sistema normativo"
+- **Current Provision:** "SECCIÓN II. DISPOSICIONES GENERALES"
+- **Next Provision:** "4.1.1 Toda instalación deberá cumplir con las disposiciones establecidas en esta Norma para efectos de inspección."
 
-**E. Transitory Provisions (TRANSITORIOS)**  
-– Title /^TRANSITORIOS\b/i or “PRIMERO”, “SEGUNDO”…  
-  Valid:  
-    TRANSITORIOS  
-    PRIMERO. Entrará en vigor…  
-    SEGUNDO. Los parámetros…  
-    …  
-    SÉPTIMO. Deroga la NOM-001-SEMARNAT-1996.  
-  → { isValid: true, reason: null }  
-  Incomplete (missing date):  
-    TRANSITORIO PRIMERO  
-    Entrará en vigor…  
-  → { isValid: false, reason: IsIncomplete }
+#### Example 2:
+- **Previous Provision:** "4.3 Evaluación de riesgos"
+- **Current Provision:** "APÉNDICE B. FORMATOS Y CRITERIOS DE EXAMEN"
+- **Next Provision:** "2.3.2 Los resultados deberán ser archivados y estar disponibles ante cualquier autoridad competente."
 
-**F. Annex / Appendix (ANEXO / APÉNDICE)**  
-– Title /^ANEXO\b/i or /^APENDICE\b/i.  
-  Valid:  
-    APÉNDICE NORMATIVO: PUERTOS DE MUESTREO  
-    (detalladas instrucciones…)  
-  → { isValid: true, reason: null }
+#### Example 3:
+- **Previous Provision:** "SECCIÓN II. DISPOSICIONES GENERALES"
+- **Current Provision:** "93.2.5 Disposiciones de seguridad"
+- **Next Provision:** "1.3 Supervisión operativa y técnica"
 
-**G. Numeral Sections (Numerales)**  
-- Title  // A new article begins at any line matching the pattern:
-  // ^[0-9]+\\.
-– Group that line + all its sub‑levels + any embedded tables into one article.  
-  Valid Example:  
-    1. Objetivo y campo de aplicación  
-    1.1 Objetivo  
-    1.2 Campo de aplicación…  
-  → { isValid: true, reason: null }  
-  Incomplete Example:  
-    2. Referencias normativas  
-    2.1 Norma Mexicana… (cuts off)  
-  → { isValid: false, reason: IsIncomplete }  
-  Continuation: if Previous was IsIncomplete → { isValid: false, reason: IsContinuation }
+#### Example 4:
+- **Previous Provision:** "2.1.4 Reglas de operación específicas"
+- **Current Provision:** "3.1.1 El reporte de cumplimiento debe entregarse al finalizar cada trimestre."
+- **Next Provision:** "APÉNDICE A. FORMATOS Y CRITERIOS DE EVALUACIÓN"
 
----
+3. **Annexes (Anexos)**:
+ - If the current provision is a structural marker (e.g., Section [Sección], Appendix (Apéndices), Annex [Anexo], or Transitory Provision [Transitorio]) and it presents a complete, logically coherent provision, it must always be classified as VALID.
+ - If the previous provision is a structural marker (e.g., Section [Sección], Appendix (Apéndices), Annex [Anexo], or Transitory Provision [Transitorio]) and it presents a complete, logically coherent provision, the current provision  must always be classified as VALID.
+ - Must provide additional information that supports or complements the legal text.
+ - **Example 1:**
+   - **Previous Provision:** "ANEXO A. REGULACIÓN COMPLEMENTARIA"
+   - **Current Provision:** "3.1.1 El reporte de cumplimiento debe entregarse al finalizar cada trimestre."
+   - **Next Provision:**  "APÉNDICE A. FORMATOS Y CRITERIOS DE EVALUACIÓN"
+   - **Example 2:**
+   - **Previous Provision:** "4.1.1 Toda instalación deberá cumplir con las disposiciones establecidas en esta Norma para efectos de inspección."
+   - **Current Provision:** "ANEXO A. REGULACIÓN COMPLEMENTARIA"
+   - **Next Provision:** "SECCIÓN II. DISPOSICIONES GENERALES"
 
-Apply these segmentation and validation rules to every section of the NOM.
+4. **Transitory Provisions (Disposiciones Transitorias)**:
+ - If the current provision is a structural marker (e.g., Section [Sección], Appendix (Apéndices), Annex [Anexo], or Transitory Provision [Transitorio]) and it presents a complete, logically coherent provision, it must always be classified as VALID.
+ - If the previous provision is a structural marker (e.g., Section [Sección], Appendix (Apéndices), Annex [Anexo], or Transitory Provision [Transitorio]) and it presents a complete, logically coherent provision, the current provision  must always be classified as VALID.
+ - Must establish rules for the transition or application of the legal document.
+ - **Example 1:**
+   - **Previous Provision:** "TRANSITORIO PRIMERO. Disposiciones transitorias sobre la implementación de nuevas normativas."
+   - **Current Provision:** "2.2.6 No se permitirá el uso de materiales inflamables en zonas de operación crítica."
+   - **Next Provision:** "3.1.1 El reporte de cumplimiento debe entregarse al finalizar cada trimestre."
+   - **Example 2:**
+   - **Previous Provision:** "93.2.5 Disposiciones de seguridad"
+   - **Current Provision:** "TRANSITORIO PRIMERO. Disposiciones transitorias sobre la implementación de nuevas normativas"
+   - **Next Provision:** "SECCIÓN II. DISPOSICIONES GENERALES"
+
+
+   ### **Invalid Legal Provisions:**
+   Mark the provision as **INVALID** if it clearly meets one of the following conditions:
+   
+   #### **IsIncomplete:**
+   - **Definition:** An article is considered **incomplete** if it is abruptly cut off or clearly unfinished, lacking a concluding idea. If an article ends without delivering a complete directive, rule, or idea, it is deemed incomplete.
+   - **Note:** An article **is not considered incomplete** if it ends with a **clear, logical, and complete idea** even if it is short. A brief statement or directive that is logically conclusive and understandable is sufficient.
+   ##### Example of IsIncomplete:
+    - **Previous Provision:** "1.4.7 Requisitos mínimos de control y supervisión"
+    - **Current Provision:** "1.4.8 Los responsables deberán coordinarse con las autoridades locales para la implementación de los procedimientos establecidos en la presente norma. Las acciones específicas que deberán considerarse incluyen la inspección técnica, monitoreo continuo, evaluación periódica y elaboración de…"
+    - **Next Provision:** "Las instalaciones deberán contar con personal capacitado y debidamente acreditado para operar el sistema de control."
+
+    - **Reasoning:** The current provision is **incomplete** because it ends abruptly and does not provide a complete directive or conclusion. Furthermore, it does not begin with a new valid numeral or subnumeral.
+   
+   #### **IsContinuation:**
+   - **Definition:** If the **Previous Provision** has been marked as **invalid** with the reason **IsIncomplete**, then the **Current Provision** should **always** be considered **INVALID** and marked as **IsContinuation**, even if it seems to continue logically. This ensures that any unfinished provision is treated as a continuation of the previous one.
+   - **Note:** The current article can only be marked as **IsContinuation** if the **Previous Provision** was already invalidated for **IsIncomplete**.
+     
+   - **Reasoning:** The **Previous Provision** was cut off or left unfinished, so the **Current Provision** should not be evaluated independently. It must be treated as a continuation of the incomplete thought in the **Previous Provision**.
+   
+  ##### Example of IsContinuation:
+  - **Previous Provision:** "3.2.5 Las disposiciones de seguridad deberán implementarse conforme al protocolo establecido en el capítulo 4 de la Norma. Los responsables designados deberán garantizar la supervisión en todos los turnos, además de establecer mecanismos de reporte diario a través de…"
+  - **Current Provision:** "los formatos establecidos por la autoridad competente, sin excepción alguna."
+  - **Next Provision:** "3.2.7 Todos los registros deberán conservarse por un mínimo de cinco años."
+
+  - **Reasoning:** The **Current Provision** is a direct continuation of the **Previous Provision**, which ended with an incomplete clause. Even though the current provision lacks un encabezado numeral, it completes the unfinished idea and must be classified as **IsContinuation**.    
+
+     - **Example 2:**
+  - **Previous Provision:** "4.2.8 Los equipos deberán ser calibrados conforme a los lineamientos establecidos en la Norma Oficial Mexicana, incluyendo aquellos especificados por la autoridad competente en materia de…"
+  - **Current Provision:** "medición ambiental, en particular para partículas suspendidas y emisiones de gases contaminantes."
+  - **Next Provision:** "4.2.9 Las mediciones deberán registrarse en bitácoras oficiales y estar disponibles para consulta durante un periodo mínimo de cinco años."
+
+  - **Reasoning:** The **Current Provision** is a direct continuation of the **Previous Provision**, which ended with an incomplete clause. Even though the current provision lacks un encabezado numeral, it completes the unfinished idea and must be classified as **IsContinuation**.    
 `
   }
 
@@ -724,7 +791,7 @@ Analyze the content of "${article.title}" within the legal basis titled "${legal
   deevitar la contaminación de los acuíferos.
    **order:** 1
 
-  **Article Output (Formatted in HTML):**  
+  **Numerals Output (Formatted in HTML):**  
    **title:** Introducción, 1    // Titles should not have HTML tags.
    **article:** <p>Esta <i>Norma Oficial Mexicana</i> establece los requisitos mínimos de construcción que se deben cumplir  durante la perforación de pozos para la extracción de aguas nacionales y trabajos asociados,</p>  
    <p>con objeto de evitar la contaminación de los acuíferos.</p>
@@ -733,8 +800,8 @@ Analyze the content of "${article.title}" within the legal basis titled "${legal
   4. Sections, and Annexes:
    - Ensure headings are concise and formatted with appropriate text structure.
    - Titles should be short and precise, containing only the grouping heading without including articles or detailed content.
-   - If any articles are included, remove them from the chapter, section, title, or annex.
-   - Please do not create or write random definitions within the Sections, and Annexes. Just make sure you are working with the information that is being shared with you. 
+   - If any articles are included, remove them from the appendix, section, or annex.
+   - Please do not create or write random definitions within the Sections and Annexes. Just make sure you are working with the information that is being shared with you. 
 
    - Sections, and Annexes should follow the structure:
      - SECTION # + Section Name
@@ -784,7 +851,25 @@ Analyze the content of "${article.title}" within the legal basis titled "${legal
      <p><b>SEGUNDO.</b> Se derogan todas las disposiciones que se opongan al presente Decreto.</p>  
     **order:** 200
 
-6. **Others (if applicable)**:
+6. **Appendices**:
+   - Format appendices clearly, preserving their informative nature.
+   - Use <table> tags to structure any included technical data or references.
+
+   #### Example (in Spanish):
+    **title:** APÉNDICE  
+    **article:**  
+      PRIMERO. El presente Apéndice proporciona información técnica adicional de carácter orientativo.  
+      SEGUNDO. Su contenido no es obligatorio, pero puede ser utilizado como referencia para una mejor comprensión de la Norma.  
+    **order:** 300
+
+  **Output (Formatted in HTML):**
+    **title:** APÉNDICE   // Titles should not have HTML tags.
+    **article:**  
+     <p><b>PRIMERO.</b> El presente Apéndice proporciona información técnica adicional de carácter orientativo.</p>  
+     <p><b>SEGUNDO.</b> Su contenido no es obligatorio, pero puede ser utilizado como referencia para una mejor comprensión de la Norma.</p>  
+    **order:** 300
+
+7. **Others (if applicable)**:
    - Review for general coherence, structure, and formatting.
    - Apply HTML styles to maintain clarity, readability, and a professional appearance.
 
