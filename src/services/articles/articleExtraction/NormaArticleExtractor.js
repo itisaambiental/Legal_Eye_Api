@@ -188,10 +188,8 @@ class NormaArticleExtractor extends ArticleExtractor {
       if (!isValid) {
         return tryExtractFrom(startIndex + 1)
       }
-      const escapedPatterns = numerals.map(t =>
-        t.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&')
-      )
-      const pattern = new RegExp(`(^|\\n)\\s*(${escapedPatterns.join('|')})\\b`, 'g')
+      const escapedPatterns = numerals.map(n => this._escapeForRegex(n))
+      const pattern = new RegExp(`(^|\\n)\\s*(${escapedPatterns.join('|')})\\b`, 'gi')
       const matches = [...text.matchAll(pattern)]
       for (let i = 0; i < matches.length; i++) {
         const start = matches[i].index
@@ -359,6 +357,24 @@ class NormaArticleExtractor extends ArticleExtractor {
     }
 
     return validated
+  }
+
+  /**
+ * Normalizes and escapes a string to be safely used in a regular expression.
+ * - Removes diacritics (accents like á, é, í)
+ * - Removes all spaces
+ * - Escapes special regex characters
+ * - Converts to lowercase if needed
+ *
+ * @param {string} str - The string to normalize and escape.
+ * @returns {string} - A safe, normalized, and escaped regex string.
+ */
+  _escapeForRegex (str) {
+    return str
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/\s+/g, '')
+      .replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
   }
 
   /**
