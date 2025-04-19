@@ -595,7 +595,7 @@ You are a legal expert who confirms the validity of legal provisions:
 - Should have a clear legal structure.
 - It must contain a specific legal rule or directive rather than just referencing other articles.
 - If the previous numeral or subnumeral is valid, the current article should be evaluated independently and should not be marked as \`IsContinuation\` even if the structure suggests continuity.
-
+- If Numerals article has no substantive body beyond the title (i.e. sólo aparece “7”) , skip it altogether.
 #### Example 1:
 - **Previous Provision:** "1.1 Introducción general al sistema normativo"
 - **Current Provision:** "4.1.1 Toda instalación deberá cumplir con las disposiciones establecidas en esta Norma para efectos de inspección."
@@ -765,6 +765,15 @@ Analyze the content of "${article.title}" within the legal basis titled "${legal
 
 2. **Title**:
    - The title field should only state the numeral, section, or annex number.
+      - If the extracted content repeats the title from the start, remove that duplicate so that it only appears once.
+   - **Labels and list markers** (e.g. “3.27. Muestra compuesta:”, “Opción 1:”, “PRIMERO.”, “A 1 Clasificación…”, “a)”)  
+     must appear in **bold** in the final HTML/text.
+   - For cases of **TRANSITORIOS**:
+     * always leaves **title** as **"TRANSITORIOS"** (without ordinal),
+     * and handle sequential labels (“PRIMERO.”, “SEGUNDO.”, etc.) as part of the **content**.
+   - For cases of **TRANSITORIO**:
+     *"TRANSITORIO"** (and if it has an ordinal number, add it),
+     * and handle sequential tags (“PRIMERO.”, “SEGUNDO.”, etc.) as part of the **title**.
    - If the article content begins with a **numeral indicator** (e.g., "1.1", "3.3", "bis", "ter", "quater", "quinquies", "sexies", "septies", "octies", "novies", "nonies", "decies", "undecies", "duodecies", "terdecies", "quaterdecies", "quindecies"), **or an ordinal numeral** (e.g., "décimo", "undécimo", "duodécimo", "trigésimo", "cuadragésimo", "quincuagésimo", "sexagésimo", "septuagésimo", "octogésimo", "nonagésimo", "centésimo"), "Check if the numeral indicator is being used as part of the article’s legal meaning. If removing it does not change the meaning, move it to the title field.  If the numeral indicator is an essential part of the article’s meaning, keep it within the content.".
    - This applies to **numerals, sections,annex and transitories,**.
    - Ensure that titles are concise and formatted consistently.
@@ -777,7 +786,7 @@ Analyze the content of "${article.title}" within the legal basis titled "${legal
 - **8. Inspección**, **9. Muestreo**, **10. Marcado, etiquetado y embalaje**
 - **ANEXO A**, **ANEXO B**, **11. Almacenamiento**
 - **12. Bibliografía**, **13. Concordancia con normas internacionales**
-- **TRANSITORIO PRIMERO**, **TRANSITORIO SEGUNDO**, **ANEXO C**
+- **TRANSITORIOS**, **TRANSITORIO PRIMERO**, **TRANSITORIO SEGUNDO**, **ANEXO C**
 - **14. Vigencia**, **SECCIÓN FINAL**, **ANEXO D**
 
 **Output (Unformatted HTML):**  
@@ -787,18 +796,54 @@ Analyze the content of "${article.title}" within the legal basis titled "${legal
 - 8. Inspección, 9. Muestreo, 10. Marcado, etiquetado y embalaje  
 - ANEXO A, ANEXO B, 11. Almacenamiento  
 - 12. Bibliografía, 13. Concordancia con normas internacionales  
-- TRANSITORIO PRIMERO, TRANSITORIO SEGUNDO, ANEXO C  
+- TRANSITORIOS,TRANSITORIO PRIMERO, TRANSITORIO SEGUNDO, ANEXO C  
 - 14. Vigencia, SECCIÓN FINAL, ANEXO D
 
 
 3. **Numerals**:
    - Review and correct long paragraphs, ensuring each explains a specific concept or legal provision.
+   - If a paragraph belongs to a fourth level numeral (e.g. 1.1.1.1),  
+     ensure the **full numeral** is prepended to each line.  
+     Do not drop or repeat only the parent (1.1.1); instead use 1.1.1.1, 1.1.1.2, etc.
    - Divide content into sections or subsections for clarity, using appropriate HTML tags:
      - <h2>, <h3> for headings
      - <p> for paragraphs
      - <ul> and <li> for lists
+   - **Automatic subitem numbering at any depth**:  
+     When a block of text follows a heading numeral of *any* depth (e.g. X.Y, X.Y.Z, X.Y.Z.W.V, etc.),  
+     prepend each line in that block with the **full parent numeral** plus a new sequential index (.1, .2, …).  
+     Do not omit or truncate levels.  
    - Use <b> for emphasis, <i> for additional context, and <span> for inline styles where necessary.
    - Complete truncated words or sentences without altering their meaning.
+
+  #### Generic Example
+      **Input (unstyled subitems under a 3 level numeral):**
+
+      2.5.3 Procedimiento
+          Paso uno: preparar la muestra.
+          Paso dos: medir el pH.
+
+  
+      **Expected output (with automatic “.1”, “.2”):**
+
+      2.5.3 Procedimiento
+        2.5.3.1 Paso uno: preparar la muestra.
+        2.5.3.2 Paso dos: medir el pH.
+
+  
+      #### Deep level Example (6 niveles)
+      **Input:**
+
+      1.2.3.4.5.6 Especificaciones avanzadas
+          Detalle A de la primera característica.
+          Detalle B de la primera característica.
+
+  
+      **Expected output:**
+
+      1.2.3.4.5.6 Especificaciones avanzadas
+        1.2.3.4.5.6.1 Detalle A de la primera característica.
+        1.2.3.4.5.6.2 Detalle B de la primera característica.
 
   #### Example (in Spanish):
    **title:** Introducción, 1 
@@ -885,7 +930,24 @@ Analyze the content of "${article.title}" within the legal basis titled "${legal
      <p><b>SEGUNDO.</b> Su contenido no es obligatorio, pero puede ser utilizado como referencia para una mejor comprensión de la Norma.</p>  
     **order:** 300
 
-7. **Others (if applicable)**:
+  7- **Tables**:
+     - Whenever you encounter a <table> anywhere in the document—whether under a numeral, in the main content, in an annex, or in any other section—**always** include its title immediately **before** the `<table>` tag.
+     - If the title consists of multiple lines (e.g. “TABLA X” on one line y subtítulo en la siguiente), preserve todas las líneas en el mismo orden.
+ 
+   #### Example 1 (in a numeral):
+   3.5 Características del muestreo
+   TABLA 2
+   Valores permisibles de pH y sólidos totales
+   <table>…</table>
+ 
+   #### Example 2 (en un ANEXO, pero la regla aplica igual si aparece en medio de un párrafo):
+   ANEXO B: Especificaciones adicionales
+   TABLA 5
+   Límites de oxígeno disuelto en efluentes
+   <table>…</table>
+   Texto siguiente…
+
+8. **Others (if applicable)**:
    - Review for general coherence, structure, and formatting.
    - Apply HTML styles to maintain clarity, readability, and a professional appearance.
 
