@@ -46,7 +46,7 @@ const articlesSchema = z
 /**
    * Zod validation schema for article verification.
 */
-const ArticleVerificationSchema = z.object({
+const articleVerificationSchema = z.object({
   isValid: z.boolean(),
   reason: z.enum(['IsContinuation', 'IsIncomplete', 'Other']).optional()
 })
@@ -84,10 +84,9 @@ const singleArticleModelSchema = z.object({
 /**
  * Zod validation schema for the Index response.
  */
-const IndexResponseSchema = z.object({
-  numerals: z.array(z.string()),
-  isValid: z.boolean(),
-  hasSubNumerals: z.boolean()
+const sectionsResponseSchema = z.object({
+  sections: z.array(z.string()),
+  isValid: z.boolean()
 })
 
-export { singleArticleSchema, articlesSchema, ArticleVerificationSchema, singleArticleModelSchema, IndexResponseSchema }
+export { singleArticleSchema, articlesSchema, articleVerificationSchema, singleArticleModelSchema, sectionsResponseSchema }

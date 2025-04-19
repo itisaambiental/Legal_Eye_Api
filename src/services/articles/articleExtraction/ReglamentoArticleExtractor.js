@@ -1,7 +1,7 @@
 import ArticleExtractor from './ArticleExtractor.js'
 import openai from '../../../config/openapi.config.js'
 import {
-  ArticleVerificationSchema,
+  articleVerificationSchema,
   singleArticleModelSchema
 } from '../../../schemas/article.schema.js'
 import { zodResponseFormat } from 'openai/helpers/zod'
@@ -268,14 +268,14 @@ class ReglamentoArticleExtractor extends ArticleExtractor {
       ],
       temperature: 0,
       response_format: zodResponseFormat(
-        ArticleVerificationSchema,
+        articleVerificationSchema,
         'article_verification'
       )
     }
     const attemptRequest = async (retryCount = 0) => {
       try {
         const response = await openai.chat.completions.create(request)
-        const content = ArticleVerificationSchema.parse(
+        const content = articleVerificationSchema.parse(
           JSON.parse(response.choices[0].message.content)
         )
         return content

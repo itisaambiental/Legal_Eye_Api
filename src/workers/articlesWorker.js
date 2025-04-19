@@ -7,6 +7,7 @@ import ArticlesService from '../services/articles/Articles.service.js'
 import UserRepository from '../repositories/User.repository.js'
 import EmailService from '../services/email/Email.service.js'
 import { CONCURRENCY_EXTRACT_ARTICLES } from '../config/variables.config.js'
+import { getModel } from '../config/openapi.config.js'
 import emailQueue from './emailWorker.js'
 
 /**
@@ -15,23 +16,6 @@ import emailQueue from './emailWorker.js'
  * @property {number} legalBasisId - ID of the legal basis to extract articles from.
  * @property {'High'|'Low'} [intelligenceLevel] - Optional intelligence level to choose AI model.
  */
-
-/**
- * AI Models.
- */
-const models = {
-  High: 'gpt-4o',
-  Low: 'gpt-4o-mini'
-}
-
-/**
- * Selects the appropriate model.
- * @param {string|null|undefined} intelligenceLevel
- * @returns {string}
- */
-function getModel (intelligenceLevel) {
-  return intelligenceLevel === 'High' ? models.High : models.Low
-}
 
 const CONCURRENCY = Number(CONCURRENCY_EXTRACT_ARTICLES || 1)
 
@@ -50,6 +34,7 @@ const CONCURRENCY = Number(CONCURRENCY_EXTRACT_ARTICLES || 1)
 articlesQueue.process(CONCURRENCY, async (job, done) => {
   /** @type {ArticleExtractorJobData} */
   const { userId, legalBasisId, intelligenceLevel } = job.data
+  console.log(job.id)
   try {
     const currentJob = await articlesQueue.getJob(job.id)
     if (!currentJob) throw new ErrorUtils(404, 'Job not found')

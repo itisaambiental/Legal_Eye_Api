@@ -1,21 +1,22 @@
 import ArticleExtractor from './ArticleExtractor.js'
 import openai from '../../../config/openapi.config.js'
-import { ArticleVerificationSchema, singleArticleModelSchema, IndexResponseSchema } from '../../../schemas/article.schema.js'
+import {
+  articleVerificationSchema,
+  singleArticleModelSchema,
+  sectionsResponseSchema
+} from '../../../schemas/article.schema.js'
 import { zodResponseFormat } from 'openai/helpers/zod'
 import { convert } from 'html-to-text'
 import ErrorUtils from '../../../utils/Error.js'
 
 /**
- * Class extending ArticleExtractor to extract articles from Mexican Official Standards (NOMs).
+ * Class extending ArticleExtractor to extract articles from (NOMs).
  * It processes the technical text of the standard, cleans formatting inconsistencies,
- * and extracts structured content based on hierarchical numerals (e.g., 6, 6.1, 6.1.1)
- * and centered headings (e.g., PREFACIO, ÍNDICE, CONSIDERANDO, CONTENIDO, TRANSITORIOS, ANEXO, APENDICE).
- * Each major numeral root or standalone centered title is treated as a distinct article.
  */
 class NormaArticleExtractor extends ArticleExtractor {
   /**
    * @typedef {Object} Article
-   * @property {string} title - The title of the article, appendix, section, annex, or transitory provision.
+   * @property {string} title - The title of the article, chapter, section, annex, or transitory provision.
    * @property {string} article - The content of the article.
    * @property {string} plainArticle - Plain text of the article.
    * @property {number} order - Order of the article.
@@ -39,7 +40,7 @@ class NormaArticleExtractor extends ArticleExtractor {
 
   /**
    * @typedef {Object} ArticleToVerify
-   * @property {string} title - The title of the article, title, appendix, section, annex, or transitory provision.
+   * @property {string} title - The title of the article, title, chapter, section, annex, or transitory provision.
    * @property {PreviousArticle} previousArticle - Object containing the content and validation result of the previous article.
    * @property {string} currentArticle - Main content of the article to be analyzed.
    * @property {string} nextArticle - Content of the next article.
@@ -76,221 +77,206 @@ class NormaArticleExtractor extends ArticleExtractor {
   }
 
   /**
- * @param {string} text - The text to clean.
- * @returns {string} - The cleaned text.
- */
+   * @param {string} text - The text to clean.
+   * @returns {string} - The cleaned text.
+   */
   _cleanText (text) {
-    const contentKeywordRegex = /\b[Cc]\s*[OoÓó]\s*[Nn]\s*[Tt]\s*[Ee]\s*[Nn]\s*[IiÍí]\s*[Dd]\s*[Oo]\b/gi
-    const indexKeywordRegex = /\b[ÍIíi]\s*[Nn]\s*[Dd]\s*[IiÍí]\s*[Cc]\s*[Ee]\b/gi
-    const sectionKeywordRegex =
-    /\b[Ss]\s*[Ee]\s*[Cc]\s*[Cc]\s*[ÍIíi]\s*[ÓOóo]\s*[Nn]\s*(\d+[A-Z]*|[IVXLCDM]+)\b/gi
-    const transientKeywordRegex =
-    /\b(?:\w+\s+)*[Tt][Rr][Aa][Nn][Ss][Ii][Tt][Oo][Rr][Ii][AaOo](?:\s*[SsAa])?\s*(\d+[A-Z]*|[IVXLCDM]+)?\b/gi
-    const annexKeywordRegex =
-    /\b[Aa]\s*[Nn]\s*[Ee]\s*[Xx]\s*[Oo]\s*(\d+[A-Z]*|[IVXLCDM]+)?\b/gi
-    const appendixKeywordRegex = /\b[AaÁá][Pp][ÉéEe]?[Nn][Dd][Ii][Cc][Ee]?[Ss]?\s*(\d+[A-Z]*|[IVXLCDM]+)?\b/gi
     const ellipsisTextRegex = /[^.]+\s*\.{3,}\s*/g
     const singleEllipsisRegex = /\s*\.{3,}\s*/g
 
-    return text
-      .replace(contentKeywordRegex, 'CONTENIDO')
-      .replace(indexKeywordRegex, 'ÍNDICE')
-      .replace(sectionKeywordRegex, 'SECCIÓN $1')
-      .replace(transientKeywordRegex, 'TRANSITORIO $1')
-      .replace(annexKeywordRegex, 'ANEXO $1')
-      .replace(appendixKeywordRegex, 'APÉNDICE $1')
-      .replace(ellipsisTextRegex, '')
-      .replace(singleEllipsisRegex, '')
+    return text.replace(ellipsisTextRegex, '').replace(singleEllipsisRegex, '')
   }
 
   /**
- * @param {string} text - Text to process and extract articles from.
- * @returns {Promise<Array<Article>>} - Array of extracted articles.
+ * @param {string} text - Full document text to process and extract sections from.
+ * @returns {Promise<Array<Article>>} - Ordered array of validated article objects.
  */
   async _extractArticles (text) {
-    text = this._cleanText(text)
-    const lines = text.split('\n').map(line => line.trim()).filter(Boolean)
-    const indexRegex = /^\s*(ÍNDICE|CONTENIDO)\s*$/i
-
-    const articlePatternString =
-    '(?:^|\\n)\\s*(' +
-    '(?:secci[oó]n)\\s+\\S+|' +
-    '(?:transitori[oa][s]?)\\s+\\S+|' +
-    '(?:anexo)\\s+\\S+|' +
-    '(?:ap[eé]ndice[s]?)\\s+\\S+' +
-    ')'
-    const articlePattern = new RegExp(articlePatternString, 'i')
-    const articleRegexes = [
-      /^(?:secci[oó]n)\s+\S+$/i,
-      /^(?:transitori[oa][s]?)\s+\S+$/i,
-      /^(?:anexo)\s+\S+$/i,
-      /^(?:ap[eé]ndice[s]?)\s+\S+$/i
-    ]
-
-    const rawArticles = []
-    let order = 1
-    const lastResult = { isValid: true, reason: null }
-    const indexLine = lines.findIndex(line => indexRegex.test(line))
-    if (indexLine > 0) {
-      const preIndexText = lines.slice(0, indexLine).join('\n')
-      const preSegments = preIndexText.split(articlePattern)
-
-      for (let i = 1; i < preSegments.length; i += 2) {
-        const currentTitle = preSegments[i].trim()
-        const currentContent = (preSegments[i + 1] || '').trim()
-        const currentArticle = `${currentTitle} ${currentContent}`.trim()
-
-        const prevTitle = i > 1 ? preSegments[i - 2]?.trim() : ''
-        const prevContent = i > 1 ? preSegments[i - 1]?.trim() : ''
-        const nextTitle = i + 2 < preSegments.length ? preSegments[i + 2]?.trim() : ''
-        const nextContent = i + 3 < preSegments.length ? preSegments[i + 3]?.trim() : ''
-
-        const previousArticle = `${prevTitle} ${prevContent}`.trim()
-        const nextArticle = `${nextTitle} ${nextContent}`.trim()
-
-        if (articleRegexes.some(r => r.test(currentTitle))) {
-          const currentArticleData = this._createArticleToVerify(
-            currentTitle,
-            lastResult,
-            previousArticle,
-            currentArticle,
-            nextArticle,
-            order++
-          )
-          rawArticles.push(currentArticleData)
-        }
-      }
-    }
-    const tryExtractFrom = async (startFromIndex = indexLine >= 0 ? indexLine : 0) => {
-      let startIndex = -1
-      let endIndex = -1
-      for (let i = startFromIndex; i < lines.length; i++) {
-        if (indexRegex.test(lines[i])) {
-          startIndex = i
-          break
-        }
-      }
-      if (startIndex === -1 || startIndex + 1 >= lines.length) {
+    try {
+      const documentText = this._cleanText(text)
+      const { sections, isValid } = await this._extractSections(documentText)
+      if (!isValid) {
         throw new ErrorUtils(500, 'Article Processing Error')
       }
-      const firstIndexLine = lines[startIndex + 1]
-      for (let i = startIndex + 2; i < lines.length; i++) {
-        if (lines[i] === firstIndexLine) {
-          endIndex = i
-          break
-        }
-      }
-      if (endIndex === -1) {
-        return tryExtractFrom(startIndex + 1)
-      }
-      const indexBlock = lines.slice(startIndex + 1, endIndex).join('\n')
-      const { isValid, numerals } = await this._cleanIndex(indexBlock)
-      if (!isValid) {
-        return tryExtractFrom(startIndex + 1)
-      }
-      const escapedPatterns = numerals.map(n => this._escapeForRegex(n))
-      const pattern = new RegExp(`(^|\\n)\\s*(${escapedPatterns.join('|')})\\b`, 'gi')
-      const matches = [...text.matchAll(pattern)]
-      for (let i = 0; i < matches.length; i++) {
-        const start = matches[i].index
-        const end = i + 1 < matches.length ? matches[i + 1].index : text.length
-        const numeral = matches[i][1]
-        const content = text.slice(start, end).trim()
 
-        const previousTitle = i > 0 ? matches[i - 1][1] : ''
-        const previousContent = i > 0 ? text.slice(matches[i - 1].index, matches[i].index).trim() : ''
-        const nextTitle = i + 1 < matches.length ? matches[i + 1][1] : ''
-        const nextContent = i + 1 < matches.length
-          ? text.slice(matches[i + 1].index, matches[i + 2]?.index || text.length).trim()
-          : ''
+      const headingRegex = this._buildHeadingRegex(sections)
+      const matches = Array.from(documentText.matchAll(headingRegex), m => ({
+        header: m[0],
+        start: m.index
+      }))
+      matches.push({ start: documentText.length })
+
+      const rawArticles = []
+      const lastResult = { isValid: true, reason: null }
+      let order = 1
+
+      for (let i = 0; i < matches.length - 1; i++) {
+        const { header, start } = matches[i]
+        const end = matches[i + 1].start
+        const content = documentText.slice(start + header.length, end).trim()
+
+        const prevStart = i > 0 ? matches[i - 1].start : 0
+        const prevEnd = start
+        const previousTitle = i > 0 ? matches[i - 1].header : ''
+        const previousContent = documentText.slice(prevStart + previousTitle.length, prevEnd).trim()
+
+        const nextTitle = i + 1 < matches.length - 1 ? matches[i + 1].header : ''
+        const nextContent = i + 2 < matches.length
+          ? documentText.slice(matches[i + 1].start + nextTitle.length, matches[i + 2].start).trim()
+          : documentText.slice(matches[i + 1].start + nextTitle.length).trim()
+
         const previousArticle = `${previousTitle} ${previousContent}`.trim()
         const nextArticle = `${nextTitle} ${nextContent}`.trim()
-        if (i === matches.length - 1) {
-          const segments = content.split(articlePattern)
-          const matchesInContent = [...content.matchAll(new RegExp(articlePatternString, 'ig'))]
-          let wasSubArticlePushed = false
-          if (matchesInContent.length > 0) {
-            const firstIndex = matchesInContent[0].index
-            const introContent = content.slice(0, firstIndex).trim()
 
-            if (introContent) {
-              const currentArticleData = this._createArticleToVerify(
-                numeral,
-                lastResult,
-                previousArticle,
-                introContent,
-                nextArticle,
-                order++
-              )
-              rawArticles.push(currentArticleData)
-              wasSubArticlePushed = true
-            }
-          }
-          for (let j = 1; j < segments.length; j += 2) {
-            const currentTitle = segments[j].trim()
-            const currentContent = (segments[j + 1] || '').trim()
-            const currentArticle = `${currentTitle} ${currentContent}`.trim()
+        const articleToVerify = this._createArticleToVerify(
+          header,
+          lastResult,
+          previousArticle,
+          content,
+          nextArticle,
+          order++
+        )
 
-            const prevTitle = j > 1 ? segments[j - 2]?.trim() : ''
-            const prevContent = j > 1 ? segments[j - 1]?.trim() : ''
-            const nextTitle = j + 2 < segments.length ? segments[j + 2]?.trim() : ''
-            const nextContent = j + 3 < segments.length ? segments[j + 3]?.trim() : ''
-
-            const previousSubArticle = `${prevTitle} ${prevContent}`.trim()
-            const nextSubArticle = `${nextTitle} ${nextContent}`.trim()
-
-            if (articleRegexes.some(r => r.test(currentTitle))) {
-              const currentArticleData = this._createArticleToVerify(
-                currentTitle,
-                lastResult,
-                previousSubArticle,
-                currentArticle,
-                nextSubArticle,
-                order++
-              )
-              rawArticles.push(currentArticleData)
-              wasSubArticlePushed = true
-            }
-          }
-
-          if (!wasSubArticlePushed) {
-            const currentArticleData = this._createArticleToVerify(
-              numeral,
-              lastResult,
-              previousArticle,
-              content,
-              nextArticle,
-              order++
-            )
-            rawArticles.push(currentArticleData)
-          }
-        } else {
-          const currentArticleData = this._createArticleToVerify(
-            numeral,
-            lastResult,
-            previousArticle,
-            content,
-            nextArticle,
-            order++
-          )
-          rawArticles.push(currentArticleData)
-        }
+        rawArticles.push(articleToVerify)
       }
-      return rawArticles
-    }
 
-    const result = await tryExtractFrom()
-    const articles = await this._validateExtractedArticles(result)
-    return articles
+      const articles = await this._validateExtractedArticles(rawArticles)
+      return articles
+    } catch (error) {
+      throw new ErrorUtils(500, 'Article Processing Error', error)
+    }
   }
 
   /**
- * Validate a list of articles using _verifyArticle.
- * Groups incomplete and continuations.
+   * Build a regular expression to match any of the given section headings.
+   * @param {string[]} sections - Array of section heading strings.
+   * @returns {RegExp} - Regex to match headings at start of a line.
+   */
+  _buildHeadingRegex (sections) {
+    const escapeForRegex = (str) =>
+      str.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')
+    const pattern = sections.map(escapeForRegex).join('|')
+    return new RegExp(`^(?:${pattern})`, 'gim')
+  }
+
+  /**
+  /**
+ * Extracts all standalone section headings from a Mexican Official Standard (NOM) document.
  *
- * @param {Array<ArticleToVerify>} rawArticles
- * @returns {Promise<Array<Article>>}
+ * @param {string} text - The full text of the NOM document in Spanish.
+ * @returns {Promise<{ sections: string[], isValid: boolean }>}
+ *   An object containing:
+ *   - sections: an array of extracted headings (numbered or unnumbered), in original order.
+ *   - isValid: true if the text looks like a valid NOM with separable sections; false otherwise.
  */
+  async _extractSections (text) {
+    const prompt = this._buildSectionsPrompt(text)
+    const request = {
+      model: this.model,
+      messages: [
+        {
+          role: 'system',
+          content: [
+            'You are an expert at parsing (NOMs).',
+            'Given a Spanish document, extract every standalone heading—numbered or unnumbered—and preserve order.',
+            'Ignore headers, footers, page numbers, and any notes.'
+          ].join(' ')
+        },
+        { role: 'user', content: prompt }
+      ],
+      temperature: 0,
+      response_format: zodResponseFormat(sectionsResponseSchema, 'sections')
+    }
+    const attemptRequest = async (retryCount = 0) => {
+      try {
+        const response = await openai.chat.completions.create(request)
+        const content = sectionsResponseSchema.parse(
+          JSON.parse(response.choices[0].message.content)
+        )
+        return content
+      } catch (error) {
+        if (error.status === 429 && retryCount < 3) {
+          const backoffTime = Math.pow(2, retryCount) * 1000
+          await new Promise((resolve) => setTimeout(resolve, backoffTime))
+          return attemptRequest(retryCount + 1)
+        }
+        throw new ErrorUtils(500, 'Article Processing Error', error)
+      }
+    }
+
+    return attemptRequest()
+  }
+
+  /**
+   * Builds the user‑facing prompt for extracting **only** top‑level and unnumbered section headings.
+   *
+   * @param {string} text - The full text of the document.
+   * @returns {string} The formatted prompt.
+   */
+  _buildSectionsPrompt (text) {
+    return `
+Extract only top‑level and unnumbered standalone section headings from a document, based strictly on the content itself (not just any index or table of contents):
+
+• Top‑level numbered headings (e.g. "1. OBJETIVO...", "10. OBSERVANCIA...").
+• Unnumbered headings include things like "CONSIDERANDO", "PREFACIO", "TRANSITORIOS", "ANEXOS", "SECCIONES", "APÉNDICE...", etc.
+
+Do NOT extract any sub‑numbered headings (e.g. "6.1", "6.1.1")—they belong under their parent.
+Preserve original accents, punctuation, and order.
+Ignore page numbers, headers, footers, links, or any notes.
+Do NOT rely solely on an index or table of contents; identify headings as they appear in the document body.
+Treat any document as valid if it contains at least one top‑level heading or numeral that can be divided and extracted individually.
+
+Return JSON matching this schema:
+
+\`\`\`json
+{
+  "sections": [ /* array of heading strings */ ],
+  "isValid": /* true if the document contains at least one extractable top‑level heading */
+}
+\`\`\`
+
+Example sections array:
+
+\`\`\`
+[
+  "CONSIDERANDO",
+  "PREFACIO",
+  "ÍNDICE",
+  "CONTENIDO",
+  "1. OBJETIVO Y CAMPO DE APLICACIÓN",
+  "2. REFERENCIAS NORMATIVAS",
+  "3. TÉRMINOS Y DEFINICIONES",
+  "4. ESPECIFICACIONES",
+  "5. MÉTODOS DE PRUEBA",
+  "6. ACCIONES ESTRATÉGICAS E INSTRUMENTOS DE EJECUCIÓN",
+  "7. PROCEDIMIENTO PARA LA EVALUACIÓN DE LA CONFORMIDAD",
+  "8. CONCORDANCIA CON NORMAS INTERNACIONALES",
+  "9. BIBLIOGRAFÍA",
+  "10. OBSERVANCIA DE ESTA NORMA",
+  "SECCIÓN 1",
+  "ANEXO 1",
+  "ANEXO 2",
+  "ANEXO 3",
+  "TRANSITORIOS",
+  "APÉNDICE",
+  "APÉNDICE NORMATIVO: PUERTOS DE MUESTREO"
+]
+\`\`\`
+
+Document text:
+"""
+${text}
+"""
+`
+  }
+
+  /**
+   * Validate a list of articles using _verifyArticle.
+   * Groups incomplete and continuations.
+   *
+   * @param {Array<ArticleToVerify>} rawArticles
+   * @returns {Promise<Array<Article>>}
+   */
   async _validateExtractedArticles (rawArticles) {
     const validated = []
     let lastResult = { isValid: true, reason: null }
@@ -299,7 +285,9 @@ class NormaArticleExtractor extends ArticleExtractor {
 
     for (const currentArticleData of rawArticles) {
       try {
-        const { isValid, reason } = await this._verifyArticle(currentArticleData)
+        const { isValid, reason } = await this._verifyArticle(
+          currentArticleData
+        )
         if (isValid) {
           if (lastArticle) {
             validated.push(lastArticle)
@@ -326,7 +314,10 @@ class NormaArticleExtractor extends ArticleExtractor {
             }
             isConcatenating = true
           } else if (reason === 'IsContinuation') {
-            if (lastResult.reason === 'IsIncomplete' || (isConcatenating && lastResult.reason === 'IsContinuation')) {
+            if (
+              lastResult.reason === 'IsIncomplete' ||
+              (isConcatenating && lastResult.reason === 'IsContinuation')
+            ) {
               if (lastArticle) {
                 lastArticle.article += ` ${currentArticleData.currentArticle}`
               }
@@ -360,24 +351,6 @@ class NormaArticleExtractor extends ArticleExtractor {
   }
 
   /**
- * Normalizes and escapes a string to be safely used in a regular expression.
- * - Removes diacritics (accents like á, é, í)
- * - Removes all spaces
- * - Escapes special regex characters
- * - Converts to lowercase if needed
- *
- * @param {string} str - The string to normalize and escape.
- * @returns {string} - A safe, normalized, and escaped regex string.
- */
-  _escapeForRegex (str) {
-    return str
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .replace(/\s+/g, '')
-      .replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-  }
-
-  /**
    * @param {string} title - Title of the article.
    * @param {ValidationResult} previousLastResult - Validation result of the previous article.
    * @param {string} previousContent - Previous article including its title.
@@ -408,102 +381,8 @@ class NormaArticleExtractor extends ArticleExtractor {
   }
 
   /**
- * @param {string} indexText - The raw index text to clean.
- * @returns {Promise<{ numerals: string[], isValid: boolean, hasSubNumerals: boolean }>} - Cleaned numerals and index validity.
- */
-  async _cleanIndex (indexText) {
-    const prompt = this._buildCleanIndexPrompt(indexText)
-    const request = {
-      model: this.model,
-      messages: [
-        {
-          role: 'system',
-          content:
-          'You are a text processing expert specialized in analyzing index sections of Mexican Official Standards (NOMs). Note: Although your instructions are in English, the index sections provided will be in Spanish.'
-        },
-        { role: 'user', content: prompt }
-      ],
-      temperature: 0,
-      response_format: zodResponseFormat(IndexResponseSchema, 'clean_index')
-    }
-
-    const attemptRequest = async (retryCount = 0) => {
-      try {
-        const response = await openai.chat.completions.create(request)
-        const content = IndexResponseSchema.parse(
-          JSON.parse(response.choices[0].message.content)
-        )
-        return content
-      } catch (error) {
-        if (error.status === 429 && retryCount < 3) {
-          const backoffTime = Math.pow(2, retryCount) * 1000
-          await new Promise(resolve => setTimeout(resolve, backoffTime))
-          return attemptRequest(retryCount + 1)
-        }
-        throw new ErrorUtils(500, 'Article Processing Error', error)
-      }
-    }
-
-    return attemptRequest()
-  }
-
-  /**
- * Builds the prompt that cleans the index and extracts its numerals.
- *
- * @param {string} index - Raw index text.
- * @returns {string} - Prompt for the OpenAI API.
- */
-  _buildCleanIndexPrompt (index) {
-    return `
-You are a text‑processing expert specialized in the index (Índice/Contenido)
-sections of Mexican Official Standards (NOMs).
-
-Given the raw index text below:
-
-"""
-${index}
-"""
-
-Your task:
-
-1. Remove headers, footers, page numbers, links, administrative notes and
-   any irrelevant content.
-2. **Return every numeral exactly as it appears, including the text that follows
-   the number preserve original order, accents, and punctuation.  
-   
-   •First‑level examples →  
-     "0. Introducción"  
-     "1. Fundamentos y Motivación"  
-     "2. Referencias"
-
-   •Sub‑numeral examples →  
-     "1.1 Antecedentes"  
-     "1.1.1 Fundamentación Jurídica"  
-     "4.4.1.2 Distribución de Usos del Suelo"
-
-
-**Important constraints**
-
-* **Never invent** new numerals (neither first‑level nor hierarchical).  
-  Return only those that already exist in the index.
-* Annexes, transitory provisions, appendices, or unnumbered items must be
-  excluded from the array.
-
-**isValid rules**
-
-Return \`"isValid": true\` only if:
-
-* They keep the original order from the document.
-* Set “hasSubNumerals” to true if at least one entry appears in the list whose number contains an extra period (e.g., “1.1”, “4.4.1”). Otherwise return false.
-
-Return \`"isValid": false\` if the text is mostly administrative notes,
-page references, or lacks the required numerals.
-`
-  }
-
-  /**
-     * @param {ArticleToVerify} article - The article to verify.
-     * @returns {Promise<ValidationResult>} - An object indicating if the article is valid and optionally the reason why it is considered invalid.
+   * @param {ArticleToVerify} article - The article to verify.
+   * @returns {Promise<ValidationResult>} - An object indicating if the article is valid and optionally the reason why it is considered invalid.
    */
   async _verifyArticle (article) {
     const prompt = this._buildVerifyPrompt(this.name, article)
@@ -513,20 +392,20 @@ page references, or lacks the required numerals.
         {
           role: 'system',
           content:
-              'You are a legal expert who is specialized in confirming the validity of the legal provisions extracted from legal documents. Note: Although your instructions are in English, the provisions provided will be in Spanish.'
+            'You are a legal expert who is specialized in confirming the validity of the legal provisions extracted from legal documents. Note: Although your instructions are in English, the provisions provided will be in Spanish.'
         },
         { role: 'user', content: prompt }
       ],
       temperature: 0,
       response_format: zodResponseFormat(
-        ArticleVerificationSchema,
+        articleVerificationSchema,
         'article_verification'
       )
     }
     const attemptRequest = async (retryCount = 0) => {
       try {
         const response = await openai.chat.completions.create(request)
-        const content = ArticleVerificationSchema.parse(
+        const content = articleVerificationSchema.parse(
           JSON.parse(response.choices[0].message.content)
         )
         return content
@@ -547,12 +426,12 @@ page references, or lacks the required numerals.
   }
 
   /**
- * Constructs a verification prompt for evaluating a legal provision.
- *
- * @param {string} legalName - The name of the legal base.
- * @param {ArticleToVerify} article - The article for which the verification prompt is built.
- * @returns {string} - The constructed prompt.
- */
+   * Constructs a verification prompt for evaluating a legal provision.
+   *
+   * @param {string} legalName - The name of the legal base.
+   * @param {ArticleToVerify} article - The article for which the verification prompt is built.
+   * @returns {string} - The constructed prompt.
+   */
   _buildVerifyPrompt (legalName, article) {
     return `
 You are a legal expert who confirms the validity of legal provisions:
