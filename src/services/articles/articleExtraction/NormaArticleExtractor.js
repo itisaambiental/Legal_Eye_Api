@@ -229,8 +229,15 @@ class NormaArticleExtractor extends ArticleExtractor {
     return `
 Extract only top‑level and unnumbered standalone section headings from a document, based strictly on the content itself (not just any index or table of contents):
 
-• Top‑level numbered headings (e.g. "1. OBJETIVO...", "10. OBSERVANCIA...").
-• Unnumbered headings include things like "CONSIDERANDO", "PREFACIO", "TRANSITORIOS", "ANEXOS", "SECCIONES", "APÉNDICE...", etc.
+- Top-level numerals: "1. OBJETIVO", "2. REFERENCIAS", ..., "10. OBSERVANCIA DE ESTA NORMA"
+- Generic section blocks such as:
+  - "CONSIDERANDO", "PREFACIO", "INTRODUCCIÓN"
+  - "ÍNDICE", "CONTENIDO"
+  - "TRANSITORIOS", "DISPOSICIONES TRANSITORIAS"
+  - "ANEXO 1", "ANEXO II", "ANEXO NORMATIVO"
+  - "APÉNDICE", "APÉNDICE A", "APÉNDICE NORMATIVO"
+  - "SECCIÓN 1", "SECCIÓN PRIMERA"
+  - Other structural headers such as "LIBRO PRIMERO", "PARTE GENERAL", etc.
 
 Do NOT extract any sub‑numbered headings (e.g. "6.1", "6.1.1")—they belong under their parent.
 Preserve original accents, punctuation, and order.
