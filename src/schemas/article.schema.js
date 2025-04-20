@@ -44,11 +44,24 @@ const articlesSchema = z
   .nonempty('At least one article is required')
 
 /**
-   * Zod validation schema for article verification.
-*/
+ * Enum for article validation reasons.
+ */
+export const VALIDATION_REASONS = Object.freeze({
+  IS_CONTINUATION: 'IsContinuation',
+  IS_INCOMPLETE: 'IsIncomplete',
+  OTHER: 'Other'
+})
+
+/**
+ * Zod validation schema for article verification.
+ */
 const articleVerificationSchema = z.object({
   isValid: z.boolean(),
-  reason: z.enum(['IsContinuation', 'IsIncomplete', 'Other']).nullable()
+  reason: z.enum([
+    VALIDATION_REASONS.IS_CONTINUATION,
+    VALIDATION_REASONS.IS_INCOMPLETE,
+    VALIDATION_REASONS.OTHER
+  ]).nullable()
 })
 
 /**

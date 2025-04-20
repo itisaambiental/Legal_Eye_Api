@@ -1,5 +1,11 @@
+import {
+  VALIDATION_REASONS
+} from '../../../schemas/article.schema.js'
+import { convert } from 'html-to-text'
+import ErrorUtils from '../../../utils/Error.js'
+
 /**
- * Abstract base class for article extractors.
+ * Base class for article extractors.
  * Defines the interface and common methods for extracting and formatting articles from text.
  */
 class ArticleExtractor {
@@ -12,13 +18,9 @@ class ArticleExtractor {
    */
 
   /**
-   * @typedef {'IsContinuation' | 'IsIncomplete'} ValidationReason
-   */
-
-  /**
    * @typedef {Object} ValidationResult
    * @property {boolean} isValid - Indicates if the article is valid.
-   * @property {ValidationReason} reason - The reason why the article is considered invalid.
+   * @property {VALIDATION_REASONS} reason - The reason why the article is considered invalid.
    */
 
   /**
@@ -55,42 +57,254 @@ class ArticleExtractor {
   }
 
   /**
-   * Abstract method to extract articles from the text.
-   * Must be implemented by subclasses.
-   * @throws {Error} If not implemented in a subclass.
-   * @returns {Promise<Array<Article>>} - List of extracted articles.
+   * Method to extracts and corrects articles from the input text.
+   * @returns {Promise<Article[]>} - List of corrected article objects.
    */
   async extractArticles () {
-    throw new Error('Method "extractArticles" must be implemented')
+    const text = this._cleanText(this.text)
+    const articles = await this._extractArticles(text)
+    const totalArticles = articles.length
+    const correctedArticles = []
+
+    for (let i = 0; i < totalArticles; i++) {
+      if (await this.job.isFailed()) {
+        throw new ErrorUtils(500, 'Job was canceled')
+      }
+      const article = articles[i]
+      try {
+        const correctedArticle = await this._correctArticle(article)
+        correctedArticle.plainArticle = convert(correctedArticle.article)
+        correctedArticles.push(correctedArticle)
+      } catch (error) {
+        correctedArticles.push({
+          ...article,
+          plainArticle: convert(article.article)
+        })
+      }
+      this._updateProgress(i + 1, totalArticles, 50, 100)
+    }
+
+    return correctedArticles
   }
 
   /**
-   * Abstract method to clean the input text.
-   * Subclasses must override this method to provide specific cleaning logic.
-   * @param {string} _text - The text to clean.
+   * Method to clean the input text.
+   * @param {string} text - The text to clean.
    * @returns {string} - The cleaned text.
-   * @throws {Error} If not implemented in a subclass.
    */
-  _cleanText (_text) {
-    throw new Error('Method "_cleanText" must be implemented')
+  _cleanText (text) {
+    const ellipsisTextRegex = /[^.]+\s*\.{3,}\s*/g
+    const singleEllipsisRegex = /\s*\.{3,}\s*/g
+
+    return text.replace(ellipsisTextRegex, '').replace(singleEllipsisRegex, '')
   }
 
   /**
-   * Abstract method to extract articles from the cleaned text.
+   * Method to extract articles from the cleaned text.
+   * @param {string} text - Full document text to process and extract sections from.
+   * @returns {Promise<Article[]>} - Ordered array of validated article objects.
+   * @throws {Error} If an error occurs during extraction.
+   */
+  async _extractArticles (text) {
+    try {
+      const { sections, isValid } = await this._extractSections(text)
+      if (!isValid) {
+        throw new ErrorUtils(500, 'Article Processing Error')
+      }
+      const headingRegex = this._buildHeadingRegex(sections)
+      const matches = Array.from(text.matchAll(headingRegex), (m) => ({
+        header: m[0],
+        start: m.index
+      }))
+      matches.push({ start: text.length })
+      const rawArticles = []
+      const lastResult = { isValid: true, reason: null }
+      let order = 1
+
+      for (let i = 0; i < matches.length - 1; i++) {
+        const { header, start } = matches[i]
+        const end = matches[i + 1].start
+        const content = text.slice(start + header.length, end).trim()
+
+        const prevStart = i > 0 ? matches[i - 1].start : 0
+        const prevEnd = start
+        const previousTitle = i > 0 ? matches[i - 1].header : ''
+        const previousContent = text
+          .slice(prevStart + previousTitle.length, prevEnd)
+          .trim()
+        const nextTitle =
+        i + 1 < matches.length - 1 ? matches[i + 1].header : ''
+        const nextContent =
+        i + 2 < matches.length
+          ? text
+            .slice(
+              matches[i + 1].start + nextTitle.length,
+              matches[i + 2].start
+            )
+            .trim()
+          : text
+            .slice(matches[i + 1].start + nextTitle.length)
+            .trim()
+
+        const previousArticle = `${previousTitle} ${previousContent}`.trim()
+        const nextArticle = `${nextTitle} ${nextContent}`.trim()
+
+        const articleToVerify = this._createArticleToVerify(
+          header,
+          lastResult,
+          previousArticle,
+          content,
+          nextArticle,
+          order++
+        )
+
+        rawArticles.push(articleToVerify)
+      }
+
+      const articles = await this._validateExtractedArticles(rawArticles)
+      return articles
+    } catch (error) {
+      throw new ErrorUtils(500, 'Article Processing Error', error)
+    }
+  }
+
+  /**
+   * Method to create a regular expression that matches any of the given section headers.
+   * @param {string[]} sections - Array of section heading strings.
+   * @returns {RegExp} - Regex to match headings at start of a line.
+   */
+  _buildHeadingRegex (sections) {
+    const escapeForRegex = (str) =>
+      str.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')
+    const pattern = sections.map(escapeForRegex).join('|')
+    return new RegExp(`^(?:${pattern})`, 'gim')
+  }
+
+  /**
+  * Method to validate extracted articles.
+  * @param {ArticleToVerify[]} articles - Array of articles to validate.
+  * @returns {Promise<Article[]>} - Array of validated articles.
+  * @throws {Error} If an error occurs during validation.
+ */
+  async _validateExtractedArticles (articles) {
+    const validated = []
+    const totalArticles = articles.length
+    let lastResult = { isValid: true, reason: null }
+    let lastArticle = null
+    let isConcatenating = false
+
+    for (let i = 0; i < totalArticles; i++) {
+      const currentArticleData = articles[i]
+      try {
+        const { isValid, reason } = await this._verifyArticle(currentArticleData)
+
+        if (isValid) {
+          if (lastArticle) {
+            validated.push(lastArticle)
+            lastArticle = null
+          }
+          validated.push({
+            title: currentArticleData.title,
+            article: currentArticleData.currentArticle,
+            plainArticle: currentArticleData.plainArticle,
+            order: currentArticleData.order
+          })
+          isConcatenating = false
+        } else if (reason === VALIDATION_REASONS.IS_INCOMPLETE) {
+          if (lastArticle && lastResult.reason === VALIDATION_REASONS.IS_INCOMPLETE) {
+            lastArticle.article += ` ${currentArticleData.currentArticle}`
+          } else {
+            lastArticle = {
+              title: currentArticleData.title,
+              article: currentArticleData.currentArticle,
+              plainArticle: currentArticleData.plainArticle,
+              order: currentArticleData.order
+            }
+          }
+          isConcatenating = true
+        } else if (reason === VALIDATION_REASONS.IS_CONTINUATION) {
+          if (
+            lastResult.reason === VALIDATION_REASONS.IS_INCOMPLETE ||
+            (isConcatenating && lastResult.reason === VALIDATION_REASONS.IS_CONTINUATION)
+          ) {
+            if (lastArticle) {
+              lastArticle.article += ` ${currentArticleData.currentArticle}`
+            }
+            isConcatenating = true
+          } else {
+            if (lastArticle) {
+              validated.push(lastArticle)
+              lastArticle = null
+            }
+            isConcatenating = false
+          }
+        }
+        lastResult = { isValid, reason }
+      } catch (error) {
+        validated.push({
+          title: currentArticleData.title,
+          article: currentArticleData.currentArticle,
+          plainArticle: currentArticleData.plainArticle,
+          order: currentArticleData.order
+        })
+      }
+      this._updateProgress(i + 1, totalArticles, 0, 50)
+    }
+    if (lastArticle) {
+      validated.push(lastArticle)
+    }
+
+    return validated
+  }
+
+  /**
+   * Method to create an article to verify.
+   * @param {string} title - Title of the article.
+   * @param {ValidationResult} previousLastResult - Validation result of the previous article.
+   * @param {string} previousContent - Content of the previous article.
+   * @param {string} currentContent - Content of the article.
+   * @param {string} nextContent - Next article including its title.
+   * @param {number} order - Order of the article.
+   * @returns {ArticleToVerify} - The article to verify.
+   */
+  _createArticleToVerify (
+    title,
+    previousLastResult,
+    previousContent,
+    currentContent,
+    nextContent,
+    order
+  ) {
+    return {
+      title,
+      previousArticle: {
+        content: previousContent,
+        lastResult: previousLastResult
+      },
+      currentArticle: currentContent,
+      nextArticle: nextContent,
+      plainArticle: '',
+      order
+    }
+  }
+
+  /**
+ * Method to updates the progress of a job.
+ * @param {number} current - Steps completed in the current phase.
+ * @param {number} total - Total steps in the current phase.
+ * @param {number} phaseStart - Percentage where this phase begins (0–100).
+ * @param {number} phaseEnd - Percentage where this phase ends (0–100).
+ */
+  _updateProgress (current, total, phaseStart = 0, phaseEnd = 100) {
+    const phaseRange = phaseEnd - phaseStart
+    const phaseProgress = Math.floor((current / total) * phaseRange)
+    const totalProgress = Math.max(0, Math.min(phaseStart + phaseProgress, 100))
+    this.job.progress(totalProgress)
+  }
+
+  /**
+   * Abstract method to extract high-level section from the text.
    * Subclasses must override this method to provide specific extraction logic.
-   * @param {string} _text - Text to process and extract articles from.
-   * @returns {Promise<Array<Article>>} - List of articles.
-   * @throws {Error} If not implemented in a subclass.
-   */
-  async _extractArticles (_text) {
-    throw new Error('Method "_extractArticles" must be implemented')
-  }
-
-  /**
-   * Abstract method to extract high-level section titles from the text.
-   * This method should return a list of section headings (e.g., numerals, annexes, appendices)
-   * and a boolean indicating whether the document has a valid structure.
-   *
    * @param {string} _text - The cleaned full text of the document.
    * @returns {Promise<{ sections: string[], isValid: boolean }>} - Extracted section titles and validity flag.
    * @throws {Error} If not implemented in a subclass.
@@ -100,21 +314,8 @@ class ArticleExtractor {
   }
 
   /**
-     * Abstract method to build a regular expression that matches any of the given section headings.
-     * This is typically used to find where each section begins in the document.
-     *
-     * @param {string[]} _sections - Array of section headings extracted from the document.
-     * @returns {RegExp} - Regular expression to match section headings at line starts.
-     * @throws {Error} If not implemented in a subclass.
-     */
-  _buildHeadingRegex (_sections) {
-    throw new Error('Method "_buildHeadingRegex" must be implemented')
-  }
-
-  /**
      * Abstract method to generate a prompt for extracting top-level section headings.
-     * This prompt is typically passed to an LLM to identify all relevant section headers from the text body.
-     *
+     * Subclasses must override this method to provide specific prompt formatting.
      * @param {string} _text - The full text of the document to analyze.
      * @returns {string} - The formatted prompt used for section extraction.
      * @throws {Error} If not implemented in a subclass.
@@ -124,45 +325,10 @@ class ArticleExtractor {
   }
 
   /**
-     * Abstract method to validate and clean extracted articles.
-     * Should process a list of articles, handling incomplete or continuation fragments.
-     *
-     * @param {Array<ArticleToVerify>} _rawArticles - List of raw articles extracted with full context.
-     * @returns {Promise<Array<Article>>} - List of validated and cleaned articles.
-     * @throws {Error} If not implemented in a subclass.
-     */
-  async _validateExtractedArticles (_rawArticles) {
-    throw new Error('Method "_validateExtractedArticles" must be implemented')
-  }
-
-  /**
-   * Abstract method to create an article.
-   * Subclasses must override this method to define how articles are created.
-   * @param {string} _title - Title of the article.
-   * @param {ValidationResult} _previousLastResult - Validation result of the previous article.
-   * @param {string} _previousContent - Content of the previous article.
-   * @param {string} _currentContent - Content of the article.
-   * @param {string} _nextContent - Next article including its title.
-   * @param {number} _order - Order of the article.
-   * @returns {ArticleToVerify} - The article to verify.
-   * @throws {Error} If not implemented in a subclass.
-   */
-  _createArticleToVerify (
-    _title,
-    _previousLastResult,
-    _previousContent,
-    _currentContent,
-    _nextContent,
-    _order
-  ) {
-    throw new Error('Method "_createArticleToVerify" must be implemented')
-  }
-
-  /**
    * Abstract method to verify an article.
-   * Subclasses must override this method to provide specific verification logic.
+    * Subclasses must override this method to provide specific verification logic.
    * @param {ArticleToVerify} _article - The article to verify.
-   * @returns {Promise<boolean> }>} - Boolean indicating if the article is valid.
+   * @returns {Promise<ValidationResult>} - An object indicating if the article is valid and optionally the reason why it is considered invalid.
    * @throws {Error} If not implemented in a subclass.
    */
   async _verifyArticle (_article) {
@@ -184,7 +350,7 @@ class ArticleExtractor {
   /**
    * Abstract method to correct an article.
    * Subclasses must override this method to provide specific correction logic.
-   * @param {Article} _article - The article object to correct.
+   * @param {string} _legalName - The name of the Legal Base.
    * @returns {Promise<Article>} - Corrected article object.
    * @throws {Error} If not implemented in a subclass.
    */
@@ -202,21 +368,6 @@ class ArticleExtractor {
    */
   _buildCorrectPrompt (_legalName, _article) {
     throw new Error('Method "_buildCorrectPrompt" must be implemented')
-  }
-
-  /**
- * Updates the progress of a job, supporting multiple weighted phases.
- *
- * @param {number} current - Steps completed in the current phase.
- * @param {number} total - Total steps in the current phase.
- * @param {number} phaseStart - Percentage where this phase begins (0–100).
- * @param {number} phaseEnd - Percentage where this phase ends (0–100).
- */
-  updateProgress (current, total, phaseStart = 0, phaseEnd = 100) {
-    const phaseRange = phaseEnd - phaseStart
-    const phaseProgress = Math.floor((current / total) * phaseRange)
-    const totalProgress = Math.max(0, Math.min(phaseStart + phaseProgress, 100))
-    this.job.progress(totalProgress)
   }
 }
 

@@ -1,6 +1,6 @@
-import LeyArticleExtractor from './LeyArticleExtractor.js'
-import ReglamentoArticleExtractor from './ReglamentoArticleExtractor.js'
-import NormaArticleExtractor from './NormaArticleExtractor.js'
+import LawArticleExtractor from './LawArticleExtractor.js'
+import RegulationArticleExtractor from './RegulationArticleExtractor.js'
+import NormArticleExtractor from './NormArticleExtractor.js'
 
 /**
  * Factory class to obtain the appropriate article extractor based on classification type.
@@ -19,43 +19,43 @@ class ArticleExtractorFactory {
   static getExtractor (classification, name, text, model, job) {
     switch (classification) {
       case 'Ley':
-        return new LeyArticleExtractor(name, text, model, job)
+        return new LawArticleExtractor(name, text, model, job)
 
       case 'Reglamento':
-        return new ReglamentoArticleExtractor(name, text, model, job)
+        return new RegulationArticleExtractor(name, text, model, job)
 
       case 'Norma':
-        return new NormaArticleExtractor(name, text, model, job)
+        return new NormArticleExtractor(name, text, model, job)
 
       case 'Acuerdos':
-        return new LeyArticleExtractor(name, text, model, job)
+        return new LawArticleExtractor(name, text, model, job)
 
       case 'Código':
-        return new LeyArticleExtractor(name, text, model, job)
+        return new LawArticleExtractor(name, text, model, job)
 
       case 'Decreto':
-        return new LeyArticleExtractor(name, text, model, job)
+        return new LawArticleExtractor(name, text, model, job)
 
       case 'Lineamiento':
-        return new LeyArticleExtractor(name, text, model, job)
+        return new LawArticleExtractor(name, text, model, job)
 
       case 'Orden Jurídico':
-        return new LeyArticleExtractor(name, text, model, job)
+        return new LawArticleExtractor(name, text, model, job)
 
       case 'Aviso':
-        return new LeyArticleExtractor(name, text, model, job)
+        return new LawArticleExtractor(name, text, model, job)
 
       case 'Convocatoria':
-        return new LeyArticleExtractor(name, text, model, job)
+        return new LawArticleExtractor(name, text, model, job)
 
       case 'Plan':
-        return new LeyArticleExtractor(name, text, model, job)
+        return new LawArticleExtractor(name, text, model, job)
 
       case 'Programa':
-        return new LeyArticleExtractor(name, text, model, job)
+        return new LawArticleExtractor(name, text, model, job)
 
       case 'Recomendaciones':
-        return new LeyArticleExtractor(name, text, model, job)
+        return new LawArticleExtractor(name, text, model, job)
 
       default:
         return null
