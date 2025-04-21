@@ -1,10 +1,6 @@
 import ArticleExtractor from './ArticleExtractor.js'
 import openai from '../../../config/openapi.config.js'
-import {
-  articleVerificationSchema,
-  singleArticleModelSchema,
-  sectionsResponseSchema
-} from '../../../schemas/article.schema.js'
+import { singleArticleModelSchema, sectionsResponseSchema } from '../../../schemas/article.schema.js'
 import { zodResponseFormat } from 'openai/helpers/zod'
 import ErrorUtils from '../../../utils/Error.js'
 
@@ -14,7 +10,7 @@ import ErrorUtils from '../../../utils/Error.js'
 class NormArticleExtractor extends ArticleExtractor {
   /**
    * @param {string} text - The cleaned full text of the document.
-   * @returns {Promise<{ sections: string[], isValid: boolean }>} - Extracted section titles and validity flag.
+   * @returns {Promise<Sections>} - Extracted section titles and validity flag.
    */
   async _extractSections (text) {
     const prompt = this._buildSectionsPrompt(text)
@@ -59,6 +55,8 @@ class NormArticleExtractor extends ArticleExtractor {
    * @returns {string} The formatted prompt.
    */
   _buildSectionsPrompt (text) {
+    const lines = text.split('\n')
+    const numberedText = lines.map((line, index) => `${index + 1}: ${line}`).join('\n')
     return `
 Extract only top‑level and unnumbered standalone section headings from a document(Norm), based strictly on the content itself (not just any index or table of contents):
 
@@ -82,237 +80,51 @@ Return JSON matching this schema:
 
 \`\`\`json
 {
-  "sections": [ /* array of heading strings */ ],
-  "isValid": /* true if the document contains at least one extractable top‑level heading */
+  "sections": [
+    {
+      "title": "string", // The exact heading text as it appears in the document.
+      "line": number     // The line number (starting from 1) where the heading is located.
+    }
+  ],
+  "isValid": true // true if at least one valid heading was found; false otherwise
 }
 \`\`\`
 
-Example sections array:
+Example:
 
-\`\`\`
-[
-  "CONSIDERANDO",
-  "PREFACIO",
-  "ÍNDICE",
-  "CONTENIDO",
-  "1. OBJETIVO Y CAMPO DE APLICACIÓN",
-  "2. REFERENCIAS NORMATIVAS",
-  "3. TÉRMINOS Y DEFINICIONES",
-  "4. ESPECIFICACIONES",
-  "5. MÉTODOS DE PRUEBA",
-  "6. ACCIONES ESTRATÉGICAS E INSTRUMENTOS DE EJECUCIÓN",
-  "7. PROCEDIMIENTO PARA LA EVALUACIÓN DE LA CONFORMIDAD",
-  "8. CONCORDANCIA CON NORMAS INTERNACIONALES",
-  "9. BIBLIOGRAFÍA",
-  "10. OBSERVANCIA DE ESTA NORMA",
-  "SECCIÓN 1",
-  "ANEXO 1",
-  "ANEXO 2",
-  "ANEXO 3",
-  "TRANSITORIOS",
-  "APÉNDICE",
-  "APÉNDICE NORMATIVO: PUERTOS DE MUESTREO"
-]
+\`\`\`json
+{
+  "sections": [
+  { title: "CONSIDERANDO", line: 1 },
+  { title: "PREFACIO", line: 2 },
+  { title: "ÍNDICE", line: 3 },
+  { title: "CONTENIDO", line: 4 },
+  { title: "1. OBJETIVO Y CAMPO DE APLICACIÓN", line: 5 },
+  { title: "2. REFERENCIAS NORMATIVAS", line: 6 },
+  { title: "3. TÉRMINOS Y DEFINICIONES", line: 7 },
+  { title: "4. ESPECIFICACIONES", line: 8 },
+  { title: "5. MÉTODOS DE PRUEBA", line: 9 },
+  { title: "6. ACCIONES ESTRATÉGICAS E INSTRUMENTOS DE EJECUCIÓN", line: 10 },
+  { title: "7. PROCEDIMIENTO PARA LA EVALUACIÓN DE LA CONFORMIDAD", line: 11 },
+  { title: "8. CONCORDANCIA CON NORMAS INTERNACIONALES", line: 12 },
+  { title: "9. BIBLIOGRAFÍA", line: 13 },
+  { title: "10. OBSERVANCIA DE ESTA NORMA", line: 14 },
+  { title: "SECCIÓN 1", line: 15 },
+  { title: "ANEXO 1", line: 16 },
+  { title: "ANEXO 2", line: 17 },
+  { title: "ANEXO 3", line: 18 },
+  { title: "TRANSITORIOS", line: 19 },
+  { title: "APÉNDICE", line: 20 },
+  { title: "APÉNDICE NORMATIVO: PUERTOS DE MUESTREO", line: 21 }
+  ],
+  "isValid": true
+}
 \`\`\`
 
 Document text:
 """
-${text}
+${numberedText}
 """
-`
-  }
-
-  /**
-   * @param {ArticleToVerify} article - The article to verify.
-   * @returns {Promise<ValidationResult>} - An object indicating if the article is valid and optionally the reason why it is considered invalid.
-   */
-  async _verifyArticle (article) {
-    const prompt = this._buildVerifyPrompt(this.name, article)
-    const request = {
-      model: this.model,
-      messages: [
-        {
-          role: 'system',
-          content:
-            'You are a legal expert who is specialized in confirming the validity of the legal provisions(Norms) extracted from legal documents. Note: Although your instructions are in English, the provisions provided will be in Spanish.'
-        },
-        { role: 'user', content: prompt }
-      ],
-      temperature: 0,
-      response_format: zodResponseFormat(
-        articleVerificationSchema,
-        'article_verification'
-      )
-    }
-    const attemptRequest = async (retryCount = 0) => {
-      try {
-        const response = await openai.chat.completions.create(request)
-        const content = articleVerificationSchema.parse(
-          JSON.parse(response.choices[0].message.content)
-        )
-        return content
-      } catch (error) {
-        if (error.status === 429) {
-          if (retryCount < 3) {
-            const backoffTime = Math.pow(2, retryCount) * 1000
-            await new Promise((resolve) => setTimeout(resolve, backoffTime))
-            return attemptRequest(retryCount + 1)
-          } else {
-            throw new ErrorUtils(500, 'Article Processing Error', error)
-          }
-        }
-        throw new ErrorUtils(500, 'Article Processing Error', error)
-      }
-    }
-    return attemptRequest()
-  }
-
-  /**
-   * @param {string} legalName - The name of the legal base.
-   * @param {ArticleToVerify} article - The article for which the verification prompt is built.
-   * @returns {string} - The constructed prompt.
-   */
-  _buildVerifyPrompt (legalName, article) {
-    return `
-You are a legal expert who confirms the validity of legal provisions:
-
-### Evaluation Context:
-- **Legal Base:** "${legalName}"
-- **Previous Provision:** "${article.previousArticle.content}" 
-(Validation: { "isValid": ${article.previousArticle.lastResult.isValid}, "reason": "${article.previousArticle.lastResult.reason}" })
-- **Current Provision(To be evaluated):** "${article.currentArticle}"
-- **Next Provision:** "${article.nextArticle}"
-
-### **Important Note on Text Evaluation**
-- **Headers and Footnotes:** Please disregard any **headers** or **footnotes** (e.g., page numbers, publication dates, and references to external sources) present in the article or legal text. These elements are often part of the document layout but are not considered part of the legal provision itself.
-- **Content of the Provision:** Focus on the **legal content** itself, i.e., the specific rule, directive, or principle outlined in the body of the article or provision.
-- **Order of Provisions:** If the **Previous Provision**, **Current Provision**, and **Next Provision** follow the correct **logical order** and are connected in a coherent sequence, they must always be classified as **VALID**.
-- **Classification Caution:** Be **extremely careful** when classifying a provision as invalid. If there is **any doubt**, lean towards classifying it as **VALID** to avoid **accidentally skipping** or omitting an article from analysis. Every provision must be evaluated **meticulously** to ensure completeness.
-
-- **Numerals from Index or Table of Contents (Índice o Contenido):**  
-  - If the current provision contains only a numeral or subnumeral along with its title as presented in the index or table of contents, without additional legal text (no specific rules, directives, principles, obligations, prohibitions, or rights explicitly stated), it must always be classified as **INVALID** with the reason **"Other"**.  
-  - Such provisions serve merely as structural placeholders or titles and do not constitute complete legal provisions for evaluation.  
-
-##### Example of Other:
-- **Previous Provision:** "1. Objetivo y campo de aplicación"
-- **Current Provision:** "2. Definiciones"
-- **Next Provision:** "3. Especificaciones generales"
-
-- **Reasoning:** The current provision ("2. Definiciones") contains only a numeral and a title, identical to how it appears in the index or table of contents, with no accompanying legal text or detailed content. Therefore, it must be marked as **INVALID** with the reason **Other**.
-
-- 1- If the article is classified as VALID (isValid: true), then the field reason must be null. 
-
-  2- If the article is classified as INVALID (isValid: false), then the field reason must always contain a specific value from the following options:
-    "IsContinuation" → The provision is a direct continuation of a previous incomplete provision.
-    "IsIncomplete" → The provision is abruptly cut off or clearly unfinished, lacking a concluding idea.
-
-    ## **Valid Legal Provision**
-
-1. **Numerals or Subnumerals (Numerales o Subnumerales)**:
-- If the current numeral or subnumeral ends with a clear, logical idea, whether short or long, it should be considered valid. A clear idea is one that presents a complete rule, principle, or directive, even if brief.
-- Must establish legal provisions such as obligations, rights, prohibitions, or principles.
-- Should have a clear legal structure.
-- It must contain a specific legal rule or directive rather than just referencing other articles.
-- If the previous numeral or subnumeral is valid, the current article should be evaluated independently and should not be marked as \`IsContinuation\` even if the structure suggests continuity.
-- If Numerals article has no substantive body beyond the title (i.e. sólo aparece “7”) , skip it altogether.
-#### Example 1:
-- **Previous Provision:** "1.1 Introducción general al sistema normativo"
-- **Current Provision:** "4.1.1 Toda instalación deberá cumplir con las disposiciones establecidas en esta Norma para efectos de inspección."
-- **Next Provision:** "9.1.2 La revisión periódica deberá realizarse al menos una vez cada doce meses."
-
-#### Example 2:
-- **Previous Provision:** "4.3 Evaluación de riesgos"
-- **Current Provision:** "3.3.1 El responsable técnico deberá realizar una evaluación documental y física de todos los componentes del sistema."
-- **Next Provision:** "2.3.2 Los resultados deberán ser archivados y estar disponibles ante cualquier autoridad competente."
-
-#### Example 3:
-- **Previous Provision:** "93.2.5 Disposiciones de seguridad"
-- **Current Provision:** "2.2.6 No se permitirá el uso de materiales inflamables en zonas de operación crítica."
-- **Next Provision:** "1.3 Supervisión operativa y técnica"
-
-2. **Appendices (Apéndices), and Sections (Secciones)**:
- - If the current provision is a structural marker (e.g., Section [Sección], Appendix (Apéndices), Annex [Anexo], or Transitory Provision [Transitorio]) and it presents a complete, logically coherent provision, it must always be classified as VALID.
- - If the previous provision is a structural marker (e.g., Section [Sección], Appendix (Apéndices), Annex [Anexo], or Transitory Provision [Transitorio]) and it presents a complete, logically coherent provision, the current provision  must always be classified as VALID.
- - Must be part of a structured legal framework.
-#### Example 1:
-- **Previous Provision:** "1.1 Introducción general al sistema normativo"
-- **Current Provision:** "SECCIÓN II. DISPOSICIONES GENERALES"
-- **Next Provision:** "4.1.1 Toda instalación deberá cumplir con las disposiciones establecidas en esta Norma para efectos de inspección."
-
-#### Example 2:
-- **Previous Provision:** "4.3 Evaluación de riesgos"
-- **Current Provision:** "APÉNDICE B. FORMATOS Y CRITERIOS DE EXAMEN"
-- **Next Provision:** "2.3.2 Los resultados deberán ser archivados y estar disponibles ante cualquier autoridad competente."
-
-#### Example 3:
-- **Previous Provision:** "SECCIÓN II. DISPOSICIONES GENERALES"
-- **Current Provision:** "93.2.5 Disposiciones de seguridad"
-- **Next Provision:** "1.3 Supervisión operativa y técnica"
-
-#### Example 4:
-- **Previous Provision:** "2.1.4 Reglas de operación específicas"
-- **Current Provision:** "3.1.1 El reporte de cumplimiento debe entregarse al finalizar cada trimestre."
-- **Next Provision:** "APÉNDICE A. FORMATOS Y CRITERIOS DE EVALUACIÓN"
-
-3. **Annexes (Anexos)**:
- - If the current provision is a structural marker (e.g., Section [Sección], Appendix (Apéndices), Annex [Anexo], or Transitory Provision [Transitorio]) and it presents a complete, logically coherent provision, it must always be classified as VALID.
- - If the previous provision is a structural marker (e.g., Section [Sección], Appendix (Apéndices), Annex [Anexo], or Transitory Provision [Transitorio]) and it presents a complete, logically coherent provision, the current provision  must always be classified as VALID.
- - Must provide additional information that supports or complements the legal text.
- - **Example 1:**
-   - **Previous Provision:** "ANEXO A. REGULACIÓN COMPLEMENTARIA"
-   - **Current Provision:** "3.1.1 El reporte de cumplimiento debe entregarse al finalizar cada trimestre."
-   - **Next Provision:**  "APÉNDICE A. FORMATOS Y CRITERIOS DE EVALUACIÓN"
-   - **Example 2:**
-   - **Previous Provision:** "4.1.1 Toda instalación deberá cumplir con las disposiciones establecidas en esta Norma para efectos de inspección."
-   - **Current Provision:** "ANEXO A. REGULACIÓN COMPLEMENTARIA"
-   - **Next Provision:** "SECCIÓN II. DISPOSICIONES GENERALES"
-
-4. **Transitory Provisions (Disposiciones Transitorias)**:
- - If the current provision is a structural marker (e.g., Section [Sección], Appendix (Apéndices), Annex [Anexo], or Transitory Provision [Transitorio]) and it presents a complete, logically coherent provision, it must always be classified as VALID.
- - If the previous provision is a structural marker (e.g., Section [Sección], Appendix (Apéndices), Annex [Anexo], or Transitory Provision [Transitorio]) and it presents a complete, logically coherent provision, the current provision  must always be classified as VALID.
- - Must establish rules for the transition or application of the legal document.
- - **Example 1:**
-   - **Previous Provision:** "TRANSITORIO PRIMERO. Disposiciones transitorias sobre la implementación de nuevas normativas."
-   - **Current Provision:** "2.2.6 No se permitirá el uso de materiales inflamables en zonas de operación crítica."
-   - **Next Provision:** "3.1.1 El reporte de cumplimiento debe entregarse al finalizar cada trimestre."
-   - **Example 2:**
-   - **Previous Provision:** "93.2.5 Disposiciones de seguridad"
-   - **Current Provision:** "TRANSITORIO PRIMERO. Disposiciones transitorias sobre la implementación de nuevas normativas"
-   - **Next Provision:** "SECCIÓN II. DISPOSICIONES GENERALES"
-
-
-   ### **Invalid Legal Provisions:**
-   Mark the provision as **INVALID** if it clearly meets one of the following conditions:
-   
-   #### **IsIncomplete:**
-   - **Definition:** An article is considered **incomplete** if it is abruptly cut off or clearly unfinished, lacking a concluding idea. If an article ends without delivering a complete directive, rule, or idea, it is deemed incomplete.
-   - **Note:** An article **is not considered incomplete** if it ends with a **clear, logical, and complete idea** even if it is short. A brief statement or directive that is logically conclusive and understandable is sufficient.
-   ##### Example of IsIncomplete:
-    - **Previous Provision:** "1.4.7 Requisitos mínimos de control y supervisión"
-    - **Current Provision:** "1.4.8 Los responsables deberán coordinarse con las autoridades locales para la implementación de los procedimientos establecidos en la presente norma. Las acciones específicas que deberán considerarse incluyen la inspección técnica, monitoreo continuo, evaluación periódica y elaboración de…"
-    - **Next Provision:** "Las instalaciones deberán contar con personal capacitado y debidamente acreditado para operar el sistema de control."
-
-    - **Reasoning:** The current provision is **incomplete** because it ends abruptly and does not provide a complete directive or conclusion. Furthermore, it does not begin with a new valid numeral or subnumeral.
-   
-   #### **IsContinuation:**
-   - **Definition:** If the **Previous Provision** has been marked as **invalid** with the reason **IsIncomplete**, then the **Current Provision** should **always** be considered **INVALID** and marked as **IsContinuation**, even if it seems to continue logically. This ensures that any unfinished provision is treated as a continuation of the previous one.
-   - **Note:** The current article can only be marked as **IsContinuation** if the **Previous Provision** was already invalidated for **IsIncomplete**.
-     
-   - **Reasoning:** The **Previous Provision** was cut off or left unfinished, so the **Current Provision** should not be evaluated independently. It must be treated as a continuation of the incomplete thought in the **Previous Provision**.
-   
-  ##### Example of IsContinuation:
-  - **Previous Provision:** "3.2.5 Las disposiciones de seguridad deberán implementarse conforme al protocolo establecido en el capítulo 4 de la Norma. Los responsables designados deberán garantizar la supervisión en todos los turnos, además de establecer mecanismos de reporte diario a través de…"
-  - **Current Provision:** "los formatos establecidos por la autoridad competente, sin excepción alguna."
-  - **Next Provision:** "3.2.7 Todos los registros deberán conservarse por un mínimo de cinco años."
-
-  - **Reasoning:** The **Current Provision** is a direct continuation of the **Previous Provision**, which ended with an incomplete clause. Even though the current provision lacks un encabezado numeral, it completes the unfinished idea and must be classified as **IsContinuation**.    
-
-     - **Example 2:**
-  - **Previous Provision:** "4.2.8 Los equipos deberán ser calibrados conforme a los lineamientos establecidos en la Norma Oficial Mexicana, incluyendo aquellos especificados por la autoridad competente en materia de…"
-  - **Current Provision:** "medición ambiental, en particular para partículas suspendidas y emisiones de gases contaminantes."
-  - **Next Provision:** "4.2.9 Las mediciones deberán registrarse en bitácoras oficiales y estar disponibles para consulta durante un periodo mínimo de cinco años."
-
-  - **Reasoning:** The **Current Provision** is a direct continuation of the **Previous Provision**, which ended with an incomplete clause. Even though the current provision lacks un encabezado numeral, it completes the unfinished idea and must be classified as **IsContinuation**.    
 `
   }
 

@@ -35,6 +35,7 @@ articlesQueue.process(CONCURRENCY, async (job, done) => {
   /** @type {ArticleExtractorJobData} */
   const { userId, legalBasisId, intelligenceLevel } = job.data
   try {
+    console.log(job.id)
     const currentJob = await articlesQueue.getJob(job.id)
     if (!currentJob) throw new ErrorUtils(404, 'Job not found')
     if (await currentJob.isFailed()) throw new ErrorUtils(500, 'Job was canceled')

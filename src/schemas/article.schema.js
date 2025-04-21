@@ -44,27 +44,6 @@ const articlesSchema = z
   .nonempty('At least one article is required')
 
 /**
- * Enum for article validation reasons.
- */
-export const VALIDATION_REASONS = Object.freeze({
-  IS_CONTINUATION: 'IsContinuation',
-  IS_INCOMPLETE: 'IsIncomplete',
-  OTHER: 'Other'
-})
-
-/**
- * Zod validation schema for article verification.
- */
-const articleVerificationSchema = z.object({
-  isValid: z.boolean(),
-  reason: z.enum([
-    VALIDATION_REASONS.IS_CONTINUATION,
-    VALIDATION_REASONS.IS_INCOMPLETE,
-    VALIDATION_REASONS.OTHER
-  ]).nullable()
-})
-
-/**
  * Simplified Zod schema for a single article.
  * This schema is designed for OpenAI models compatibility.
  */
@@ -98,8 +77,13 @@ const singleArticleModelSchema = z.object({
  * Zod validation schema for the Index response.
  */
 const sectionsResponseSchema = z.object({
-  sections: z.array(z.string()),
+  sections: z.array(
+    z.object({
+      title: z.string(),
+      line: z.number()
+    })
+  ),
   isValid: z.boolean()
 })
 
-export { singleArticleSchema, articlesSchema, articleVerificationSchema, singleArticleModelSchema, sectionsResponseSchema }
+export { singleArticleSchema, articlesSchema, singleArticleModelSchema, sectionsResponseSchema }
