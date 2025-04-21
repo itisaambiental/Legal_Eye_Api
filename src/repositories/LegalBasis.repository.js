@@ -1155,7 +1155,7 @@ class LegalBasisRepository {
  * @param {Object} filters - The filtering criteria.
  * @param {string} [filters.jurisdiction] - Jurisdiction value to filter by.
  * @param {string} [filters.state] - State name to filter by.
- * @param {Array<string>} [filters.municipalities] - List of municipalities to filter by.
+ * @param {string} [filters.municipality] - Municipality to filter by.
  * @param {number} [filters.subjectId] - Subject ID to filter by.
  * @param {Array<number>} [filters.aspectIds] - List of aspect IDs to filter by.
  *
@@ -1166,7 +1166,7 @@ class LegalBasisRepository {
     const {
       jurisdiction,
       state,
-      municipalities,
+      municipality,
       subjectId,
       aspectIds
     } = filters
@@ -1204,10 +1204,9 @@ class LegalBasisRepository {
       values.push(state)
     }
 
-    if (municipalities && municipalities.length > 0) {
-      const placeholders = municipalities.map(() => '?').join(', ')
-      query += ` AND lb.municipality IN (${placeholders})`
-      values.push(...municipalities)
+    if (municipality) {
+      query += ' AND lb.municipality = ?'
+      values.push(municipality)
     }
 
     if (subjectId) {

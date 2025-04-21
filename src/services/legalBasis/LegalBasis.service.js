@@ -733,35 +733,34 @@ class LegalBasisService {
   }
 
   /**
-   * Retrieves legal basis entries by dynamic filters.
-   *
-   * @param {Object} filters - The filtering criteria.
-   * @param {string} [filters.jurisdiction] - Optional jurisdiction value.
-   * @param {string} [filters.state] - Optional state name.
-   * @param {Array<string>} [filters.municipalities] - Optional array of municipalities.
-   * @param {number} [filters.subjectId] - Optional subject ID.
-   * @param {Array<number>} [filters.aspectIds] - Optional array of aspect IDs.
-   * @returns {Promise<Array<LegalBasis>>} - A list of filtered and formatted legal basis records.
-   * @throws {ErrorUtils} - If an error occurs during retrieval.
-   */
+ * Retrieves legal basis entries by dynamic filters.
+ *
+ * @param {Object} filters - The filtering criteria.
+ * @param {string} [filters.jurisdiction] - Optional jurisdiction value.
+ * @param {string} [filters.state] - Optional state name.
+ * @param {string} [filters.municipality] - Optional municipality.
+ * @param {number} [filters.subjectId] - Optional subject ID.
+ * @param {Array<number>} [filters.aspectIds] - Optional array of aspect IDs.
+ * @returns {Promise<Array<LegalBasis>>} - A list of filtered and formatted legal basis records.
+ * @throws {ErrorUtils} - If an error occurs during retrieval.
+ */
   static async getLegalBasisByCriteria (filters = {}) {
     try {
       const {
         jurisdiction,
         state,
-        municipalities,
+        municipality,
         subjectId,
         aspectIds
       } = filters
 
-      const legalBasis =
-        await LegalBasisRepository.findLegalBasisByCriteria({
-          jurisdiction,
-          state,
-          municipalities,
-          subjectId,
-          aspectIds
-        })
+      const legalBasis = await LegalBasisRepository.findLegalBasisByCriteria({
+        jurisdiction,
+        state,
+        municipality,
+        subjectId,
+        aspectIds
+      })
 
       if (!legalBasis) return []
 

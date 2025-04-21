@@ -385,7 +385,7 @@ export const getLegalBasisByCriteria = async (req, res) => {
   const {
     jurisdiction,
     state,
-    municipalities,
+    municipality,
     subjectId,
     aspectIds
   } = req.query
@@ -394,12 +394,6 @@ export const getLegalBasisByCriteria = async (req, res) => {
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-    const municipalitiesList = Array.isArray(municipalities)
-      ? municipalities.map((m) => String(m).trim()).filter(Boolean)
-      : typeof municipalities === 'string'
-        ? municipalities.split(',').map((m) => m.trim()).filter(Boolean)
-        : []
-
     const aspects = Array.isArray(aspectIds)
       ? aspectIds.map(Number).filter(Number.isInteger)
       : typeof aspectIds === 'string'
@@ -408,7 +402,7 @@ export const getLegalBasisByCriteria = async (req, res) => {
     const legalBasis = await LegalBasisService.getLegalBasisByCriteria({
       jurisdiction,
       state,
-      municipalities: municipalitiesList,
+      municipality,
       subjectId,
       aspectIds: aspects
     })
