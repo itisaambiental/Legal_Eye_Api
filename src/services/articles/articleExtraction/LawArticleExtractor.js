@@ -66,7 +66,19 @@ class LawArticleExtractor extends ArticleExtractor {
     - "TÍTULO I", "TÍTULO PRIMERO"
     - "CAPÍTULO I", "CAPÍTULO PRIMERO"
     - "SECCIÓN I", "SECCIÓN PRIMERA"
-    - "ARTÍCULO 1", "ARTÍCULO PRIMERO"
+    - "ARTÍCULO 1", "ARTÍCULO PRIMERO" 
+    - "ARTÍCULO 2", "ARTÍCULO SEGUNDO"
+    - "ARTÍCULO 3", "ARTÍCULO TERCERO"
+    - "ARTÍCULO 10", "ARTÍCULO DÉCIMO"
+    - "ARTÍCULO 11", "ARTÍCULO DÉCIMO PRIMERO"
+    - "ARTÍCULO 12", "ARTÍCULO DÉCIMO SEGUNDO"
+    - "ARTÍCULO 20", "ARTÍCULO VIGÉSIMO"
+    - "ARTÍCULO 21", "ARTÍCULO VIGÉSIMO PRIMERO"
+    - "ARTÍCULO 100", "ARTÍCULO CÉNTESIMO"
+    - "ARTÍCULO 101", "ARTÍCULO CÉNTESIMO PRIMERO"
+    - "ARTÍCULO 1 BIS", "ARTÍCULO PRIMERO BIS"
+    - "ARTÍCULO 2 TER", "ARTÍCULO SEGUNDO TER"
+    - "ARTÍCULO 15 QUATER", "ARTÍCULO DECIMOQUINTO QUATER"  
     - "ARTÍCULO 3.1", "ARTÍCULO 7-B", "ARTÍCULO 12 bis", "ARTÍCULO 15 ter"
     - "TRANSITORIOS", "DISPOSICIONES TRANSITORIAS"
     - "ANEXO A", "ANEXO I"
@@ -106,7 +118,31 @@ class LawArticleExtractor extends ArticleExtractor {
     "ARTÍCULO 4-A",
     "TRANSITORIOS",
     "ANEXO A",
-    "ANEXO B"
+    "ANEXO B",
+    "ARTÍCULO 2",
+    "ARTÍCULO SEGUNDO",
+    "ARTÍCULO 3",
+    "ARTÍCULO TERCERO",
+    "ARTÍCULO 10",
+    "ARTÍCULO DÉCIMO",
+    "ARTÍCULO 11",
+    "ARTÍCULO DÉCIMO PRIMERO",
+    "ARTÍCULO 12",
+    "ARTÍCULO DÉCIMO SEGUNDO",
+    "ARTÍCULO 20",
+    "ARTÍCULO VIGÉSIMO",
+    "ARTÍCULO 21",
+    "ARTÍCULO VIGÉSIMO PRIMERO",
+    "ARTÍCULO 100",
+    "ARTÍCULO CÉNTESIMO",
+    "ARTÍCULO 101",
+    "ARTÍCULO CÉNTESIMO PRIMERO",
+    "ARTÍCULO 1 BIS",
+    "ARTÍCULO PRIMERO BIS",
+    "ARTÍCULO 2 TER",
+    "ARTÍCULO SEGUNDO TER",
+    "ARTÍCULO 15 QUATER",
+    "ARTÍCULO DECIMOQUINTO QUATER"
   ]
   \`\`\`
   
@@ -209,6 +245,15 @@ You are a legal expert who confirms the validity of legal provisions:
   - **Previous Provision:** "ARTÍCULO 9. Los convenios de concertación que en materia forestal celebre el Estado con personas físicas y morales del sector social y privado, podrán versar sobre la instrumentación de programas forestales, el fomento a la educación, cultura, capacitación, servicios ambientales e investigación forestales, así como respecto de las labores de vigilancia y demás programas operativos establecidos en esta Ley."
   - **Current Provision:** "ARTÍCULO 10. Se preverá que en el seguimiento y evaluación de los resultados que se obtengan por la ejecución de los convenios a que se refiere este capítulo, intervenga el Consejo Forestal Estatal."
   - **Next Provision:** "SECCIÓN II. DISPOSICIONES GENERALES"
+  - **Example 4:**
+  - **Previous Provision:** "ARTÍCULO 20. Las disposiciones previstas en este numeral regularán el uso sustentable de los recursos forestales del Estado."
+  - **Current Provision:**  "ARTÍCULO 21. Se establecerán mecanismos de participación ciudadana para la vigilancia de los programas forestales."
+  - **Next Provision:**     "ARTÍCULO 22. Corresponderá al Consejo Forestal dictaminar las solicitudes de aprovechamiento de madera."
+  - **Example 5:**
+  - **Previous Provision:** "ARTÍCULO 100. El presente Título establece las sanciones administrativas aplicables por incumplimiento de las obligaciones ambientales."
+  - **Current Provision:**  "ARTÍCULO 101. Las multas se graduarán de conformidad con la gravedad de la infracción y los daños ocasionados."
+  - **Next Provision:**     "ARTÍCULO 102. En caso de reincidencia, las sanciones podrán incrementarse hasta un cincuenta por ciento adicional."
+
 
 2. **Chapters (Capítulos), Titles (Títulos), and Sections (Secciones)**:
  - If the current provision is a structural marker (e.g., Chapter [Capítulo], Section [Sección], Title [Título], Annex [Anexo], or Transitory Provision [Transitorio]) and it presents a complete, logically coherent provision, it must always be classified as VALID.
@@ -398,7 +443,9 @@ You are a legal expert who confirms the validity of legal provisions:
      - **CAPÍTULO DÉCIMO SEGUNDO**, **CAPÍTULO DÉCIMO TERCERO**, **CAPÍTULO TRIGÉSIMO PRIMERO**
      - **SECCIÓN UNDÉCIMA**, **SECCIÓN VIGÉSIMA, **TRANSITORIO PRIMERO**, **ANEXO 1**
      - **TÍTULO CUADRAGÉSIMO**, **TÍTULO QUINCUAGÉSIMO SEXTO**, **TRANSITORIO SEGUNDO**, **ANEXO II**
-  
+     - **ARTÍCULO 10**, **ARTÍCULO 11**, **ARTÍCULO 12**
+     - **ARTÍCULO 100**, **ARTÍCULO 101**, **ARTÍCULO 102**
+
     **Output (Unformatted HTML):**  
      // Titles should not have HTML tags.
      - ARTÍCULO 1 Bis, Sección 2, Capítulo 3
@@ -409,6 +456,8 @@ You are a legal expert who confirms the validity of legal provisions:
      - CAPÍTULO DÉCIMO SEGUNDO, CAPÍTULO DÉCIMO TERCERO, CAPÍTULO TRIGÉSIMO PRIMERO
      - SECCIÓN UNDÉCIMA, SECCIÓN VIGÉSIMA, TRANSITORIO PRIMERO, ANEXO 1
      - TÍTULO CUADRAGÉSIMO, TÍTULO QUINCUAGÉSIMO SEXTO, TRANSITORIO SEGUNDO, ANEXO II
+     - ARTÍCULO 10, ARTÍCULO 11, ARTÍCULO 12
+     - ARTÍCULO 100, ARTÍCULO 101, ARTÍCULO 102
   
   3. **Articles**:
      - Review and correct long paragraphs, ensuring each explains a specific concept or legal provision.
@@ -418,11 +467,32 @@ You are a legal expert who confirms the validity of legal provisions:
        - <ul> and <li> for lists
      - Use <b> for emphasis, <i> for additional context, and <span> for inline styles where necessary.
      - Complete truncated words or sentences without altering their meaning.
-  
+     - **Preserve full article numbers**:  
+       When producing the **title** for each article, always copy the **exact numeral** from the source, whether it is 1 digit, 2 digit, 3 digit or more.  
+
     #### Example (in Spanish):
      **title:** ARTÍCULO 1 
      **article:** La Secretaría podrá establecer una vigencia en las autorizaciones que ésta emita en materia de impacto ambiental y, en su caso, de riesgo ambiental. En tales casos, el promovente deberá tramitar la renovación correspondiente conforme a los criterios que la Secretaría determine.
      **order:** 1
+
+    #### Example (multi digit article numbers)
+      **Input headings:**
+      ARTÍCULO 20. Disposiciones especiales…
+      ARTÍCULO 100. Vigencia…
+      ARTÍCULO 101. Derogaciones…
+
+      **Expected output:**
+      **title:** ARTÍCULO 20
+      **article:** <p>Disposiciones especiales…</p>
+      **order:** 20
+
+      **title:** ARTÍCULO 100
+      **article:** <p>Vigencia…</p>
+      **order:** 100
+
+      **title:** ARTÍCULO 101
+      **article:** <p>Derogaciones…</p>
+      **order:** 101
   
     **Article Output (Formatted in HTML):**  
      **title:** ARTÍCULO 1   // Titles should not have HTML tags.
