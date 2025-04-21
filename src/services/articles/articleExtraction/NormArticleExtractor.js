@@ -68,7 +68,7 @@ Extract only top‑level and unnumbered standalone section headings from a docum
   - "ANEXO 1", "ANEXO II", "ANEXO NORMATIVO"
   - "APÉNDICE", "APÉNDICE A", "APÉNDICE NORMATIVO"
   - "SECCIÓN 1", "SECCIÓN PRIMERA"
-  - Other structural headers such as "LIBRO PRIMERO", "PARTE GENERAL", etc.
+    **Important:** Do not include generic headings, summaries, or formatting artifacts (e.g., centered bold phrases, footers, page numbers, author credits). Only return those which clearly represent structural sections in the document's hierarchy.
 
 Do NOT extract any sub‑numbered headings (e.g. "6.1", "6.1.1")—they belong under their parent.
 Preserve original accents, punctuation, and order.

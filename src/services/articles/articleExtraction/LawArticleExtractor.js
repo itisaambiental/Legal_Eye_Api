@@ -61,6 +61,7 @@ class LawArticleExtractor extends ArticleExtractor {
   Extract all legal section headings and their sub-divisions from a legal document (law, code, regulation), based strictly on the body content (not from any index or table of contents):
   
   • Valid section headers include, but are not limited to:
+    - "CONSIDERANDO", "PREFACIO"
     - "TÍTULO I", "TÍTULO PRIMERO"
     - "CAPÍTULO I", "CAPÍTULO PRIMERO"
     - "SECCIÓN I", "SECCIÓN PRIMERA"
@@ -81,7 +82,8 @@ class LawArticleExtractor extends ArticleExtractor {
     - "TRANSITORIOS", "DISPOSICIONES TRANSITORIAS"
     - "ANEXO A", "ANEXO I"
     - "APÉNDICE A", "APÉNDICE NORMATIVO"
-    - Other structural headers such as "LIBRO PRIMERO", "PARTE GENERAL", "CONSIDERANDO", "INTRODUCCIÓN', "PREFACIO" etc.
+  
+    **Important:** Do not include generic headings, summaries, or formatting artifacts (e.g., centered bold phrases, footers, page numbers, author credits). Only return those which clearly represent structural sections in the document's hierarchy.
   
   • You MUST extract sub-numbered and compound article identifiers such as:
     - "ARTÍCULO 2.1", "ARTÍCULO 4-B", "ARTÍCULO 10 bis" — treat each of these as **independent headers**.
