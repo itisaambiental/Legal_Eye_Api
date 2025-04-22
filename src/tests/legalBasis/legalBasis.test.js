@@ -280,7 +280,7 @@ describe('Create a legal base', () => {
 
   describe('Validation Tests', () => {
     test('Should return 400 if legalName exceeds max length', async () => {
-      const longName = 'A'.repeat(256)
+      const longName = 'A'.repeat(1001)
       const legalBasisData = generateLegalBasisData({
         legalName: longName,
         subjectId: String(createdSubjectId),
