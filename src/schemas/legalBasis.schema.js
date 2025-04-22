@@ -14,7 +14,7 @@ const legalBasisSchema = z
     legalName: z
       .string()
       .min(1, 'The legal name is required')
-      .max(255, 'The legal name cannot exceed 255 characters'),
+      .max(1000, 'The legal name cannot exceed 255 characters'),
 
     /**
      * Abbreviation of the legal basis.

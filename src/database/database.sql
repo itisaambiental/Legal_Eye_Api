@@ -88,8 +88,8 @@ CREATE TABLE IF NOT EXISTS aspects (
 -- - subject_id: Id of the associated subject.
 CREATE TABLE IF NOT EXISTS legal_basis (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    legal_name VARCHAR(255) NOT NULL,
-    abbreviation VARCHAR(20),
+    legal_name VARCHAR(1000) NOT NULL,
+    abbreviation VARCHAR(255),
     classification ENUM(
         'Ley', 
         'Reglamento', 
