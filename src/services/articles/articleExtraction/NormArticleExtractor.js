@@ -65,7 +65,8 @@ Extract only top‑level and unnumbered standalone section headings from a docum
   - "CONSIDERANDO", "PREFACIO", "INTRODUCCIÓN"
   - "ÍNDICE", "CONTENIDO"
   - "TRANSITORIOS", "DISPOSICIONES TRANSITORIAS"
-  - "ANEXO 1", "ANEXO II", "ANEXO NORMATIVO"
+  - "ANEXO A", "ANEXO B", "ANEXO C", "ANEXO D"
+  - "ANEXO 1", "ANEXO II",  "ANEXO III","ANEXO NORMATIVO", "ANEXO TÉCNICO"
   - "APÉNDICE", "APÉNDICE A", "APÉNDICE NORMATIVO"
   - "SECCIÓN 1", "SECCIÓN PRIMERA"
     **Important:** Do not include generic headings, summaries, or formatting artifacts (e.g., centered bold phrases, footers, page numbers, author credits). Only return those which clearly represent structural sections in the document's hierarchy.
@@ -75,6 +76,35 @@ Preserve original accents, punctuation, and order.
 Ignore page numbers, headers, footers, links, or any notes.
 Do NOT rely solely on an index or table of contents; identify headings as they appear in the document body.
 Treat any document as valid if it contains at least one top‑level heading or numeral that can be divided and extracted individually.
+The word **"ANEXO" can appear alone or followed by a letter, roman numeral, or descriptor** — treat all of them as valid top-level headings.
+
+INDEX-BASED HEADINGS WARNING:
+
+In some legal documents (Normas), a block titled "ÍNDICE" (Index) appears before the body text. This block often contains lines like:
+
+1. Introducción
+2. Objeto y Ámbito de validez
+3. Definiciones
+4. Límites máximos permisibles de emisiones de Compuestos Orgánicos Volátiles
+5. Requisitos técnicos
+6 Vigilancia
+7. Vigencia
+8. Referencias
+ANEXOS
+
+Be aware of **two common scenarios**:
+
+1. **If a heading from the index (e.g., "1. Introducción") reappears exactly in the body**, then you may include it as a section.
+2. **If the heading appears only in the index (e.g., "ANEXOS")**, but the body only contains "ANEXO I", "ANEXO II", etc., then:
+   - DO NOT include "ANEXOS"
+   - Instead, extract the real top-level headings: "ANEXO I", "ANEXO II", etc.
+
+In general:
+- **Do not extract any title that appears only inside the index block.**
+- **Only extract a heading if it appears again after the index block in the real content**.
+- Consider headings like “ANEXO”, “APÉNDICE”, etc., as valid only when they appear individually in the body of the text.
+
+The goal is to build a sequence of sections that match the structure of the actual document content — not the index.
 
 Return JSON matching this schema:
 
@@ -113,9 +143,9 @@ Example:
   { title: "ANEXO 1", line: 16 },
   { title: "ANEXO 2", line: 17 },
   { title: "ANEXO 3", line: 18 },
-  { title: "TRANSITORIOS", line: 19 },
-  { title: "APÉNDICE", line: 20 },
-  { title: "APÉNDICE NORMATIVO: PUERTOS DE MUESTREO", line: 21 }
+  { title: "TRANSITORIOS", line: 20 },
+  { title: "APÉNDICE", line: 21 },
+  { title: "APÉNDICE NORMATIVO: PUERTOS DE MUESTREO", line: 23 }
   ],
   "isValid": true
 }
