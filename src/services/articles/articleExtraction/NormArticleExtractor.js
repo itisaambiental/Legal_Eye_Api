@@ -238,7 +238,7 @@ Analyze the content of "${article.title}" within the legal basis titled "${legal
 VERY IMPORTANT:
 - Do not paraphrase, summarize, restructure or reinterpret the original text.  
 - Every section title, article content, bullet point, and table must be reproduced **verbatim**,  
-including punctuation, spacing, and line breaks.  
+  including punctuation, spacing, and line breaks.  
 - This is a legal document and must preserve its original wording with full fidelity.
 
 ### Instructions:
