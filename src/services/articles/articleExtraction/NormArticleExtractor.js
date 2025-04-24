@@ -51,105 +51,121 @@ class NormArticleExtractor extends ArticleExtractor {
   }
 
   /**
-   * @param {string} text - The full text of the document.
-   * @returns {string} The formatted prompt.
-   */
+ * @param {string} text - The full text of the document.
+ * @returns {string} The formatted prompt.
+ */
   _buildSectionsPrompt (text) {
     const lines = text.split('\n')
     const numberedText = lines.map((line, index) => `${index + 1}: ${line}`).join('\n')
     return `
-Extract only top‑level and unnumbered standalone section headings from a document(Norm), based strictly on the content itself (not just any index or table of contents):
+Extract only **top-level and unnumbered standalone section headings** from a technical or legal normative document (e.g., Normas Oficiales Mexicanas), based **strictly** on the content itself — **not from any index or table of contents**.
 
-- Top-level numerals: "1. OBJETIVO", "2. REFERENCIAS", ..., "10. OBSERVANCIA DE ESTA NORMA"
-- Generic section blocks such as:
-  - "CONSIDERANDO", "PREFACIO", "INTRODUCCIÓN"
-  - "ÍNDICE", "CONTENIDO"
-  - "TRANSITORIOS", "DISPOSICIONES TRANSITORIAS"
-  - "ANEXO A", "ANEXO B", "ANEXO C", "ANEXO D"
-  - "ANEXO 1", "ANEXO II",  "ANEXO III","ANEXO NORMATIVO", "ANEXO TÉCNICO"
-  - "APÉNDICE", "APÉNDICE A", "APÉNDICE NORMATIVO"
-  - "SECCIÓN 1", "SECCIÓN PRIMERA"
-    **Important:** Do not include generic headings, summaries, or formatting artifacts (e.g., centered bold phrases, footers, page numbers, author credits). Only return those which clearly represent structural sections in the document's hierarchy.
+---
 
-Do NOT extract any sub‑numbered headings (e.g. "6.1", "6.1.1")—they belong under their parent.
-Preserve original accents, punctuation, and order.
-Ignore page numbers, headers, footers, links, or any notes.
-Do NOT rely solely on an index or table of contents; identify headings as they appear in the document body.
-Treat any document as valid if it contains at least one top‑level heading or numeral that can be divided and extracted individually.
-The word **"ANEXO" can appear alone or followed by a letter, roman numeral, or descriptor** — treat all of them as valid top-level headings.
+🔍 **You MUST extract top-level structural sections**, such as:
 
-INDEX-BASED HEADINGS WARNING:
+📘 **Numeral-based headings** (preserve punctuation and allow natural variations):
+- "1. OBJETIVO"
+- "2. REFERENCIAS"
+- "3. DEFINICIONES"
+- "4. REQUISITOS"
+- "10. OBSERVANCIA DE ESTA NORMA"
+- Accept as valid: "1. Objetivo", "2. Referencias:", "3. DEFINICIONES." — the casing and trailing punctuation may vary.
 
-In some legal documents (Normas), a block titled "ÍNDICE" (Index) appears before the body text. This block often contains lines like:
+📂 **Generic blocks commonly present in normative documents**:
+- "CONSIDERANDO", "PREFACIO", "INTRODUCCIÓN"
+- "ÍNDICE", "CONTENIDO"
 
-1. Introducción
-2. Objeto y Ámbito de validez
-3. Definiciones
-4. Límites máximos permisibles de emisiones de Compuestos Orgánicos Volátiles
-5. Requisitos técnicos
-6 Vigilancia
-7. Vigencia
-8. Referencias
-ANEXOS
+📑 **Transitional provisions**:
+- "TRANSITORIOS", "DISPOSICIONES TRANSITORIAS" (even if repeated — extract each block individually)
 
-Be aware of **two common scenarios**:
+📎 **Annexes** (considered valid when found in the body, not just in the index):
+- "ANEXO", "ANEXO A", "ANEXO B", "ANEXO C", ...
+- "ANEXO I", "ANEXO II", "ANEXO III"
+- "ANEXO NORMATIVO", "ANEXO TÉCNICO"
+- Accept both lettered and roman numeral variants.
 
-1. **If a heading from the index (e.g., "1. Introducción") reappears exactly in the body**, then you may include it as a section.
-2. **If the heading appears only in the index (e.g., "ANEXOS")**, but the body only contains "ANEXO I", "ANEXO II", etc., then:
-   - DO NOT include "ANEXOS"
-   - Instead, extract the real top-level headings: "ANEXO I", "ANEXO II", etc.
+📘 **Appendices**:
+- "APÉNDICE", "APÉNDICE A", "APÉNDICE NORMATIVO", etc.
 
-In general:
-- **Do not extract any title that appears only inside the index block.**
-- **Only extract a heading if it appears again after the index block in the real content**.
-- Consider headings like “ANEXO”, “APÉNDICE”, etc., as valid only when they appear individually in the body of the text.
+🗂 **Sections**:
+- "SECCIÓN 1", "SECCIÓN PRIMERA", "SECCIÓN II", etc.
 
-The goal is to build a sequence of sections that match the structure of the actual document content — not the index.
+---
 
-Return JSON matching this schema:
+⚠️ **Strict Exclusion Rules**:
+- ❌ Do NOT include any heading that appears **only inside the "ÍNDICE"** block if it does not reappear in the body text.
+- ❌ Do NOT extract sub-numbered headings such as "4.1", "4.2.1", "6.1.3.4". These belong under their respective parent and should be ignored for this task.
+- ❌ Do NOT include formatting artifacts like centered titles, footers, headers, watermarks, editorial credits, or decorative text.
+
+---
+
+🧠 **Semantic Guidance**:
+- Always interpret heading validity based on its **structural role and legal-normative purpose**, not its appearance alone.
+- Accept headings in **any casing** (uppercase, lowercase, sentence-case), and even if followed by a period, colon or semicolon.
+- Examples of valid variants:  
+  - "3. Definiciones.", "5. MÉTODOS DE PRUEBA:", "ANEXO I.", "SECCIÓN 2;", "Apéndice Normativo: Requisitos adicionales".
+
+---
+
+📌 **Reminder on the use of index blocks**:
+- If a heading appears both in the "ÍNDICE" and again in the document body, you MUST extract it.
+- If a heading appears **only in the index**, DO NOT extract it.
+- Instead, extract only headings that occur **within the actual content** of the document.
+
+---
+
+✅ **The goal is to capture the real content structure** that defines the document’s organization and meaning.
+
+
+
+🔒 You MUST extract based only on real legal content hierarchy, not visual formatting.
+
+• Preserve original **accents**, **punctuation**, and **order** of appearance.
+• Ignore any **page numbers**, **headers**, **footers**, **marginal notes**, or **index references**.
+• Do NOT rely on any index or table of contents—extract based solely on the actual content flow.
+
+• Consider the document valid (isValid: true) if it contains at least one extractable section or sub-article heading as defined above.
+
+Important: You must extract and return each heading **exactly as it appears in the original document**, without paraphrasing or summarizing. This includes:
+  - Keeping all punctuation marks (e.g., ".", "-", ":")
+  - Preserving sentence structure and exact words
+  - NOT rewriting or improving text for clarity
+
+This is a legal document — accuracy is critical.
+
+IMPORTANT – MULTIPLE "TRANSITORIOS" BLOCKS
+
+Legal documents may include multiple "TRANSITORIOS" blocks, especially when reforms or annexes have been added in different dates or through different agreements.
+
+• You MUST treat each "TRANSITORIOS" heading as a **separate standalone section** if it appears more than once in the document.
+• Do NOT group multiple "TRANSITORIOS" blocks into one single section, even if they share the same heading.
+• Each "TRANSITORIOS" must be extracted **with its own content block**, starting from the heading and continuing until the next structural heading.
+
+Examples:
+  - First "TRANSITORIOS" (line 120) → title: "TRANSITORIOS", line: 120
+  - Second "TRANSITORIOS" (line 560) → title: "TRANSITORIOS", line: 560
+  - Third "TRANSITORIOS" (line 770) → title: "TRANSITORIOS", line: 770
+  
+This ensures that each reform, publication, or addendum is captured independently.
+
+You MUST return the extracted sections **in the exact order in which they appear** in the document, based on their line number.
+
+📤 **Return the output as valid JSON in this format**:
 
 \`\`\`json
 {
   "sections": [
     {
-      "title": "string", // The exact heading text as it appears in the document.
-      "line": number     // The line number (starting from 1) where the heading is located.
+      "title": "string", // Exact heading text as found in the document
+      "line": number     // Line number (starting from 1)
     }
   ],
-  "isValid": true // true if at least one valid heading was found; false otherwise
+  "isValid": true // true if at least one valid heading was found
 }
 \`\`\`
 
-Example:
-
-\`\`\`json
-{
-  "sections": [
-  { title: "CONSIDERANDO", line: 1 },
-  { title: "PREFACIO", line: 2 },
-  { title: "ÍNDICE", line: 3 },
-  { title: "CONTENIDO", line: 4 },
-  { title: "1. OBJETIVO Y CAMPO DE APLICACIÓN", line: 5 },
-  { title: "2. REFERENCIAS NORMATIVAS", line: 6 },
-  { title: "3. TÉRMINOS Y DEFINICIONES", line: 7 },
-  { title: "4. ESPECIFICACIONES", line: 8 },
-  { title: "5. MÉTODOS DE PRUEBA", line: 9 },
-  { title: "6. ACCIONES ESTRATÉGICAS E INSTRUMENTOS DE EJECUCIÓN", line: 10 },
-  { title: "7. PROCEDIMIENTO PARA LA EVALUACIÓN DE LA CONFORMIDAD", line: 11 },
-  { title: "8. CONCORDANCIA CON NORMAS INTERNACIONALES", line: 12 },
-  { title: "9. BIBLIOGRAFÍA", line: 13 },
-  { title: "10. OBSERVANCIA DE ESTA NORMA", line: 14 },
-  { title: "SECCIÓN 1", line: 15 },
-  { title: "ANEXO 1", line: 16 },
-  { title: "ANEXO 2", line: 17 },
-  { title: "ANEXO 3", line: 18 },
-  { title: "TRANSITORIOS", line: 20 },
-  { title: "APÉNDICE", line: 21 },
-  { title: "APÉNDICE NORMATIVO: PUERTOS DE MUESTREO", line: 23 }
-  ],
-  "isValid": true
-}
-\`\`\`
+---
 
 Document text:
 """

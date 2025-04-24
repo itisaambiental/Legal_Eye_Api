@@ -120,7 +120,9 @@ Examples:
 
 This ensures that each reform, publication, or addendum is captured independently.
 
-Return your answer as valid JSON in the following format:
+You MUST return the extracted sections **in the exact order in which they appear** in the document, based on their line number.
+
+📤 **Return the output as valid JSON in this format**:
   
   \`\`\`json
   {
