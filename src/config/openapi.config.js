@@ -21,9 +21,10 @@ const openai = new OpenAI(options)
  * Available AI models.
  */
 export const models = {
-  High: 'gpt-4.1',
-  Low: 'gpt-4.1-mini'
-}
+  High: 'gpt-4o',
+  Low: 'gpt-4o-mini'
+};
+
 
 /**
  * Selects the appropriate model based on the given intelligence level.
