@@ -198,7 +198,7 @@ You MUST return the extracted sections **in the exact order in which they appear
   
   {
     "title": "${article.title}",
-    "article": "${article.article}",
+    "article": \`\`\`${article.article}\`\`\`,
     "plainArticle": "${article.plainArticle}",
     "order": ${article.order}
   }
