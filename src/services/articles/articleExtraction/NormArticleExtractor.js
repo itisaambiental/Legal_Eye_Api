@@ -146,7 +146,7 @@ Examples:
   - First "TRANSITORIOS" (line 120) → title: "TRANSITORIOS", line: 120
   - Second "TRANSITORIOS" (line 560) → title: "TRANSITORIOS", line: 560
   - Third "TRANSITORIOS" (line 770) → title: "TRANSITORIOS", line: 770
-  
+
 This ensures that each reform, publication, or addendum is captured independently.
 
 You MUST return the extracted sections **in the exact order in which they appear** in the document, based on their line number.
@@ -416,7 +416,7 @@ VERY IMPORTANT:
 
   7- **Tables**:
      - Whenever you encounter a <table> anywhere in the document—whether under a numeral, in the main content, in an annex, or in any other section—**always** include its title immediately **before** the <table> tag.
-     - If the title consists of multiple lines (e.g. “TABLA X” on one line y subtítulo en la siguiente), preserve todas las líneas en el mismo orden.
+     - If the title consists of multiple lines (e.g. “TABLA X” on one line and subtitle in the next one), keep all lines in the same order.
  
    #### Example 1 (in a numeral):
    3.5 Características del muestreo
@@ -424,7 +424,7 @@ VERY IMPORTANT:
    Valores permisibles de pH y sólidos totales
    <table>…</table>
  
-   #### Example 2 (en un ANEXO, pero la regla aplica igual si aparece en medio de un párrafo):
+   #### Example 2 (in an ANNEX, but the rule applies equally if it appears in the middle of a paragraph):
    ANEXO B: Especificaciones adicionales
    TABLA 5
    Límites de oxígeno disuelto en efluentes
