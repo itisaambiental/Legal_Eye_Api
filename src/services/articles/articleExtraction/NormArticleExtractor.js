@@ -230,7 +230,7 @@ Analyze the content of "${article.title}" within the legal basis titled "${legal
 
 {
   "title": "${article.title}",
-  "article": "${article.article}",
+    "article": \`\`\`${article.article}\`\`\`,
   "plainArticle": "${article.plainArticle}",
   "order": ${article.order}
 }
