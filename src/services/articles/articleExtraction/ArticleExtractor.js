@@ -95,8 +95,8 @@ class ArticleExtractor {
   async _extractArticles (text) {
     try {
       const { sections, isValid } = await this._extractSections(text)
-      if (!isValid) {
-        throw new ErrorUtils(500, 'Article Processing Error')
+      if (!isValid || !Array.isArray(sections) || sections.length === 0) {
+        throw new ErrorUtils(500, 'Article Processing Error: Invalid sections')
       }
       const lines = text.split('\n')
       const sortedSections = sections.sort((a, b) => a.line - b.line)
@@ -104,12 +104,14 @@ class ArticleExtractor {
       let order = 1
       for (let i = 0; i < sortedSections.length; i++) {
         const { title, line } = sortedSections[i]
-        const nextLine = sortedSections[i + 1]?.line ?? lines.length + 1
-        const contentLines = lines.slice(line, nextLine - 1)
-        const article = contentLines.join('\n').trim()
+        const currentLineIndex = line - 1
+        const nextLineIndex = (sortedSections[i + 1]?.line ?? lines.length + 1) - 1
+
+        const blockLines = lines.slice(currentLineIndex, nextLineIndex)
+        const articleText = blockLines.join('\n').trim()
         articles.push({
           title,
-          article,
+          article: articleText,
           plainArticle: '',
           order: order++
         })
