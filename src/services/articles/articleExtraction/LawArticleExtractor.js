@@ -58,103 +58,130 @@ class LawArticleExtractor extends ArticleExtractor {
     const lines = text.split('\n')
     const numberedText = lines.map((line, index) => `${index + 1}: ${line}`).join('\n')
     return `
-  Extract all legal section headings and their sub-divisions from a legal document (law, code, regulation), based strictly on the body content (not from any index or table of contents):
+    Extract all legal section headings and their sub-divisions from a legal document (law, code, regulation), based strictly on the body content (not from any index or table of contents):
+    
+    • Valid section headers include, but are not limited to:
+      - "CONSIDERANDO", "PREFACIO"
+      - "TÍTULO I", "TÍTULO PRIMERO"
+      - "CAPÍTULO I", "CAPÍTULO PRIMERO"
+      - "SECCIÓN I", "SECCIÓN PRIMERA"
+      - "ARTÍCULO 1", "ARTÍCULO PRIMERO"
+      - "ARTÍCULO 2", "ARTÍCULO SEGUNDO"
+      - "ARTÍCULO 3", "ARTÍCULO TERCERO"
+      - "ARTÍCULO 10", "ARTÍCULO DÉCIMO"
+      - "ARTÍCULO 11", "ARTÍCULO DÉCIMO PRIMERO"
+      - "ARTÍCULO 12", "ARTÍCULO DÉCIMO SEGUNDO"
+      - "ARTÍCULO 20", "ARTÍCULO VIGÉSIMO"
+      - "ARTÍCULO 21", "ARTÍCULO VIGÉSIMO PRIMERO"
+      - "ARTÍCULO 100", "ARTÍCULO CÉNTESIMO"
+      - "ARTÍCULO 101", "ARTÍCULO CÉNTESIMO PRIMERO"
+      - "ARTÍCULO 1 BIS", "ARTÍCULO PRIMERO BIS"
+      - "ARTÍCULO 2 TER", "ARTÍCULO SEGUNDO TER"
+      - "ARTÍCULO 15 QUATER", "ARTÍCULO DECIMOQUINTO QUATER"  
+      - "ARTÍCULO 3.1", "ARTÍCULO 7-B", "ARTÍCULO 12 bis", "ARTÍCULO 15 ter"
+      - "TRANSITORIOS", "DISPOSICIONES TRANSITORIAS"
+      - "ANEXO A", "ANEXO I"
+      - "APÉNDICE A", "APÉNDICE NORMATIVO"
+    
+      **Important:** Do not include generic headings, summaries, or formatting artifacts (e.g., centered bold phrases, footers, page numbers, author credits). Only return those which clearly represent structural sections in the document's hierarchy.
+    
+    • You MUST extract sub-numbered and compound article identifiers such as:
+      - "ARTÍCULO 2.1", "ARTÍCULO 4-B", "ARTÍCULO 10 bis" — treat each of these as **independent headers**.
+      - These sub-articles are legal subdivisions and must be listed as standalone headings.
+    
+    • Preserve original **accents**, **punctuation**, and **order** of appearance.
+    • Ignore any **page numbers**, **headers**, **footers**, **marginal notes**, or **index references**.
+    • Do NOT rely on any index or table of contents—extract based solely on the actual content flow.
+    
+    • Consider the document valid (isValid: true) if it contains at least one extractable section or sub-article heading as defined above.
+    
+       Important: You must extract and return each heading **exactly as it appears in the original document**, without paraphrasing or summarizing. This includes:
   
-  • Valid section headers include, but are not limited to:
-    - "CONSIDERANDO", "PREFACIO"
-    - "TÍTULO I", "TÍTULO PRIMERO"
-    - "CAPÍTULO I", "CAPÍTULO PRIMERO"
-    - "SECCIÓN I", "SECCIÓN PRIMERA"
-    - "ARTÍCULO 1", "ARTÍCULO PRIMERO"
-    - "ARTÍCULO 2", "ARTÍCULO SEGUNDO"
-    - "ARTÍCULO 3", "ARTÍCULO TERCERO"
-    - "ARTÍCULO 10", "ARTÍCULO DÉCIMO"
-    - "ARTÍCULO 11", "ARTÍCULO DÉCIMO PRIMERO"
-    - "ARTÍCULO 12", "ARTÍCULO DÉCIMO SEGUNDO"
-    - "ARTÍCULO 20", "ARTÍCULO VIGÉSIMO"
-    - "ARTÍCULO 21", "ARTÍCULO VIGÉSIMO PRIMERO"
-    - "ARTÍCULO 100", "ARTÍCULO CÉNTESIMO"
-    - "ARTÍCULO 101", "ARTÍCULO CÉNTESIMO PRIMERO"
-    - "ARTÍCULO 1 BIS", "ARTÍCULO PRIMERO BIS"
-    - "ARTÍCULO 2 TER", "ARTÍCULO SEGUNDO TER"
-    - "ARTÍCULO 15 QUATER", "ARTÍCULO DECIMOQUINTO QUATER"  
-    - "ARTÍCULO 3.1", "ARTÍCULO 7-B", "ARTÍCULO 12 bis", "ARTÍCULO 15 ter"
-    - "TRANSITORIOS", "DISPOSICIONES TRANSITORIAS"
-    - "ANEXO A", "ANEXO I"
-    - "APÉNDICE A", "APÉNDICE NORMATIVO"
+      - Keeping all punctuation marks (e.g., ".", "-", ":")
+      - Preserving sentence structure and exact words
+      - NOT rewriting or improving text for clarity
   
-    **Important:** Do not include generic headings, summaries, or formatting artifacts (e.g., centered bold phrases, footers, page numbers, author credits). Only return those which clearly represent structural sections in the document's hierarchy.
+      This is a legal document — accuracy is critical.
   
-  • You MUST extract sub-numbered and compound article identifiers such as:
-    - "ARTÍCULO 2.1", "ARTÍCULO 4-B", "ARTÍCULO 10 bis" — treat each of these as **independent headers**.
-    - These sub-articles are legal subdivisions and must be listed as standalone headings.
+      IMPORTANT – MULTIPLE "TRANSITORIOS" BLOCKS
   
-  • Preserve original **accents**, **punctuation**, and **order** of appearance.
-  • Ignore any **page numbers**, **headers**, **footers**, **marginal notes**, or **index references**.
-  • Do NOT rely on any index or table of contents—extract based solely on the actual content flow.
+      Legal documents may include multiple "TRANSITORIOS" blocks, especially when reforms or annexes have been added in different dates or through different agreements.
   
-  • Consider the document valid (isValid: true) if it contains at least one extractable section or sub-article heading as defined above.
+      • You MUST treat each "TRANSITORIOS" heading as a **separate standalone section** if it appears more than once in the document.
   
-  Return your answer as valid JSON in the following format:
-
-\`\`\`json
-{
-  "sections": [ 
-    {
-      "title": "string", // The exact heading text as it appears in the document.
-      "line": "number"   // The line number (starting from 1) where the heading is located in the document
-    }
-  ],
-  "isValid": true // true if at least one valid heading was found; false otherwise
-}
-\`\`\`
-
-  Example sections array:
-
+      • Do NOT group multiple "TRANSITORIOS" blocks into one single section, even if they share the same heading.
+  
+      • Each "TRANSITORIOS" must be extracted **with its own content block**, starting from the heading and continuing until the next structural heading.
+  
+      • Examples:
+        - First "TRANSITORIOS" (line 120) → title: "TRANSITORIOS", line: 120
+        - Second "TRANSITORIOS" (line 560) → title: "TRANSITORIOS", line: 560
+        - Third "TRANSITORIOS" (line 770) → title: "TRANSITORIOS", line: 770
+  
+      This ensures that each reform, publication, or addendum is captured independently.
+  
+      Always preserve the distinction between different legislative events, and do not merge unrelated "TRANSITORIOS" content blocks.
+  
+    Return your answer as valid JSON in the following format:
+  
+  \`\`\`json
+  {
+    "sections": [ 
+      {
+        "title": "string", // The exact heading text as it appears in the document.
+        "line": "number"   // The line number (starting from 1) where the heading is located in the document
+      }
+    ],
+    "isValid": true // true if at least one valid heading was found; false otherwise
+  }
   \`\`\`
- [
-  { "title": "TÍTULO PRIMERO", "line": 1 },
-  { "title": "CAPÍTULO I", "line": 2 },
-  { "title": "ARTÍCULO 1", "line": 3 },
-  { "title": "ARTÍCULO 1.1", "line": 4 },
-  { "title": "ARTÍCULO 2 bis", "line": 5 },
-  { "title": "CAPÍTULO II", "line": 6 },
-  { "title": "ARTÍCULO 4", "line": 7 },
-  { "title": "ARTÍCULO 4-A", "line": 8 },
-  { "title": "TRANSITORIOS", "line": 9 },
-  { "title": "ANEXO A", "line": 10 },
-  { "title": "ANEXO B", "line": 11 },
-  { "title": "ARTÍCULO 2", "line": 12 },
-  { "title": "ARTÍCULO SEGUNDO", "line": 13 },
-  { "title": "ARTÍCULO 3", "line": 14 },
-  { "title": "ARTÍCULO TERCERO", "line": 15 },
-  { "title": "ARTÍCULO 10", "line": 16 },
-  { "title": "ARTÍCULO DÉCIMO", "line": 17 },
-  { "title": "ARTÍCULO 11", "line": 18 },
-  { "title": "ARTÍCULO DÉCIMO PRIMERO", "line": 19 },
-  { "title": "ARTÍCULO 12", "line": 20 },
-  { "title": "ARTÍCULO DÉCIMO SEGUNDO", "line": 21 },
-  { "title": "ARTÍCULO 20", "line": 22 },
-  { "title": "ARTÍCULO VIGÉSIMO", "line": 23 },
-  { "title": "ARTÍCULO 21", "line": 24 },
-  { "title": "ARTÍCULO VIGÉSIMO PRIMERO", "line": 25 },
-  { "title": "ARTÍCULO 100", "line": 26 },
-  { "title": "ARTÍCULO CÉNTESIMO", "line": 27 },
-  { "title": "ARTÍCULO 101", "line": 28 },
-  { "title": "ARTÍCULO CÉNTESIMO PRIMERO", "line": 29 },
-  { "title": "ARTÍCULO 1 BIS", "line": 30 },
-  { "title": "ARTÍCULO PRIMERO BIS", "line": 31 },
-  { "title": "ARTÍCULO 2 TER", "line": 32 },
-  { "title": "ARTÍCULO SEGUNDO TER", "line": 33 },
-  { "title": "ARTÍCULO 15 QUATER", "line": 34 },
-  { "title": "ARTÍCULO DECIMOQUINTO QUATER", "line": 35 }
-]
-  \`\`\` 
-  Document text:
-  """
-  ${numberedText}
-  """
-  `
+  
+    Example sections array:
+  
+    \`\`\`
+   [
+    { "title": "TÍTULO PRIMERO", "line": 1 },
+    { "title": "CAPÍTULO I", "line": 2 },
+    { "title": "ARTÍCULO 1", "line": 3 },
+    { "title": "ARTÍCULO 1.1", "line": 4 },
+    { "title": "ARTÍCULO 2 bis", "line": 5 },
+    { "title": "CAPÍTULO II", "line": 6 },
+    { "title": "ARTÍCULO 4", "line": 7 },
+    { "title": "ARTÍCULO 4-A", "line": 8 },
+    { "title": "TRANSITORIOS", "line": 9 },
+    { "title": "ANEXO A", "line": 10 },
+    { "title": "ANEXO B", "line": 11 },
+    { "title": "ARTÍCULO 2", "line": 12 },
+    { "title": "ARTÍCULO SEGUNDO", "line": 13 },
+    { "title": "ARTÍCULO 3", "line": 14 },
+    { "title": "ARTÍCULO TERCERO", "line": 15 },
+    { "title": "ARTÍCULO 10", "line": 16 },
+    { "title": "ARTÍCULO DÉCIMO", "line": 17 },
+    { "title": "ARTÍCULO 11", "line": 18 },
+    { "title": "ARTÍCULO DÉCIMO PRIMERO", "line": 19 },
+    { "title": "ARTÍCULO 12", "line": 20 },
+    { "title": "ARTÍCULO DÉCIMO SEGUNDO", "line": 21 },
+    { "title": "ARTÍCULO 20", "line": 22 },
+    { "title": "ARTÍCULO VIGÉSIMO", "line": 23 },
+    { "title": "ARTÍCULO 21", "line": 24 },
+    { "title": "ARTÍCULO VIGÉSIMO PRIMERO", "line": 25 },
+    { "title": "ARTÍCULO 100", "line": 26 },
+    { "title": "ARTÍCULO CÉNTESIMO", "line": 27 },
+    { "title": "ARTÍCULO 101", "line": 28 },
+    { "title": "ARTÍCULO CÉNTESIMO PRIMERO", "line": 29 },
+    { "title": "ARTÍCULO 1 BIS", "line": 30 },
+    { "title": "ARTÍCULO PRIMERO BIS", "line": 31 },
+    { "title": "ARTÍCULO 2 TER", "line": 32 },
+    { "title": "ARTÍCULO SEGUNDO TER", "line": 33 },
+    { "title": "ARTÍCULO 15 QUATER", "line": 34 },
+    { "title": "ARTÍCULO DECIMOQUINTO QUATER", "line": 35 }
+  ]
+    \`\`\` 
+    Document text:
+    """
+    ${numberedText}
+    """
+    `
   }
 
   /**
