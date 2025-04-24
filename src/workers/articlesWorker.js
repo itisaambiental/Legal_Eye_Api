@@ -37,10 +37,12 @@ articlesQueue.process(CONCURRENCY, async (job, done) => {
   try {
     const currentJob = await articlesQueue.getJob(job.id)
     if (!currentJob) throw new ErrorUtils(404, 'Job not found')
-    if (await currentJob.isFailed()) throw new ErrorUtils(500, 'Job was canceled')
+    if (await currentJob.isFailed()) { throw new ErrorUtils(500, 'Job was canceled') }
     const legalBase = await LegalBasisRepository.findById(legalBasisId)
     if (!legalBase) throw new ErrorUtils(404, 'LegalBasis not found')
-    const { error, success, text } = await DocumentService.process(legalBase.url)
+    const { error, success, text } = await DocumentService.process(
+      legalBase.url
+    )
     if (!success) throw new ErrorUtils(500, 'Document Processing Error', error)
     const model = getModel(intelligenceLevel)
     const extractor = ArticleExtractorFactory.getExtractor(
@@ -55,12 +57,12 @@ articlesQueue.process(CONCURRENCY, async (job, done) => {
     if (!extractedArticles || extractedArticles.length === 0) {
       throw new ErrorUtils(500, 'Article Processing Error')
     }
-    if (await currentJob.isFailed()) throw new ErrorUtils(500, 'Job was canceled')
+    if (await currentJob.isFailed()) { throw new ErrorUtils(500, 'Job was canceled') }
     const insertionSuccess = await ArticlesService.createMany(
       legalBase.id,
       extractedArticles
     )
-    if (!insertionSuccess) throw new ErrorUtils(500, 'Failed to insert articles')
+    if (!insertionSuccess) { throw new ErrorUtils(500, 'Failed to insert articles') }
     try {
       const user = await UserRepository.findById(userId)
       if (user) {
@@ -92,7 +94,9 @@ articlesQueue.process(CONCURRENCY, async (job, done) => {
       console.error('Error sending notification email:', notifyError)
     }
     if (error instanceof ErrorUtils) return done(error)
-    return done(new ErrorUtils(500, 'Unexpected error during article processing'))
+    return done(
+      new ErrorUtils(500, 'Unexpected error during article processing')
+    )
   }
 })
 
