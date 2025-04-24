@@ -370,7 +370,7 @@ You MUST return the extracted sections **in the exact order in which they appear
 
   7- **Tables**:
      - Whenever you encounter a <table> anywhere in the document—whether under a numeral, in the main content, in an annex, or in any other section—**always** include its title immediately **before** the <table> tag.
-     - If the title consists of multiple lines (e.g. “TABLA X” on one line y subtítulo en la siguiente), preserve todas las líneas en el mismo orden.
+     - If the title consists of multiple lines (e.g. “TABLA X” on one line and subtitle in the next one), keep all lines in the same order.
  
       #### Example 1 (in a numeral):
       3.5 Características del muestreo
