@@ -121,7 +121,7 @@ class RegulationArticleExtractor extends ArticleExtractor {
       This ensures that each reform, publication, or addendum is captured independently.
   
       Always preserve the distinction between different legislative events, and do not merge unrelated "TRANSITORIOS" content blocks.
-  
+ 
     Return your answer as valid JSON in the following format:
   
   \`\`\`json
@@ -244,7 +244,13 @@ class RegulationArticleExtractor extends ArticleExtractor {
     "plainArticle": "${article.plainArticle}",
     "order": ${article.order}
   }
-  
+
+  VERY IMPORTANT:
+  - Do not paraphrase, summarize, restructure or reinterpret the original text.  
+  - Every section title, article content, bullet point, and table must be reproduced **verbatim**,  
+    including punctuation, spacing, and line breaks.  
+  - This is a legal document and must preserve its original wording with full fidelity.  
+
   ### Instructions:
   
   1. **plainArticle**:
@@ -403,6 +409,23 @@ class RegulationArticleExtractor extends ArticleExtractor {
   6. **Others (if applicable)**:
      - Review for general coherence, structure, and formatting.
      - Apply HTML styles to maintain clarity, readability, and a professional appearance.
+
+  7- **Tables**:
+     - Whenever you encounter a <table> anywhere in the document—whether under a numeral, in the main content, in an annex, or in any other section—**always** include its title immediately **before** the <table> tag.
+     - If the title consists of multiple lines (e.g. “TABLA X” on one line y subtítulo en la siguiente), preserve todas las líneas en el mismo orden.
+ 
+      #### Example 1 (in a numeral):
+      3.5 Características del muestreo
+      TABLA 2
+      Valores permisibles de pH y sólidos totales
+      <table>…</table>
+    
+      #### Example 2 (en un ANEXO, pero la regla aplica igual si aparece en medio de un párrafo):
+      ANEXO B: Especificaciones adicionales
+      TABLA 5
+      Límites de oxígeno disuelto en efluentes
+      <table>…</table>
+      Texto siguiente…    
   
   ### Additional Formatting Guidelines:
   
