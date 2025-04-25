@@ -85,6 +85,24 @@ class RegulationArticleExtractor extends ArticleExtractor {
     - "ANEXO A", "Anexo I", "anexo B:"
     - "APÉNDICE A", "Apéndice Normativo"
 
+    🔑 VERY IMPORTANT — DETECT "ARTÍCULO N." HEADINGS IN BODY TEXT
+
+    • In legal documents such as regulations, it's common for article headers like "Artículo 1." or "Artículo 14." to appear directly before their content on the same line.
+
+    • You MUST recognize these as legal section headers — even when followed by sentence text on the same line.
+
+    • For example:
+      - "Artículo 1. Este Reglamento tiene por objeto..." → heading: "Artículo 1."
+      - "Artículo 2. Se aplicará conforme a..." → heading: "Artículo 2."
+
+ • Treat any line starting with "Artículo" and ending at the first punctuation mark — like a period (.), colon (:), or semicolon (;) — as a standalone section title.
+
+    • DO NOT skip, paraphrase, summarize or ignore these — they are the **primary legal structure** of regulations.
+
+    • If the article number includes modifiers like "bis", "ter", "quater", or "7-B", they must also be captured.
+
+    • The heading must be returned **verbatim** as it appears in the original line, preserving capitalization and punctuation.
+  
   ⚠️ Do NOT reject section headers due to:
     - casing (e.g., "artículo" instead of "ARTÍCULO")
     - punctuation (e.g., "Artículo 1.", "Capítulo II:")
