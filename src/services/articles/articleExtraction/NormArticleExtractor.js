@@ -151,6 +151,13 @@ This ensures that each reform, publication, or addendum is captured independentl
 
 You MUST return the extracted sections **in the exact order in which they appear** in the document, based on their line number.
 
+⚠️ IMPORTANT – ABOUT THE COMPLETE OUTPUT
+Do not summarize the output, do not reduce it because of size, and do not assume that I only want the top-level hierarchy.
+The size of the JSON IS NOT AN OBJECTION. If the document contains hundreds or thousands of headings, you must list absolutely all of them, one by one, exactly as they appear in the text.
+DO NOT group or omit headers, etc.
+DO NOT summarize, DO NOT trim for reasons of size or practicality.
+
+
 📤 **Return the output as valid JSON in this format**:
 
 \`\`\`json
@@ -230,7 +237,7 @@ Analyze the content of "${article.title}" within the legal basis titled "${legal
 
 {
   "title": "${article.title}",
-    "article": \`\`\`${article.article}\`\`\`,
+  "article": "${article.article}",
   "plainArticle": "${article.plainArticle}",
   "order": ${article.order}
 }
@@ -238,7 +245,7 @@ Analyze the content of "${article.title}" within the legal basis titled "${legal
 VERY IMPORTANT:
 - Do not paraphrase, summarize, restructure or reinterpret the original text.  
 - Every section title, article content, bullet point, and table must be reproduced **verbatim**,  
-  including punctuation, spacing, and line breaks.  
+including punctuation, spacing, and line breaks.  
 - This is a legal document and must preserve its original wording with full fidelity.
 
 ### Instructions:
