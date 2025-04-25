@@ -156,6 +156,8 @@ Do not summarize the output, do not reduce it because of size, and do not assume
 The size of the JSON IS NOT AN OBJECTION. If the document contains hundreds or thousands of headings, you must list absolutely all of them, one by one, exactly as they appear in the text.
 DO NOT group or omit headers, etc.
 DO NOT summarize, DO NOT trim for reasons of size or practicality.
+Only return the valid section heading found on each line.
+Do NOT return any additional content, explanations, or body text, even if it appears on the same line: only extract and return the valid legal heading.
 
 
 📤 **Return the output as valid JSON in this format**:
