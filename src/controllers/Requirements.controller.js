@@ -199,20 +199,20 @@ export const getRequirementsBySubject = async (req, res) => {
 export const getRequirementsBySubjectAndAspects = async (req, res) => {
   const { userId } = req
   const { subjectId } = req.params
-  let { aspectIds } = req.query
+  const { aspectIds } = req.query
   try {
     const isAuthorized = await UserService.userExists(userId)
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-    aspectIds = Array.isArray(aspectIds)
+    const aspects = Array.isArray(aspectIds)
       ? aspectIds.map(Number).filter(Number.isInteger)
       : typeof aspectIds === 'string'
         ? aspectIds.split(',').map(Number).filter(Number.isInteger)
         : []
     const requirements = await RequirementService.getBySubjectAndAspects(
       subjectId,
-      aspectIds
+      aspects
     )
     return res.status(200).json({ requirements })
   } catch (error) {

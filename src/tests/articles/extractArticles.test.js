@@ -3,6 +3,7 @@ import { api } from '../../config/test.config.js'
 import UserRepository from '../../repositories/User.repository.js'
 import SubjectsRepository from '../../repositories/Subject.repository.js'
 import LegalBasisRepository from '../../repositories/LegalBasis.repository.js'
+import RequirementRepository from '../../repositories/Requirements.repository.js'
 import AspectsRepository from '../../repositories/Aspects.repository.js'
 import extractArticlesService from '../../services/articles/extractArticles/extractArticles.service.js'
 import generateLegalBasisData from '../../utils/generateLegalBasisData.js'
@@ -21,6 +22,7 @@ const createdAspectIds = []
 let createdLegalBasis
 
 beforeAll(async () => {
+  await RequirementRepository.deleteAll()
   await LegalBasisRepository.deleteAll()
   await SubjectsRepository.deleteAll()
   await AspectsRepository.deleteAll()

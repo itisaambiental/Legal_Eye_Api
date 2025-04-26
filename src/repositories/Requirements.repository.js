@@ -691,53 +691,63 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 
   /**
  * Retrieves all requirements filtered by subject and optionally by aspects.
- * Includes associated subject and aspects.
+ * Includes associated subject and all aspects.
  * @param {number} subjectId - The subject ID to filter by.
  * @param {Array<number>} [aspectIds] - Optional array of aspect IDs to further filter by.
  * @returns {Promise<Array<Requirement>|null>} - A list of requirements matching the filters, or null if none found.
  * @throws {ErrorUtils} - If an error occurs during retrieval.
  */
   static async findBySubjectAndAspects (subjectId, aspectIds = []) {
-    let query = `
-    SELECT 
-      r.id, 
-      r.requirement_number, 
-      r.requirement_name, 
-      r.mandatory_description, 
-      r.complementary_description, 
-      r.mandatory_sentences, 
-      r.complementary_sentences, 
-      r.mandatory_keywords, 
-      r.complementary_keywords, 
-      r.requirement_condition, 
-      r.evidence, 
-      r.specify_evidence,
-      r.periodicity, 
-      s.id AS subject_id, 
-      s.subject_name AS subject_name, 
-      a.id AS aspect_id, 
-      a.aspect_name AS aspect_name
-    FROM requirements r
-    JOIN subjects s ON r.subject_id = s.id
-    LEFT JOIN requirement_subject_aspect rsa ON r.id = rsa.requirement_id
-    LEFT JOIN aspects a ON rsa.aspect_id = a.id
-    WHERE r.subject_id = ?
-  `
-
-    const values = [subjectId]
-
-    if (aspectIds.length > 0) {
-      const placeholders = aspectIds.map(() => '?').join(', ')
-      query += ` AND a.id IN (${placeholders})`
-      values.push(...aspectIds)
-    }
-
     try {
+      const values = [subjectId]
+      let requirementIds = []
+      if (aspectIds.length > 0) {
+        const placeholders = aspectIds.map(() => '?').join(', ')
+        const filterQuery = `
+        SELECT DISTINCT r.id
+        FROM requirements r
+        JOIN requirement_subject_aspect rsa ON r.id = rsa.requirement_id
+        WHERE r.subject_id = ?
+        AND rsa.aspect_id IN (${placeholders})
+      `
+        const [filterRows] = await pool.query(filterQuery, [subjectId, ...aspectIds])
+        if (filterRows.length === 0) return null
+        requirementIds = filterRows.map(row => row.id)
+      }
+      let query = `
+      SELECT 
+        r.id, 
+        r.requirement_number, 
+        r.requirement_name, 
+        r.mandatory_description, 
+        r.complementary_description, 
+        r.mandatory_sentences, 
+        r.complementary_sentences, 
+        r.mandatory_keywords, 
+        r.complementary_keywords, 
+        r.requirement_condition, 
+        r.evidence, 
+        r.specify_evidence,
+        r.periodicity, 
+        s.id AS subject_id, 
+        s.subject_name AS subject_name, 
+        a.id AS aspect_id, 
+        a.aspect_name AS aspect_name
+      FROM requirements r
+      JOIN subjects s ON r.subject_id = s.id
+      LEFT JOIN requirement_subject_aspect rsa ON r.id = rsa.requirement_id
+      LEFT JOIN aspects a ON rsa.aspect_id = a.id
+      WHERE r.subject_id = ?
+    `
+      if (requirementIds.length > 0) {
+        const placeholders = requirementIds.map(() => '?').join(', ')
+        query += ` AND r.id IN (${placeholders})`
+        values.push(...requirementIds)
+      }
       const [rows] = await pool.query(query, values)
       if (rows.length === 0) return null
-
       const requirementsMap = new Map()
-      rows.forEach((row) => {
+      rows.forEach(row => {
         if (!requirementsMap.has(row.id)) {
           requirementsMap.set(row.id, {
             id: row.id,
@@ -768,8 +778,8 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           })
         }
       })
-
-      return Array.from(requirementsMap.values()).map(req =>
+      const requirementsArray = Array.from(requirementsMap.values())
+      return requirementsArray.map(req =>
         new Requirement(
           req.id,
           req.subject,
@@ -1942,13 +1952,8 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
  * @throws {ErrorUtils} - If an error occurs during deletion.
  */
   static async deleteAll () {
-    const deleteAspectsQuery = `
-    DELETE FROM requirement_subject_aspect
-  `
-    const deleteRequirementsQuery = `
-    DELETE FROM requirements
-  `
-
+    const deleteAspectsQuery = 'DELETE FROM requirement_subject_aspect'
+    const deleteRequirementsQuery = 'DELETE FROM requirements'
     const connection = await pool.getConnection()
     try {
       await connection.beginTransaction()
