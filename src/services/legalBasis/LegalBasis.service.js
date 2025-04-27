@@ -6,7 +6,6 @@ import SubjectsRepository from '../../repositories/Subject.repository.js'
 import AspectsRepository from '../../repositories/Aspects.repository.js'
 import ExtractArticlesService from '../articles/extractArticles/extractArticles.service.js'
 import SendLegalBasisService from './sendLegalBasis/sendLegalBasis.service.js'
-import RequirementsIdentificationService from '../requirements/requirementsIdentification/requirementsIdentification.service.js'
 import { z } from 'zod'
 import ErrorUtils from '../../utils/Error.js'
 import FileService from '../files/File.service.js'
@@ -1093,23 +1092,12 @@ class LegalBasisService {
           'Cannot delete LegalBasis with pending Article Extraction jobs'
         )
       }
-      const { hasPendingJobs: hasPendingRequirementIdentificationJobs } =
-        await RequirementsIdentificationService.hasPendingLegalBasisJobs(
-          legalBasisId
-        )
       const { hasPendingJobs: hasPendingSendLegalBasisJobs } =
         await SendLegalBasisService.hasPendingSendJobs(legalBasisId)
       if (hasPendingSendLegalBasisJobs) {
         throw new ErrorUtils(
           409,
           'Cannot delete LegalBasis with pending Send Legal Basis jobs'
-        )
-      }
-
-      if (hasPendingRequirementIdentificationJobs) {
-        throw new ErrorUtils(
-          409,
-          'Cannot delete LegalBasis with pending Requirement Identification jobs'
         )
       }
       if (legalBasis.url) {
@@ -1143,9 +1131,7 @@ class LegalBasisService {
         )
         throw new ErrorUtils(404, 'LegalBasis not found for IDs', { notFoundIds })
       }
-
       const pendingArticleExtractionJobs = []
-      const pendingRequirementIdentificationJobs = []
       const pendingSendLegalBasisJobs = []
       const urlsToDelete = []
 
@@ -1154,21 +1140,11 @@ class LegalBasisService {
           const { hasPendingJobs: hasPendingArticleExtractionJobs } =
           await ExtractArticlesService.hasPendingExtractionJobs(legalBase.id)
 
-          const { hasPendingJobs: hasPendingRequirementIdentificationJobs } =
-          await RequirementsIdentificationService.hasPendingLegalBasisJobs(legalBase.id)
-
           const { hasPendingJobs: hasPendingSendLegalBasisJobs } =
           await SendLegalBasisService.hasPendingSendJobs(legalBase.id)
 
           if (hasPendingArticleExtractionJobs) {
             pendingArticleExtractionJobs.push({
-              id: legalBase.id,
-              name: legalBase.legal_name
-            })
-          }
-
-          if (hasPendingRequirementIdentificationJobs) {
-            pendingRequirementIdentificationJobs.push({
               id: legalBase.id,
               name: legalBase.legal_name
             })
@@ -1203,16 +1179,7 @@ class LegalBasisService {
         )
       }
 
-      if (pendingRequirementIdentificationJobs.length > 0) {
-        throw new ErrorUtils(
-          409,
-          'Cannot delete Legal Bases with pending Requirement Identification jobs',
-          { legalBases: pendingRequirementIdentificationJobs }
-        )
-      }
-
       await Promise.all(urlsToDelete.map((url) => FileService.deleteFile(url)))
-
       const legalBasisDeleted = await LegalBasisRepository.deleteBatch(legalBasisIds)
       if (!legalBasisDeleted) {
         throw new ErrorUtils(404, 'LegalBasis not found')

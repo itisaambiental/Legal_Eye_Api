@@ -4,11 +4,11 @@ import {
   singleArticleSchema,
   articlesSchema
 } from '../../schemas/article.schema.js'
-import RequirementsIdentificationService from '../requirements/requirementsIdentification/requirementsIdentification.service.js'
 import SendLegalBasisService from '../legalBasis/sendLegalBasis/sendLegalBasis.service.js'
 import ErrorUtils from '../../utils/Error.js'
 import { z } from 'zod'
 import { convert } from 'html-to-text'
+
 /**
  * Service class for handling Article operations.
  */
@@ -254,16 +254,6 @@ class ArticlesService {
       if (!existingArticle) {
         throw new ErrorUtils(404, 'Article not found')
       }
-      const { hasPendingJobs: hasPendingRequirementIdentificationJobs } =
-        await RequirementsIdentificationService.hasPendingLegalBasisJobs(
-          existingArticle.legal_basis_id
-        )
-      if (hasPendingRequirementIdentificationJobs) {
-        throw new ErrorUtils(
-          409,
-          'Cannot delete Article with pending Requirement Identification jobs'
-        )
-      }
       const { hasPendingJobs: hasPendingSendLegalBasisJobs } =
         await SendLegalBasisService.hasPendingSendJobs(
           existingArticle.legal_basis_id
@@ -304,21 +294,9 @@ class ArticlesService {
           notFoundIds
         })
       }
-      const pendingRequirementIdentificationJobs = []
       const pendingSendLegalBasisJobs = []
       await Promise.all(
         existingArticles.map(async (article) => {
-          const {
-            hasPendingJobs: hasPendingRequirementIdentificationJobsForArticle
-          } = await RequirementsIdentificationService.hasPendingLegalBasisJobs(
-            article.legal_basis_id
-          )
-          if (hasPendingRequirementIdentificationJobsForArticle) {
-            pendingRequirementIdentificationJobs.push({
-              id: article.id,
-              name: article.article_name
-            })
-          }
           const { hasPendingJobs: hasPendingSendLegalBasisJobsForArticle } =
             await SendLegalBasisService.hasPendingSendJobs(
               article.legal_basis_id
@@ -331,13 +309,6 @@ class ArticlesService {
           }
         })
       )
-      if (pendingRequirementIdentificationJobs.length > 0) {
-        throw new ErrorUtils(
-          409,
-          'Cannot delete Articles with pending Requirement Identification jobs',
-          { articles: pendingRequirementIdentificationJobs }
-        )
-      }
       if (pendingSendLegalBasisJobs.length > 0) {
         throw new ErrorUtils(
           409,
