@@ -1,6 +1,6 @@
 import { convert } from 'html-to-text'
 import ErrorUtils from '../../../utils/Error.js'
-
+import { sleep } from '../../../utils/sleep.js'
 /**
  * Base class for article extractors.
  * Defines the interface and common methods for extracting and formatting articles from text.
@@ -69,6 +69,7 @@ class ArticleExtractor {
         })
       }
       this._updateProgress(i + 1, totalArticles)
+      await sleep(3000)
     }
 
     return correctedArticles
