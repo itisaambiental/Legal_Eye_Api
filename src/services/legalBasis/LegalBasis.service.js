@@ -1,6 +1,7 @@
 import LegalBasisRepository from '../../repositories/LegalBasis.repository.js'
 import articlesQueue from '../../workers/articlesWorker.js'
 import legalBasisSchema from '../../schemas/legalBasis.schema.js'
+import sendLegalBasisQueue from '../../workers/sendLegalBasisWorker.js'
 import SubjectsRepository from '../../repositories/Subject.repository.js'
 import AspectsRepository from '../../repositories/Aspects.repository.js'
 import extractArticles from '../articles/extractArticles/extractArticles.service.js'
@@ -864,6 +865,38 @@ class LegalBasisService {
         500,
         'Failed to retrieve legal basis records by last reform range'
       )
+    }
+  }
+
+  /**
+ * Sends selected Legal Basis entries to ACM Suite after validating them.
+ *
+ * @param {number} userId - The ID of the user sending legal basis.
+ * @param {Array<number>} legalBasisIds - An array of Legal Basis IDs to send.
+ * @returns {Promise<{ jobId: string|number|null }>} - The job ID created for sending legal basis.
+ * @throws {ErrorUtils} - If validation fails or no valid records are found.
+ */
+  static async sendLegalBasis (userId, legalBasisIds) {
+    try {
+      const legalBasis = await LegalBasisRepository.findByIds(legalBasisIds)
+      if (legalBasis.length !== legalBasisIds.length) {
+        const notFoundIds = legalBasisIds.filter(
+          (id) => !legalBasis.some((legalBase) => legalBase.id === id)
+        )
+        throw new ErrorUtils(404, 'LegalBasis not found for IDs', {
+          notFoundIds
+        })
+      }
+      const job = await sendLegalBasisQueue.add({
+        userId,
+        legalBasisIds
+      })
+      return { jobId: job.id }
+    } catch (error) {
+      if (error instanceof ErrorUtils) {
+        throw error
+      }
+      throw new ErrorUtils(500, 'Unexpected error during send LegalBasis operation')
     }
   }
 

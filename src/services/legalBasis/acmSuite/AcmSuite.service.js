@@ -1,7 +1,7 @@
 // Legal_Eye_Api/src/services/legalBasis/acmSuite/AcmSuite.service.js
 
 import { BaseAcmSuiteService } from './BaseAcmSuite.service.js'
-import ErrorUtils from '../../../utils/Error'
+import ErrorUtils from '../../../utils/Error.js'
 
 /**
  * AcmSuiteService provides methods to interact with the ACM Suite API endpoints.
@@ -9,17 +9,18 @@ import ErrorUtils from '../../../utils/Error'
  */
 export class AcmSuiteService extends BaseAcmSuiteService {
   /**
-   * Sends a LegalBasis object to create a new guideline in ACM Suite.
-   * @param {Object} legalBasis - Parameters for creating a legal basis.
-   * @param {string} legalBasis.legalName - The legal basis name.
-   * @param {string} legalBasis.abbreviation - The legal basis abbreviation.
-   * @param {number} legalBasis.classificationId - ID of the legal classification.
-   * @param {number} legalBasis.jurisdictionId - ID of the jurisdiction.
-   * @param {number} [legalBasis.stateId] - ID of the state.
-   * @param {number} [legalBasis.municipalityId] - ID of the municipality.
-   * @param {string|Date|null} legalBasis.lastReform - The date of the last reform.
-   * @returns {Promise<{ success: boolean, id?: number, error?: string }>}
-   */
+ * Sends a LegalBasis object to create a new guideline in ACM Suite.
+ * @param {Object} legalBasis - Parameters for creating a legal basis.
+ * @param {string} legalBasis.legalName - The legal basis name.
+ * @param {string} legalBasis.abbreviation - The legal basis abbreviation.
+ * @param {number} legalBasis.classificationId - ID of the legal classification.
+ * @param {number} legalBasis.jurisdictionId - ID of the jurisdiction.
+ * @param {number} [legalBasis.stateId] - ID of the state.
+ * @param {number} [legalBasis.municipalityId] - ID of the municipality.
+ * @param {string|Date|null} legalBasis.lastReform - The date of the last reform.
+ * @returns {Promise<number>} The ID of the created legal basis in ACM Suite.
+ * @throws {ErrorUtils} If the request fails or the creation is not successful.
+ */
   async sendLegalBasis (legalBasis) {
     try {
       const response = await this.api.post('/catalogs/guideline', {
@@ -33,26 +34,27 @@ export class AcmSuiteService extends BaseAcmSuiteService {
       })
       const { success, data, message } = response.data
       if (success && data?.id_guideline) {
-        return { success: true, id: data.id_guideline }
+        return data.id_guideline
       }
-      return { success: false, error: message }
+      throw new ErrorUtils(500, message)
     } catch (error) {
       if (error.response?.data?.message) {
-        return { success: false, error: error.response.data.message }
+        throw new ErrorUtils(500, error.response.data.message)
       }
-      throw new ErrorUtils(500, 'Failed to send LegalBasis')
+      throw new ErrorUtils(500, 'Failed to create LegalBasis')
     }
   }
 
   /**
-   * Sends an article to ACM Suite under a specific guideline.
-   * @param {number} legalBasisId - The ID of the legal basis
-   * @param {Object} article - The article object.
-   * @param {string} article.article_name - The title of the article.
-   * @param {string} article.description - The full content of the article.
-   * @param {number} article.article_order - The display order for the article.
-   * @returns {Promise<{ success: boolean, id?: number, error?: string }>}
-   */
+ * Sends an article to ACM Suite under a specific guideline.
+ * @param {number} legalBasisId - The ID of the legal basis.
+ * @param {Object} article - The article object.
+ * @param {string} article.article_name - The title of the article.
+ * @param {string} article.description - The full content of the article.
+ * @param {number} article.article_order - The display order for the article.
+ * @returns {Promise<void>} Resolves if successful; throws an error if failed.
+ * @throws {ErrorUtils} If the request fails or the creation is not successful.
+ */
   async sendArticle (legalBasisId, article) {
     try {
       const response = await this.api.post(`/catalogs/guideline/${legalBasisId}/legal_basi`, {
@@ -61,138 +63,143 @@ export class AcmSuiteService extends BaseAcmSuiteService {
         publish: false,
         order: article.article_order
       })
-      const { success, data, message } = response.data
-      if (success && data?.id_legal_basis) {
-        return { success: true, id: data.id_legal_basis }
+      const { success, message } = response.data
+      if (!success) {
+        throw new ErrorUtils(500, message)
       }
-      return { success: false, error: message }
     } catch (error) {
       if (error.response?.data?.message) {
-        return { success: false, error: error.response.data.message }
+        throw new ErrorUtils(500, error.response.data.message)
       }
-      throw new ErrorUtils(500, 'Failed to send Article')
+      throw new ErrorUtils(500, 'Failed to create Article')
     }
   }
 
   /**
-   * Fetches all legal classifications from ACM Suite.
-   * @returns {Promise<{ success: boolean, data?: Array, error?: string }>}
-   */
-  async getByClassifications () {
+ * Fetches the classification ID from ACM Suite based on a given classification name.
+ * @param {string} classification - The classification name to find ('Ley', 'Reglamento', 'Norma', etc.).
+ * @returns {Promise<number>} The ID of the classification.
+ * @throws {ErrorUtils} If the request fails or the response is not as expected.
+ */
+  async getClassificationId (classification) {
     try {
       const response = await this.api.get('/source/legal_classification')
       const { success, data, message } = response.data
-
       if (success && Array.isArray(data)) {
-        return { success: true, data }
+        const found = data.find(item => item.legal_classification.toLowerCase() === classification.toLowerCase())
+        if (found) {
+          return found.id_legal_c
+        }
+        if (data.length > 0) {
+          return data[0].id_legal_c
+        }
+        throw new ErrorUtils(500, 'Failed to fetch classification ID')
       }
-
-      return { success: false, error: message || 'Unexpected response format' }
+      throw new ErrorUtils(500, message)
     } catch (error) {
       if (error.response?.data?.message) {
-        return { success: false, error: error.response.data.message }
+        throw new ErrorUtils(500, error.response.data.message)
       }
-      throw new ErrorUtils(500, 'Failed to fetch legal classifications')
+      throw new ErrorUtils(500, 'Failed to fetch classification ID')
     }
   }
 
   /**
-   * Retrieves the list of available application types (jurisdictions) from ACM Suite.
-   * @returns {Promise<{ success: boolean, data?: Array, error?: string }>}
-   */
-  async getByJurisdiction () {
+ * Retrieves the application type ID (jurisdiction) from ACM Suite based on a given jurisdiction name.
+ * @param {string} jurisdiction - The name of the jurisdiction to find ('Estatal', 'Federal', 'Local').
+ * @returns {Promise<number>} The ID of the jurisdiction.
+ * @throws {ErrorUtils} If the request fails or the jurisdiction is not found.
+ */
+  async getJurisdictionId (jurisdiction) {
     try {
       const response = await this.api.get('/source/application_type')
       const { success, data, message } = response.data
-
       if (success && Array.isArray(data)) {
-        return { success: true, data }
+        const found = data.find(item => item.application_type.toLowerCase() === jurisdiction.toLowerCase())
+        if (found) {
+          return found.id_application_type
+        }
+        if (data.length > 0) {
+          return data[0].id_application_type
+        }
+        throw new ErrorUtils(500, 'Failed to fetch jurisdiction ID')
       }
-
-      return { success: false, error: message || 'Unexpected response format' }
+      throw new ErrorUtils(500, message)
     } catch (error) {
       if (error.response?.data?.message) {
-        return { success: false, error: error.response.data.message }
+        throw new ErrorUtils(500, error.response.data.message)
       }
-      throw new ErrorUtils(500, 'Failed to fetch jurisdiction types')
+      throw new ErrorUtils(500, 'Failed to fetch jurisdiction ID')
     }
   }
 
   /**
-   * Retrieves the list of all countries available in ACM Suite.
-   * @returns {Promise<{ success: boolean, data?: Array, error?: string }>}
-   */
-  async getAllCountries () {
-    try {
-      const response = await this.api.get('/source/country')
-      const { success, data, message } = response.data
-
-      if (success && Array.isArray(data)) {
-        return { success: true, data }
-      }
-
-      return { success: false, error: message || 'Unexpected response format' }
-    } catch (error) {
-      if (error.response?.data?.message) {
-        return { success: false, error: error.response.data.message }
-      }
-      throw new ErrorUtils(500, 'Failed to fetch countries')
-    }
-  }
-
-  /**
- * Retrieves the list of states for a given country from ACM Suite.
- * @param {number} countryId - ID of the country to filter states.
- * @returns {Promise<{ success: boolean, data?: Array, error?: string }>}
+ * Retrieves the state ID from ACM Suite based on a given state name and country ID.
+ * @param {string} state - The name of the state to find.
+ * @param {number} [countryId=1] - The ID of the country to filter states.
+ * @returns {Promise<number>} The ID of the state.
+ * @throws {ErrorUtils} If the request fails or the state is not found.
  */
-  async getStatesByCountry (countryId) {
+  async getStateId (state, countryId = 1) {
     try {
       const response = await this.api.get('/source/state', {
         params: {
           'filters[id_country]': countryId
         }
       })
-
       const { success, data, message } = response.data
-
       if (success && Array.isArray(data)) {
-        return { success: true, data }
+        const found = data.find(item => item.state.toLowerCase() === state.toLowerCase())
+        if (found) {
+          return found.id_state
+        }
+        if (data.length > 0) {
+          return data[0].id_state
+        }
+        throw new ErrorUtils(500, 'Failed to fetch state ID')
       }
-
-      return { success: false, error: message || 'Unexpected response format' }
+      throw new ErrorUtils(500, message)
     } catch (error) {
       if (error.response?.data?.message) {
-        return { success: false, error: error.response.data.message }
+        throw new ErrorUtils(500, error.response.data.message)
       }
-      throw new ErrorUtils(500, 'Failed to fetch states by country')
+      throw new ErrorUtils(500, 'Failed to fetch state ID')
     }
   }
 
   /**
- * Retrieves the list of cities for a given state from ACM Suite.
+ * Retrieves the municipality ID from ACM Suite based on a given municipality name and state ID.
  * @param {number} stateId - ID of the state to filter cities.
- * @returns {Promise<{ success: boolean, data?: Array, error?: string }>}
+ * @param {string} municipality - The name of the municipality to find.
+ * @returns {Promise<number>} The ID of the municipality.
+ * @throws {ErrorUtils} If the request fails or the municipality is not found.
  */
-  async getCitiesByState (stateId) {
+  async getMunicipalityId (stateId, municipality) {
     try {
       const response = await this.api.get('/source/city', {
         params: {
           'filters[id_state]': stateId
         }
       })
-
       const { success, data, message } = response.data
-
       if (success && Array.isArray(data)) {
-        return { success: true, data }
+        const found = data.find(item => item.city.toLowerCase() === municipality.toLowerCase())
+        if (found) {
+          return found.id_city
+        }
+        if (data.length > 0) {
+          return data[0].id_city
+        }
+        throw new ErrorUtils(500, 'Failed to fetch municipality ID')
       }
-
-      return { success: false, error: message || 'Unexpected response format' }
+      throw new ErrorUtils(500, message)
     } catch (error) {
       if (error.response?.data?.message) {
-        return { success: false, error: error.response.data.message }
+        throw new ErrorUtils(500, error.response.data.message)
       }
-      throw new ErrorUtils(500, 'Failed to fetch cities by state')
+      throw new ErrorUtils(500, 'Failed to fetch municipality ID')
     }
   }
 }
+
+export default AcmSuiteService

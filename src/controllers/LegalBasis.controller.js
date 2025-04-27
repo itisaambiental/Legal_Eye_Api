@@ -455,6 +455,43 @@ export const getLegalBasisByLastReform = async (req, res) => {
 }
 
 /**
+ * Sends selected legal basis records to ACM Suite.
+ * @function sendLegalBasis
+ * @param {import('express').Request} req - Request object, expects { legalBasisIds } in body.
+ * @param {import('express').Response} res - Response object.
+ * @returns {Object} - Job information for processing the sending task.
+ */
+export const sendLegalBasis = async (req, res) => {
+  const { userId } = req
+  const { legalBasisIds } = req.body
+  if (
+    !legalBasisIds ||
+    !Array.isArray(legalBasisIds) ||
+    legalBasisIds.length === 0
+  ) {
+    return res.status(400).json({
+      message: 'Missing required fields: legalBasisIds'
+    })
+  }
+  try {
+    const isAuthorized = await UserService.userExists(userId)
+    if (!isAuthorized) {
+      return res.status(403).json({ message: 'Unauthorized' })
+    }
+    const { jobId } = await LegalBasisService.sendLegalBasis(userId, legalBasisIds)
+    return res.status(202).json({ jobId })
+  } catch (error) {
+    if (error instanceof ErrorUtils) {
+      return res.status(error.status).json({
+        message: error.message,
+        ...(error.errors && { errors: error.errors })
+      })
+    }
+    return res.status(500).json({ message: 'Internal Server Error' })
+  }
+}
+
+/**
  * Updates a legal basis record.
  * @function updateLegalBasis
  * @param {import('express').Request} req - Request object, expects { id } in params and { legalName, abbreviation, subjectId, aspectsIds, classification, jurisdiction, state, municipality, lastReform, extractArticles, intelligenceLevel, removeDocument } in body and an optional 'document' file.

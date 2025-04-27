@@ -138,6 +138,49 @@ Razón: ${reason}`,
            <p>Razón: <em>${reason}</em></p>`
     }
   }
+
+  /**
+ * Generates an email notifying the user that the legal basis failed to be sent.
+ * @param {string} gmail - The Gmail address of the user.
+ * @param {string} legalBasisName - The name of the legal basis.
+ * @returns {EmailData}
+ */
+  static generateSendLegalBasisFailureEmail (gmail, legalBasisName) {
+    return {
+      to: gmail,
+      subject: 'Error al enviar el fundamento legal a ACM Suite',
+      text: `Ocurrió un error al intentar enviar el fundamento legal "${legalBasisName}" a ACM Suite.`,
+      html: `<p><strong>Ocurrió un error</strong> al intentar enviar el fundamento legal <strong>${legalBasisName}</strong> a ACM Suite.</p>`
+    }
+  }
+
+  /**
+ * Generates an email notifying the user that all legal bases were sent successfully.
+ * @param {string} gmail - The Gmail address of the user.
+ * @returns {EmailData}
+ */
+  static generateAllLegalBasisSentSuccessEmail (gmail) {
+    return {
+      to: gmail,
+      subject: 'Todos los fundamentos legales fueron enviados exitosamente',
+      text: 'Todos los fundamentos legales seleccionados han sido enviados correctamente a ACM Suite.',
+      html: '<p><strong>Todos los fundamentos legales seleccionados</strong> han sido <strong>enviados exitosamente</strong> a ACM Suite.</p>'
+    }
+  }
+
+  /**
+ * Generates an email notifying the user that all legal bases failed to be sent.
+ * @param {string} gmail - The Gmail address of the user.
+ * @returns {EmailData}
+ */
+  static generateAllLegalBasisFailedEmail (gmail) {
+    return {
+      to: gmail,
+      subject: 'Error al enviar los fundamentos legales a ACM Suite',
+      text: 'Ocurrió un error y ninguno de los fundamentos legales seleccionados pudo ser enviado a ACM Suite.',
+      html: '<p><strong>Ocurrió un error</strong> y <strong>ninguno</strong> de los fundamentos legales seleccionados pudo ser enviado a ACM Suite.</p>'
+    }
+  }
 }
 
 export default EmailService
