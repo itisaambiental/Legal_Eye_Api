@@ -382,13 +382,7 @@ export const getLegalBasisBySubjectAndAspects = async (req, res) => {
  */
 export const getLegalBasisByCriteria = async (req, res) => {
   const { userId } = req
-  const {
-    jurisdiction,
-    state,
-    municipality,
-    subjectId,
-    aspectIds
-  } = req.query
+  const { jurisdiction, state, municipality, subjectId, aspectIds } = req.query
   try {
     const isAuthorized = await UserService.userExists(userId)
     if (!isAuthorized) {
@@ -428,8 +422,12 @@ export const getLegalBasisByCriteria = async (req, res) => {
 export const getLegalBasisByLastReform = async (req, res) => {
   const { userId } = req
   const { from, to } = req.query
-  const { date: parsedFrom, error: fromError } = from ? validateDate(from, 'from') : { date: null, error: null }
-  const { date: parsedTo, error: toError } = to ? validateDate(to, 'to') : { date: null, error: null }
+  const { date: parsedFrom, error: fromError } = from
+    ? validateDate(from, 'from')
+    : { date: null, error: null }
+  const { date: parsedTo, error: toError } = to
+    ? validateDate(to, 'to')
+    : { date: null, error: null }
   if (fromError || toError) {
     return res.status(400).json({
       message: 'Invalid date format',
@@ -441,45 +439,11 @@ export const getLegalBasisByLastReform = async (req, res) => {
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-    const legalBasis = await LegalBasisService.getByLastReform(parsedFrom, parsedTo)
+    const legalBasis = await LegalBasisService.getByLastReform(
+      parsedFrom,
+      parsedTo
+    )
     return res.status(200).json({ legalBasis })
-  } catch (error) {
-    if (error instanceof ErrorUtils) {
-      return res.status(error.status).json({
-        message: error.message,
-        ...(error.errors && { errors: error.errors })
-      })
-    }
-    return res.status(500).json({ message: 'Internal Server Error' })
-  }
-}
-
-/**
- * Sends selected legal basis records to ACM Suite.
- * @function sendLegalBasis
- * @param {import('express').Request} req - Request object, expects { legalBasisIds } in body.
- * @param {import('express').Response} res - Response object.
- * @returns {Object} - Job information for processing the sending task.
- */
-export const sendLegalBasis = async (req, res) => {
-  const { userId } = req
-  const { legalBasisIds } = req.body
-  if (
-    !legalBasisIds ||
-    !Array.isArray(legalBasisIds) ||
-    legalBasisIds.length === 0
-  ) {
-    return res.status(400).json({
-      message: 'Missing required fields: legalBasisIds'
-    })
-  }
-  try {
-    const isAuthorized = await UserService.userExists(userId)
-    if (!isAuthorized) {
-      return res.status(403).json({ message: 'Unauthorized' })
-    }
-    const { jobId } = await LegalBasisService.sendLegalBasis(userId, legalBasisIds)
-    return res.status(202).json({ jobId })
   } catch (error) {
     if (error instanceof ErrorUtils) {
       return res.status(error.status).json({

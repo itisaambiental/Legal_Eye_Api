@@ -11,6 +11,13 @@ import { EMAIL_USER, APP_URL } from '../../config/variables.config.js'
  */
 
 /**
+ * @typedef {Object} SuccessLegalBasisReport
+ * @property {string} name - Name of the successfully sent legal basis.
+ * @property {number} articlesSent - Number of successfully sent articles for this legal basis.
+ * @property {number} articlesFailed - Number of articles that failed for this legal basis.
+ */
+
+/**
  * Service class for handling email operations.
  * Provides methods for sending different types of emails.
  */
@@ -155,16 +162,55 @@ Razón: ${reason}`,
   }
 
   /**
- * Generates an email notifying the user that all legal bases were sent successfully.
+ * Generates an email notifying the user that an article failed to be sent under a specific legal basis.
  * @param {string} gmail - The Gmail address of the user.
+ * @param {string} legalBasisName - The name of the legal basis.
+ * @param {string} articleName - The name of the article that failed.
  * @returns {EmailData}
  */
-  static generateAllLegalBasisSentSuccessEmail (gmail) {
+  static generateSendArticleFailureEmail (gmail, legalBasisName, articleName) {
     return {
       to: gmail,
-      subject: 'Todos los fundamentos legales fueron enviados exitosamente',
-      text: 'Todos los fundamentos legales seleccionados han sido enviados correctamente a ACM Suite.',
-      html: '<p><strong>Todos los fundamentos legales seleccionados</strong> han sido <strong>enviados exitosamente</strong> a ACM Suite.</p>'
+      subject: 'Error al enviar un artículo a ACM Suite',
+      text: `Ocurrió un error al intentar enviar el artículo "${articleName}" del fundamento legal "${legalBasisName}" a ACM Suite.`,
+      html: `<p><strong>Ocurrió un error</strong> al intentar enviar el artículo <strong>"${articleName}"</strong> del fundamento legal <strong>"${legalBasisName}"</strong> a ACM Suite.</p>`
+    }
+  }
+
+  /**
+ * Generates an email report summarizing successes and failures of sending legal bases.
+ * @param {string} gmail - The Gmail address of the user.
+ * @param {SuccessLegalBasisReport[]} successLegalBasesReports - List of successfully sent legal bases.
+ * @param {string[]} failedLegalBasesNames - List of failed legal bases names.
+ * @returns {EmailData}
+ */
+  static generateLegalBasisSummaryReportEmail (gmail, successLegalBasesReports, failedLegalBasesNames) {
+    const successList = successLegalBasesReports.length
+      ? `<ul>${successLegalBasesReports.map(item => `
+      <li>
+        ${item.name} 
+        (Artículos enviados: ${item.articlesSent}, Artículos fallidos: ${item.articlesFailed})
+      </li>
+    `).join('')}</ul>`
+      : '<p>Ningún fundamento enviado con éxito.</p>'
+
+    const failureList = failedLegalBasesNames.length
+      ? `<ul>${failedLegalBasesNames.map(name => `<li>${name}</li>`).join('')}</ul>`
+      : '<p>Ningún fundamento falló.</p>'
+
+    return {
+      to: gmail,
+      subject: 'Reporte de envío de fundamentos legales a ACM Suite',
+      text: `Reporte final:
+Éxitos: ${successLegalBasesReports.length}
+Fallos: ${failedLegalBasesNames.length}`,
+      html: `
+      <h3>Reporte de envío de fundamentos legales</h3>
+      <p><strong>Enviados exitosamente (${successLegalBasesReports.length} fundamentos):</strong></p>
+      ${successList}
+      <p><strong>Errores (${failedLegalBasesNames.length} fundamentos):</strong></p>
+      ${failureList}
+    `
     }
   }
 

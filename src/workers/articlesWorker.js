@@ -74,7 +74,7 @@ articlesQueue.process(CONCURRENCY, async (job, done) => {
         await emailQueue.add(emailData)
       }
     } catch (notifyErr) {
-      console.error('Error sending notification email:', notifyErr)
+      console.error('Error sending notification success email:', notifyErr)
     }
 
     done(null)
@@ -91,7 +91,7 @@ articlesQueue.process(CONCURRENCY, async (job, done) => {
         await emailQueue.add(emailData)
       }
     } catch (notifyError) {
-      console.error('Error sending notification email:', notifyError)
+      console.error('Error sending notification failure email:', notifyError)
     }
     if (error instanceof ErrorUtils) return done(error)
     return done(

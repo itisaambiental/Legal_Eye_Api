@@ -19,7 +19,6 @@ import {
   getLegalBasisBySubjectAndAspects,
   getLegalBasisByLastReform,
   getLegalBasisByCriteria,
-  sendLegalBasis,
   updateLegalBasis,
   deleteLegalBasis,
   deleteLegalBasisBatch
@@ -169,15 +168,6 @@ router.get('/legalBasis/criteria/query', UserExtractor, getLegalBasisByCriteria)
  * @middleware UserExtractor
  */
 router.get('/legalBasis/lastReform/lastReform', UserExtractor, getLegalBasisByLastReform)
-
-/**
- * Route to send selected legal basis IDs to ACM Suite.
- * @method POST
- * @path /legalBasis/send
- * @description Sends one or multiple legal basis to ACM Suite for registration.
- * @middlewares UserExtractor
- */
-router.post('/legalBasis/send', UserExtractor, sendLegalBasis)
 
 /**
  * Route to update a legal basis.

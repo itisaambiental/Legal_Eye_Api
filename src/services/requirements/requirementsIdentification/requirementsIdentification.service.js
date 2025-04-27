@@ -163,31 +163,6 @@ class RequirementsIdentificationService {
   }
 
   /**
- * Checks if there are pending identification jobs for a given article ID.
- * If its associated legal basis has a pending job, the article is also considered as having a pending job.
- *
- * @param {number} articleId - The ID of the article to check.
- * @returns {Promise<{ hasPendingJobs: boolean, jobId: string | null }>}
- * @throws {ErrorUtils} - If an error occurs while checking the queue.
- */
-  static async hasPendingArticleJobs (articleId) {
-    try {
-      const article = await ArticlesRepository.findById(articleId)
-      if (!article) {
-        throw new ErrorUtils(404, 'Article not found')
-      }
-      const legalBasisId = article.legal_basis_id
-      const result = await this.hasPendingLegalBasisJobs(legalBasisId)
-      return result
-    } catch (error) {
-      if (error instanceof ErrorUtils) {
-        throw error
-      }
-      throw new ErrorUtils(500, 'Failed to check pending identification jobs for Article', [{ articleId }])
-    }
-  }
-
-  /**
      * Checks if there are pending processing jobs for a given requirement ID.
      * If jobs exist, returns the jobId; otherwise, returns null.
      *

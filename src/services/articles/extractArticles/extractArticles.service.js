@@ -39,7 +39,7 @@ class ExtractArticlesService {
    * If jobs exist, returns the jobId; otherwise, returns null.
    *
    * @param {number} legalBasisId - The ID of the legal basis to check.
-   * @returns {Promise<{ hasPendingJobs: boolean, jobId: string | null }>}
+   * @returns {Promise<{ hasPendingJobs: boolean, jobId: string | number | null }>}
    * @throws {ErrorUtils} - If an error occurs while checking the extraction queue.
    */
   static async hasPendingExtractionJobs (legalBasisId) {

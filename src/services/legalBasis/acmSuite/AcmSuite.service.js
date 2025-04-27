@@ -1,5 +1,3 @@
-// Legal_Eye_Api/src/services/legalBasis/acmSuite/AcmSuite.service.js
-
 import { BaseAcmSuiteService } from './BaseAcmSuite.service.js'
 import ErrorUtils from '../../../utils/Error.js'
 
@@ -17,7 +15,7 @@ export class AcmSuiteService extends BaseAcmSuiteService {
  * @param {number} legalBasis.jurisdictionId - ID of the jurisdiction.
  * @param {number} [legalBasis.stateId] - ID of the state.
  * @param {number} [legalBasis.municipalityId] - ID of the municipality.
- * @param {string|Date|null} legalBasis.lastReform - The date of the last reform.
+ * @param {string} legalBasis.lastReform - The date of the last reform.
  * @returns {Promise<number>} The ID of the created legal basis in ACM Suite.
  * @throws {ErrorUtils} If the request fails or the creation is not successful.
  */
@@ -38,6 +36,7 @@ export class AcmSuiteService extends BaseAcmSuiteService {
       }
       throw new ErrorUtils(500, message)
     } catch (error) {
+      console.error(error)
       if (error.response?.data?.message) {
         throw new ErrorUtils(500, error.response.data.message)
       }
@@ -58,8 +57,8 @@ export class AcmSuiteService extends BaseAcmSuiteService {
   async sendArticle (legalBasisId, article) {
     try {
       const response = await this.api.post(`/catalogs/guideline/${legalBasisId}/legal_basi`, {
-        legal_basis: article.description,
-        legal_quote: article.article_name,
+        legal_basis: article.article_name,
+        legal_quote: article.description,
         publish: false,
         order: article.article_order
       })
@@ -77,7 +76,7 @@ export class AcmSuiteService extends BaseAcmSuiteService {
 
   /**
  * Fetches the classification ID from ACM Suite based on a given classification name.
- * @param {string} classification - The classification name to find ('Ley', 'Reglamento', 'Norma', etc.).
+ * @param {string} classification - The classification name to find.
  * @returns {Promise<number>} The ID of the classification.
  * @throws {ErrorUtils} If the request fails or the response is not as expected.
  */
@@ -106,7 +105,7 @@ export class AcmSuiteService extends BaseAcmSuiteService {
 
   /**
  * Retrieves the application type ID (jurisdiction) from ACM Suite based on a given jurisdiction name.
- * @param {string} jurisdiction - The name of the jurisdiction to find ('Estatal', 'Federal', 'Local').
+ * @param {string} jurisdiction - The name of the jurisdiction to find.
  * @returns {Promise<number>} The ID of the jurisdiction.
  * @throws {ErrorUtils} If the request fails or the jurisdiction is not found.
  */

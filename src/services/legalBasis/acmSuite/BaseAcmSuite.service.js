@@ -1,13 +1,9 @@
-// Legal_Eye_Api/src/services/legalBasis/acmSuite/BaseAcmSuiteService.js
-
 import axios from 'axios'
 import { ACM_SUITE_API_URL, ACM_SUITE_EMAIL, ACM_SUITE_PASSWORD } from '../../../config/variables.config.js'
 import ErrorUtils from '../../../utils/Error.js'
 
-console.log(ACM_SUITE_API_URL, ACM_SUITE_EMAIL, ACM_SUITE_PASSWORD)
-
 /**
- * BaseAcmSuiteService is responsible for authenticating with the ACM Suite API, storing and refreshing access tokens.
+ * BaseAcmSuiteService is responsible for authenticating with the ACM Suite API.
  */
 export class BaseAcmSuiteService {
   constructor () {
@@ -48,7 +44,8 @@ export class BaseAcmSuiteService {
       (response) => response,
       async (error) => {
         const originalRequest = error.config
-        const isUnauthorized = error.response?.status === 401
+        const statusCodeUnauthorized = 401
+        const isUnauthorized = error.response?.status === statusCodeUnauthorized
         if (isUnauthorized && !originalRequest._retry) {
           originalRequest._retry = true
           try {
@@ -109,8 +106,8 @@ export class BaseAcmSuiteService {
         refresh_token: this.refreshTokenValue
       })
       const { success, data, message } = response.data
-      if (!success || !data?.access_token || !data?.refresh_token) {
-        throw new ErrorUtils(401, message || 'Unauthorized during token refresh')
+      if (!success) {
+        throw new ErrorUtils(401, message)
       }
       const { access_token: accessToken, refresh_token: refreshToken } = data
       return { accessToken, refreshToken }

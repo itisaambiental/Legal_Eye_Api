@@ -5,6 +5,7 @@ import {
   articlesSchema
 } from '../../schemas/article.schema.js'
 import RequirementsIdentificationService from '../requirements/requirementsIdentification/requirementsIdentification.service.js'
+import SendLegalBasisService from '../legalBasis/sendLegalBasis/sendLegalBasis.service.js'
 import ErrorUtils from '../../utils/Error.js'
 import { z } from 'zod'
 import { convert } from 'html-to-text'
@@ -33,13 +34,10 @@ class ArticlesService {
       const plainArticle = parsedArticle.article
         ? convert(parsedArticle.article)
         : null
-      const createdArticle = await ArticlesRepository.create(
-        legalBasisId,
-        {
-          ...parsedArticle,
-          plainArticle
-        }
-      )
+      const createdArticle = await ArticlesRepository.create(legalBasisId, {
+        ...parsedArticle,
+        plainArticle
+      })
       return createdArticle
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -256,9 +254,25 @@ class ArticlesService {
       if (!existingArticle) {
         throw new ErrorUtils(404, 'Article not found')
       }
-      const { hasPendingJobs: hasPendingRequirementIdentificationJobs } = await RequirementsIdentificationService.hasPendingArticleJobs(existingArticle.id)
+      const { hasPendingJobs: hasPendingRequirementIdentificationJobs } =
+        await RequirementsIdentificationService.hasPendingLegalBasisJobs(
+          existingArticle.legal_basis_id
+        )
       if (hasPendingRequirementIdentificationJobs) {
-        throw new ErrorUtils(409, 'Cannot delete Article with pending Requirement Identification jobs')
+        throw new ErrorUtils(
+          409,
+          'Cannot delete Article with pending Requirement Identification jobs'
+        )
+      }
+      const { hasPendingJobs: hasPendingSendLegalBasisJobs } =
+        await SendLegalBasisService.hasPendingSendJobs(
+          existingArticle.legal_basis_id
+        )
+      if (hasPendingSendLegalBasisJobs) {
+        throw new ErrorUtils(
+          409,
+          'Cannot delete Article with pending Send Legal Basis jobs'
+        )
       }
       const articleDeleted = await ArticlesRepository.deleteById(id)
       if (!articleDeleted) {
@@ -274,11 +288,11 @@ class ArticlesService {
   }
 
   /**
- * Deletes multiple articles by their IDs.
- * @param {Array<number>} articleIds - Array of article IDs to delete.
- * @returns {Promise<{ success: boolean }>} - An object indicating the deletion was successful.
- * @throws {ErrorUtils} - If articles not found or deletion fails.
- */
+   * Deletes multiple articles by their IDs.
+   * @param {Array<number>} articleIds - Array of article IDs to delete.
+   * @returns {Promise<{ success: boolean }>} - An object indicating the deletion was successful.
+   * @throws {ErrorUtils} - If articles not found or deletion fails.
+   */
   static async deleteArticlesBatch (articleIds) {
     try {
       const existingArticles = await ArticlesRepository.findByIds(articleIds)
@@ -286,21 +300,50 @@ class ArticlesService {
         const notFoundIds = articleIds.filter(
           (id) => !existingArticles.some((article) => article.id === id)
         )
-        throw new ErrorUtils(404, 'Articles not found for IDs', { notFoundIds })
+        throw new ErrorUtils(404, 'Articles not found for IDs', {
+          notFoundIds
+        })
       }
-      const results = await Promise.all(
+      const pendingRequirementIdentificationJobs = []
+      const pendingSendLegalBasisJobs = []
+      await Promise.all(
         existingArticles.map(async (article) => {
-          const { hasPendingJobs: hasPendingRequirementIdentificationJobs } = await RequirementsIdentificationService.hasPendingArticleJobs(article.id)
-          return hasPendingRequirementIdentificationJobs
-            ? { id: article.id, name: article.article_name }
-            : null
+          const {
+            hasPendingJobs: hasPendingRequirementIdentificationJobsForArticle
+          } = await RequirementsIdentificationService.hasPendingLegalBasisJobs(
+            article.legal_basis_id
+          )
+          if (hasPendingRequirementIdentificationJobsForArticle) {
+            pendingRequirementIdentificationJobs.push({
+              id: article.id,
+              name: article.article_name
+            })
+          }
+          const { hasPendingJobs: hasPendingSendLegalBasisJobsForArticle } =
+            await SendLegalBasisService.hasPendingSendJobs(
+              article.legal_basis_id
+            )
+          if (hasPendingSendLegalBasisJobsForArticle) {
+            pendingSendLegalBasisJobs.push({
+              id: article.id,
+              name: article.article_name
+            })
+          }
         })
       )
-      const pendingRequirementIdentificationJobs = results.filter(Boolean)
       if (pendingRequirementIdentificationJobs.length > 0) {
-        throw new ErrorUtils(409, 'Cannot delete Articles with pending Requirement Identification jobs', {
-          articles: pendingRequirementIdentificationJobs
-        })
+        throw new ErrorUtils(
+          409,
+          'Cannot delete Articles with pending Requirement Identification jobs',
+          { articles: pendingRequirementIdentificationJobs }
+        )
+      }
+      if (pendingSendLegalBasisJobs.length > 0) {
+        throw new ErrorUtils(
+          409,
+          'Cannot delete Articles with pending Send Legal Basis jobs',
+          { articles: pendingSendLegalBasisJobs }
+        )
       }
       const articlesDeleted = await ArticlesRepository.deleteBatch(articleIds)
       if (!articlesDeleted) {
