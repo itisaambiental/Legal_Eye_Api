@@ -2188,7 +2188,7 @@ describe('Get Legal Basis By Subject And Aspects', () => {
     })
     test('Should return 409 if the legal basis has pending Article Extraction jobs', async () => {
       jest
-        .spyOn(extractArticles, 'hasPendingExtractionJobs')
+        .spyOn(extractArticlesService, 'hasPendingExtractionJobs')
         .mockResolvedValue({ hasPendingJobs: true })
       const response = await api
         .delete(`/api/legalBasis/${createdLegalBasis.id}`)

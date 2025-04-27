@@ -10,6 +10,7 @@ import { server, app } from '../index.js'
 import { pool } from '../config/db.config.js'
 import emailQueue from '../workers/emailWorker.js'
 import articlesQueue from '../workers/articlesWorker.js'
+import sendLegalBasisQueue from '../queues/sendLegalBasisQueue.js'
 import requirementsIdentificationQueue from '../queues/requirementsIdentificationQueue.js'
 
 const timeout = 500000
@@ -38,7 +39,8 @@ beforeAll(async () => {
 afterAll(async () => {
   await emailQueue.close()
   await articlesQueue.close()
-  requirementsIdentificationQueue.close()
+  await sendLegalBasisQueue.close()
+  await requirementsIdentificationQueue.close()
   if (serverInstance) {
     serverInstance.close()
   }
