@@ -10,6 +10,7 @@
     "test:subjects": "NODE_ENV=test jest --verbose tests/subjects/subjects.test.js",
     "test:aspects": "NODE_ENV=test jest  --verbose  tests/aspects/aspects.test.js",
     "test:legalBasis": "NODE_ENV=test jest --verbose tests/legalBasis/legalBasis.test.js",
+    "test:sendLegalBasis": "NODE_ENV=test jest --verbose tests/legalBasis/sendLegalBasis.test.js",
     "test:articles": "NODE_ENV=test jest --verbose tests/articles/articles.test.js",
     "test:extractArticles": "NODE_ENV=test jest --verbose tests/articles/extractArticles.test.js",
     "test:requirements": "NODE_ENV=test jest --verbose tests/requirements/requirements.test.js",

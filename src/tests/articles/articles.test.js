@@ -8,6 +8,7 @@ import AspectsRepository from '../../repositories/Aspects.repository.js'
 import RequirementRepository from '../../repositories/Requirements.repository.js'
 import generateLegalBasisData from '../../utils/generateLegalBasisData.js'
 import generateArticleData from '../../utils/generateArticleData.js'
+import SendLegalBasisService from '../../services/legalBasis/sendLegalBasis/sendLegalBasis.service.js'
 
 import {
   ADMIN_PASSWORD_TEST,
@@ -632,5 +633,86 @@ describe('Delete multiple articles', () => {
       .expect('Content-Type', /application\/json/)
 
     expect(response.body.error).toMatch(/token missing or invalid/i)
+  })
+})
+
+describe('Delete Articles - Prevent Deletion if Send Legal Basis Job Pending', () => {
+  let createdArticleId
+
+  beforeEach(async () => {
+    const articleData = generateArticleData()
+    const response = await api
+      .post(`/api/articles/legalBasis/${createdLegalBasisId}`)
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .send(articleData)
+      .expect(201)
+      .expect('Content-Type', /application\/json/)
+
+    createdArticleId = response.body.article.id
+  })
+
+  afterEach(async () => {
+    jest.restoreAllMocks()
+  })
+
+  test('Should prevent deleting a single article if there is a pending Send Legal Basis job', async () => {
+    jest.spyOn(SendLegalBasisService, 'hasPendingSendJobs').mockResolvedValue({
+      hasPendingJobs: true,
+      jobId: 'mockedJobId'
+    })
+
+    const response = await api
+      .delete(`/api/article/${createdArticleId}`)
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .expect(409)
+      .expect('Content-Type', /application\/json/)
+
+    expect(response.body.message).toMatch(
+      /Cannot delete Article with pending Send Legal Basis jobs/i
+    )
+  })
+})
+
+describe('Delete Multiple Articles - Prevent Deletion if Any Send Legal Basis Job Pending', () => {
+  let createdArticleIds = []
+
+  beforeEach(async () => {
+    createdArticleIds = []
+    for (let i = 0; i < 3; i++) {
+      const articleData = generateArticleData()
+      const response = await api
+        .post(`/api/articles/legalBasis/${createdLegalBasisId}`)
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send(articleData)
+        .expect(201)
+        .expect('Content-Type', /application\/json/)
+
+      createdArticleIds.push(response.body.article.id)
+    }
+  })
+
+  afterEach(async () => {
+    jest.restoreAllMocks()
+  })
+
+  test('Should prevent deleting multiple articles if at least one has a pending Send Legal Basis job', async () => {
+    jest.spyOn(SendLegalBasisService, 'hasPendingSendJobs')
+      .mockImplementation(async (legalBasisId) => {
+        if (legalBasisId) {
+          return { hasPendingJobs: true, jobId: 'mockedJobId' }
+        }
+        return { hasPendingJobs: false, jobId: null }
+      })
+
+    const response = await api
+      .delete('/api/articles/batch')
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .send({ articleIds: createdArticleIds })
+      .expect(409)
+      .expect('Content-Type', /application\/json/)
+
+    expect(response.body.message).toMatch(
+      /Cannot delete Articles with pending Send Legal Basis jobs/i
+    )
   })
 })
