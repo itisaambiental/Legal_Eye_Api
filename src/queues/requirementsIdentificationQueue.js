@@ -1,8 +1,3 @@
-/**
- * Initializes and exports analize queue for requirements identification using Bull.
- * Configures the queue with Redis settings and default job options.
- */
-
 import Queue from 'bull'
 import { redisConfig } from '../config/redis.config.js'
 

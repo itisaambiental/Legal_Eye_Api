@@ -36,7 +36,6 @@ export class AcmSuiteService extends BaseAcmSuiteService {
       }
       throw new ErrorUtils(500, message)
     } catch (error) {
-      console.error(error)
       if (error.response?.data?.message) {
         throw new ErrorUtils(500, error.response.data.message)
       }
