@@ -485,6 +485,7 @@ describe('Update an article', () => {
 
 describe('Delete an article', () => {
   let createdArticleId
+
   beforeEach(async () => {
     const articleData = generateArticleData()
     const response = await api
@@ -495,6 +496,10 @@ describe('Delete an article', () => {
       .expect('Content-Type', /application\/json/)
 
     createdArticleId = response.body.article.id
+  })
+
+  afterEach(async () => {
+    jest.restoreAllMocks()
   })
 
   test('Should successfully delete an article by its ID', async () => {
@@ -541,11 +546,30 @@ describe('Delete an article', () => {
 
     expect(response.body.error).toMatch(/token missing or invalid/i)
   })
+
+  test('Should prevent deleting a single article if there is a pending Send Legal Basis job', async () => {
+    jest.spyOn(SendLegalBasisService, 'hasPendingSendJobs').mockResolvedValue({
+      hasPendingJobs: true,
+      jobId: 'mockedJobId'
+    })
+
+    const response = await api
+      .delete(`/api/article/${createdArticleId}`)
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .expect(409)
+      .expect('Content-Type', /application\/json/)
+
+    expect(response.body.message).toMatch(
+      /Cannot delete Article with pending Send Legal Basis jobs/i
+    )
+  })
 })
 
 describe('Delete multiple articles', () => {
   let createdArticleIds = []
+
   beforeEach(async () => {
+    createdArticleIds = []
     for (let i = 0; i < 5; i++) {
       const articleData = generateArticleData()
       const response = await api
@@ -560,6 +584,7 @@ describe('Delete multiple articles', () => {
   })
 
   afterEach(async () => {
+    jest.restoreAllMocks()
     createdArticleIds = []
   })
 
@@ -633,66 +658,6 @@ describe('Delete multiple articles', () => {
       .expect('Content-Type', /application\/json/)
 
     expect(response.body.error).toMatch(/token missing or invalid/i)
-  })
-})
-
-describe('Delete Articles - Prevent Deletion if Send Legal Basis Job Pending', () => {
-  let createdArticleId
-
-  beforeEach(async () => {
-    const articleData = generateArticleData()
-    const response = await api
-      .post(`/api/articles/legalBasis/${createdLegalBasisId}`)
-      .set('Authorization', `Bearer ${tokenAdmin}`)
-      .send(articleData)
-      .expect(201)
-      .expect('Content-Type', /application\/json/)
-
-    createdArticleId = response.body.article.id
-  })
-
-  afterEach(async () => {
-    jest.restoreAllMocks()
-  })
-
-  test('Should prevent deleting a single article if there is a pending Send Legal Basis job', async () => {
-    jest.spyOn(SendLegalBasisService, 'hasPendingSendJobs').mockResolvedValue({
-      hasPendingJobs: true,
-      jobId: 'mockedJobId'
-    })
-
-    const response = await api
-      .delete(`/api/article/${createdArticleId}`)
-      .set('Authorization', `Bearer ${tokenAdmin}`)
-      .expect(409)
-      .expect('Content-Type', /application\/json/)
-
-    expect(response.body.message).toMatch(
-      /Cannot delete Article with pending Send Legal Basis jobs/i
-    )
-  })
-})
-
-describe('Delete Multiple Articles - Prevent Deletion if Any Send Legal Basis Job Pending', () => {
-  let createdArticleIds = []
-
-  beforeEach(async () => {
-    createdArticleIds = []
-    for (let i = 0; i < 3; i++) {
-      const articleData = generateArticleData()
-      const response = await api
-        .post(`/api/articles/legalBasis/${createdLegalBasisId}`)
-        .set('Authorization', `Bearer ${tokenAdmin}`)
-        .send(articleData)
-        .expect(201)
-        .expect('Content-Type', /application\/json/)
-
-      createdArticleIds.push(response.body.article.id)
-    }
-  })
-
-  afterEach(async () => {
-    jest.restoreAllMocks()
   })
 
   test('Should prevent deleting multiple articles if at least one has a pending Send Legal Basis job', async () => {
