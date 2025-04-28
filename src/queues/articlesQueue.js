@@ -3,7 +3,7 @@ import { redisConfig } from '../config/redis.config.js'
 import { LIMIT_EXTRACT_ARTICLES } from '../config/variables.config.js'
 
 /**
- * Rate limiter configuration for the SendLegalBasis queue.
+ * Rate limiter configuration for the extract articles queue.
  * @type {import('bull').RateLimiter}
  */
 const limiter = {

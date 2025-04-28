@@ -1,7 +1,3 @@
-/**
- * @description Initializes and exports AWS clients
- */
-
 import { AWS_REGION, AWS_SECRET_ACCESS_KEY, AWS_ACCESS_KEY_ID } from './variables.config.js'
 import { TextractClient } from '@aws-sdk/client-textract'
 import { S3Client } from '@aws-sdk/client-s3'

@@ -1,9 +1,3 @@
-/**
- * Sets up the testing environment using supertest.
- * Exports the API object for making HTTP requests in tests.
- * Cleans up resources after all tests are completed.
- */
-
 /* eslint-disable no-undef */
 import supertest from 'supertest'
 import { server, app } from '../index.js'

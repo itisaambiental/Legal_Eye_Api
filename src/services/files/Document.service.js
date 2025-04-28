@@ -11,7 +11,7 @@ import {
 
 /**
  * Service class for processing documents.
- * Handles PDF and image files, extracting text content using OCR when necessary.
+ * Handles PDF and image files, extracting text content.
  */
 class DocumentService {
   /**

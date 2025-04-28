@@ -1,8 +1,3 @@
-/**
- * Initializes the admin user in the database if it does not already exist.
- * Loads the admin's profile picture from the file system.
- */
-
 import UserService from '../services/users/User.service.js'
 import UserRepository from '../repositories/User.repository.js'
 import {

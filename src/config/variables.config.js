@@ -1,8 +1,3 @@
-/**
- * Loads environment variables from a .env file into process.env.
- * Exports the required environment variables for use throughout the application.
- */
-
 import dotenv from 'dotenv'
 dotenv.config()
 
