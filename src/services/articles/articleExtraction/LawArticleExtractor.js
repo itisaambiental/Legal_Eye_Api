@@ -63,6 +63,7 @@ class LawArticleExtractor extends ArticleExtractor {
 • Valid section headers include (case-insensitive, punctuation-preserving, and semantically understood by meaning, not just appearance):
 
   ✅ Acceptable variations include capitalized, lowercase, and sentence-case versions. For example:
+     - "CONSIDERANDO", "Considerando"
      - "ARTÍCULO 1", "Artículo 1", "artículo 1,", "Artículo 1."
      - "CAPÍTULO I", "Capítulo I", "capítulo I" , "Capítulo I."
      - "TÍTULO PRIMERO", "Título Primero", "título primero", "Título Primero."
@@ -75,6 +76,7 @@ class LawArticleExtractor extends ArticleExtractor {
 
   🔍 Extract the following types of structural sections when present (in any casing):
     ✅ Valid examples include:
+    - "CONSIDERANDO", "Considerando"
     - "ARTÍCULO 1", "Artículo 1", "artículo 1.", "Artículo 2:", "artículo 3;"
     - "CAPÍTULO I", "Capítulo Primero", "capítulo II.", "Capítulo Segundo:"
     - "TÍTULO I", "Título Primero", "título segundo."
