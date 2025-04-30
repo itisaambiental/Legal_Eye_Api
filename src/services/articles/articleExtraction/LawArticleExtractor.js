@@ -62,20 +62,24 @@ class LawArticleExtractor extends ArticleExtractor {
 
 • Valid section headers include (case-insensitive, punctuation-preserving, and semantically understood by meaning, not just appearance):
 
-  ✅ Acceptable variations include capitalized, lowercase, and sentence-case versions. For example:
+   Acceptable variations include capitalized, lowercase, and sentence-case versions. For example:
      - "CONSIDERANDO", "Considerando"
      - "ARTÍCULO 1", "Artículo 1", "artículo 1,", "Artículo 1."
      - "CAPÍTULO I", "Capítulo I", "capítulo I" , "Capítulo I."
      - "TÍTULO PRIMERO", "Título Primero", "título primero", "Título Primero."
      - Also accept: "Artículo 10 bis", "Artículo 15 ter", "Capítulo Segundo", "Artículo 2.1", etc.
 
-  ➕ Include compound and extended article formats as standalone section headers:
+     **Generic blocks commonly present in normative documents**:
+    - "CONSIDERANDO", "PREFACIO", "INTRODUCCIÓN"
+    - "ÍNDICE", "CONTENIDO"
+
+   Include compound and extended article formats as standalone section headers:
      - e.g., "Artículo 2.1", "Artículo 3-B", "Artículo 10 bis", "Artículo 12 ter", etc.
 
-  🧠 You must identify legal headers based on their **legal meaning and structural intent**, not just formatting or spelling.
+   You must identify legal headers based on their **legal meaning and structural intent**, not just formatting or spelling.
 
-  🔍 Extract the following types of structural sections when present (in any casing):
-    ✅ Valid examples include:
+   Extract the following types of structural sections when present (in any casing):
+      Valid examples include:
     - "CONSIDERANDO", "Considerando"
     - "ARTÍCULO 1", "Artículo 1", "artículo 1.", "Artículo 2:", "artículo 3;"
     - "CAPÍTULO I", "Capítulo Primero", "capítulo II.", "Capítulo Segundo:"
@@ -87,11 +91,17 @@ class LawArticleExtractor extends ArticleExtractor {
     - "ANEXO A", "Anexo I", "anexo B:"
     - "APÉNDICE A", "Apéndice Normativo"
 
-  🔑 VERY IMPORTANT — DETECT "ARTÍCULO N." HEADINGS IN BODY TEXT
+    VERY IMPORTANT — DETECT "ARTÍCULO N." HEADINGS IN BODY TEXT
 
     • In legal documents such as regulations, it's common for article headers like "Artículo 1." or "Artículo 14." to appear directly before their content on the same line.
 
+    • Do not extract subtitles, descriptions or content headers, even in capital letters or on a separate line.
+
     • You MUST recognize these as legal section headers — even when followed by sentence text on the same line.
+
+    • Only lines beginning with explicit legal hierarchy markers MUST be extracted as section headings.
+
+    • If a thematic description or subtitle appears *below* or *on the same line as* a structural heading, it should NOT be extracted as a separate heading. These descriptions belong to the content of the preceding heading and are NOT considered standalone legal sections or divisions.
 
     • For example:
       - "Artículo 1. Este Reglamento tiene por objeto..." → heading: "Artículo 1."
@@ -106,12 +116,12 @@ class LawArticleExtractor extends ArticleExtractor {
     • The heading must be returned **verbatim** as it appears in the original line, preserving capitalization and punctuation.
   
 
-  ⚠️ Do NOT reject section headers due to:
+    Do NOT reject section headers due to:
     - casing (e.g., "artículo" instead of "ARTÍCULO")
     - punctuation (e.g., "Artículo 1.", "Capítulo II:")
     - numbering style (numerical or ordinal)
 
-  🔒 You MUST extract based only on real legal content hierarchy, not visual formatting.
+    You MUST extract based only on real legal content hierarchy, not visual formatting.
 
 • Preserve original **accents**, **punctuation**, and **order** of appearance.
 • Ignore any **page numbers**, **headers**, **footers**, **marginal notes**, or **index references**.
@@ -143,7 +153,7 @@ This ensures that each reform, publication, or addendum is captured independentl
 
 You MUST return the extracted sections **in the exact order in which they appear** in the document, based on their line number.
 
-⚠️ IMPORTANT – ABOUT THE COMPLETE OUTPUT
+  IMPORTANT – ABOUT THE COMPLETE OUTPUT
 Do not summarize the output, do not reduce it because of size, and do not assume that I only want the top-level hierarchy.
 The size of the JSON IS NOT AN OBJECTION. If the document contains hundreds or thousands of headings, you must list absolutely all of them, one by one, exactly as they appear in the text.
 DO NOT group or omit headers, etc.
@@ -151,7 +161,7 @@ DO NOT summarize, DO NOT trim for reasons of size or practicality.
 Only return the valid section heading found on each line.
 Do NOT return any additional content, explanations, or body text, even if it appears on the same line: only extract and return the valid legal heading.
 
-📤 **Return the output as valid JSON in this format**:
+  **Return the output as valid JSON in this format**:
   
   \`\`\`json
   {

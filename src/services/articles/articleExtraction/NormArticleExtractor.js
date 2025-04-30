@@ -62,9 +62,9 @@ Extract only **top-level and unnumbered standalone section headings** from a tec
 
 ---
 
-🔍 **You MUST extract top-level structural sections**, such as:
+ **You MUST extract top-level structural sections**, such as:
 
-📘 **Numeral-based headings** (preserve punctuation and allow natural variations):
+ **Numeral-based headings** (preserve punctuation and allow natural variations):
 - "1. OBJETIVO"
 - "2. REFERENCIAS"
 - "3. DEFINICIONES"
@@ -72,35 +72,35 @@ Extract only **top-level and unnumbered standalone section headings** from a tec
 - "10. OBSERVANCIA DE ESTA NORMA"
 - Accept as valid: "1. Objetivo", "2. Referencias:", "3. DEFINICIONES." — the casing and trailing punctuation may vary.
 
-📂 **Generic blocks commonly present in normative documents**:
+ **Generic blocks commonly present in normative documents**:
 - "CONSIDERANDO", "PREFACIO", "INTRODUCCIÓN"
 - "ÍNDICE", "CONTENIDO"
 
-📑 **Transitional provisions**:
+ **Transitional provisions**:
 - "TRANSITORIOS", "DISPOSICIONES TRANSITORIAS" (even if repeated — extract each block individually)
 
-📎 **Annexes** (considered valid when found in the body, not just in the index):
+ **Annexes** (considered valid when found in the body, not just in the index):
 - "ANEXO", "ANEXO A", "ANEXO B", "ANEXO C", ...
 - "ANEXO I", "ANEXO II", "ANEXO III"
 - "ANEXO NORMATIVO", "ANEXO TÉCNICO"
 - Accept both lettered and roman numeral variants.
 
-📘 **Appendices**:
+ **Appendices**:
 - "APÉNDICE", "APÉNDICE A", "APÉNDICE NORMATIVO", etc.
 
-🗂 **Sections**:
+ **Sections**:
 - "SECCIÓN 1", "SECCIÓN PRIMERA", "SECCIÓN II", etc.
 
 ---
 
-⚠️ **Strict Exclusion Rules**:
-- ❌ Do NOT include any heading that appears **only inside the "ÍNDICE"** block if it does not reappear in the body text.
-- ❌ Do NOT extract sub-numbered headings such as "4.1", "4.2.1", "6.1.3.4". These belong under their respective parent and should be ignored for this task.
-- ❌ Do NOT include formatting artifacts like centered titles, footers, headers, watermarks, editorial credits, or decorative text.
+ **Strict Exclusion Rules**:
+-  Do NOT include any heading that appears **only inside the "ÍNDICE"** block if it does not reappear in the body text.
+-  Do NOT extract sub-numbered headings such as "4.1", "4.2.1", "6.1.3.4". These belong under their respective parent and should be ignored for this task.
+-  Do NOT include formatting artifacts like centered titles, footers, headers, watermarks, editorial credits, or decorative text.
 
 ---
 
-🧠 **Semantic Guidance**:
+ **Semantic Guidance**:
 - Always interpret heading validity based on its **structural role and legal-normative purpose**, not its appearance alone.
 - Accept headings in **any casing** (uppercase, lowercase, sentence-case), and even if followed by a period, colon or semicolon.
 - Examples of valid variants:  
@@ -108,18 +108,18 @@ Extract only **top-level and unnumbered standalone section headings** from a tec
 
 ---
 
-📌 **Reminder on the use of index blocks**:
+ **Reminder on the use of index blocks**:
 - If a heading appears both in the "ÍNDICE" and again in the document body, you MUST extract it.
 - If a heading appears **only in the index**, DO NOT extract it.
 - Instead, extract only headings that occur **within the actual content** of the document.
 
 ---
 
-✅ **The goal is to capture the real content structure** that defines the document’s organization and meaning.
+ **The goal is to capture the real content structure** that defines the document’s organization and meaning.
 
 
 
-🔒 You MUST extract based only on real legal content hierarchy, not visual formatting.
+ You MUST extract based only on real legal content hierarchy, not visual formatting.
 
 • Preserve original **accents**, **punctuation**, and **order** of appearance.
 • Ignore any **page numbers**, **headers**, **footers**, **marginal notes**, or **index references**.
@@ -151,7 +151,7 @@ This ensures that each reform, publication, or addendum is captured independentl
 
 You MUST return the extracted sections **in the exact order in which they appear** in the document, based on their line number.
 
-⚠️ IMPORTANT – ABOUT THE COMPLETE OUTPUT
+ IMPORTANT – ABOUT THE COMPLETE OUTPUT
 Do not summarize the output, do not reduce it because of size, and do not assume that I only want the top-level hierarchy.
 The size of the JSON IS NOT AN OBJECTION. If the document contains hundreds or thousands of headings, you must list absolutely all of them, one by one, exactly as they appear in the text.
 DO NOT group or omit headers, etc.
@@ -160,7 +160,7 @@ Only return the valid section heading found on each line.
 Do NOT return any additional content, explanations, or body text, even if it appears on the same line: only extract and return the valid legal heading.
 
 
-📤 **Return the output as valid JSON in this format**:
+ **Return the output as valid JSON in this format**:
 
 \`\`\`json
 {
