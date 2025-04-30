@@ -97,6 +97,8 @@ Extract only **top-level and unnumbered standalone section headings** from a tec
 
 • Do not extract subtitles, thematic descriptions, or content headers, even if they are in uppercase or appear on a separate line.
 
+• If a line matches a valid legal header, check that the next line is not also a valid header before extracting. If multiple headers are stacked without content lines in between, only extract the topmost one.
+
 • Never extract two valid legal headings one immediately after the other on consecutive lines. There must always be at least one non-header line (such as a paragraph, description, or article body) between two legal section headings.
 
 • If a thematic description or subtitle appears below or on the same line as a structural heading, it must not be extracted separately. It belongs to the content of the preceding heading.

@@ -95,6 +95,8 @@ class RegulationArticleExtractor extends ArticleExtractor {
 
       • In legal documents such as regulations, it is common for article headers like "Artículo 1." or "Artículo 14." to appear directly before their content on the same line. These must be recognized and extracted as valid legal section headings.
 
+      • If a line matches a valid legal header, check that the next line is not also a valid header before extracting. If multiple headers are stacked without content lines in between, only extract the topmost one.
+
       • Do not extract subtitles, thematic descriptions, or content headers, even if they are in uppercase or appear on a separate line.
 
       • Never extract two valid legal headings one immediately after the other on consecutive lines. There must always be at least one non-header line (such as a paragraph, description, or article body) between two legal section headings.
