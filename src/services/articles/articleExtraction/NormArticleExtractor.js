@@ -93,6 +93,16 @@ Extract only **top-level and unnumbered standalone section headings** from a tec
 
 ---
 
+  VERY IMPORTANT — DETECT  HEADINGS IN BODY TEXT
+
+• Do not extract subtitles, thematic descriptions, or content headers, even if they are in uppercase or appear on a separate line.
+
+• Never extract two valid legal headings one immediately after the other on consecutive lines. There must always be at least one non-header line (such as a paragraph, description, or article body) between two legal section headings.
+
+• If a thematic description or subtitle appears below or on the same line as a structural heading, it must not be extracted separately. It belongs to the content of the preceding heading.
+
+• Only extract the heading itself, exactly as it appears in the document, and ignore any additional sentence or content in the same line.
+
  **Strict Exclusion Rules**:
 -  Do NOT include any heading that appears **only inside the "ÍNDICE"** block if it does not reappear in the body text.
 -  Do NOT extract sub-numbered headings such as "4.1", "4.2.1", "6.1.3.4". These belong under their respective parent and should be ignored for this task.

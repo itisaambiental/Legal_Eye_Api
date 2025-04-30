@@ -91,19 +91,19 @@ class RegulationArticleExtractor extends ArticleExtractor {
     - "ANEXO A", "Anexo I", "anexo B:"
     - "APÉNDICE A", "Apéndice Normativo"
 
-     VERY IMPORTANT — DETECT "ARTÍCULO N." HEADINGS IN BODY TEXT
+         VERY IMPORTANT — DETECT  HEADINGS IN BODY TEXT
 
-    • In legal documents such as regulations, it's common for article headers like "Artículo 1." or "Artículo 14." to appear directly before their content on the same line.
+      • In legal documents such as regulations, it is common for article headers like "Artículo 1." or "Artículo 14." to appear directly before their content on the same line. These must be recognized and extracted as valid legal section headings.
 
-    • Do not extract subtitles, descriptions or content headers, even in capital letters or on a separate line.
+      • Do not extract subtitles, thematic descriptions, or content headers, even if they are in uppercase or appear on a separate line.
 
-    • You MUST recognize these as legal section headers — even when followed by sentence text on the same line.
+      • Never extract two valid legal headings one immediately after the other on consecutive lines. There must always be at least one non-header line (such as a paragraph, description, or article body) between two legal section headings.
 
-    • Only lines beginning with explicit legal hierarchy markers MUST be extracted as section headings.
+      • If a thematic description or subtitle appears below or on the same line as a structural heading, it must not be extracted separately. It belongs to the content of the preceding heading.
 
-    • If a thematic description or subtitle appears *below* or *on the same line as* a structural heading, it should NOT be extracted as a separate heading. These descriptions belong to the content of the preceding heading and are NOT considered standalone legal sections or divisions.
+      • Only extract the heading itself, exactly as it appears in the document, and ignore any additional sentence or content in the same line.
 
-    • For example:
+      • For example:
       - "Artículo 1. Este Reglamento tiene por objeto..." → heading: "Artículo 1."
       - "Artículo 2. Se aplicará conforme a..." → heading: "Artículo 2."
 
