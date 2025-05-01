@@ -413,23 +413,23 @@ class UserRepository {
   }
 
   /**
-   * Retrieves a verification code from the database.
-   * @param {string} gmail - Gmail associated with the code.
-   * @param {string} code - The verification code.
-   * @returns {Promise<Object|null>} - The verification code object or null if not found.
-   * @throws {ErrorUtils} - If an error occurs during retrieval.
-   */
+ * Retrieves the expiration date of a verification code.
+ * @param {string} gmail - Gmail associated with the code.
+ * @param {string} code - The verification code.
+ * @returns {Promise<{ expiresAt: Date } | null>} - The expiration info or null if not found.
+ * @throws {ErrorUtils} - If an error occurs during retrieval.
+ */
   static async getVerificationCode (gmail, code) {
     const query = `
-      SELECT id, gmail, code, expires_at AS expiresAt
-      FROM verification_codes
-      WHERE gmail = ? AND code = ?
-    `
+    SELECT expires_at AS expiresAt
+    FROM verification_codes
+    WHERE gmail = ? AND code = ?
+  `
     const values = [gmail, code]
 
     try {
       const [result] = await pool.query(query, values)
-      return result[0]
+      return result[0] || null
     } catch (error) {
       console.error('Error retrieving verification code from database:', error)
       throw new ErrorUtils(500, 'Error retrieving verification code from database')

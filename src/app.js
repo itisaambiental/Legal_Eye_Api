@@ -4,6 +4,7 @@
 
 import express from 'express'
 import cors from 'cors'
+import rateLimiter from './middlewares/rate_limiter.js'
 import UserRoutes from './routes/User.routes.js'
 import FilesRoutes from './routes/Files.routes.js'
 import SubjectsRoutes from './routes/Subjects.routes.js'
@@ -33,6 +34,7 @@ const corsOptions =
 
 app.use(cors(corsOptions)) // Enable Cross-Origin Resource Sharing
 app.use(express.json()) // Parse incoming JSON requests
+app.use(rateLimiter) // Apply rate limiting
 
 /**
  * Route setup.
