@@ -320,7 +320,7 @@ class RequirementTypesRepository {
         id
       ])
       if (result.affectedRows === 0) return null
-      const requirementType = await this.findById(result.insertId)
+      const requirementType = await this.findById(id)
       return requirementType
     } catch (error) {
       console.error('Error updating requirement type:', error.message)
