@@ -1,6 +1,6 @@
-import RequirementTypesService from '../../services/requirements/requirementTypes/requirementTypes.service.js'
-import UserService from '../../services/users/User.service.js'
-import ErrorUtils from '../../utils/Error.js'
+import RequirementTypesService from '../services/requirements/requirementTypes/requirementTypes.service.js'
+import UserService from '../services/users/User.service.js'
+import ErrorUtils from '../utils/Error.js'
 
 /**
  * Controller for requirement types operations.
@@ -44,7 +44,7 @@ export const createRequirementType = async (req, res) => {
  * @function getRequirementTypes
  * @param {import('express').Request} req - Request object.
  * @param {import('express').Response} res - Response object.
- * @returns {Array} - List of all requirement types.
+ * @returns {Object} - Object of all requirement types.
  */
 export const getRequirementTypes = async (req, res) => {
   const { userId } = req
@@ -53,8 +53,8 @@ export const getRequirementTypes = async (req, res) => {
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-    const types = await RequirementTypesService.getAll()
-    return res.status(200).json({ requirementTypes: types })
+    const requirementTypes = await RequirementTypesService.getAll()
+    return res.status(200).json({ requirementTypes })
   } catch (error) {
     if (error instanceof ErrorUtils) {
       return res.status(error.status).json({
@@ -81,8 +81,8 @@ export const getRequirementTypeById = async (req, res) => {
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-    const type = await RequirementTypesService.getById(id)
-    return res.status(200).json({ requirementType: type })
+    const requirementType = await RequirementTypesService.getById(id)
+    return res.status(200).json({ requirementType })
   } catch (error) {
     if (error instanceof ErrorUtils) {
       return res.status(error.status).json({
@@ -95,11 +95,11 @@ export const getRequirementTypeById = async (req, res) => {
 }
 
 /**
- * Retrieves requirement types by name.
+ * Retrieves requirement types by name (partial or full match).
  * @function getRequirementTypesByName
  * @param {import('express').Request} req - Request object, expects `name` in query parameters.
  * @param {import('express').Response} res - Response object.
- * @returns {Array} - Array of matching requirement types.
+ * @returns {Object} - Object of matching requirement types.
  */
 export const getRequirementTypesByName = async (req, res) => {
   const { userId } = req
@@ -109,8 +109,8 @@ export const getRequirementTypesByName = async (req, res) => {
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-    const types = await RequirementTypesService.getByName(name)
-    return res.status(200).json({ requirementTypes: types })
+    const requirementTypes = await RequirementTypesService.getByName(name)
+    return res.status(200).json({ requirementTypes })
   } catch (error) {
     if (error instanceof ErrorUtils) {
       return res.status(error.status).json({
@@ -126,7 +126,7 @@ export const getRequirementTypesByName = async (req, res) => {
  * @function getRequirementTypesByDescription
  * @param {import('express').Request} req - Request object, expects `description` in query parameters.
  * @param {import('express').Response} res - Response object.
- * @returns {Array} - Array of matching requirement types.
+ * @returns {Object} - Object of matching requirement types.
  */
 export const getRequirementTypesByDescription = async (req, res) => {
   const { userId } = req
@@ -136,8 +136,10 @@ export const getRequirementTypesByDescription = async (req, res) => {
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-    const types = await RequirementTypesService.getByDescription(description)
-    return res.status(200).json({ requirementTypes: types })
+    const requirementTypes = await RequirementTypesService.getByDescription(
+      description
+    )
+    return res.status(200).json({ requirementTypes })
   } catch (error) {
     if (error instanceof ErrorUtils) {
       return res.status(error.status).json({
@@ -164,8 +166,10 @@ export const getRequirementTypesByClassification = async (req, res) => {
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-    const types = await RequirementTypesService.getByClassification(classification)
-    return res.status(200).json({ requirementTypes: types })
+    const requirementTypes = await RequirementTypesService.getByClassification(
+      classification
+    )
+    return res.status(200).json({ requirementTypes })
   } catch (error) {
     if (error instanceof ErrorUtils) {
       return res.status(error.status).json({
@@ -193,12 +197,12 @@ export const updateRequirementType = async (req, res) => {
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-    const type = await RequirementTypesService.updateById(id, {
+    const requirementType = await RequirementTypesService.updateById(id, {
       name,
       description,
       classification
     })
-    return res.status(200).json({ requirementType: type })
+    return res.status(200).json({ requirementType })
   } catch (error) {
     if (error instanceof ErrorUtils) {
       return res.status(error.status).json({
@@ -238,7 +242,9 @@ export const deleteRequirementType = async (req, res) => {
         ...(error.errors && { errors: error.errors })
       })
     }
-    return res.status(500).json({ message: 'Failed to delete requirement type' })
+    return res
+      .status(500)
+      .json({ message: 'Failed to delete requirement type' })
   }
 }
 
@@ -251,16 +257,22 @@ export const deleteRequirementType = async (req, res) => {
  */
 export const deleteRequirementTypesBatch = async (req, res) => {
   const { userId } = req
-  const { ids } = req.body
-  if (!ids || !Array.isArray(ids) || ids.length === 0) {
-    return res.status(400).json({ message: 'Missing required field: ids' })
+  const { requirementTypesIds } = req.body
+  if (
+    !requirementTypesIds ||
+    !Array.isArray(requirementTypesIds) ||
+    requirementTypesIds.length === 0
+  ) {
+    return res.status(400).json({ message: 'Missing required field: requirementTypesIds' })
   }
   try {
     const isAuthorized = await UserService.userExists(userId)
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-    const { success } = await RequirementTypesService.deleteBatch(ids)
+    const { success } = await RequirementTypesService.deleteBatch(
+      requirementTypesIds
+    )
     if (success) {
       return res.sendStatus(204)
     } else {

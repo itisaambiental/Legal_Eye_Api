@@ -89,7 +89,7 @@ class SubjectsRepository {
   /**
    * Finds subjects in the database using an array of IDs.
    * @param {Array<number>} subjectIds - Array of subject IDs to find.
-   * @returns {Promise<Array<Object>>} - Array of objects with found subject IDs and names.
+   * @returns {Promise<Subject[]>>} - Array of objects with found subject IDs and names.
    * @throws {ErrorUtils} - If an error occurs during retrieval.
    */
   static async findByIds (subjectIds) {
@@ -103,12 +103,14 @@ class SubjectsRepository {
   `
     try {
       const [rows] = await pool.query(query, [subjectIds])
-      return rows.map((row) => ({
-        id: row.id,
-        name: row.subject_name,
-        abbreviation: row.abbreviation,
-        order_index: row.order_index
-      }))
+      return rows.map(
+        (subject) => new Subject(
+          subject.id,
+          subject.subject_name,
+          subject.abbreviation,
+          subject.order_index
+        )
+      )
     } catch (error) {
       console.error('Error finding subjects by IDs:', error.message)
       throw new ErrorUtils(

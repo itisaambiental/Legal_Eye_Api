@@ -99,7 +99,7 @@ router.delete('/requirement-types/:id', UserExtractor, deleteRequirementType)
  * Route to delete multiple requirement types using an array of IDs.
  * @method DELETE
  * @path /requirement-types/batch
- * @body {Array<number>} ids - Array of IDs of the requirement types to delete.
+ * @body {Array<number>} requirementTypesIds - Array of IDs of the requirement types to delete.
  * @description Deletes multiple requirement types from the system.
  * @middleware UserExtractor
  */

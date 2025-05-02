@@ -168,6 +168,10 @@ class SubjectsService {
  */
   static async deleteById (id) {
     try {
+      const currentSubject = await SubjectsRepository.findById(id)
+      if (!currentSubject) {
+        throw new ErrorUtils(404, 'Subject not found')
+      }
       const { isAssociatedToLegalBasis } = await SubjectsRepository.checkSubjectLegalBasisAssociations(id)
       if (isAssociatedToLegalBasis) {
         throw new ErrorUtils(

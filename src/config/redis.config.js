@@ -50,9 +50,7 @@ export const redisConfig = {
   host: config[NODE_ENV].host,
   port: config[NODE_ENV].port,
   password: config[NODE_ENV].password,
-  username: config[NODE_ENV].username,
-  db: 0,
-  connectTimeout: 10000
+  username: config[NODE_ENV].username
 }
 
 /**

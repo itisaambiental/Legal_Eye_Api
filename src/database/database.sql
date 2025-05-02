@@ -190,15 +190,6 @@ CREATE TABLE IF NOT EXISTS requirements (
         'Única vez',
         'Específica'
     ) NOT NULL,
-    requirement_type ENUM(
-        'Identificación Estatal',
-        'Identificación Federal',
-        'Identificación Local',
-        'Requerimiento Compuesto',
-        'Requerimiento Compuesto e Identificación',
-        'Requerimiento Estatal',
-        'Requerimiento Local'
-    ) NOT NULL,
     FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE RESTRICT,
     FULLTEXT(mandatory_description),
     FULLTEXT(complementary_description),
@@ -257,9 +248,9 @@ CREATE TABLE IF NOT EXISTS identification_requirements (
 -- including the type name,  description and a classification.
 CREATE TABLE IF NOT EXISTS requirement_types (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
-    description TEXT,
-    classification LONGTEXT NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    description LONGTEXT NOT NULL,
+    classification LONGTEXT NOT NULL
 );
 
 -- Table: identification_legal_basis

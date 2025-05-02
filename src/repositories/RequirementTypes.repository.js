@@ -20,18 +20,25 @@ class RequirementTypesRepository {
       VALUES (?, ?, ?)
     `
     try {
-      const [result] = await pool.query(query, [name, description, classification])
+      const [result] = await pool.query(query, [
+        name,
+        description,
+        classification
+      ])
       const requirementType = await this.findById(result.insertId)
       return requirementType
     } catch (error) {
       console.error('Error creating requirement type:', error.message)
-      throw new ErrorUtils(500, 'Error inserting requirement type into the database')
+      throw new ErrorUtils(
+        500,
+        'Error inserting requirement type into the database'
+      )
     }
   }
 
   /**
    * Fetches all requirement types from the database.
-   * @returns {Promise<Array<RequirementType|null>>} - Returns a list of RequirementType instances.
+   * @returns {Promise<RequirementType[] | null>} - Returns a list of RequirementType instances.
    * @throws {ErrorUtils} - If an error occurs during retrieval.
    */
   static async findAll () {
@@ -43,16 +50,20 @@ class RequirementTypesRepository {
           `)
       if (rows.length === 0) return null
       return rows.map(
-        (type) => new RequirementType(
-          type.id,
-          type.name,
-          type.description,
-          type.classification
-        )
+        (requirementType) =>
+          new RequirementType(
+            requirementType.id,
+            requirementType.name,
+            requirementType.description,
+            requirementType.classification
+          )
       )
     } catch (error) {
       console.error('Error fetching requirement types:', error.message)
-      throw new ErrorUtils(500, 'Error fetching requirement types from the database')
+      throw new ErrorUtils(
+        500,
+        'Error fetching requirement types from the database'
+      )
     }
   }
 
@@ -73,27 +84,30 @@ class RequirementTypesRepository {
         [id]
       )
       if (rows.length === 0) return null
-      const type = rows[0]
+      const requirementType = rows[0]
       return new RequirementType(
-        type.id,
-        type.name,
-        type.description,
-        type.classification
+        requirementType.id,
+        requirementType.name,
+        requirementType.description,
+        requirementType.classification
       )
     } catch (error) {
       console.error('Error fetching requirement type by ID:', error.message)
-      throw new ErrorUtils(500, 'Error fetching requirement type from the database')
+      throw new ErrorUtils(
+        500,
+        'Error fetching requirement type from the database'
+      )
     }
   }
 
   /**
    * Finds requirement types in the database using an array of IDs.
-   * @param {Array<number>} typeIds - Array of requirement type IDs to find.
-   * @returns {Promise<Array<RequirementType>>} - Array of RequirementType instances.
+   * @param {Array<number>} requirementTypesIds - Array of requirement type IDs to find.
+   * @returns {Promise<RequirementType[]>} - Array of RequirementType instances.
    * @throws {ErrorUtils} - If an error occurs during retrieval.
    */
-  static async findByIds (typeIds) {
-    if (typeIds.length === 0) {
+  static async findByIds (requirementTypesIds) {
+    if (requirementTypesIds.length === 0) {
       return []
     }
     const query = `
@@ -102,11 +116,22 @@ class RequirementTypesRepository {
       WHERE id IN (?)
     `
     try {
-      const [rows] = await pool.query(query, [typeIds])
-      return rows.map(row => new RequirementType(row.id, row.name, row.description, row.classification))
+      const [rows] = await pool.query(query, [requirementTypesIds])
+      return rows.map(
+        (row) =>
+          new RequirementType(
+            row.id,
+            row.name,
+            row.description,
+            row.classification
+          )
+      )
     } catch (error) {
       console.error('Error finding requirement types by IDs:', error.message)
-      throw new ErrorUtils(500, 'Error finding requirement types by IDs from the database')
+      throw new ErrorUtils(
+        500,
+        'Error finding requirement types by IDs from the database'
+      )
     }
   }
 
@@ -127,8 +152,14 @@ class RequirementTypesRepository {
       const [rows] = await pool.query(query, [name, idToExclude])
       return rows.length > 0
     } catch (error) {
-      console.error('Error checking if requirement type name exists:', error.message)
-      throw new ErrorUtils(500, 'Error checking if requirement type name exists')
+      console.error(
+        'Error checking if requirement type name exists:',
+        error.message
+      )
+      throw new ErrorUtils(
+        500,
+        'Error checking if requirement type name exists'
+      )
     }
   }
 
@@ -148,29 +179,43 @@ class RequirementTypesRepository {
       const [rows] = await pool.query(query, [name])
       return rows.length > 0
     } catch (error) {
-      console.error('Error checking if requirement type name exists:', error.message)
-      throw new ErrorUtils(500, 'Error checking if requirement type name exists')
+      console.error(
+        'Error checking if requirement type name exists:',
+        error.message
+      )
+      throw new ErrorUtils(
+        500,
+        'Error checking if requirement type name exists'
+      )
     }
   }
 
   /**
    * Fetches requirement types from the database by partial name match.
-   * @param {string} partialName - A partial or full name to search for.
-   * @returns {Promise<Array<RequirementType|null>>} - Array of RequirementType instances.
+   * @param {string} name - A partial or full name to search for.
+   * @returns {Promise<Array<RequirementType[]|null>>} - Array of RequirementType instances.
    */
-  static async findByName (partialName) {
-    const search = `%${partialName}%`
+  static async findByName (name) {
+    const search = `%${name}%`
     try {
       const [rows] = await pool.query(
-            `
+        `
             SELECT id, name, description, classification
             FROM requirement_types
             WHERE name LIKE ?
             `,
-            [search]
+        [search]
       )
       if (rows.length === 0) return null
-      return rows.map(row => new RequirementType(row.id, row.name, row.description, row.classification))
+      return rows.map(
+        (row) =>
+          new RequirementType(
+            row.id,
+            row.name,
+            row.description,
+            row.classification
+          )
+      )
     } catch (error) {
       console.error('Error fetching requirement types by name:', error.message)
       throw new ErrorUtils(500, 'Error fetching requirement types by name')
@@ -179,11 +224,11 @@ class RequirementTypesRepository {
 
   /**
    * Fetches requirement types from the database by partial description match.
-   * @param {string} partialDescription - A partial description to search for.
-   * @returns {Promise<Array<RequirementType|null>>} - Array of RequirementType instances.
+   * @param {string} description - A partial description to search for.
+   * @returns {Promise<Array<RequirementType[]|null>>} - Array of RequirementType instances.
    */
-  static async findByDescription (partialDescription) {
-    const search = `%${partialDescription}%`
+  static async findByDescription (description) {
+    const search = `%${description}%`
     try {
       const [rows] = await pool.query(
         `
@@ -194,20 +239,34 @@ class RequirementTypesRepository {
         [search]
       )
       if (rows.length === 0) return null
-      return rows.map(row => new RequirementType(row.id, row.name, row.description, row.classification))
+      return rows.map(
+        (row) =>
+          new RequirementType(
+            row.id,
+            row.name,
+            row.description,
+            row.classification
+          )
+      )
     } catch (error) {
-      console.error('Error fetching requirement types by description:', error.message)
-      throw new ErrorUtils(500, 'Error fetching requirement types by description')
+      console.error(
+        'Error fetching requirement types by description:',
+        error.message
+      )
+      throw new ErrorUtils(
+        500,
+        'Error fetching requirement types by description'
+      )
     }
   }
 
   /**
    * Fetches requirement types from the database by partial classification match.
-   * @param {string} partialClassification - A partial classification to search for.
-   * @returns {Promise<Array<RequirementType|null>>} - Array of RequirementType instances.
+   * @param {string} classification - A partial classification to search for.
+   * @returns {Promise<Array<RequirementType[]|null>>} - Array of RequirementType instances.
    */
-  static async findByClassification (partialClassification) {
-    const search = `%${partialClassification}%`
+  static async findByClassification (classification) {
+    const search = `%${classification}%`
     try {
       const [rows] = await pool.query(
         `
@@ -218,10 +277,24 @@ class RequirementTypesRepository {
         [search]
       )
       if (rows.length === 0) return null
-      return rows.map(row => new RequirementType(row.id, row.name, row.description, row.classification))
+      return rows.map(
+        (row) =>
+          new RequirementType(
+            row.id,
+            row.name,
+            row.description,
+            row.classification
+          )
+      )
     } catch (error) {
-      console.error('Error fetching requirement types by classification:', error.message)
-      throw new ErrorUtils(500, 'Error fetching requirement types by classification')
+      console.error(
+        'Error fetching requirement types by classification:',
+        error.message
+      )
+      throw new ErrorUtils(
+        500,
+        'Error fetching requirement types by classification'
+      )
     }
   }
 
@@ -240,12 +313,21 @@ class RequirementTypesRepository {
       WHERE id = ?
     `
     try {
-      const [result] = await pool.query(query, [name, description, classification, id])
+      const [result] = await pool.query(query, [
+        name,
+        description,
+        classification,
+        id
+      ])
       if (result.affectedRows === 0) return null
-      return await this.findById(id)
+      const requirementType = await this.findById(result.insertId)
+      return requirementType
     } catch (error) {
       console.error('Error updating requirement type:', error.message)
-      throw new ErrorUtils(500, 'Error updating requirement type in the database')
+      throw new ErrorUtils(
+        500,
+        'Error updating requirement type in the database'
+      )
     }
   }
 
@@ -263,26 +345,32 @@ class RequirementTypesRepository {
       return result.affectedRows > 0
     } catch (error) {
       console.error('Error deleting requirement type:', error.message)
-      throw new ErrorUtils(500, 'Error deleting requirement type from the database')
+      throw new ErrorUtils(
+        500,
+        'Error deleting requirement type from the database'
+      )
     }
   }
 
   /**
    * Deletes multiple requirement types from the database using an array of IDs.
-   * @param {Array<number>} typeIds - Array of requirement type IDs to delete.
+   * @param {Array<number>} requirementTypesIds - Array of requirement type IDs to delete.
    * @returns {Promise<boolean>} - True if deletion was successful, otherwise false.
    */
-  static async deleteBatch (typeIds) {
+  static async deleteBatch (requirementTypesIds) {
     const query = `
       DELETE FROM requirement_types
       WHERE id IN (?)
     `
     try {
-      const [result] = await pool.query(query, [typeIds])
+      const [result] = await pool.query(query, [requirementTypesIds])
       return result.affectedRows > 0
     } catch (error) {
       console.error('Error deleting requirement types batch:', error.message)
-      throw new ErrorUtils(500, 'Error deleting requirement types from the database')
+      throw new ErrorUtils(
+        500,
+        'Error deleting requirement types from the database'
+      )
     }
   }
 
@@ -296,7 +384,10 @@ class RequirementTypesRepository {
       await pool.query('DELETE FROM requirement_types')
     } catch (error) {
       console.error('Error deleting all requirement types:', error.message)
-      throw new ErrorUtils(500, 'Error deleting all requirement types from the database')
+      throw new ErrorUtils(
+        500,
+        'Error deleting all requirement types from the database'
+      )
     }
   }
 }

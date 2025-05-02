@@ -18,20 +18,24 @@ class RequirementTypesService {
    */
   static async create ({ name, description, classification }) {
     try {
-      const parsedType = requirementTypesSchema.parse({ name, description, classification })
-
-      const typeExists = await RequirementTypesRepository.existsByRequirementTypesName(parsedType.name)
-      if (typeExists) {
-        throw new ErrorUtils(409, 'Requirement type already exists')
+      const parsedRequirementType = requirementTypesSchema.parse({
+        name,
+        description,
+        classification
+      })
+      const requirementTypeNameExists =
+        await RequirementTypesRepository.existsByRequirementTypesName(
+          parsedRequirementType.name
+        )
+      if (requirementTypeNameExists) {
+        throw new ErrorUtils(409, 'Requirement type name already exists')
       }
-
-      const createdType = await RequirementTypesRepository.create(
-        parsedType.name,
-        parsedType.description,
-        parsedType.classification
+      const createdRequirementType = await RequirementTypesRepository.create(
+        parsedRequirementType.name,
+        parsedRequirementType.description,
+        parsedRequirementType.classification
       )
-
-      return createdType
+      return createdRequirementType
     } catch (error) {
       if (error instanceof z.ZodError) {
         const validationErrors = error.errors.map((e) => ({
@@ -40,11 +44,9 @@ class RequirementTypesService {
         }))
         throw new ErrorUtils(400, 'Validation failed', validationErrors)
       }
-
       if (error instanceof ErrorUtils) {
         throw error
       }
-
       throw new ErrorUtils(500, 'Failed to create requirement type')
     }
   }
@@ -98,11 +100,11 @@ class RequirementTypesService {
    */
   static async getByName (name) {
     try {
-      const types = await RequirementTypesRepository.findByName(name)
-      if (!types) {
+      const requirementTypes = await RequirementTypesRepository.findByName(name)
+      if (!requirementTypes) {
         return []
       }
-      return types
+      return requirementTypes
     } catch (error) {
       if (error instanceof ErrorUtils) {
         throw error
@@ -119,37 +121,47 @@ class RequirementTypesService {
    */
   static async getByDescription (description) {
     try {
-      const types = await RequirementTypesRepository.findByDescription(description)
-      if (!types) {
+      const requirementTypes = await RequirementTypesRepository.findByDescription(
+        description
+      )
+      if (!requirementTypes) {
         return []
       }
-      return types
+      return requirementTypes
     } catch (error) {
       if (error instanceof ErrorUtils) {
         throw error
       }
-      throw new ErrorUtils(500, 'Failed to fetch requirement types by description')
+      throw new ErrorUtils(
+        500,
+        'Failed to fetch requirement types by description'
+      )
     }
   }
 
   /**
-       * Fetches requirement types by partial or full classification match.
-       * @param {string} classification - The classification or partial classification to search.
-       * @returns {Promise<Array<RequirementType>>} - List of matching requirement types.
-       * @throws {ErrorUtils} - If an error occurs during retrieval.
-       */
+   * Fetches requirement types by partial or full classification match.
+   * @param {string} classification - The classification or partial classification to search.
+   * @returns {Promise<Array<RequirementType>>} - List of matching requirement types.
+   * @throws {ErrorUtils} - If an error occurs during retrieval.
+   */
   static async getByClassification (classification) {
     try {
-      const types = await RequirementTypesRepository.findByClassification(classification)
-      if (!types) {
+      const requirementTypes = await RequirementTypesRepository.findByClassification(
+        classification
+      )
+      if (!requirementTypes) {
         return []
       }
-      return types
+      return requirementTypes
     } catch (error) {
       if (error instanceof ErrorUtils) {
         throw error
       }
-      throw new ErrorUtils(500, 'Failed to fetch requirement types by classification')
+      throw new ErrorUtils(
+        500,
+        'Failed to fetch requirement types by classification'
+      )
     }
   }
 
@@ -165,30 +177,34 @@ class RequirementTypesService {
    */
   static async updateById (id, { name, description, classification }) {
     try {
-      const parsed = requirementTypesSchema.parse({ name, description, classification })
-
-      const currentType = await RequirementTypesRepository.findById(id)
-      if (!currentType) {
+      const parsedRequirementType = requirementTypesSchema.parse({
+        name,
+        description,
+        classification
+      })
+      const requirementType = await RequirementTypesRepository.findById(id)
+      if (!requirementType) {
         throw new ErrorUtils(404, 'Requirement type not found')
       }
-
-      const nameExists = await RequirementTypesRepository.existsByNameExcludingId(parsed.name, id)
-      if (nameExists) {
-        throw new ErrorUtils(409, 'Requirement type with this name already exists')
+      const requirementTypeNameExists =
+        await RequirementTypesRepository.existsByNameExcludingId(
+          parsedRequirementType.name,
+          id
+        )
+      if (requirementTypeNameExists) {
+        throw new ErrorUtils(409, 'Requirement type name already exists')
       }
 
-      const updatedType = await RequirementTypesRepository.update(
+      const updatedRequirementType = await RequirementTypesRepository.update(
         id,
-        parsed.name,
-        parsed.description,
-        parsed.classification
+        parsedRequirementType.name,
+        parsedRequirementType.description,
+        parsedRequirementType.classification
       )
-
-      if (!updatedType) {
-        throw new ErrorUtils(404, 'Requirement type not found after update')
+      if (!updatedRequirementType) {
+        throw new ErrorUtils(404, 'Requirement type not found')
       }
-
-      return updatedType
+      return updatedRequirementType
     } catch (error) {
       if (error instanceof z.ZodError) {
         const validationErrors = error.errors.map((e) => ({
@@ -214,11 +230,14 @@ class RequirementTypesService {
    */
   static async deleteById (id) {
     try {
-      const deleted = await RequirementTypesRepository.deleteById(id)
-      if (!deleted) {
+      const requirementType = await RequirementTypesRepository.findById(id)
+      if (!requirementType) {
         throw new ErrorUtils(404, 'Requirement type not found')
       }
-
+      const requirementTypeDeleted = await RequirementTypesRepository.deleteById(id)
+      if (!requirementTypeDeleted) {
+        throw new ErrorUtils(404, 'Requirement type not found')
+      }
       return { success: true }
     } catch (error) {
       if (error instanceof ErrorUtils) {
@@ -236,15 +255,21 @@ class RequirementTypesService {
    */
   static async deleteBatch (requirementTypeIds) {
     try {
-      const existingTypes = await RequirementTypesRepository.findByIds(requirementTypeIds)
-      if (existingTypes.length !== requirementTypeIds.length) {
+      const existingRequirementTypes = await RequirementTypesRepository.findByIds(
+        requirementTypeIds
+      )
+      if (existingRequirementTypes.length !== requirementTypeIds.length) {
         const notFoundIds = requirementTypeIds.filter(
-          (id) => !existingTypes.some((type) => type.id === id)
+          (id) => !existingRequirementTypes.some((type) => type.id === id)
         )
-        throw new ErrorUtils(404, 'Requirement types not found for IDs', { notFoundIds })
+        throw new ErrorUtils(404, 'Requirement types not found for IDs', {
+          notFoundIds
+        })
       }
-      const deleted = await RequirementTypesRepository.deleteBatch(requirementTypeIds)
-      if (!deleted) {
+      const requirementTypesDeleted = await RequirementTypesRepository.deleteBatch(
+        requirementTypeIds
+      )
+      if (!requirementTypesDeleted) {
         throw new ErrorUtils(404, 'Requirement types not found')
       }
       return { success: true }

@@ -57,9 +57,7 @@ const pool = createPool({
   host: config[NODE_ENV].host,
   user: config[NODE_ENV].user,
   password: config[NODE_ENV].password,
-  database: config[NODE_ENV].database,
-  waitForConnections: true,
-  connectTimeout: 10000
+  database: config[NODE_ENV].database
 })
 
 export { pool }
