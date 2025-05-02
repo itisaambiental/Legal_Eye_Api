@@ -22,12 +22,6 @@ import { NODE_ENV, APP_URL } from './config/variables.config.js'
  */
 const app = express()
 
-const TRUSTED_PROXY_HOPS = 1
-/**
- * Trust proxy if behind a load balancer or reverse proxy.
- */
-app.set('trust proxy', TRUSTED_PROXY_HOPS)
-
 /**
  * Middleware setup.
  */
