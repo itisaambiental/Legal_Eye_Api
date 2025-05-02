@@ -226,10 +226,9 @@ CREATE TABLE IF NOT EXISTS requirements_identification (
     failed_reason TEXT,
     user_id BIGINT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE
-    SET
-        NULL
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
 );
+
 
 -- Table: identification_requirements
 -- Description: This table creates a relationship between an analysis (from requirements_identification)
@@ -247,11 +246,14 @@ CREATE TABLE IF NOT EXISTS identification_requirements (
 -- Description: This table stores the types of requirements that can be associated with identificacion requirements.
 -- including the type name,  description and a classification.
 CREATE TABLE IF NOT EXISTS requirement_types (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    description LONGTEXT NOT NULL,
-    classification LONGTEXT NOT NULL
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  description LONGTEXT NOT NULL,
+  classification LONGTEXT NOT NULL,
+  FULLTEXT(description),
+  FULLTEXT(classification)
 );
+
 
 -- Table: identification_legal_basis
 -- Description: This table links each requirement (within an analysis) to one or more legal bases,

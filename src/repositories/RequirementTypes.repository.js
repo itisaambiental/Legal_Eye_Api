@@ -232,9 +232,9 @@ class RequirementTypesRepository {
     try {
       const [rows] = await pool.query(
         `
-        SELECT id, name, description, classification
-        FROM requirement_types
-        WHERE description LIKE ?
+       SELECT id, name, description, classification
+       FROM requirement_types
+       WHERE MATCH(description) AGAINST(? IN BOOLEAN MODE)
         `,
         [search]
       )
@@ -270,9 +270,9 @@ class RequirementTypesRepository {
     try {
       const [rows] = await pool.query(
         `
-        SELECT id, name, description, classification
-        FROM requirement_types
-        WHERE classification LIKE ?
+      SELECT id, name, description, classification
+      FROM requirement_types
+      WHERE MATCH(classification) AGAINST(? IN BOOLEAN MODE)
         `,
         [search]
       )
