@@ -23,6 +23,11 @@ import { NODE_ENV, APP_URL } from './config/variables.config.js'
 const app = express()
 
 /**
+ * Trust proxy if behind a load balancer or reverse proxy.
+ */
+app.set('trust proxy', true)
+
+/**
  * Middleware setup.
  */
 
