@@ -26,6 +26,9 @@ const app = express()
  * Middleware setup.
  */
 
+const TRUSTED_PROXY_HOPS = 1
+app.set('trust proxy', TRUSTED_PROXY_HOPS)
+
 const corsOptions =
   NODE_ENV === 'production'
     ? {
