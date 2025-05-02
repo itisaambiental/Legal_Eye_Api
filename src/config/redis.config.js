@@ -1,3 +1,4 @@
+import Redis from 'ioredis'
 import {
   REDIS_PASS,
   REDIS_USER,
@@ -15,9 +16,9 @@ import {
 } from './variables.config.js'
 
 /**
- * Defines the Redis configuration settings based on the current environment.
- * Each environment (development, test, production) has its own Redis parameters.
- * @type {Object}
+ * Defines Redis connection settings for each environment.
+ * This allows different credentials and hosts for development, test, and production.
+ * @type {Object<string, { host: string, port: number, password: string, username: string }>}
  */
 const config = {
   development: {
@@ -41,9 +42,9 @@ const config = {
 }
 
 /**
- * Exports the Redis configuration object based on the current environment.
- * This configuration is used to initialize Redis clients for caching or pub/sub.
- * @type {Object}
+ * Redis connection options for the active environment.
+ * This object is used to initialize Redis clients throughout the application.
+ * @type {import('ioredis').RedisOptions}
  */
 export const redisConfig = {
   host: config[NODE_ENV].host,
@@ -53,3 +54,10 @@ export const redisConfig = {
   db: 0,
   connectTimeout: 10000
 }
+
+/**
+ * Redis client instance.
+ * This client is used across the application for caching.
+ * @type {import('ioredis').Redis}
+ */
+export const redisClient = new Redis(redisConfig)
