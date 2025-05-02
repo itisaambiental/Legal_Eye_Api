@@ -14,6 +14,7 @@ import SendLegalBasisRoutes from './routes/SendLegalBasis.routes.js'
 import ArticlesRoutes from './routes/Articles.routes.js'
 import ExtractArticlesRoutes from './routes/ExtractArticles.routes.js'
 import RequirementsRoutes from './routes/Requirements.routes.js'
+import RequirementTypesRoutes from './routes/RequirementTypes.routes.js'
 import { NODE_ENV, APP_URL } from './config/variables.config.js'
 /**
  * Configure the Express application.
@@ -49,6 +50,7 @@ app.use('/api', SendLegalBasisRoutes)
 app.use('/api', ArticlesRoutes)
 app.use('/api', ExtractArticlesRoutes)
 app.use('/api', RequirementsRoutes)
+app.use('/api', RequirementTypesRoutes)
 
 /**
  * Handle 404 Not Found errors.
