@@ -249,7 +249,7 @@ Do NOT return any additional content, explanations, or body text, even if it app
   - Every section title, article content, bullet point, and table must be reproduced **verbatim**,  
     including punctuation, spacing, and line breaks.  
   - This is a legal document and must preserve its original wording with full fidelity.
-  - Apply the CSS 'text-align: justify' style to all paragraph (<p>) elements and relevant text content to ensure that the text is aligned to both margins. This improves the readability and professional presentation of the document(Except in tables or lists).
+  - Apply the CSS ('style="text-align: justify;">') style to all paragraph (<p>) elements and relevant text content to ensure that the text is aligned to both margins. This improves the readability and professional presentation of the document(Except in tables or lists).
 
   ### Instructions:
   
@@ -430,7 +430,7 @@ Do NOT return any additional content, explanations, or body text, even if it app
   ### Additional Formatting Guidelines:
   
   - Please do not create or write random definitions within the article. Just make sure you are working with the information that is being shared with you. 
-  - All text within HTML content should be justified using CSS ('text-align: justify') to align the text to both margins in a professional and legible manner(Except in tables or lists).
+  - All paragraph (<p>) elements content should be justified using CSS ('style="text-align: justify;">') to align the text to both margins in a professional and legible manner(Except in tables or lists).
   - Use consistent and professional formatting, such as proper indentation for nested elements.
   - **Never delete, omit, or ignore numbered or lettered fractions** (e.g., 1.1, 1.1.2, I.A, a), i), etc.) found in the articles.
   - Respect spaces, punctuation (e.g., periods, hyphens), and line breaks for clarity.
