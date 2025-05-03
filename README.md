@@ -138,8 +138,13 @@ OPENAI_API_KEY=                # Clave de API de OpenAI para procesamiento de IA
 ORGANIZATION_ID=               # ID de la organización de OpenAI
 PROJECT_ID=                    # ID del proyecto de OpenAI
 
-# Concurrencia
-CONCURRENCY_EXTRACT_ARTICLES=  # Máximo número de procesos concurrentes para extracción de artículos
+# Extracción de Artículos
+LIMIT_EXTRACT_ARTICLES=         # Límite máximo de solicitudes en cola para la extracción de artículos legales.
+CONCURRENCY_EXTRACT_ARTICLES=   # Número máximo de procesos concurrentes permitidos para la extracción de artículos.
+
+# Envío de Fundamentos
+LIMIT_SEND_LEGAL_BASIS=         # Límite máximo de solicitudes en cola para el envío de fundamentos legales.
+CONCURRENCY_SEND_LEGAL_BASIS=   # Número máximo de procesos concurrentes permitidos para el envío de fundamentos legales.
 ```
 
 ---
