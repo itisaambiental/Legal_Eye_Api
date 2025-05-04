@@ -12,7 +12,7 @@ const rateLimiter = rateLimit({
     sendCommand: (...args) => redisClient.call(...args)
   }),
   windowMs: 60 * 1000,
-  max: 250,
+  max: 500,
   keyGenerator: (req) => {
     return req.userId ? `user:${req.userId}` : req.ip
   },
