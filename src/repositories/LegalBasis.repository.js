@@ -100,6 +100,7 @@ class LegalBasisRepository {
       JOIN subjects ON legal_basis.subject_id = subjects.id
       LEFT JOIN legal_basis_subject_aspect ON legal_basis.id = legal_basis_subject_aspect.legal_basis_id
       LEFT JOIN aspects ON legal_basis_subject_aspect.aspect_id = aspects.id
+      ORDER BY legal_basis.id DESC;
     `
     try {
       const [rows] = await pool.query(query)
@@ -291,6 +292,7 @@ class LegalBasisRepository {
     LEFT JOIN legal_basis_subject_aspect ON legal_basis.id = legal_basis_subject_aspect.legal_basis_id
     LEFT JOIN aspects ON legal_basis_subject_aspect.aspect_id = aspects.id
     WHERE legal_basis.id IN (?)
+    ORDER BY legal_basis.id DESC;
   `
     try {
       const [rows] = await pool.query(query, [legalBasisIds])
@@ -370,6 +372,7 @@ class LegalBasisRepository {
   LEFT JOIN legal_basis_subject_aspect ON legal_basis.id = legal_basis_subject_aspect.legal_basis_id
   LEFT JOIN aspects ON legal_basis_subject_aspect.aspect_id = aspects.id
   WHERE legal_basis.legal_name LIKE ?
+  ORDER BY legal_basis.id DESC;
 `
     try {
       const [rows] = await pool.query(query, [`%${legalName}%`])
@@ -452,6 +455,7 @@ class LegalBasisRepository {
   LEFT JOIN legal_basis_subject_aspect ON legal_basis.id = legal_basis_subject_aspect.legal_basis_id
   LEFT JOIN aspects ON legal_basis_subject_aspect.aspect_id = aspects.id
   WHERE legal_basis.abbreviation LIKE ?
+  ORDER BY legal_basis.id DESC;
 `
     try {
       const [rows] = await pool.query(query, [`%${abbreviation}%`])
@@ -536,6 +540,7 @@ class LegalBasisRepository {
     LEFT JOIN legal_basis_subject_aspect ON legal_basis.id = legal_basis_subject_aspect.legal_basis_id
     LEFT JOIN aspects ON legal_basis_subject_aspect.aspect_id = aspects.id
     WHERE legal_basis.classification = ?
+    ORDER BY legal_basis.id DESC;
   `
     try {
       const [rows] = await pool.query(query, [classification])
@@ -623,6 +628,7 @@ class LegalBasisRepository {
     LEFT JOIN legal_basis_subject_aspect ON legal_basis.id = legal_basis_subject_aspect.legal_basis_id
     LEFT JOIN aspects ON legal_basis_subject_aspect.aspect_id = aspects.id
     WHERE legal_basis.jurisdiction = ?
+    ORDER BY legal_basis.id DESC;
   `
     try {
       const [rows] = await pool.query(query, [jurisdiction])
@@ -710,6 +716,7 @@ class LegalBasisRepository {
   LEFT JOIN legal_basis_subject_aspect ON legal_basis.id = legal_basis_subject_aspect.legal_basis_id
   LEFT JOIN aspects ON legal_basis_subject_aspect.aspect_id = aspects.id
   WHERE legal_basis.state = ?
+  ORDER BY legal_basis.id DESC;
 `
 
     try {
@@ -804,6 +811,7 @@ class LegalBasisRepository {
       query += ` AND legal_basis.municipality IN (${placeholders})`
       values.push(...municipalities)
     }
+    query += ' ORDER BY legal_basis.id DESC;'
     try {
       const [rows] = await pool.query(query, values)
 
@@ -893,6 +901,7 @@ class LegalBasisRepository {
     LEFT JOIN legal_basis_subject_aspect ON legal_basis.id = legal_basis_subject_aspect.legal_basis_id
     LEFT JOIN aspects ON legal_basis_subject_aspect.aspect_id = aspects.id
     WHERE legal_basis.subject_id = ?
+    ORDER BY legal_basis.id DESC;
   `
     try {
       const [rows] = await pool.query(query, [subjectId])
@@ -1002,6 +1011,7 @@ class LegalBasisRepository {
         query += ` AND legal_basis.id IN (${placeholders})`
         values.push(...legalBasisIds)
       }
+      query += ' ORDER BY legal_basis.id DESC;'
       const [rows] = await pool.query(query, values)
       if (rows.length === 0) return null
       const legalBasisMap = new Map()
@@ -1104,6 +1114,7 @@ class LegalBasisRepository {
     if (conditions.length > 0) {
       query += ' WHERE ' + conditions.join(' AND ')
     }
+    query += ' ORDER BY legal_basis.id DESC;'
     try {
       const [rows] = await pool.query(query, values)
       if (rows.length === 0) return null
@@ -1252,6 +1263,7 @@ class LegalBasisRepository {
         query += ` AND lb.id IN (${placeholders})`
         values.push(...legalBasisIds)
       }
+      query += ' ORDER BY lb.id DESC;'
       const [rows] = await pool.query(query, values)
       if (rows.length === 0) return null
       const legalBasisMap = new Map()

@@ -121,6 +121,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     JOIN subjects s ON r.subject_id = s.id
     LEFT JOIN requirement_subject_aspect rsa ON r.id = rsa.requirement_id
     LEFT JOIN aspects a ON rsa.aspect_id = a.id
+    ORDER BY r.id DESC;
   `
 
     try {
@@ -336,6 +337,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     LEFT JOIN requirement_subject_aspect rsa ON r.id = rsa.requirement_id
     LEFT JOIN aspects a ON rsa.aspect_id = a.id
     WHERE r.id IN (?)
+    ORDER BY r.id DESC;
   `
 
     try {
@@ -433,6 +435,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     LEFT JOIN requirement_subject_aspect rsa ON r.id = rsa.requirement_id
     LEFT JOIN aspects a ON rsa.aspect_id = a.id
     WHERE r.requirement_number LIKE ?
+    ORDER BY r.id DESC;
   `
 
     try {
@@ -529,6 +532,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     LEFT JOIN requirement_subject_aspect rsa ON r.id = rsa.requirement_id
     LEFT JOIN aspects a ON rsa.aspect_id = a.id
     WHERE r.requirement_name LIKE ?
+    ORDER BY r.id DESC;
   `
 
     try {
@@ -625,6 +629,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     LEFT JOIN requirement_subject_aspect rsa ON r.id = rsa.requirement_id
     LEFT JOIN aspects a ON rsa.aspect_id = a.id
     WHERE r.subject_id = ?
+    ORDER BY r.id DESC;
   `
 
     try {
@@ -744,6 +749,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         query += ` AND r.id IN (${placeholders})`
         values.push(...requirementIds)
       }
+      query += ' ORDER BY r.id DESC;'
       const [rows] = await pool.query(query, values)
       if (rows.length === 0) return null
       const requirementsMap = new Map()
@@ -1402,6 +1408,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     LEFT JOIN requirement_subject_aspect rsa ON r.id = rsa.requirement_id
     LEFT JOIN aspects a ON rsa.aspect_id = a.id
     WHERE r.requirement_condition = ?
+    ORDER BY r.id DESC;
   `
 
     try {
@@ -1498,6 +1505,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     LEFT JOIN requirement_subject_aspect rsa ON r.id = rsa.requirement_id
     LEFT JOIN aspects a ON rsa.aspect_id = a.id
     WHERE r.evidence = ?
+    ORDER BY r.id DESC;
   `
 
     try {
@@ -1594,6 +1602,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     LEFT JOIN requirement_subject_aspect rsa ON r.id = rsa.requirement_id
     LEFT JOIN aspects a ON rsa.aspect_id = a.id
     WHERE r.periodicity = ?
+    ORDER BY r.id DESC;
   `
 
     try {

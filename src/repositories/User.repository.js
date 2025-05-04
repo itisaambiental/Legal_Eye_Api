@@ -27,7 +27,13 @@ class UserRepository {
       VALUES (?, ?, ?, ?, ?)
     `
     try {
-      const [result] = await pool.query(query, [name, password, gmail, roleId, profilePicture])
+      const [result] = await pool.query(query, [
+        name,
+        password,
+        gmail,
+        roleId,
+        profilePicture
+      ])
       const user = await this.findById(result.insertId)
       return user
     } catch (error) {
@@ -87,7 +93,14 @@ class UserRepository {
       WHERE id = ?
     `
     try {
-      const [result] = await pool.query(query, [name, password, gmail, roleId, profilePicture, id])
+      const [result] = await pool.query(query, [
+        name,
+        password,
+        gmail,
+        roleId,
+        profilePicture,
+        id
+      ])
       if (result.affectedRows === 0) {
         return null
       }
@@ -122,7 +135,10 @@ class UserRepository {
       return user
     } catch (error) {
       console.error('Error updating user profile picture:', error)
-      throw new ErrorUtils(500, 'Error updating profile picture in the database')
+      throw new ErrorUtils(
+        500,
+        'Error updating profile picture in the database'
+      )
     }
   }
 
@@ -184,7 +200,14 @@ class UserRepository {
       const [rows] = await pool.query(query, [id])
       if (rows.length === 0) return null
       const user = rows[0]
-      return new User(user.id, user.name, user.password, user.gmail, user.role_id, user.profile_picture)
+      return new User(
+        user.id,
+        user.name,
+        user.password,
+        user.gmail,
+        user.role_id,
+        user.profile_picture
+      )
     } catch (error) {
       console.error('Error retrieving user by ID:', error)
       throw new ErrorUtils(500, 'Error retrieving user by ID')
@@ -192,12 +215,12 @@ class UserRepository {
   }
 
   /**
- * Finds users in the database using an array of IDs.
- * Constructs and returns instances of User.
- * @param {Array<number>} userIds - Array of user IDs to find.
- * @returns {Promise<Array<User>>} - Array of User instances with relevant data.
- * @throws {ErrorUtils} - If an error occurs during retrieval.
- */
+   * Finds users in the database using an array of IDs.
+   * Constructs and returns instances of User.
+   * @param {Array<number>} userIds - Array of user IDs to find.
+   * @returns {Promise<Array<User>>} - Array of User instances with relevant data.
+   * @throws {ErrorUtils} - If an error occurs during retrieval.
+   */
   static async findByIds (userIds) {
     if (userIds.length === 0) {
       return []
@@ -207,7 +230,17 @@ class UserRepository {
   `
     try {
       const [rows] = await pool.query(query, [userIds])
-      return rows.map(user => new User(user.id, user.name, user.password, user.gmail, user.role_id, user.profile_picture))
+      return rows.map(
+        (user) =>
+          new User(
+            user.id,
+            user.name,
+            user.password,
+            user.gmail,
+            user.role_id,
+            user.profile_picture
+          )
+      )
     } catch (error) {
       console.error('Error finding users by IDs:', error)
       throw new ErrorUtils(500, 'Error finding users by IDs')
@@ -222,12 +255,25 @@ class UserRepository {
    */
   static async findByRole (roleId) {
     const query = `
-      SELECT id, name, password, gmail, role_id, profile_picture FROM users WHERE role_id = ?
+      SELECT id, name, password, gmail, role_id, profile_picture 
+      FROM users 
+      WHERE role_id = ?
+      ORDER BY id DESC;
     `
     try {
       const [rows] = await pool.query(query, [roleId])
       if (rows.length === 0) return null
-      return rows.map(user => new User(user.id, user.name, user.password, user.gmail, user.role_id, user.profile_picture))
+      return rows.map(
+        (user) =>
+          new User(
+            user.id,
+            user.name,
+            user.password,
+            user.gmail,
+            user.role_id,
+            user.profile_picture
+          )
+      )
     } catch (error) {
       console.error('Error retrieving users by role:', error)
       throw new ErrorUtils(500, 'Error retrieving users by role')
@@ -254,11 +300,11 @@ class UserRepository {
   }
 
   /**
- * Finds a user by Gmail.
- * @param {string} gmail - The Gmail to find.
- * @returns {Promise<User|null>} - The user object if found, or null if not found.
- * @throws {ErrorUtils} - If an error occurs during the check.
- */
+   * Finds a user by Gmail.
+   * @param {string} gmail - The Gmail to find.
+   * @returns {Promise<User|null>} - The user object if found, or null if not found.
+   * @throws {ErrorUtils} - If an error occurs during the check.
+   */
   static async existsByGmail (gmail) {
     const query = `
     SELECT id, name, password, gmail, role_id, profile_picture 
@@ -270,7 +316,14 @@ class UserRepository {
       const [rows] = await pool.query(query, [gmail])
       if (rows.length === 0) return null
       const user = rows[0]
-      return new User(user.id, user.name, user.password, user.gmail, user.role_id, user.profile_picture)
+      return new User(
+        user.id,
+        user.name,
+        user.password,
+        user.gmail,
+        user.role_id,
+        user.profile_picture
+      )
     } catch (error) {
       console.error('Error finding user by Gmail:', error.message)
       throw new ErrorUtils(500, 'Error finding user by Gmail')
@@ -278,13 +331,18 @@ class UserRepository {
   }
 
   /**
- * Retrieves users from the database by their name or email (gmail).
- * @param {string} [nameOrEmail] - The name or email of the user to search for.
- * @returns {Promise<Array<User|null>>} - Array of users matching the search criteria.
- * @throws {ErrorUtils} - If an error occurs during retrieval.
- */
+   * Retrieves users from the database by their name or email (gmail).
+   * @param {string} [nameOrEmail] - The name or email of the user to search for.
+   * @returns {Promise<Array<User|null>>} - Array of users matching the search criteria.
+   * @throws {ErrorUtils} - If an error occurs during retrieval.
+   */
   static async findByNameOrGmail (nameOrEmail) {
-    const query = 'SELECT id, name, password, gmail, role_id, profile_picture FROM users WHERE name LIKE ? OR gmail LIKE ?'
+    const query = `
+      SELECT id, name, password, gmail, role_id, profile_picture 
+      FROM users 
+      WHERE name LIKE ? OR gmail LIKE ?
+      ORDER BY id DESC;
+    `
     const searchValue = `%${nameOrEmail}%`
     try {
       const [rows] = await pool.query(query, [searchValue, searchValue])
@@ -307,12 +365,12 @@ class UserRepository {
   }
 
   /**
- * Checks if a user exists with the given Gmail, excluding a specific user ID.
- * @param {string} gmail - The Gmail to check for existence.
- * @param {number} userId - The user ID to exclude from the check.
- * @returns {Promise<User|null>} - True if a user with the same Gmail (excluding the given ID) exists, false otherwise.
- * @throws {ErrorUtils} - If an error occurs during the check.
- */
+   * Checks if a user exists with the given Gmail, excluding a specific user ID.
+   * @param {string} gmail - The Gmail to check for existence.
+   * @param {number} userId - The user ID to exclude from the check.
+   * @returns {Promise<User|null>} - True if a user with the same Gmail (excluding the given ID) exists, false otherwise.
+   * @throws {ErrorUtils} - If an error occurs during the check.
+   */
   static async existsByGmailExcludingId (gmail, userId) {
     const query = `
     SELECT 1 
@@ -324,10 +382,23 @@ class UserRepository {
       const [rows] = await pool.query(query, [gmail, userId])
       if (rows.length === 0) return null
       const user = rows[0]
-      return new User(user.id, user.name, user.password, user.gmail, user.role_id, user.profile_picture)
+      return new User(
+        user.id,
+        user.name,
+        user.password,
+        user.gmail,
+        user.role_id,
+        user.profile_picture
+      )
     } catch (error) {
-      console.error('Error checking if user exists by Gmail excluding ID:', error.message)
-      throw new ErrorUtils(500, 'Error checking if user exists by Gmail excluding ID')
+      console.error(
+        'Error checking if user exists by Gmail excluding ID:',
+        error.message
+      )
+      throw new ErrorUtils(
+        500,
+        'Error checking if user exists by Gmail excluding ID'
+      )
     }
   }
 
@@ -338,12 +409,24 @@ class UserRepository {
    */
   static async findAll () {
     const query = `
-      SELECT id, name, password, gmail, role_id, profile_picture FROM users
+      SELECT id, name, password, gmail, role_id, profile_picture 
+      FROM users
+      ORDER BY id DESC;
     `
     try {
       const [rows] = await pool.query(query)
       if (rows.length === 0) return null
-      return rows.map(user => new User(user.id, user.name, user.password, user.gmail, user.role_id, user.profile_picture))
+      return rows.map(
+        (user) =>
+          new User(
+            user.id,
+            user.name,
+            user.password,
+            user.gmail,
+            user.role_id,
+            user.profile_picture
+          )
+      )
     } catch (error) {
       console.error('Error retrieving all users:', error)
       throw new ErrorUtils(500, 'Error retrieving all users')
@@ -363,7 +446,7 @@ class UserRepository {
     try {
       const [rows] = await pool.query(query)
       if (rows.length === 0) return null
-      return rows.map(role => new Role(role.id, role.name))
+      return rows.map((role) => new Role(role.id, role.name))
     } catch (error) {
       console.error('Error retrieving all roles:', error)
       throw new ErrorUtils(500, 'Error retrieving all roles')
@@ -413,12 +496,12 @@ class UserRepository {
   }
 
   /**
- * Retrieves the expiration date of a verification code.
- * @param {string} gmail - Gmail associated with the code.
- * @param {string} code - The verification code.
- * @returns {Promise<{ expiresAt: Date } | null>} - The expiration info or null if not found.
- * @throws {ErrorUtils} - If an error occurs during retrieval.
- */
+   * Retrieves the expiration date of a verification code.
+   * @param {string} gmail - Gmail associated with the code.
+   * @param {string} code - The verification code.
+   * @returns {Promise<{ expiresAt: Date } | null>} - The expiration info or null if not found.
+   * @throws {ErrorUtils} - If an error occurs during retrieval.
+   */
   static async getVerificationCode (gmail, code) {
     const query = `
     SELECT expires_at AS expiresAt
@@ -432,7 +515,10 @@ class UserRepository {
       return result[0] || null
     } catch (error) {
       console.error('Error retrieving verification code from database:', error)
-      throw new ErrorUtils(500, 'Error retrieving verification code from database')
+      throw new ErrorUtils(
+        500,
+        'Error retrieving verification code from database'
+      )
     }
   }
 }

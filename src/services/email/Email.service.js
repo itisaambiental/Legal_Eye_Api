@@ -37,10 +37,8 @@ class EmailService {
         text,
         html
       }
-
       await transporter.sendMail(mailOptions)
     } catch (error) {
-      console.error('Error sending email:', error)
       throw new ErrorUtils(500, 'Error sending email', error)
     }
   }

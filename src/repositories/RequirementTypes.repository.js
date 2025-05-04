@@ -46,7 +46,7 @@ class RequirementTypesRepository {
       const [rows] = await pool.query(`
             SELECT id, name, description, classification
             FROM requirement_types
-            ORDER BY id ASC
+            ORDER BY id DESC;
           `)
       if (rows.length === 0) return null
       return rows.map(
@@ -114,6 +114,7 @@ class RequirementTypesRepository {
       SELECT id, name, description, classification
       FROM requirement_types
       WHERE id IN (?)
+      ORDER BY id DESC;
     `
     try {
       const [rows] = await pool.query(query, [requirementTypesIds])
@@ -203,6 +204,7 @@ class RequirementTypesRepository {
             SELECT id, name, description, classification
             FROM requirement_types
             WHERE name LIKE ?
+            ORDER BY id DESC;
             `,
         [search]
       )
