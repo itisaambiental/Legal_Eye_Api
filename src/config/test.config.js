@@ -37,7 +37,12 @@ afterAll(async () => {
   await extractArticlesQueue.close()
   await sendLegalBasisQueue.close()
   if (serverInstance) {
-    serverInstance.close()
+    await new Promise((resolve, reject) => {
+      serverInstance.close((err) => {
+        if (err) return reject(err)
+        resolve()
+      })
+    })
   }
   await redisClient.quit()
   await pool.end()
