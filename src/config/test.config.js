@@ -2,6 +2,7 @@
 import supertest from 'supertest'
 import { server, app } from '../index.js'
 import { pool } from '../config/db.config.js'
+import { redisClient } from './redis.config.js'
 import emailQueue from '../workers/emailWorker.js'
 import extractArticlesQueue from '../workers/extractArticlesWorker.js'
 import sendLegalBasisQueue from '../workers/sendLegalBasisWorker.js'
@@ -16,9 +17,11 @@ export const api = supertest(app)
 
 /**
  * Initializes the server only once for all test files.
- * Uses a random port in test environment to avoid port conflicts.
+ * Uses a random port in test environment to avoid port conflicts
+ * @type {import('http').Server}
  */
 let serverInstance
+
 beforeAll(async () => {
   if (!server || !server.listening) {
     serverInstance = app.listen(0)
@@ -36,5 +39,6 @@ afterAll(async () => {
   if (serverInstance) {
     serverInstance.close()
   }
+  await redisClient.quit()
   await pool.end()
 }, timeout)
