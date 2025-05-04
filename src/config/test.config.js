@@ -4,7 +4,7 @@ import { server, app } from '../index.js'
 import { pool } from '../config/db.config.js'
 import emailQueue from '../workers/emailWorker.js'
 import extractArticlesQueue from '../workers/extractArticlesWorker.js'
-import sendLegalBasisQueue from '../queues/sendLegalBasisQueue.js'
+import sendLegalBasisQueue from '../workers/sendLegalBasisWorker.js'
 
 const timeout = 500000
 
