@@ -4,7 +4,7 @@
  */
 
 import { Router } from 'express'
-import UserExtractor from '../middlewares/access_token.js'
+import UserExtractor from '../middlewares/user_extractor.js'
 import { getExtractionJobStatus, hasPendingExtractionJobs, cancelExtractionJob } from '../controllers/ExtractArticles.controller.js'
 
 const router = Router()

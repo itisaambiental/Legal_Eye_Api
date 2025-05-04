@@ -4,7 +4,7 @@
  */
 
 import { Router } from 'express'
-import UserExtractor from '../middlewares/access_token.js'
+import UserExtractor from '../middlewares/user_extractor.js'
 import {
   createLegalBasis,
   getAllLegalBasis,

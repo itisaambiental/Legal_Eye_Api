@@ -5,6 +5,7 @@
 import express from 'express'
 import cors from 'cors'
 import rateLimiter from './middlewares/rate_limiter.js'
+import OptionalUserExtractor from './middlewares/optional_user_extractor.js'
 import UserRoutes from './routes/User.routes.js'
 import FilesRoutes from './routes/Files.routes.js'
 import SubjectsRoutes from './routes/Subjects.routes.js'
@@ -16,19 +17,19 @@ import ExtractArticlesRoutes from './routes/ExtractArticles.routes.js'
 import RequirementsRoutes from './routes/Requirements.routes.js'
 import RequirementTypesRoutes from './routes/RequirementTypes.routes.js'
 import { NODE_ENV, APP_URL } from './config/variables.config.js'
+
 /**
  * Configure the Express application.
  * @type {import('express').Application}
  */
 const app = express()
 
-/**
- * Middleware setup.
- */
-
 const TRUSTED_PROXY_HOPS = 1
 app.set('trust proxy', TRUSTED_PROXY_HOPS)
 
+/**
+ * Middleware setup.
+ */
 const corsOptions =
   NODE_ENV === 'production'
     ? {
@@ -38,6 +39,7 @@ const corsOptions =
 
 app.use(cors(corsOptions)) // Enable Cross-Origin Resource Sharing
 app.use(express.json()) // Parse incoming JSON requests
+app.use(OptionalUserExtractor) // Extract the user ID if it exists
 app.use(rateLimiter) // Apply rate limiting
 
 /**

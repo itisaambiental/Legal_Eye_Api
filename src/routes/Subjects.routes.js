@@ -13,7 +13,7 @@ import {
   deleteSubject,
   deleteSubjectsBatch
 } from '../controllers/Subject.controller.js'
-import UserExtractor from '../middlewares/access_token.js'
+import UserExtractor from '../middlewares/user_extractor.js'
 
 /**
  * SubjectRouter
