@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS users (
     password VARCHAR(255) NOT NULL,
     gmail VARCHAR(255) NOT NULL UNIQUE,
     role_id BIGINT NOT NULL,
-    profile_picture VARCHAR(255) DEFAULT NULL,
+    profile_picture TEXT DEFAULT NULL,
     FOREIGN KEY (role_id) REFERENCES roles(id)
 );
 
@@ -108,7 +108,7 @@ CREATE TABLE IF NOT EXISTS legal_basis (
     jurisdiction ENUM('Estatal', 'Federal', 'Local') NOT NULL,
     state VARCHAR(255),
     municipality VARCHAR(255),
-    url VARCHAR(255),
+    url TEXT,
     last_reform DATE,
     subject_id INT NOT NULL,
     FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE RESTRICT
