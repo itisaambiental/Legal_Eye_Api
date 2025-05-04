@@ -13,10 +13,10 @@ const limiter = {
 }
 
 /**
- * The Article queue for processing articles sending jobs.
+ * The Article queue for processing extract articles sending jobs.
  * @type {import('bull').Queue}
  */
-const articlesQueue = new Queue('articlesQueue', {
+const extractArticlesQueue = new Queue('extractArticlesQueue', {
   redis: redisConfig,
   defaultJobOptions: {
     attempts: 1,
@@ -26,4 +26,4 @@ const articlesQueue = new Queue('articlesQueue', {
   limiter
 })
 
-export default articlesQueue
+export default extractArticlesQueue

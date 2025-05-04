@@ -1,5 +1,5 @@
 import LegalBasisRepository from '../../repositories/LegalBasis.repository.js'
-import articlesQueue from '../../workers/articlesWorker.js'
+import extractArticlesQueue from '../../workers/extractArticlesWorker.js'
 import legalBasisSchema from '../../schemas/legalBasis.schema.js'
 import sendLegalBasisQueue from '../../workers/sendLegalBasisWorker.js'
 import SubjectsRepository from '../../repositories/Subject.repository.js'
@@ -127,7 +127,7 @@ class LegalBasisService {
       if (documentKey) {
         documentUrl = await FileService.getFile(documentKey)
         if (parsedlegalBasis.extractArticles) {
-          const job = await articlesQueue.add({
+          const job = await extractArticlesQueue.add({
             userId,
             legalBasisId: createdLegalBasis.id,
             intelligenceLevel: parsedlegalBasis.intelligenceLevel
@@ -1034,7 +1034,7 @@ class LegalBasisService {
       if (documentKey) {
         documentUrl = await FileService.getFile(documentKey)
         if (parsedlegalBasis.extractArticles) {
-          const job = await articlesQueue.add({
+          const job = await extractArticlesQueue.add({
             userId,
             legalBasisId: updatedLegalBasis.id,
             intelligenceLevel: parsedlegalBasis.intelligenceLevel

@@ -7,8 +7,7 @@ import RequirementRepository from '../../repositories/Requirements.repository.js
 import AspectsRepository from '../../repositories/Aspects.repository.js'
 import extractArticlesService from '../../services/articles/extractArticles/extractArticles.service.js'
 import generateLegalBasisData from '../../utils/generateLegalBasisData.js'
-import articlesQueue from '../../queues/articlesQueue.js'
-
+import extractArticlesQueue from '../../queues/extractArticlesQueue.js'
 import {
   ADMIN_PASSWORD_TEST,
   ADMIN_GMAIL
@@ -230,7 +229,7 @@ describe('Cancel job', () => {
       isFailed: jest.fn().mockResolvedValue(false)
     }
 
-    jest.spyOn(articlesQueue, 'getJob').mockResolvedValue(mockJob)
+    jest.spyOn(extractArticlesQueue, 'getJob').mockResolvedValue(mockJob)
 
     await api
       .delete(`/api/jobs/articles/${jobId}`)
@@ -262,7 +261,7 @@ describe('Cancel job', () => {
         getState: jest.fn().mockResolvedValue(state)
       }
 
-      jest.spyOn(articlesQueue, 'getJob').mockResolvedValue(mockJob)
+      jest.spyOn(extractArticlesQueue, 'getJob').mockResolvedValue(mockJob)
 
       await api
         .delete(`/api/jobs/articles/${jobId}`)
@@ -289,7 +288,7 @@ describe('Cancel job', () => {
         remove: jest.fn()
       }
 
-      jest.spyOn(articlesQueue, 'getJob').mockResolvedValue(mockJob)
+      jest.spyOn(extractArticlesQueue, 'getJob').mockResolvedValue(mockJob)
 
       const response = await api
         .delete(`/api/jobs/articles/${jobId}`)
@@ -308,7 +307,7 @@ describe('Cancel job', () => {
   test('Should return 404 if the job does not exist', async () => {
     const nonExistentJobId = 'non-existent-job'
 
-    jest.spyOn(articlesQueue, 'getJob').mockResolvedValue(null)
+    jest.spyOn(extractArticlesQueue, 'getJob').mockResolvedValue(null)
 
     const response = await api
       .delete(`/api/jobs/articles/${nonExistentJobId}`)

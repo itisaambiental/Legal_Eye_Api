@@ -1,5 +1,5 @@
 import ErrorUtils from '../../../utils/Error.js'
-import articlesQueue from '../../../workers/articlesWorker.js'
+import extractArticlesQueue from '../../../workers/extractArticlesWorker.js'
 import QueueService from '../../queue/Queue.service.js'
 import LegalBasisRepository from '../../../repositories/LegalBasis.repository.js'
 
@@ -15,7 +15,7 @@ class ExtractArticlesService {
    */
   static async getExtractionJobStatus (jobId) {
     try {
-      const job = await articlesQueue.getJob(jobId)
+      const job = await extractArticlesQueue.getJob(jobId)
       if (!job) {
         return {
           status: 404,
@@ -49,7 +49,7 @@ class ExtractArticlesService {
         throw new ErrorUtils(404, 'LegalBasis not found')
       }
       const statesToCheck = ['waiting', 'paused', 'active', 'delayed']
-      const jobs = await QueueService.getJobsByStates(articlesQueue, statesToCheck)
+      const jobs = await QueueService.getJobsByStates(extractArticlesQueue, statesToCheck)
       const job = jobs.find((job) => Number(job.data.legalBasisId) === Number(legalBasisId))
       if (job) {
         return { hasPendingJobs: true, jobId: job.id }
@@ -71,7 +71,7 @@ class ExtractArticlesService {
    */
   static async cancelExtractionJob (jobId) {
     try {
-      const job = await articlesQueue.getJob(jobId)
+      const job = await extractArticlesQueue.getJob(jobId)
       if (!job) {
         throw new ErrorUtils(404, 'Job not found')
       }

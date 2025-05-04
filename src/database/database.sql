@@ -215,32 +215,6 @@ CREATE TABLE IF NOT EXISTS requirement_subject_aspect (
     FOREIGN KEY (aspect_id) REFERENCES aspects(id) ON DELETE RESTRICT
 );
 
--- Table: requirements_identification
--- Description: This master table records the analysis (identification) that groups the evaluated requirements,
--- including the analysis name, description, status, and the associated user.
-CREATE TABLE IF NOT EXISTS requirements_identification (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    identification_name VARCHAR(255) NOT NULL,
-    identification_description TEXT,
-    status ENUM('Activo', 'Completado', 'Fallido') NOT NULL DEFAULT 'Activo',
-    failed_reason TEXT,
-    user_id BIGINT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
-);
-
-
--- Table: identification_requirements
--- Description: This table creates a relationship between an analysis (from requirements_identification)
--- and the requirements used in that analysis.
--- Note: The subject and aspect are derived from the requirements table.
-CREATE TABLE IF NOT EXISTS identification_requirements (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    requirements_identification_id INT NOT NULL,
-    requirement_id INT NOT NULL,
-    FOREIGN KEY (requirements_identification_id) REFERENCES requirements_identification(id) ON DELETE CASCADE,
-    FOREIGN KEY (requirement_id) REFERENCES requirements(id) ON DELETE RESTRICT
-);
 
 -- Table: requirement_types
 -- Description: This table stores the types of requirements that can be associated with identificacion requirements.
@@ -252,30 +226,4 @@ CREATE TABLE IF NOT EXISTS requirement_types (
   classification LONGTEXT NOT NULL,
   FULLTEXT(description),
   FULLTEXT(classification)
-);
-
-
--- Table: identification_legal_basis
--- Description: This table links each requirement (within an analysis) to one or more legal bases,
--- establishing a many-to-many relationship between the analyzed requirement and legal documents.
-CREATE TABLE IF NOT EXISTS identification_legal_basis (
-    identification_requirement_id INT NOT NULL,
-    legal_basis_id INT NOT NULL,
-    PRIMARY KEY (identification_requirement_id, legal_basis_id),
-    FOREIGN KEY (identification_requirement_id) REFERENCES identification_requirements(id) ON DELETE CASCADE,
-    FOREIGN KEY (legal_basis_id) REFERENCES legal_basis(id) ON DELETE RESTRICT
-);
-
--- Table: identification_legal_basis_articles
--- Description: This table associates legal articles with a given legal basis linked to a requirement
--- within an analysis, classifying each article as either 'Obligatory' or 'Complementary'.
-CREATE TABLE IF NOT EXISTS identification_legal_basis_articles (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    identification_requirement_id INT NOT NULL,
-    legal_basis_id INT NOT NULL,
-    article_id INT NOT NULL,
-    classification ENUM('Obligatory', 'Complementary') NOT NULL,
-    FOREIGN KEY (identification_requirement_id) REFERENCES identification_requirements(id) ON DELETE CASCADE,
-    FOREIGN KEY (legal_basis_id) REFERENCES legal_basis(id) ON DELETE RESTRICT,
-    FOREIGN KEY (article_id) REFERENCES article(id) ON DELETE RESTRICT
 );

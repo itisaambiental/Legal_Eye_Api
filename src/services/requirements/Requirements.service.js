@@ -2,7 +2,6 @@ import RequirementRepository from '../../repositories/Requirements.repository.js
 import requirementSchema from '../../schemas/requirement.schema.js'
 import SubjectsRepository from '../../repositories/Subject.repository.js'
 import AspectsRepository from '../../repositories/Aspects.repository.js'
-import RequirementsIdentificationService from './requirementsIdentification/requirementsIdentification.service.js'
 import ErrorUtils from '../../utils/Error.js'
 import { z } from 'zod'
 
@@ -614,10 +613,6 @@ class RequirementService {
       if (!existingRequirement) {
         throw new ErrorUtils(404, 'Requirement not found')
       }
-      const { hasPendingJobs: hasPendingRequirementIdentificationJobs } = await RequirementsIdentificationService.hasPendingRequirementJobs(requirementId)
-      if (hasPendingRequirementIdentificationJobs) {
-        throw new ErrorUtils(409, 'Cannot delete Requirement with pending Requirement Identification jobs')
-      }
       const requirementDeleted = await RequirementRepository.delete(
         requirementId
       )
@@ -647,22 +642,6 @@ class RequirementService {
           (id) => !requirements.some((requirement) => requirement.id === id)
         )
         throw new ErrorUtils(404, 'Requirements not found for IDs', { notFoundIds })
-      }
-      const results = await Promise.all(
-        requirements.map(async (requirement) => {
-          const { hasPendingJobs: hasPendingRequirementIdentificationJobs } = await RequirementsIdentificationService.hasPendingRequirementJobs(requirement.id)
-          return hasPendingRequirementIdentificationJobs
-            ? { id: requirement.id, name: requirement.requirement_name }
-            : null
-        })
-      )
-      const pendingRequirementIdentificationJobs = results.filter(Boolean)
-      if (pendingRequirementIdentificationJobs.length > 0) {
-        throw new ErrorUtils(
-          409,
-          'Cannot delete Requirements with pending Requirement Identification jobs',
-          { requirements: pendingRequirementIdentificationJobs }
-        )
       }
       const requirementsDeleted = await RequirementRepository.deleteBatch(requirementIds)
       if (!requirementsDeleted) {

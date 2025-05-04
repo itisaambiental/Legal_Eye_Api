@@ -1,4 +1,4 @@
-import articlesQueue from '../queues/articlesQueue.js'
+import extractArticlesQueue from '../queues/extractArticlesQueue.js'
 import ArticleExtractorFactory from '../services/articles/articleExtraction/ArticleExtractorFactory.js'
 import ErrorUtils from '../utils/Error.js'
 import DocumentService from '../services/files/Document.service.js'
@@ -31,11 +31,11 @@ const CONCURRENCY = Number(CONCURRENCY_EXTRACT_ARTICLES || 1)
  * @param {import('bull').Job<import('bull').Job>} job
  * @param {import('bull').ProcessCallbackFunction} done
  */
-articlesQueue.process(CONCURRENCY, async (job, done) => {
+extractArticlesQueue.process(CONCURRENCY, async (job, done) => {
   /** @type {ArticleExtractorJobData} */
   const { userId, legalBasisId, intelligenceLevel } = job.data
   try {
-    const currentJob = await articlesQueue.getJob(job.id)
+    const currentJob = await extractArticlesQueue.getJob(job.id)
     if (!currentJob) throw new ErrorUtils(404, 'Job not found')
     if (await currentJob.isFailed()) { throw new ErrorUtils(500, 'Job was canceled') }
     const legalBase = await LegalBasisRepository.findById(legalBasisId)
@@ -100,4 +100,4 @@ articlesQueue.process(CONCURRENCY, async (job, done) => {
   }
 })
 
-export default articlesQueue
+export default extractArticlesQueue
