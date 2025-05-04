@@ -2,7 +2,7 @@
  * Optional user extractor middleware.
  * Extracts userId from JWT if present and valid. Does not block the request.
  *
- * @type {import('express').RequestHandler}
+ * @module OptionalUserExtractor
  */
 import jwt from 'jsonwebtoken'
 import { JWT_SECRET } from '../config/variables.config.js'
