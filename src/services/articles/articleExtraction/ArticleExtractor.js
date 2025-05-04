@@ -97,7 +97,7 @@ class ArticleExtractor {
     try {
       const { sections, isValid } = await this._extractSections(text)
       if (!isValid || !Array.isArray(sections) || sections.length === 0) {
-        throw new ErrorUtils(500, 'Article Processing Error: Invalid sections')
+        throw new ErrorUtils(500, 'Article Processing Error')
       }
       const lines = text.split('\n')
       const sortedSections = sections.sort((a, b) => a.line - b.line)
