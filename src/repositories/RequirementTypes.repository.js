@@ -102,7 +102,7 @@ class RequirementTypesRepository {
 
   /**
    * Finds requirement types in the database using an array of IDs.
-   * @param {Array<number>} requirementTypesIds - Array of requirement type IDs to find.
+   * @param {number[]} requirementTypesIds - Array of requirement type IDs to find.
    * @returns {Promise<RequirementType[]>} - Array of RequirementType instances.
    * @throws {ErrorUtils} - If an error occurs during retrieval.
    */
@@ -356,7 +356,7 @@ class RequirementTypesRepository {
 
   /**
    * Deletes multiple requirement types from the database using an array of IDs.
-   * @param {Array<number>} requirementTypesIds - Array of requirement type IDs to delete.
+   * @param {number[]} requirementTypesIds - Array of requirement type IDs to delete.
    * @returns {Promise<boolean>} - True if deletion was successful, otherwise false.
    */
   static async deleteBatch (requirementTypesIds) {

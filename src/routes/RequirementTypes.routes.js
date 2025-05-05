@@ -103,6 +103,6 @@ router.delete('/requirement-types/:id', UserExtractor, deleteRequirementType)
  * @description Deletes multiple requirement types from the system.
  * @middleware UserExtractor
  */
-router.delete('/requirement-types/batch', UserExtractor, deleteRequirementTypesBatch)
+router.delete('/requirement-types/delete/batch', UserExtractor, deleteRequirementTypesBatch)
 
 export default router
