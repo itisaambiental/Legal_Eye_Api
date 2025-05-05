@@ -105,13 +105,11 @@ class LawArticleExtractor extends ArticleExtractor {
 
       • Only extract the heading itself, exactly as it appears in the document, and ignore any additional sentence or content in the same line.
 
-      • If a block such as "TRANSITORIOS" contains nested article-like headings (e.g., "Artículo Primero", "Artículo Segundo"), you must not extract them as separate top-level headings.
+      • If a block, which is a transitional provision, contains nested headings similar to articles, you should not extract them as separate top-level headings.
 
-      • These inner articles must be treated as part of the content of the enclosing "TRANSITORIOS" section, and should not appear independently in the output JSON.
+      • These internal articles should be considered part of the content of the section of the transitional provision that encompasses them and should not appear independently.
 
-      • Only the outer block heading ("TRANSITORIOS", "Disposiciones Transitorias", etc.) should be extracted as the section title, and its content may include those inner articles.
-
-      • This ensures that reform or transitional provisions are kept grouped as legally intended.
+      • This ensures that the transitional provisions remain grouped as legally required.
 
       • For example:
       - "Artículo 1. Este Reglamento tiene por objeto..." → heading: "Artículo 1."
