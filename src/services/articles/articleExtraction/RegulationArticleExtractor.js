@@ -105,12 +105,6 @@ class RegulationArticleExtractor extends ArticleExtractor {
 
       • Only extract the heading itself, exactly as it appears in the document, and ignore any additional sentence or content in the same line.
 
-      • If a block, which is a transitional provision, contains nested headings similar to articles, you should not extract them as separate top-level headings.
-
-      • These internal articles should be considered part of the content of the section of the transitional provision that encompasses them and should not appear independently.
-
-      • This ensures that the transitional provisions remain grouped as legally required.
-
       • For example:
       - "Artículo 1. Este Reglamento tiene por objeto..." → heading: "Artículo 1."
       - "Artículo 2. Se aplicará conforme a..." → heading: "Artículo 2."
@@ -150,6 +144,10 @@ Legal documents may include multiple "TRANSITORIOS" blocks, especially when refo
 • You MUST treat each "TRANSITORIOS" heading as a **separate standalone section** if it appears more than once in the document.
 • Do NOT group multiple "TRANSITORIOS" blocks into one single section, even if they share the same heading.
 • Each "TRANSITORIOS" must be extracted **with its own content block**, starting from the heading and continuing until the next structural heading.
+• If a "TRANSITORIOS" block contains articles, or similar formats, you MUST not extract them as standalone section headings.
+• These are subdivisions internal to the TRANSITORIOS block and must be treated as part of its content.
+• Only the outer "TRANSITORIOS" heading should be extracted. Its internal article-like lines are not separate sections and must be ignored as standalone titles.
+• This ensures that each transitional provision is preserved as a single legal unit, as required by legal structure.
 
 Examples:
   - First "TRANSITORIOS" (line 120) → title: "TRANSITORIOS", line: 120
