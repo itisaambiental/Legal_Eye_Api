@@ -19,7 +19,7 @@ class DocumentService {
    * @param {string} fileKey - The key of the file in the S3 bucket.
    * @returns {Promise<{success: boolean, text?: string, error?: string}>} - The processing result.
    */
-  static async process (fileKey) {
+  static async extractText (fileKey) {
     try {
       const jobId = await this.startExtractText(fileKey)
       const isComplete = await this.waitForJobCompletion(jobId)

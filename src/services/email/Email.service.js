@@ -28,8 +28,9 @@ class EmailService {
    * @returns {Promise<void>} - Resolves when the email is sent successfully.
    * @throws {ErrorUtils} - Throws an error if the email fails to send.
    */
-  static async sendEmail ({ to, subject, text, html }) {
+  static async sendEmail (mailData) {
     try {
+      const { to, subject, text, html } = mailData
       const mailOptions = {
         from: EMAIL_USER,
         to,

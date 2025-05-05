@@ -40,7 +40,7 @@ extractArticlesQueue.process(CONCURRENCY, async (job, done) => {
     if (await currentJob.isFailed()) { throw new ErrorUtils(500, 'Job was canceled') }
     const legalBase = await LegalBasisRepository.findById(legalBasisId)
     if (!legalBase) throw new ErrorUtils(404, 'LegalBasis not found')
-    const { error, success, text } = await DocumentService.process(
+    const { error, success, text } = await DocumentService.extractText(
       legalBase.url
     )
     if (!success) throw new ErrorUtils(500, 'Document Processing Error', error)

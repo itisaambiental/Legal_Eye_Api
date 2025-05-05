@@ -91,7 +91,7 @@ class LawArticleExtractor extends ArticleExtractor {
     - "ANEXO A", "Anexo I", "anexo B:"
     - "APÉNDICE A", "Apéndice Normativo"
 
-       VERY IMPORTANT — DETECT  HEADINGS IN BODY TEXT
+        VERY IMPORTANT — DETECT  HEADINGS IN BODY TEXT
 
       • In legal documents such as regulations, it is common for article headers like "Artículo 1." or "Artículo 14." to appear directly before their content on the same line. These must be recognized and extracted as valid legal section headings.
 
@@ -104,6 +104,14 @@ class LawArticleExtractor extends ArticleExtractor {
       • If a thematic description or subtitle appears below or on the same line as a structural heading, it must not be extracted separately. It belongs to the content of the preceding heading.
 
       • Only extract the heading itself, exactly as it appears in the document, and ignore any additional sentence or content in the same line.
+
+      • If a block such as "TRANSITORIOS" contains nested article-like headings (e.g., "Artículo Primero", "Artículo Segundo"), you must not extract them as separate top-level headings.
+
+      • These inner articles must be treated as part of the content of the enclosing "TRANSITORIOS" section, and should not appear independently in the output JSON.
+
+      • Only the outer block heading ("TRANSITORIOS", "Disposiciones Transitorias", etc.) should be extracted as the section title, and its content may include those inner articles.
+
+      • This ensures that reform or transitional provisions are kept grouped as legally intended.
 
       • For example:
       - "Artículo 1. Este Reglamento tiene por objeto..." → heading: "Artículo 1."
