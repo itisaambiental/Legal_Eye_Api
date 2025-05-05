@@ -91,7 +91,7 @@ class RegulationArticleExtractor extends ArticleExtractor {
     - "ANEXO A", "Anexo I", "anexo B:"
     - "APÉNDICE A", "Apéndice Normativo"
 
-        VERY IMPORTANT — DETECT  HEADINGS IN BODY TEXT
+         VERY IMPORTANT — DETECT  HEADINGS IN BODY TEXT
 
       • In legal documents such as regulations, it is common for article headers like "Artículo 1." or "Artículo 14." to appear directly before their content on the same line. These must be recognized and extracted as valid legal section headings.
 
@@ -144,10 +144,6 @@ Legal documents may include multiple "TRANSITORIOS" blocks, especially when refo
 • You MUST treat each "TRANSITORIOS" heading as a **separate standalone section** if it appears more than once in the document.
 • Do NOT group multiple "TRANSITORIOS" blocks into one single section, even if they share the same heading.
 • Each "TRANSITORIOS" must be extracted **with its own content block**, starting from the heading and continuing until the next structural heading.
-• If a "TRANSITORIOS" block contains articles, or similar formats, you MUST not extract them as standalone section headings.
-• These are subdivisions internal to the TRANSITORIOS block and must be treated as part of its content.
-• Only the outer "TRANSITORIOS" heading should be extracted. Its internal article-like lines are not separate sections and must be ignored as standalone titles.
-• This ensures that each transitional provision is preserved as a single legal unit, as required by legal structure.
 
 Examples:
   - First "TRANSITORIOS" (line 120) → title: "TRANSITORIOS", line: 120
