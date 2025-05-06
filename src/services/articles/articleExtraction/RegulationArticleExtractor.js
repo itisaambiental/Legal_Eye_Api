@@ -69,9 +69,9 @@ class RegulationArticleExtractor extends ArticleExtractor {
      - "TÍTULO PRIMERO", "Título Primero", "título primero", "Título Primero."
      - Also accept: "Artículo 10 bis", "Artículo 15 ter", "Capítulo Segundo", "Artículo 2.1", etc.
 
-      **Generic blocks commonly present in normative documents**:
-      - "CONSIDERANDO", "PREFACIO", "INTRODUCCIÓN"
-      - "ÍNDICE", "CONTENIDO"
+     **Generic blocks commonly present in normative documents**:
+    - "CONSIDERANDO", "PREFACIO", "INTRODUCCIÓN"
+    - "ÍNDICE", "CONTENIDO"
 
    Include compound and extended article formats as standalone section headers:
      - e.g., "Artículo 2.1", "Artículo 3-B", "Artículo 10 bis", "Artículo 12 ter", etc.
@@ -91,7 +91,7 @@ class RegulationArticleExtractor extends ArticleExtractor {
     - "ANEXO A", "Anexo I", "anexo B:"
     - "APÉNDICE A", "Apéndice Normativo"
 
-         VERY IMPORTANT — DETECT  HEADINGS IN BODY TEXT
+       VERY IMPORTANT — DETECT  HEADINGS IN BODY TEXT
 
       • In legal documents such as regulations, it is common for article headers like "Artículo 1." or "Artículo 14." to appear directly before their content on the same line. These must be recognized and extracted as valid legal section headings.
 
@@ -117,12 +117,13 @@ class RegulationArticleExtractor extends ArticleExtractor {
 
     • The heading must be returned **verbatim** as it appears in the original line, preserving capitalization and punctuation.
   
-   Do NOT reject section headers due to:
+
+    Do NOT reject section headers due to:
     - casing (e.g., "artículo" instead of "ARTÍCULO")
     - punctuation (e.g., "Artículo 1.", "Capítulo II:")
     - numbering style (numerical or ordinal)
 
-   You MUST extract based only on real legal content hierarchy, not visual formatting.
+    You MUST extract based only on real legal content hierarchy, not visual formatting.
 
 • Preserve original **accents**, **punctuation**, and **order** of appearance.
 • Ignore any **page numbers**, **headers**, **footers**, **marginal notes**, or **index references**.
@@ -137,43 +138,27 @@ Important: You must extract and return each heading **exactly as it appears in t
 
 This is a legal document — accuracy is critical.
 
-IMPORTANT – MULTIPLE "TRANSITORIOS" BLOCKS
+IMPORTANT (Transitional-Provisions) Blocks
 
-Legal documents may include multiple "TRANSITORIOS" blocks, especially when reforms or annexes have been added in different dates or through different agreements.
+  • Top-level only:
+  Any heading whose main text is exactly a form of “TRANSITORIOS” (e.g. “TRANSITORIOS”, “Disposiciones Transitorias”, etc.) is a standalone section. Record it once, verbatim, with its line number.
 
-• You MUST treat each "TRANSITORIOS" heading as a **separate standalone section** if it appears more than once in the document.
-• Do NOT group multiple "TRANSITORIOS" blocks into one single section, even if they share the same heading.
-• Each "TRANSITORIOS" must be extracted **with its own content block**, starting from the heading and continuing until the next structural heading.
+  • One heading = one block:
+  If the document later repeats a TRANSITORIOS-type heading, treat that as a new section. Do not merge separate blocks, even if the wording is identical.
 
-Examples:
-  - First "TRANSITORIOS" (line 120) → title: "TRANSITORIOS", line: 120
-  - Second "TRANSITORIOS" (line 560) → title: "TRANSITORIOS", line: 560
-  - Third "TRANSITORIOS" (line 770) → title: "TRANSITORIOS", line: 770
-
-This ensures that each reform, publication, or addendum is captured independently.
+  •Ignore inner headings:
+  Inside a TRANSITORIOS block you may see internal articles. Do not extract or list these. They are content of the current block—not separate sections.
 
 You MUST return the extracted sections **in the exact order in which they appear** in the document, based on their line number.
 
- IMPORTANT – ABOUT THE COMPLETE OUTPUT
-Do not summarize the output, do not reduce it because of size, and do not assume that I only want the top-level hierarchy.
-The size of the JSON IS NOT AN OBJECTION. If the document contains hundreds or thousands of headings, you must list absolutely all of them, one by one, exactly as they appear in the text.
-DO NOT group or omit headers, etc.
-DO NOT summarize, DO NOT trim for reasons of size or practicality.
-Only return the valid section heading found on each line.
-Do NOT return any additional content, explanations, or body text, even if it appears on the same line: only extract and return the valid legal heading.
+  IMPORTANT – ABOUT THE COMPLETE OUTPUT
+  - Do not summarize the output, do not reduce it because of size, and do not assume that I only want the top-level hierarchy.
+  - The size of the JSON IS NOT AN OBJECTION. If the document contains hundreds or thousands of headings, you must list absolutely all of them, one by one, exactly as they appear in the text.
+  - DO NOT group or omit headers, etc.
+  - DO NOT summarize, DO NOT trim for reasons of size or practicality.
+  - Only return the valid section heading found on each line.
+  - Do NOT return any additional content, explanations, or body text, even if it appears on the same line: only extract and return the valid legal heading.
 
- **Return the output as valid JSON in this format**:
-  
-  \`\`\`json
-  {
-    "sections": [ 
-      {
-        "title": "string", // The exact heading text as it appears in the document.
-        "line": "number"   // The line number (starting from 1) where the heading is located in the document
-      }
-    ],
-    "isValid": true // true if at least one valid heading was found; false otherwise
-  }
   \`\`\`
     Document text:
     """

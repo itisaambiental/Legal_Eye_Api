@@ -138,43 +138,27 @@ Important: You must extract and return each heading **exactly as it appears in t
 
 This is a legal document — accuracy is critical.
 
-IMPORTANT – MULTIPLE "TRANSITORIOS" BLOCKS
+IMPORTANT (Transitional-Provisions) Blocks
 
-Legal documents may include multiple "TRANSITORIOS" blocks, especially when reforms or annexes have been added in different dates or through different agreements.
+  • Top-level only:
+  Any heading whose main text is exactly a form of “TRANSITORIOS” (e.g. “TRANSITORIOS”, “Disposiciones Transitorias”, etc.) is a standalone section. Record it once, verbatim, with its line number.
 
-• You MUST treat each "TRANSITORIOS" heading as a **separate standalone section** if it appears more than once in the document.
-• Do NOT group multiple "TRANSITORIOS" blocks into one single section, even if they share the same heading.
-• Each "TRANSITORIOS" must be extracted **with its own content block**, starting from the heading and continuing until the next structural heading.
+  • One heading = one block:
+  If the document later repeats a TRANSITORIOS-type heading, treat that as a new section. Do not merge separate blocks, even if the wording is identical.
 
-Examples:
-  - First "TRANSITORIOS" (line 120) → title: "TRANSITORIOS", line: 120
-  - Second "TRANSITORIOS" (line 560) → title: "TRANSITORIOS", line: 560
-  - Third "TRANSITORIOS" (line 770) → title: "TRANSITORIOS", line: 770
-
-This ensures that each reform, publication, or addendum is captured independently.
+  •Ignore inner headings:
+  Inside a TRANSITORIOS block you may see internal articles. Do not extract or list these. They are content of the current block—not separate sections.
 
 You MUST return the extracted sections **in the exact order in which they appear** in the document, based on their line number.
 
   IMPORTANT – ABOUT THE COMPLETE OUTPUT
-Do not summarize the output, do not reduce it because of size, and do not assume that I only want the top-level hierarchy.
-The size of the JSON IS NOT AN OBJECTION. If the document contains hundreds or thousands of headings, you must list absolutely all of them, one by one, exactly as they appear in the text.
-DO NOT group or omit headers, etc.
-DO NOT summarize, DO NOT trim for reasons of size or practicality.
-Only return the valid section heading found on each line.
-Do NOT return any additional content, explanations, or body text, even if it appears on the same line: only extract and return the valid legal heading.
+  - Do not summarize the output, do not reduce it because of size, and do not assume that I only want the top-level hierarchy.
+  - The size of the JSON IS NOT AN OBJECTION. If the document contains hundreds or thousands of headings, you must list absolutely all of them, one by one, exactly as they appear in the text.
+  - DO NOT group or omit headers, etc.
+  - DO NOT summarize, DO NOT trim for reasons of size or practicality.
+  - Only return the valid section heading found on each line.
+  - Do NOT return any additional content, explanations, or body text, even if it appears on the same line: only extract and return the valid legal heading.
 
-  **Return the output as valid JSON in this format**:
-  
-  \`\`\`json
-  {
-    "sections": [ 
-      {
-        "title": "string", // The exact heading text as it appears in the document.
-        "line": "number"   // The line number (starting from 1) where the heading is located in the document
-      }
-    ],
-    "isValid": true // true if at least one valid heading was found; false otherwise
-  }
   \`\`\`
     Document text:
     """
