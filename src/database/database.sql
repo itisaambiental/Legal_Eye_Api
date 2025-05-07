@@ -227,3 +227,14 @@ CREATE TABLE IF NOT EXISTS requirement_types (
   FULLTEXT(description),
   FULLTEXT(classification)
 );
+
+-- Table: legal_verbs
+-- Description: Esta tabla almacena los verbos legales junto con su descripción y su traducción.
+CREATE TABLE IF NOT EXISTS legal_verbs (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  description LONGTEXT NOT NULL,
+  translation LONGTEXT NOT NULL,
+  FULLTEXT (description),
+  FULLTEXT (translation)
+) ENGINE=InnoDB;
