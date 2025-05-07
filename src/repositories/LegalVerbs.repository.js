@@ -316,7 +316,7 @@ class LegalVerbsRepository {
         id
       ])
       if (result.affectedRows === 0) return null
-      const legalVerb = await this.findById(result.insertId)
+      const legalVerb = await this.findById(id)
       return legalVerb
     } catch (error) {
       console.error('Error updating legal verb:', error.message)
