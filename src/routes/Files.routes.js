@@ -4,7 +4,7 @@
  */
 
 import { Router } from 'express'
-import { upload } from '../config/multer.config.js'
+import { upload } from '../middlewares/multer.js'
 import { uploadFile, getFile } from '../controllers/Files.controller.js'
 import UserExtractor from '../middlewares/user_extractor.js'
 
