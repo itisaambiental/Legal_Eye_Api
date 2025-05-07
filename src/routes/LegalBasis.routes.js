@@ -23,7 +23,7 @@ import {
   deleteLegalBasis,
   deleteLegalBasisBatch
 } from '../controllers/LegalBasis.controller.js'
-import { upload } from '../config/multer.config.js'
+import { upload } from '../middlewares/multer.js'
 
 /**
  * LegalBasisRouter
