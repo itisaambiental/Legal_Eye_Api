@@ -230,7 +230,6 @@ class RequirementTypesRepository {
    * @returns {Promise<Array<RequirementType[]|null>>} - Array of RequirementType instances.
    */
   static async findByDescription (description) {
-    const search = `%${description}%`
     try {
       const [rows] = await pool.query(
         `
@@ -238,7 +237,7 @@ class RequirementTypesRepository {
        FROM requirement_types
        WHERE MATCH(description) AGAINST(? IN BOOLEAN MODE)
         `,
-        [search]
+        [description]
       )
       if (rows.length === 0) return null
       return rows.map(
@@ -268,7 +267,6 @@ class RequirementTypesRepository {
    * @returns {Promise<Array<RequirementType[]|null>>} - Array of RequirementType instances.
    */
   static async findByClassification (classification) {
-    const search = `%${classification}%`
     try {
       const [rows] = await pool.query(
         `
@@ -276,7 +274,7 @@ class RequirementTypesRepository {
       FROM requirement_types
       WHERE MATCH(classification) AGAINST(? IN BOOLEAN MODE)
         `,
-        [search]
+        [classification]
       )
       if (rows.length === 0) return null
       return rows.map(

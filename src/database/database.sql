@@ -237,4 +237,4 @@ CREATE TABLE IF NOT EXISTS legal_verbs (
   translation LONGTEXT NOT NULL,
   FULLTEXT (description),
   FULLTEXT (translation)
-) ENGINE=InnoDB;
+);

@@ -1,6 +1,6 @@
-import LegalVerbsRepository from '../../../repositories/LegalVerbs.repository.js'
-import ErrorUtils from '../../../utils/Error.js'
-import legalVerbsSchema from '../../../schemas/legalVerbs.schema.js'
+import LegalVerbsRepository from '../../repositories/LegalVerbs.repository.js'
+import ErrorUtils from '../../utils/Error.js'
+import legalVerbsSchema from '../../schemas/legalVerbs.schema.js'
 import { z } from 'zod'
 
 /**
@@ -18,20 +18,23 @@ class LegalVerbsService {
    */
   static async create ({ name, description, translation }) {
     try {
-      const parsed = legalVerbsSchema.parse({ name, description, translation })
-      const exists = await LegalVerbsRepository.existsByName(parsed.name)
-      if (exists) {
+      const legalVerbParsed = legalVerbsSchema.parse({ name, description, translation })
+      const LegalVerbNameExists = await LegalVerbsRepository.existsByName(legalVerbParsed.name)
+      if (LegalVerbNameExists) {
         throw new ErrorUtils(409, 'Legal verb name already exists')
       }
-      const created = await LegalVerbsRepository.create(
-        parsed.name,
-        parsed.description,
-        parsed.translation
+      const createdLegalVerb = await LegalVerbsRepository.create(
+        legalVerbParsed.name,
+        legalVerbParsed.description,
+        legalVerbParsed.translation
       )
-      return created
+      return createdLegalVerb
     } catch (error) {
       if (error instanceof z.ZodError) {
-        const validationErrors = error.errors.map(e => ({ field: e.path[0], message: e.message }))
+        const validationErrors = error.errors.map((e) => ({
+          field: e.path[0],
+          message: e.message
+        }))
         throw new ErrorUtils(400, 'Validation failed', validationErrors)
       }
       if (error instanceof ErrorUtils) {
@@ -48,8 +51,11 @@ class LegalVerbsService {
    */
   static async getAll () {
     try {
-      const items = await LegalVerbsRepository.findAll()
-      return items || []
+      const legalVerbs = await LegalVerbsRepository.findAll()
+      if (!legalVerbs) {
+        return []
+      }
+      return legalVerbs
     } catch (error) {
       if (error instanceof ErrorUtils) throw error
       throw new ErrorUtils(500, 'Failed to fetch legal verbs')
@@ -64,11 +70,11 @@ class LegalVerbsService {
    */
   static async getById (id) {
     try {
-      const item = await LegalVerbsRepository.findById(id)
-      if (!item) {
+      const legalVerb = await LegalVerbsRepository.findById(id)
+      if (!legalVerb) {
         throw new ErrorUtils(404, 'Legal verb not found')
       }
-      return item
+      return legalVerb
     } catch (error) {
       if (error instanceof ErrorUtils) throw error
       throw new ErrorUtils(500, 'Failed to fetch legal verb')
@@ -83,8 +89,11 @@ class LegalVerbsService {
    */
   static async getByName (name) {
     try {
-      const items = await LegalVerbsRepository.findByName(name)
-      return items || []
+      const legalVerbs = await LegalVerbsRepository.findByName(name)
+      if (!legalVerbs) {
+        return []
+      }
+      return legalVerbs
     } catch (error) {
       if (error instanceof ErrorUtils) throw error
       throw new ErrorUtils(500, 'Failed to fetch legal verbs by name')
@@ -99,8 +108,11 @@ class LegalVerbsService {
    */
   static async getByDescription (description) {
     try {
-      const items = await LegalVerbsRepository.findByDescription(description)
-      return items || []
+      const legalVerbs = await LegalVerbsRepository.findByDescription(description)
+      if (!legalVerbs) {
+        return []
+      }
+      return legalVerbs
     } catch (error) {
       if (error instanceof ErrorUtils) throw error
       throw new ErrorUtils(500, 'Failed to fetch legal verbs by description')
@@ -115,8 +127,11 @@ class LegalVerbsService {
    */
   static async getByTranslation (translation) {
     try {
-      const items = await LegalVerbsRepository.findByTranslation(translation)
-      return items || []
+      const legalVerbs = await LegalVerbsRepository.findByTranslation(translation)
+      if (!legalVerbs) {
+        return []
+      }
+      return legalVerbs
     } catch (error) {
       if (error instanceof ErrorUtils) throw error
       throw new ErrorUtils(500, 'Failed to fetch legal verbs by translation')
@@ -135,28 +150,34 @@ class LegalVerbsService {
    */
   static async updateById (id, { name, description, translation }) {
     try {
-      const parsed = legalVerbsSchema.parse({ name, description, translation })
-      const existing = await LegalVerbsRepository.findById(id)
-      if (!existing) {
+      const legalVerbParsed = legalVerbsSchema.parse({ name, description, translation })
+      const legalVerb = await LegalVerbsRepository.findById(id)
+      if (!legalVerb) {
         throw new ErrorUtils(404, 'Legal verb not found')
       }
-      const nameExists = await LegalVerbsRepository.existsByNameExcludingId(parsed.name, id)
-      if (nameExists) {
+      const LegalVerbNameExists = await LegalVerbsRepository.existsByNameExcludingId(
+        legalVerbParsed.name,
+        id
+      )
+      if (LegalVerbNameExists) {
         throw new ErrorUtils(409, 'Legal verb name already exists')
       }
-      const updated = await LegalVerbsRepository.update(
+      const updatedLegalVerb = await LegalVerbsRepository.update(
         id,
-        parsed.name,
-        parsed.description,
-        parsed.translation
+        legalVerbParsed.name,
+        legalVerbParsed.description,
+        legalVerbParsed.translation
       )
-      if (!updated) {
+      if (!updatedLegalVerb) {
         throw new ErrorUtils(404, 'Legal verb not found')
       }
-      return updated
+      return updatedLegalVerb
     } catch (error) {
       if (error instanceof z.ZodError) {
-        const validationErrors = error.errors.map(e => ({ field: e.path[0], message: e.message }))
+        const validationErrors = error.errors.map((e) => ({
+          field: e.path[0],
+          message: e.message
+        }))
         throw new ErrorUtils(400, 'Validation failed', validationErrors)
       }
       if (error instanceof ErrorUtils) throw error
@@ -172,12 +193,12 @@ class LegalVerbsService {
    */
   static async deleteById (id) {
     try {
-      const existing = await LegalVerbsRepository.findById(id)
-      if (!existing) {
+      const legalVerb = await LegalVerbsRepository.findById(id)
+      if (!legalVerb) {
         throw new ErrorUtils(404, 'Legal verb not found')
       }
-      const deleted = await LegalVerbsRepository.deleteById(id)
-      if (!deleted) {
+      const deletedLegalVerb = await LegalVerbsRepository.deleteById(id)
+      if (!deletedLegalVerb) {
         throw new ErrorUtils(404, 'Legal verb not found')
       }
       return { success: true }
@@ -189,19 +210,23 @@ class LegalVerbsService {
 
   /**
    * Deletes multiple legal verbs by their IDs.
-   * @param {Array<number>} ids - Array of legal verb IDs to delete.
+   * @param {Array<number>} legalVerbsIds - Array of legal verb IDs to delete.
    * @returns {Promise<{ success: boolean }>} - An object indicating the deletion was successful.
    * @throws {ErrorUtils} - If IDs not found or deletion fails.
    */
-  static async deleteBatch (ids) {
+  static async deleteBatch (legalVerbsIds) {
     try {
-      const existing = await LegalVerbsRepository.findByIds(ids)
-      if (existing.length !== ids.length) {
-        const notFoundIds = ids.filter(id => !existing.some(item => item.id === id))
-        throw new ErrorUtils(404, 'Legal verbs not found for IDs', { notFoundIds })
+      const legalVerbs = await LegalVerbsRepository.findByIds(legalVerbsIds)
+      if (legalVerbs.length !== legalVerbsIds.length) {
+        const notFoundIds = legalVerbsIds.filter(
+          (id) => !legalVerbs.some((item) => item.id === id)
+        )
+        throw new ErrorUtils(404, 'Legal verbs not found for IDs', {
+          notFoundIds
+        })
       }
-      const deleted = await LegalVerbsRepository.deleteBatch(ids)
-      if (!deleted) {
+      const deletedLegalVerbs = await LegalVerbsRepository.deleteBatch(legalVerbsIds)
+      if (!deletedLegalVerbs) {
         throw new ErrorUtils(404, 'Legal verbs not found')
       }
       return { success: true }

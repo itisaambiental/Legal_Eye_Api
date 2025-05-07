@@ -224,32 +224,13 @@ class ArticlesRepository {
  */
   static async findByDescription (legalBasisId, description) {
     try {
-      const likeQuery = `
-      SELECT id, legal_basis_id, article_name, description, article_order
-      FROM article
-      WHERE legal_basis_id = ? 
-        AND plain_description LIKE ?
-    `
-      const [rows] = await pool.query(likeQuery, [legalBasisId, `%${description}%`])
-      if (rows.length > 0) {
-        return rows.map(
-          (row) =>
-            new Article(
-              row.id,
-              row.legal_basis_id,
-              row.article_name,
-              row.description,
-              row.article_order
-            )
-        )
-      }
-      const matchQuery = `
+      const query = `
       SELECT id, legal_basis_id, article_name, description, article_order
       FROM article
       WHERE legal_basis_id = ?
         AND MATCH(plain_description) AGAINST(? IN BOOLEAN MODE)
     `
-      const [result] = await pool.query(matchQuery, [legalBasisId, `%${description}%`])
+      const [result] = await pool.query(query, [legalBasisId, description])
       if (result.length === 0) return null
       return result.map(
         (row) =>

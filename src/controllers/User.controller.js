@@ -23,7 +23,7 @@ export const loginUser = async (req, res) => {
     })
   }
   try {
-    const { token } = await UserService.loginUser(req.body)
+    const token = await UserService.loginUser(req.body)
     return res.status(200).json({ token })
   } catch (error) {
     if (error instanceof ErrorUtils) {
@@ -50,7 +50,7 @@ export const loginUserMicrosoftAuth = async (req, res) => {
     })
   }
   try {
-    const { token } = await UserService.microsoftLogin(accessToken)
+    const token = await UserService.microsoftLogin(accessToken)
     return res.status(200).json({ token })
   } catch (error) {
     if (error instanceof ErrorUtils) {

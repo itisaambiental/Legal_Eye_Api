@@ -99,7 +99,7 @@ class UserService {
    * @param {Object} loginData - User's login data.
    * @param {string} loginData.gmail - User's Gmail.
    * @param {string} loginData.password - User's password.
-   * @returns {Promise<Object>} - Object containing JWT token.
+   * @returns {Promise<string>} - JWT token.
    * @throws {ErrorUtils} - If validation fails or credentials are invalid.
    */
 
@@ -124,7 +124,7 @@ class UserService {
       const token = jwt.sign({ userForToken }, JWT_SECRET, {
         expiresIn: JWT_EXPIRATION
       })
-      return { token }
+      return token
     } catch (error) {
       if (error instanceof z.ZodError) {
         throw new ErrorUtils(401, 'Invalid email or password')
@@ -164,7 +164,7 @@ class UserService {
   /**
    * Logs in a user using Microsoft OAuth.
    * @param {string} accessToken - Microsoft access token.
-   * @returns {Promise<Object>} - Object containing JWT token.
+   * @returns {Promise<string>} - JWT token.
    * @throws {ErrorUtils} - If login fails or user does not exist.
    */
   static async microsoftLogin (accessToken) {
@@ -185,7 +185,7 @@ class UserService {
         expiresIn: JWT_EXPIRATION
       })
 
-      return { token }
+      return token
     } catch (error) {
       if (error instanceof ErrorUtils) {
         throw error
@@ -196,7 +196,7 @@ class UserService {
 
   /**
    * Retrieves all users from the database.
-   * @returns {Promise<Array<Object>>} - Array of user objects.
+   * @returns {Promise<Array<User>>} - Array of user objects.
    * @throws {ErrorUtils} - If retrieval fails.
    */
   static async getAllUsers () {
@@ -229,7 +229,7 @@ class UserService {
 
   /**
    * Retrieves all roles from the database.
-   * @returns {Promise<Array<Object>>} - Array of role objects.
+   * @returns {Promise<Array<Role>>} - Array of role objects.
    * @throws {ErrorUtils} - If retrieval fails.
    */
   static async getAllRoles () {
@@ -250,7 +250,7 @@ class UserService {
   /**
    * Retrieves a user by their ID.
    * @param {number} id - User's ID.
-   * @returns {Promise<Object>} - User object without password.
+   * @returns {Promise<User>} - User object without password.
    * @throws {ErrorUtils} - If user not found or retrieval fails.
    */
   static async getUserById (id) {
@@ -280,7 +280,7 @@ class UserService {
   /**
    * Retrieves users by their role ID.
    * @param {number} roleId - Role ID to filter users by.
-   * @returns {Promise<Array<Object>>} - Array of user objects.
+   * @returns {Promise<Array<User>>} - Array of user objects.
    * @throws {ErrorUtils} - If retrieval fails.
    */
   static async getUsersByRole (roleId) {
@@ -314,7 +314,7 @@ class UserService {
   /**
    * Retrieves users by name or gmail.
    * @param {string} [nameOrEmail] - The name or email of the user to search for.
-   * @returns {Promise<Array<Object>>} - Array of user objects matching the criteria.
+   * @returns {Promise<Array<User>>} - Array of user objects matching the criteria.
    * @throws {ErrorUtils} - If retrieval fails.
    */
   static async getUsersByNameOrGmail (nameOrEmail) {
@@ -351,7 +351,7 @@ class UserService {
    * @param {Object} userData - Fields to update, expects { name, gmail, roleId, profilePicture, removePicture }.
    * @param {Express.Multer.File} profilePicture - New profile picture file (optional).
    * @param {number} currentUserId - ID of the currently logged-in user.
-   * @returns {Promise<Object>} - Updated user data and a new token if applicable.
+   * @returns {Promise<User>} - Updated user data and a new token if applicable.
    * @throws {ErrorUtils} - If update fails, user not found, or validation errors occur.
    */
   static async updateUser (userId, userData, profilePicture, currentUserId) {

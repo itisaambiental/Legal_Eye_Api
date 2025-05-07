@@ -1,4 +1,4 @@
-import LegalVerbsService from '../services/requirements/legalVerbs/legalVerbs.service.js'
+import LegalVerbsService from '../services/legalVerbs/legalVerbs.service.js'
 import UserService from '../services/users/User.service.js'
 import ErrorUtils from '../utils/Error.js'
 
@@ -22,7 +22,11 @@ export const createLegalVerb = async (req, res) => {
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-    const legalVerb = await LegalVerbsService.create({ name, description, translation })
+    const legalVerb = await LegalVerbsService.create({
+      name,
+      description,
+      translation
+    })
     return res.status(201).json({ legalVerb })
   } catch (error) {
     if (error instanceof ErrorUtils) {
@@ -190,7 +194,11 @@ export const updateLegalVerb = async (req, res) => {
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-    const legalVerb = await LegalVerbsService.updateById(id, { name, description, translation })
+    const legalVerb = await LegalVerbsService.updateById(id, {
+      name,
+      description,
+      translation
+    })
     return res.status(200).json({ legalVerb })
   } catch (error) {
     if (error instanceof ErrorUtils) {
@@ -245,8 +253,14 @@ export const deleteLegalVerb = async (req, res) => {
 export const deleteLegalVerbsBatch = async (req, res) => {
   const { userId } = req
   const { legalVerbsIds } = req.body
-  if (!legalVerbsIds || !Array.isArray(legalVerbsIds) || legalVerbsIds.length === 0) {
-    return res.status(400).json({ message: 'Missing required field: legalVerbsIds' })
+  if (
+    !legalVerbsIds ||
+    !Array.isArray(legalVerbsIds) ||
+    legalVerbsIds.length === 0
+  ) {
+    return res
+      .status(400)
+      .json({ message: 'Missing required field: legalVerbsIds' })
   }
   try {
     const isAuthorized = await UserService.userExists(userId)

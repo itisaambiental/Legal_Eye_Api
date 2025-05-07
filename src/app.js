@@ -11,6 +11,7 @@ import FilesRoutes from './routes/Files.routes.js'
 import SubjectsRoutes from './routes/Subjects.routes.js'
 import AspectsRoutes from './routes/Aspects.routes.js'
 import LegalBasisRoutes from './routes/LegalBasis.routes.js'
+import LegalVerbsRoutes from './routes/LegalVerbs.routes.js'
 import SendLegalBasisRoutes from './routes/SendLegalBasis.routes.js'
 import ArticlesRoutes from './routes/Articles.routes.js'
 import ExtractArticlesRoutes from './routes/ExtractArticles.routes.js'
@@ -51,6 +52,7 @@ app.use('/api', FilesRoutes)
 app.use('/api', SubjectsRoutes)
 app.use('/api', AspectsRoutes)
 app.use('/api', LegalBasisRoutes)
+app.use('/api', LegalVerbsRoutes)
 app.use('/api', SendLegalBasisRoutes)
 app.use('/api', ArticlesRoutes)
 app.use('/api', ExtractArticlesRoutes)

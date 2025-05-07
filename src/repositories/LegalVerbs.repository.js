@@ -20,14 +20,16 @@ class LegalVerbsRepository {
       VALUES (?, ?, ?)
     `
     try {
-      const [result] = await pool.query(query, [name, description, translation])
-      return this.findById(result.insertId)
+      const [result] = await pool.query(query, [
+        name,
+        description,
+        translation
+      ])
+      const legalVerb = await this.findById(result.insertId)
+      return legalVerb
     } catch (error) {
       console.error('Error creating legal verb:', error.message)
-      throw new ErrorUtils(
-        500,
-        'Error inserting legal verb into the database'
-      )
+      throw new ErrorUtils(500, 'Error inserting legal verb into the database')
     }
   }
 
@@ -43,14 +45,12 @@ class LegalVerbsRepository {
       )
       if (rows.length === 0) return null
       return rows.map(
-        row => new LegalVerb(row.id, row.name, row.description, row.translation)
+        (row) =>
+          new LegalVerb(row.id, row.name, row.description, row.translation)
       )
     } catch (error) {
       console.error('Error fetching legal verbs:', error.message)
-      throw new ErrorUtils(
-        500,
-        'Error fetching legal verbs from the database'
-      )
+      throw new ErrorUtils(500, 'Error fetching legal verbs from the database')
     }
   }
 
@@ -75,10 +75,7 @@ class LegalVerbsRepository {
       return new LegalVerb(row.id, row.name, row.description, row.translation)
     } catch (error) {
       console.error('Error fetching legal verb by ID:', error.message)
-      throw new ErrorUtils(
-        500,
-        'Error fetching legal verb from the database'
-      )
+      throw new ErrorUtils(500, 'Error fetching legal verb from the database')
     }
   }
 
@@ -101,7 +98,8 @@ class LegalVerbsRepository {
     try {
       const [rows] = await pool.query(query, [ids])
       return rows.map(
-        row => new LegalVerb(row.id, row.name, row.description, row.translation)
+        (row) =>
+          new LegalVerb(row.id, row.name, row.description, row.translation)
       )
     } catch (error) {
       console.error('Error finding legal verbs by IDs:', error.message)
@@ -130,10 +128,7 @@ class LegalVerbsRepository {
       return rows.length > 0
     } catch (error) {
       console.error('Error checking if legal verb name exists:', error.message)
-      throw new ErrorUtils(
-        500,
-        'Error checking if legal verb name exists'
-      )
+      throw new ErrorUtils(500, 'Error checking if legal verb name exists')
     }
   }
 
@@ -154,10 +149,7 @@ class LegalVerbsRepository {
       return rows.length > 0
     } catch (error) {
       console.error('Error checking if legal verb name exists:', error.message)
-      throw new ErrorUtils(
-        500,
-        'Error checking if legal verb name exists'
-      )
+      throw new ErrorUtils(500, 'Error checking if legal verb name exists')
     }
   }
 
@@ -178,7 +170,10 @@ class LegalVerbsRepository {
       const [rows] = await pool.query(query, [translation, idToExclude])
       return rows.length > 0
     } catch (error) {
-      console.error('Error checking if legal verb translation exists:', error.message)
+      console.error(
+        'Error checking if legal verb translation exists:',
+        error.message
+      )
       throw new ErrorUtils(
         500,
         'Error checking if legal verb translation exists'
@@ -202,7 +197,10 @@ class LegalVerbsRepository {
       const [rows] = await pool.query(query, [translation])
       return rows.length > 0
     } catch (error) {
-      console.error('Error checking if legal verb translation exists:', error.message)
+      console.error(
+        'Error checking if legal verb translation exists:',
+        error.message
+      )
       throw new ErrorUtils(
         500,
         'Error checking if legal verb translation exists'
@@ -229,14 +227,12 @@ class LegalVerbsRepository {
       )
       if (rows.length === 0) return null
       return rows.map(
-        row => new LegalVerb(row.id, row.name, row.description, row.translation)
+        (row) =>
+          new LegalVerb(row.id, row.name, row.description, row.translation)
       )
     } catch (error) {
       console.error('Error fetching legal verbs by name:', error.message)
-      throw new ErrorUtils(
-        500,
-        'Error fetching legal verbs by name'
-      )
+      throw new ErrorUtils(500, 'Error fetching legal verbs by name')
     }
   }
 
@@ -246,7 +242,6 @@ class LegalVerbsRepository {
    * @returns {Promise<LegalVerb[] | null>} - Array of LegalVerb instances.
    */
   static async findByDescription (description) {
-    const search = description
     try {
       const [rows] = await pool.query(
         `
@@ -254,18 +249,19 @@ class LegalVerbsRepository {
           FROM legal_verbs
           WHERE MATCH(description) AGAINST(? IN BOOLEAN MODE)
         `,
-        [search]
+        [description]
       )
       if (rows.length === 0) return null
       return rows.map(
-        row => new LegalVerb(row.id, row.name, row.description, row.translation)
+        (row) =>
+          new LegalVerb(row.id, row.name, row.description, row.translation)
       )
     } catch (error) {
-      console.error('Error fetching legal verbs by description:', error.message)
-      throw new ErrorUtils(
-        500,
-        'Error fetching legal verbs by description'
+      console.error(
+        'Error fetching legal verbs by description:',
+        error.message
       )
+      throw new ErrorUtils(500, 'Error fetching legal verbs by description')
     }
   }
 
@@ -275,7 +271,6 @@ class LegalVerbsRepository {
    * @returns {Promise<LegalVerb[] | null>} - Array of LegalVerb instances.
    */
   static async findByTranslation (translation) {
-    const search = translation
     try {
       const [rows] = await pool.query(
         `
@@ -283,18 +278,19 @@ class LegalVerbsRepository {
           FROM legal_verbs
           WHERE MATCH(translation) AGAINST(? IN BOOLEAN MODE)
         `,
-        [search]
+        [translation]
       )
       if (rows.length === 0) return null
       return rows.map(
-        row => new LegalVerb(row.id, row.name, row.description, row.translation)
+        (row) =>
+          new LegalVerb(row.id, row.name, row.description, row.translation)
       )
     } catch (error) {
-      console.error('Error fetching legal verbs by translation:', error.message)
-      throw new ErrorUtils(
-        500,
-        'Error fetching legal verbs by translation'
+      console.error(
+        'Error fetching legal verbs by translation:',
+        error.message
       )
+      throw new ErrorUtils(500, 'Error fetching legal verbs by translation')
     }
   }
 
@@ -313,15 +309,18 @@ class LegalVerbsRepository {
       WHERE id = ?
     `
     try {
-      const [result] = await pool.query(query, [name, description, translation, id])
+      const [result] = await pool.query(query, [
+        name,
+        description,
+        translation,
+        id
+      ])
       if (result.affectedRows === 0) return null
-      return this.findById(id)
+      const legalVerb = await this.findById(result.insertId)
+      return legalVerb
     } catch (error) {
       console.error('Error updating legal verb:', error.message)
-      throw new ErrorUtils(
-        500,
-        'Error updating legal verb in the database'
-      )
+      throw new ErrorUtils(500, 'Error updating legal verb in the database')
     }
   }
 
@@ -339,10 +338,7 @@ class LegalVerbsRepository {
       return result.affectedRows > 0
     } catch (error) {
       console.error('Error deleting legal verb:', error.message)
-      throw new ErrorUtils(
-        500,
-        'Error deleting legal verb from the database'
-      )
+      throw new ErrorUtils(500, 'Error deleting legal verb from the database')
     }
   }
 
