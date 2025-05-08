@@ -1,4 +1,4 @@
-import LegalVerbsService from '../services/legalVerbs/legalVerbs.service.js'
+import LegalVerbsService from '../services/requirements/legalVerbs/legalVerbs.service.js'
 import UserService from '../services/users/User.service.js'
 import ErrorUtils from '../utils/Error.js'
 

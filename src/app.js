@@ -52,12 +52,12 @@ app.use('/api', FilesRoutes)
 app.use('/api', SubjectsRoutes)
 app.use('/api', AspectsRoutes)
 app.use('/api', LegalBasisRoutes)
-app.use('/api', LegalVerbsRoutes)
 app.use('/api', SendLegalBasisRoutes)
 app.use('/api', ArticlesRoutes)
 app.use('/api', ExtractArticlesRoutes)
 app.use('/api', RequirementsRoutes)
 app.use('/api', RequirementTypesRoutes)
+app.use('/api', LegalVerbsRoutes)
 
 /**
  * Handle 404 Not Found errors.

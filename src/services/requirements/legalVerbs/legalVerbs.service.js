@@ -1,6 +1,6 @@
-import LegalVerbsRepository from '../../repositories/LegalVerbs.repository.js'
-import ErrorUtils from '../../utils/Error.js'
-import legalVerbsSchema from '../../schemas/legalVerbs.schema.js'
+import LegalVerbsRepository from '../../../repositories/LegalVerbs.repository.js'
+import ErrorUtils from '../../../utils/Error.js'
+import legalVerbsSchema from '../../../schemas/legalVerbs.schema.js'
 import { z } from 'zod'
 
 /**
@@ -219,7 +219,7 @@ class LegalVerbsService {
       const legalVerbs = await LegalVerbsRepository.findByIds(legalVerbsIds)
       if (legalVerbs.length !== legalVerbsIds.length) {
         const notFoundIds = legalVerbsIds.filter(
-          (id) => !legalVerbs.some((item) => item.id === id)
+          (id) => !legalVerbs.some((lv) => lv.id === id)
         )
         throw new ErrorUtils(404, 'Legal verbs not found for IDs', {
           notFoundIds

@@ -3,7 +3,10 @@ import { api } from '../../config/test.config.js'
 import UserRepository from '../../repositories/User.repository.js'
 import RequirementTypesRepository from '../../repositories/RequirementTypes.repository.js'
 import generateRequirementTypeData from '../../utils/generateRequirementTypeData.js'
-import { ADMIN_PASSWORD_TEST, ADMIN_GMAIL } from '../../config/variables.config.js'
+import {
+  ADMIN_PASSWORD_TEST,
+  ADMIN_GMAIL
+} from '../../config/variables.config.js'
 
 let tokenAdmin
 
@@ -133,10 +136,10 @@ describe('GET /api/requirement-types', () => {
 
     expect(requirementTypes).toBeInstanceOf(Array)
     expect(requirementTypes.length).toBe(2)
-    const names = requirementTypes.map(rt => rt.name)
+    const names = requirementTypes.map((rt) => rt.name)
     expect(names).toEqual(expect.arrayContaining(['Type A', 'Type B']))
 
-    requirementTypes.forEach(rt => {
+    requirementTypes.forEach((rt) => {
       expect(rt).toHaveProperty('id')
       expect(rt).toHaveProperty('name')
       expect(rt).toHaveProperty('description')
@@ -145,9 +148,7 @@ describe('GET /api/requirement-types', () => {
   })
 
   test('Should return 401 if the user is unauthorized', async () => {
-    const response = await api
-      .get('/api/requirement-types')
-      .expect(401)
+    const response = await api.get('/api/requirement-types').expect(401)
 
     expect(response.body.error).toMatch(/token missing or invalid/i)
   })
@@ -177,7 +178,10 @@ describe('GET /api/requirement-types/:id', () => {
     expect(requirementType).toHaveProperty('id', createdId)
     expect(requirementType).toHaveProperty('name', data.name)
     expect(requirementType).toHaveProperty('description', data.description)
-    expect(requirementType).toHaveProperty('classification', data.classification)
+    expect(requirementType).toHaveProperty(
+      'classification',
+      data.classification
+    )
   })
 
   test('Should return 404 if requirement type with given ID does not exist', async () => {
@@ -224,7 +228,7 @@ describe('GET /api/requirement-types/search/name', () => {
 
     const types = response.body.requirementTypes
     expect(Array.isArray(types)).toBe(true)
-    expect(types.some(t => t.name === 'Water Regulation')).toBe(true)
+    expect(types.some((t) => t.name === 'Water Regulation')).toBe(true)
   })
 
   test('Should return an empty array when no requirement types match the given name', async () => {
@@ -249,7 +253,9 @@ describe('GET /api/requirement-types/search/name', () => {
 
 describe('GET /api/requirement-types/search/description', () => {
   test('Should return a requirement type that matches the given description', async () => {
-    const data = generateRequirementTypeData({ description: 'Regulates water treatment' })
+    const data = generateRequirementTypeData({
+      description: 'Regulates water treatment'
+    })
 
     await api
       .post('/api/requirement-types')
@@ -265,7 +271,9 @@ describe('GET /api/requirement-types/search/description', () => {
 
     const types = response.body.requirementTypes
     expect(Array.isArray(types)).toBe(true)
-    expect(types.some(t => t.description.includes('Regulates water treatment'))).toBe(true)
+    expect(
+      types.some((t) => t.description.includes('Regulates water treatment'))
+    ).toBe(true)
   })
 
   test('Should return an empty array when no requirement types match the given description', async () => {
@@ -290,7 +298,9 @@ describe('GET /api/requirement-types/search/description', () => {
 
 describe('GET /api/requirement-types/search/classification', () => {
   test('Should return a requirement type that matches the given classification', async () => {
-    const data = generateRequirementTypeData({ classification: 'Environmental' })
+    const data = generateRequirementTypeData({
+      classification: 'Environmental'
+    })
 
     await api
       .post('/api/requirement-types')
@@ -306,7 +316,7 @@ describe('GET /api/requirement-types/search/classification', () => {
 
     const types = response.body.requirementTypes
     expect(Array.isArray(types)).toBe(true)
-    expect(types.some(t => t.classification === 'Environmental')).toBe(true)
+    expect(types.some((t) => t.classification === 'Environmental')).toBe(true)
   })
 
   test('Should return an empty array when no requirement types match the given classification', async () => {
@@ -379,7 +389,7 @@ describe('PATCH /api/requirement-types/:id', () => {
     expect(response.body.message).toBe('Validation failed')
     expect(Array.isArray(response.body.errors)).toBe(true)
     expect(response.body.errors.length).toBeGreaterThan(0)
-    response.body.errors.forEach(error => {
+    response.body.errors.forEach((error) => {
       expect(error).toHaveProperty('field')
       expect(error).toHaveProperty('message')
     })
