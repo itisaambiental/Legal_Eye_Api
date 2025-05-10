@@ -1,5 +1,5 @@
 import SubjectsService from '../services/subjects/Subjects.service.js'
-import ErrorUtils from '../utils/Error.js'
+import HttpException from '../utils/HttpException.js'
 import UserService from '../services/users/User.service.js'
 
 /**
@@ -29,7 +29,7 @@ export const createSubject = async (req, res) => {
     })
     return res.status(201).json({ subject })
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({
         message: error.message,
         ...(error.errors && { errors: error.errors })
@@ -56,7 +56,7 @@ export const getSubjects = async (req, res) => {
     const subjects = await SubjectsService.getAll()
     return res.status(200).json({ subjects })
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({
         message: error.message,
         ...(error.errors && { errors: error.errors })
@@ -84,7 +84,7 @@ export const getSubjectById = async (req, res) => {
     const subject = await SubjectsService.getById(id)
     return res.status(200).json({ subject })
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({
         message: error.message,
         ...(error.errors && { errors: error.errors })
@@ -112,7 +112,7 @@ export const getSubjectsByName = async (req, res) => {
     const subjects = await SubjectsService.getByName(subjectName)
     return res.status(200).json({ subjects })
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({
         message: error.message,
         ...(error.errors && { errors: error.errors })
@@ -145,7 +145,7 @@ export const updateSubject = async (req, res) => {
     })
     return res.status(200).json({ subject })
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({
         message: error.message,
         ...(error.errors && { errors: error.errors })
@@ -177,7 +177,7 @@ export const deleteSubject = async (req, res) => {
       return res.status(500).json({ message: 'Internal Server Error' })
     }
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({
         message: error.message,
         ...(error.errors && { errors: error.errors })
@@ -214,7 +214,7 @@ export const deleteSubjectsBatch = async (req, res) => {
       return res.status(500).json({ message: 'Internal Server Error' })
     }
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({
         message: error.message,
         ...(error.errors && { errors: error.errors })

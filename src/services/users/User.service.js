@@ -5,7 +5,7 @@ import userSchema from '../../schemas/user.schema.js'
 import loginSchema from '../../schemas/login.schema.js'
 import { generatePassword } from '../../utils/generatePassword.js'
 import { z } from 'zod'
-import ErrorUtils from '../../utils/Error.js'
+import HttpException from '../../utils/HttpException.js'
 import emailQueue from '../../workers/emailWorker.js'
 import jwt from 'jsonwebtoken'
 import {
@@ -31,7 +31,7 @@ class UserService {
    * @param {number} userData.roleId - User's role ID.
    * @param {Express.Multer.File} profilePicture - User's profile picture file (optional).
    * @returns {Promise<Object>} - Registered user data.
-   * @throws {ErrorUtils} - If validation fails or user already exists.
+   * @throws {HttpException} - If validation fails or user already exists.
    */
   static async registerUser (userData, profilePicture) {
     try {
@@ -41,7 +41,7 @@ class UserService {
       })
       const existingUser = await UserRepository.existsByGmail(parsedUser.gmail)
       if (existingUser) {
-        throw new ErrorUtils(409, 'Gmail already exists')
+        throw new HttpException(409, 'Gmail already exists')
       }
       const userPassword = generatePassword()
       const salt = await bcrypt.genSalt()
@@ -53,7 +53,7 @@ class UserService {
         if (uploadResponse.response.$metadata.httpStatusCode === 200) {
           profilePictureKey = uploadResponse.uniqueFileName
         } else {
-          throw new ErrorUtils(500, 'Failed to upload profile picture')
+          throw new HttpException(500, 'Failed to upload profile picture')
         }
       }
       const user = await UserRepository.create({
@@ -84,13 +84,13 @@ class UserService {
           field: e.path[0],
           message: e.message
         }))
-        throw new ErrorUtils(400, 'Validation failed', validationErrors)
+        throw new HttpException(400, 'Validation failed', validationErrors)
       }
 
-      if (error instanceof ErrorUtils) {
+      if (error instanceof HttpException) {
         throw error
       }
-      throw new ErrorUtils(500, 'Unexpected error during user registration')
+      throw new HttpException(500, 'Unexpected error during user registration')
     }
   }
 
@@ -100,7 +100,7 @@ class UserService {
    * @param {string} loginData.gmail - User's Gmail.
    * @param {string} loginData.password - User's password.
    * @returns {Promise<string>} - JWT token.
-   * @throws {ErrorUtils} - If validation fails or credentials are invalid.
+   * @throws {HttpException} - If validation fails or credentials are invalid.
    */
 
   static async loginUser (loginData) {
@@ -109,11 +109,11 @@ class UserService {
       const { gmail, password } = parsedLoginData
       const user = await UserRepository.existsByGmail(gmail)
       if (!user) {
-        throw new ErrorUtils(401, 'Invalid email or password')
+        throw new HttpException(401, 'Invalid email or password')
       }
       const correctPassword = await bcrypt.compare(password, user.password)
       if (!correctPassword) {
-        throw new ErrorUtils(401, 'Invalid email or password')
+        throw new HttpException(401, 'Invalid email or password')
       }
       const userForToken = {
         id: user.id,
@@ -127,9 +127,9 @@ class UserService {
       return token
     } catch (error) {
       if (error instanceof z.ZodError) {
-        throw new ErrorUtils(401, 'Invalid email or password')
+        throw new HttpException(401, 'Invalid email or password')
       }
-      throw new ErrorUtils(401, 'Invalid email or password')
+      throw new HttpException(401, 'Invalid email or password')
     }
   }
 
@@ -137,7 +137,7 @@ class UserService {
    * Calls the Microsoft Graph API to retrieve user email.
    * @param {string} accessToken - The Microsoft access token.
    * @returns {Promise<string>} - The user's email address.
-   * @throws {ErrorUtils} - If the token is invalid or the API call fails.
+   * @throws {HttpException} - If the token is invalid or the API call fails.
    */
   static async getUserDataFromMicrosoft (accessToken) {
     try {
@@ -150,14 +150,14 @@ class UserService {
       const { mail, userPrincipalName } = data
       const userEmail = mail || userPrincipalName
       if (!userEmail) {
-        throw new ErrorUtils(401, 'Invalid token')
+        throw new HttpException(401, 'Invalid token')
       }
       return userEmail
     } catch (error) {
       if (error.response && error.response.status === 401) {
-        throw new ErrorUtils(401, 'Invalid token')
+        throw new HttpException(401, 'Invalid token')
       }
-      throw new ErrorUtils(500, 'Microsoft API call failed', error.message)
+      throw new HttpException(500, 'Microsoft API call failed', error.message)
     }
   }
 
@@ -165,14 +165,14 @@ class UserService {
    * Logs in a user using Microsoft OAuth.
    * @param {string} accessToken - Microsoft access token.
    * @returns {Promise<string>} - JWT token.
-   * @throws {ErrorUtils} - If login fails or user does not exist.
+   * @throws {HttpException} - If login fails or user does not exist.
    */
   static async microsoftLogin (accessToken) {
     try {
       const userEmail = await this.getUserDataFromMicrosoft(accessToken)
       const user = await UserRepository.existsByGmail(userEmail)
       if (!user) {
-        throw new ErrorUtils(401, 'Invalid email')
+        throw new HttpException(401, 'Invalid email')
       }
       const userForToken = {
         id: user.id,
@@ -187,17 +187,17 @@ class UserService {
 
       return token
     } catch (error) {
-      if (error instanceof ErrorUtils) {
+      if (error instanceof HttpException) {
         throw error
       }
-      throw new ErrorUtils(500, 'Failed to login with Microsoft')
+      throw new HttpException(500, 'Failed to login with Microsoft')
     }
   }
 
   /**
    * Retrieves all users from the database.
    * @returns {Promise<Array<User>>} - Array of user objects.
-   * @throws {ErrorUtils} - If retrieval fails.
+   * @throws {HttpException} - If retrieval fails.
    */
   static async getAllUsers () {
     try {
@@ -220,17 +220,17 @@ class UserService {
       )
       return userList
     } catch (error) {
-      if (error instanceof ErrorUtils) {
+      if (error instanceof HttpException) {
         throw error
       }
-      throw new ErrorUtils(500, 'Failed to retrieve users')
+      throw new HttpException(500, 'Failed to retrieve users')
     }
   }
 
   /**
    * Retrieves all roles from the database.
    * @returns {Promise<Array<Role>>} - Array of role objects.
-   * @throws {ErrorUtils} - If retrieval fails.
+   * @throws {HttpException} - If retrieval fails.
    */
   static async getAllRoles () {
     try {
@@ -240,10 +240,10 @@ class UserService {
       }
       return roles
     } catch (error) {
-      if (error instanceof ErrorUtils) {
+      if (error instanceof HttpException) {
         throw error
       }
-      throw new ErrorUtils(500, 'Failed to retrieve users')
+      throw new HttpException(500, 'Failed to retrieve users')
     }
   }
 
@@ -251,13 +251,13 @@ class UserService {
    * Retrieves a user by their ID.
    * @param {number} id - User's ID.
    * @returns {Promise<User>} - User object without password.
-   * @throws {ErrorUtils} - If user not found or retrieval fails.
+   * @throws {HttpException} - If user not found or retrieval fails.
    */
   static async getUserById (id) {
     try {
       const user = await UserRepository.findById(id)
       if (!user) {
-        throw new ErrorUtils(404, 'User not found')
+        throw new HttpException(404, 'User not found')
       }
       let profilePictureUrl = null
       if (user.profile_picture) {
@@ -270,10 +270,10 @@ class UserService {
         profile_picture: profilePictureUrl
       }
     } catch (error) {
-      if (error instanceof ErrorUtils) {
+      if (error instanceof HttpException) {
         throw error
       }
-      throw new ErrorUtils(500, 'Failed to retrieve user')
+      throw new HttpException(500, 'Failed to retrieve user')
     }
   }
 
@@ -281,7 +281,7 @@ class UserService {
    * Retrieves users by their role ID.
    * @param {number} roleId - Role ID to filter users by.
    * @returns {Promise<Array<User>>} - Array of user objects.
-   * @throws {ErrorUtils} - If retrieval fails.
+   * @throws {HttpException} - If retrieval fails.
    */
   static async getUsersByRole (roleId) {
     try {
@@ -304,10 +304,10 @@ class UserService {
       )
       return userList
     } catch (error) {
-      if (error instanceof ErrorUtils) {
+      if (error instanceof HttpException) {
         throw error
       }
-      throw new ErrorUtils(500, 'Failed to retrieve users by role')
+      throw new HttpException(500, 'Failed to retrieve users by role')
     }
   }
 
@@ -315,7 +315,7 @@ class UserService {
    * Retrieves users by name or gmail.
    * @param {string} [nameOrEmail] - The name or email of the user to search for.
    * @returns {Promise<Array<User>>} - Array of user objects matching the criteria.
-   * @throws {ErrorUtils} - If retrieval fails.
+   * @throws {HttpException} - If retrieval fails.
    */
   static async getUsersByNameOrGmail (nameOrEmail) {
     try {
@@ -338,10 +338,10 @@ class UserService {
       )
       return userList
     } catch (error) {
-      if (error instanceof ErrorUtils) {
+      if (error instanceof HttpException) {
         throw error
       }
-      throw new ErrorUtils(500, 'Failed to retrieve users by name or gmail')
+      throw new HttpException(500, 'Failed to retrieve users by name or gmail')
     }
   }
 
@@ -352,7 +352,7 @@ class UserService {
    * @param {Express.Multer.File} profilePicture - New profile picture file (optional).
    * @param {number} currentUserId - ID of the currently logged-in user.
    * @returns {Promise<User>} - Updated user data and a new token if applicable.
-   * @throws {ErrorUtils} - If update fails, user not found, or validation errors occur.
+   * @throws {HttpException} - If update fails, user not found, or validation errors occur.
    */
   static async updateUser (userId, userData, profilePicture, currentUserId) {
     try {
@@ -365,14 +365,14 @@ class UserService {
         userId
       )
       if (existingUser) {
-        throw new ErrorUtils(409, 'Gmail already exists')
+        throw new HttpException(409, 'Gmail already exists')
       }
       const currentUser = await UserRepository.findById(userId)
       if (!currentUser) {
-        throw new ErrorUtils(404, 'User not found')
+        throw new HttpException(404, 'User not found')
       }
       if (parsedUser.removePicture && profilePicture) {
-        throw new ErrorUtils(
+        throw new HttpException(
           400,
           'Cannot provide a profile picture if removePicture is true'
         )
@@ -386,7 +386,7 @@ class UserService {
           }
           profilePictureKey = uploadResponse.uniqueFileName
         } else {
-          throw new ErrorUtils(500, 'Failed to upload profile picture')
+          throw new HttpException(500, 'Failed to upload profile picture')
         }
       } else if (!profilePicture && parsedUser.removePicture) {
         if (currentUser.profile_picture) {
@@ -400,7 +400,7 @@ class UserService {
       }
       const updatedUser = await UserRepository.update(userId, updatedUserData)
       if (!updatedUser) {
-        throw new ErrorUtils(404, 'User not found')
+        throw new HttpException(404, 'User not found')
       }
       let profilePictureUrl = null
       if (updatedUser.profile_picture) {
@@ -434,13 +434,13 @@ class UserService {
           field: e.path[0],
           message: e.message
         }))
-        throw new ErrorUtils(400, 'Validation failed', validationErrors)
+        throw new HttpException(400, 'Validation failed', validationErrors)
       }
 
-      if (error instanceof ErrorUtils) {
+      if (error instanceof HttpException) {
         throw error
       }
-      throw new ErrorUtils(500, 'Failed to update user')
+      throw new HttpException(500, 'Failed to update user')
     }
   }
 
@@ -449,17 +449,17 @@ class UserService {
    * @param {number} userId - User's ID.
    * @param {Express.Multer.File} profilePicture - New profile picture file.
    * @returns {Promise<string>} - URL of the updated profile picture.
-   * @throws {ErrorUtils} - If update fails.
+   * @throws {HttpException} - If update fails.
    */
   static async updateUserPicture (userId, profilePicture) {
     try {
       const userExists = await UserRepository.findById(userId)
       if (!userExists) {
-        throw new ErrorUtils(404, 'User not found')
+        throw new HttpException(404, 'User not found')
       }
       const uploadResponse = await FileService.uploadFile(profilePicture)
       if (uploadResponse.response.$metadata.httpStatusCode !== 200) {
-        throw new ErrorUtils(500, 'Failed to upload profile picture')
+        throw new HttpException(500, 'Failed to upload profile picture')
       }
       const profilePictureKey = uploadResponse.uniqueFileName
       const user = await UserRepository.updateProfilePicture(
@@ -467,15 +467,15 @@ class UserService {
         profilePictureKey
       )
       if (!user) {
-        throw new ErrorUtils(404, 'User not found')
+        throw new HttpException(404, 'User not found')
       }
       return user
     } catch (error) {
-      if (error instanceof ErrorUtils) {
+      if (error instanceof HttpException) {
         throw error
       }
 
-      throw new ErrorUtils(500, 'Failed to update user picture')
+      throw new HttpException(500, 'Failed to update user picture')
     }
   }
 
@@ -483,27 +483,27 @@ class UserService {
    * Deletes a user by their ID.
    * @param {number} id - User's ID.
    * @returns {Promise<Object>} -  Success message if user was deleted.
-   * @throws {ErrorUtils} - If user not found or deletion fails.
+   * @throws {HttpException} - If user not found or deletion fails.
    */
   static async deleteUser (id) {
     try {
       const user = await UserRepository.findById(id)
       if (!user) {
-        throw new ErrorUtils(404, 'User not found')
+        throw new HttpException(404, 'User not found')
       }
       if (user.profile_picture) {
         await FileService.deleteFile(user.profile_picture)
       }
       const userDeleted = await UserRepository.delete(id)
       if (!userDeleted) {
-        throw new ErrorUtils(404, 'User not found')
+        throw new HttpException(404, 'User not found')
       }
       return { success: true }
     } catch (error) {
-      if (error instanceof ErrorUtils) {
+      if (error instanceof HttpException) {
         throw error
       }
-      throw new ErrorUtils(500, 'Failed to delete user')
+      throw new HttpException(500, 'Failed to delete user')
     }
   }
 
@@ -511,7 +511,7 @@ class UserService {
    * Deletes multiple users by their IDs.
    * @param {Array<number>} userIds - Array of user IDs to delete.
    * @returns {Promise<Object>} - Success message if users were deleted.
-   * @throws {ErrorUtils} - If users not found or deletion fails.
+   * @throws {HttpException} - If users not found or deletion fails.
    */
   static async deleteUsersBatch (userIds) {
     try {
@@ -519,7 +519,7 @@ class UserService {
       if (existingUsers.length !== userIds.length) {
         const foundIds = existingUsers.map((user) => user.id)
         const notFoundIds = userIds.filter((id) => !foundIds.includes(id))
-        throw new ErrorUtils(404, 'Users not found for IDs', { notFoundIds })
+        throw new HttpException(404, 'Users not found for IDs', { notFoundIds })
       }
       for (const user of existingUsers) {
         if (user.profile_picture) {
@@ -528,14 +528,14 @@ class UserService {
       }
       const usersDeleted = await UserRepository.deleteBatch(userIds)
       if (!usersDeleted) {
-        throw new ErrorUtils(404, 'Users not found')
+        throw new HttpException(404, 'Users not found')
       }
       return { success: true }
     } catch (error) {
-      if (error instanceof ErrorUtils) {
+      if (error instanceof HttpException) {
         throw error
       }
-      throw new ErrorUtils(500, 'Failed to delete users')
+      throw new HttpException(500, 'Failed to delete users')
     }
   }
 
@@ -543,7 +543,7 @@ class UserService {
    * Checks if a user is authorized as an admin.
    * @param {number} userId - User's ID.
    * @returns {Promise<boolean>} - True if the user is authorized.
-   * @throws {ErrorUtils} - If check fails.
+   * @throws {HttpException} - If check fails.
    */
 
   static async isAuthorized (userId) {
@@ -554,10 +554,10 @@ class UserService {
       }
       return user.roleId === 1
     } catch (error) {
-      if (error instanceof ErrorUtils) {
+      if (error instanceof HttpException) {
         throw error
       }
-      throw new ErrorUtils(500, 'Failed to check authorization')
+      throw new HttpException(500, 'Failed to check authorization')
     }
   }
 
@@ -565,7 +565,7 @@ class UserService {
    * Checks if a user is exists.
    * @param {number} userId - User's ID.
    * @returns {Promise<boolean>} - True if the exists.
-   * @throws {ErrorUtils} - If check fails.
+   * @throws {HttpException} - If check fails.
    */
   static async userExists (userId) {
     try {
@@ -575,10 +575,10 @@ class UserService {
       }
       return true
     } catch (error) {
-      if (error instanceof ErrorUtils) {
+      if (error instanceof HttpException) {
         throw error
       }
-      throw new ErrorUtils(500, 'Failed to check authorization')
+      throw new HttpException(500, 'Failed to check authorization')
     }
   }
 
@@ -587,7 +587,7 @@ class UserService {
    * @param {number} requestingUserId - ID of the requesting user.
    * @param {number} targetUserId - ID of the target user.
    * @returns {Promise<boolean>} - True if the user can access the target user's data.
-   * @throws {ErrorUtils} - If check fails.
+   * @throws {HttpException} - If check fails.
    */
   static async canAccessUser (requestingUserId, targetUserId) {
     try {
@@ -603,10 +603,10 @@ class UserService {
       }
       return false
     } catch (error) {
-      if (error instanceof ErrorUtils) {
+      if (error instanceof HttpException) {
         throw error
       }
-      throw new ErrorUtils(500, 'Authorization failed')
+      throw new HttpException(500, 'Authorization failed')
     }
   }
 
@@ -614,7 +614,7 @@ class UserService {
    * Requests a password reset by generating a verification code.
    * @param {string} gmail - User's Gmail.
    * @returns {Promise<void>}
-   * @throws {ErrorUtils} - If code generation or email sending fails.
+   * @throws {HttpException} - If code generation or email sending fails.
    */
   static async requestPasswordReset (gmail) {
     try {
@@ -635,10 +635,10 @@ class UserService {
 
       await emailQueue.add(emailData)
     } catch (error) {
-      if (error instanceof ErrorUtils) {
+      if (error instanceof HttpException) {
         throw error
       }
-      throw new ErrorUtils(500, 'Failed to send verification code')
+      throw new HttpException(500, 'Failed to send verification code')
     }
   }
 
@@ -647,7 +647,7 @@ class UserService {
    * @param {string} gmail - User's Gmail.
    * @param {string} code - Verification code.
    * @returns {Promise<boolean>} - True if verification is successful.
-   * @throws {ErrorUtils} - If verification or password update fails.
+   * @throws {HttpException} - If verification or password update fails.
    */
   static async verifyPasswordResetCode (gmail, code) {
     try {
@@ -674,7 +674,7 @@ class UserService {
       )
 
       if (!userUpdated) {
-        throw new ErrorUtils(500, 'Failed to update user password')
+        throw new HttpException(500, 'Failed to update user password')
       }
       const emailData = EmailService.generatePasswordResetEmailSend(
         gmail,
@@ -683,10 +683,10 @@ class UserService {
       await emailQueue.add(emailData)
       return true
     } catch (error) {
-      if (error instanceof ErrorUtils) {
+      if (error instanceof HttpException) {
         throw error
       }
-      throw new ErrorUtils(500, 'Failed verifying verification code')
+      throw new HttpException(500, 'Failed verifying verification code')
     }
   }
 }

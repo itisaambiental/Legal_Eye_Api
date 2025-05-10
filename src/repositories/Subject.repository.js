@@ -1,5 +1,5 @@
 import { pool } from '../config/db.config.js'
-import ErrorUtils from '../utils/Error.js'
+import HttpException from '../utils/HttpException.js'
 import Subject from '../models/Subject.model.js'
 
 /**
@@ -12,7 +12,7 @@ class SubjectsRepository {
    * @param {string} abbreviation - The abbreviation of the subject.
    * @param {number} orderIndex - The order index of the subject.
    * @returns {Promise<Subject>} - Returns the the created Subject.
-   * @throws {ErrorUtils} - If an error occurs during insertion.
+   * @throws {HttpException} - If an error occurs during insertion.
    */
   static async create (subjectName, abbreviation, orderIndex) {
     const query = `
@@ -25,14 +25,14 @@ class SubjectsRepository {
       return subject
     } catch (error) {
       console.error('Error creating subject:', error.message)
-      throw new ErrorUtils(500, 'Error inserting subject into the database')
+      throw new HttpException(500, 'Error inserting subject into the database')
     }
   }
 
   /**
    * Fetches all subjects from the database.
    * @returns {Promise<Array<Subject|null>>} - Returns a list of Subject instances.
-   * @throws {ErrorUtils} - If an error occurs during retrieval.
+   * @throws {HttpException} - If an error occurs during retrieval.
    */
   static async findAll () {
     try {
@@ -52,7 +52,7 @@ class SubjectsRepository {
       )
     } catch (error) {
       console.error('Error fetching subjects:', error.message)
-      throw new ErrorUtils(500, 'Error fetching subjects from the database')
+      throw new HttpException(500, 'Error fetching subjects from the database')
     }
   }
 
@@ -60,7 +60,7 @@ class SubjectsRepository {
    * Fetches a subject by its ID from the database.
    * @param {number} id - The ID of the subject to retrieve.
    * @returns {Promise<Subject|null>} - Returns the Subject instance or null if not found.
-   * @throws {ErrorUtils} - If an error occurs during retrieval.
+   * @throws {HttpException} - If an error occurs during retrieval.
    */
   static async findById (id) {
     try {
@@ -82,7 +82,7 @@ class SubjectsRepository {
       )
     } catch (error) {
       console.error('Error fetching subject by ID:', error.message)
-      throw new ErrorUtils(500, 'Error fetching subject from the database')
+      throw new HttpException(500, 'Error fetching subject from the database')
     }
   }
 
@@ -90,7 +90,7 @@ class SubjectsRepository {
    * Finds subjects in the database using an array of IDs.
    * @param {Array<number>} subjectIds - Array of subject IDs to find.
    * @returns {Promise<Subject[]>>} - Array of objects with found subject IDs and names.
-   * @throws {ErrorUtils} - If an error occurs during retrieval.
+   * @throws {HttpException} - If an error occurs during retrieval.
    */
   static async findByIds (subjectIds) {
     if (subjectIds.length === 0) {
@@ -113,7 +113,7 @@ class SubjectsRepository {
       )
     } catch (error) {
       console.error('Error finding subjects by IDs:', error.message)
-      throw new ErrorUtils(
+      throw new HttpException(
         500,
         'Error finding subjects by IDs from the database'
       )
@@ -138,7 +138,7 @@ class SubjectsRepository {
       return rows.length > 0
     } catch (error) {
       console.error('Error checking if subject exists:', error.message)
-      throw new ErrorUtils(500, 'Error checking if subject exists')
+      throw new HttpException(500, 'Error checking if subject exists')
     }
   }
 
@@ -146,7 +146,7 @@ class SubjectsRepository {
    * Checks if a subject exists with the given name.
    * @param {string} subjectName - The name of the subject to check for existence.
    * @returns {Promise<boolean>} - True if a subject with the same name exists, false otherwise.
-   * @throws {ErrorUtils} - If an error occurs during the check.
+   * @throws {HttpException} - If an error occurs during the check.
    */
   static async existsBySubjectName (subjectName) {
     const query = `
@@ -160,7 +160,7 @@ class SubjectsRepository {
       return rows.length > 0
     } catch (error) {
       console.error('Error checking if subject exists by name:', error.message)
-      throw new ErrorUtils(500, 'Error checking if subject exists by name')
+      throw new HttpException(500, 'Error checking if subject exists by name')
     }
   }
 
@@ -168,7 +168,7 @@ class SubjectsRepository {
    * Fetches subjects from the database by a partial match of their name.
    * @param {string} subjectName - A partial or full name of the subject to search for.
    * @returns {Promise<Array<Subject|null>>} - Returns an array of Subject instances matching the criteria.
-   * @throws {ErrorUtils} - If an error occurs during retrieval.
+   * @throws {HttpException} - If an error occurs during retrieval.
    */
   static async findByName (subjectName) {
     const searchValue = `%${subjectName}%`
@@ -192,7 +192,7 @@ class SubjectsRepository {
       )
     } catch (error) {
       console.error('Error fetching subjects by partial name:', error.message)
-      throw new ErrorUtils(500, 'Error fetching subjects from the database')
+      throw new HttpException(500, 'Error fetching subjects from the database')
     }
   }
 
@@ -203,7 +203,7 @@ class SubjectsRepository {
  * @param {string} abbreviation - The updated abbreviation.
  * @param {number} orderIndex - The updated display order.
  * @returns {Promise<Subject|null>} - The updated Subject instance.
- * @throws {ErrorUtils} - If an error occurs during update.
+ * @throws {HttpException} - If an error occurs during update.
  */
   static async update (id, subjectName, abbreviation, orderIndex) {
     const query = `
@@ -218,7 +218,7 @@ class SubjectsRepository {
       return await this.findById(id)
     } catch (error) {
       console.error('Error updating subject:', error.message)
-      throw new ErrorUtils(500, 'Error updating subject in the database')
+      throw new HttpException(500, 'Error updating subject in the database')
     }
   }
 
@@ -226,7 +226,7 @@ class SubjectsRepository {
    * Deletes a subject by its ID.
    * @param {number} id - The ID of the subject to delete.
    * @returns {Promise<boolean>} - Returns true if the deletion is successful, false otherwise.
-   * @throws {ErrorUtils} - If an error occurs during deletion.
+   * @throws {HttpException} - If an error occurs during deletion.
    */
   static async deleteById (id) {
     try {
@@ -243,7 +243,7 @@ class SubjectsRepository {
       return true
     } catch (error) {
       console.error('Error deleting subject:', error.message)
-      throw new ErrorUtils(500, 'Error deleting subject from the database')
+      throw new HttpException(500, 'Error deleting subject from the database')
     }
   }
 
@@ -251,7 +251,7 @@ class SubjectsRepository {
    * Deletes multiple subjects from the database using an array of IDs.
    * @param {Array<number>} subjectIds - Array of subject IDs to delete.
    * @returns {Promise<boolean>} - True if subjects were deleted, otherwise false.
-   * @throws {ErrorUtils} - If an error occurs during the deletion.
+   * @throws {HttpException} - If an error occurs during the deletion.
    */
   static async deleteBatch (subjectIds) {
     const query = `
@@ -265,21 +265,21 @@ class SubjectsRepository {
       return true
     } catch (error) {
       console.error('Error deleting subjects:', error.message)
-      throw new ErrorUtils(500, 'Error deleting subjects from the database')
+      throw new HttpException(500, 'Error deleting subjects from the database')
     }
   }
 
   /**
    * Deletes all subjects from the database.
    * @returns {Promise<void>}
-   * @throws {ErrorUtils} - If an error occurs during deletion.
+   * @throws {HttpException} - If an error occurs during deletion.
    */
   static async deleteAll () {
     try {
       await pool.query('DELETE FROM subjects')
     } catch (error) {
       console.error('Error deleting all subjects:', error.message)
-      throw new ErrorUtils(
+      throw new HttpException(
         500,
         'Error deleting all subjects from the database'
       )
@@ -292,7 +292,7 @@ class SubjectsRepository {
  * @returns {Promise<{ isAssociatedToLegalBasis: boolean }>}
  * - Returns an object containing:
    - `isAssociatedToLegalBasis` (boolean): True if the subject is linked to at least one legal basis.
- * @throws {ErrorUtils} - If an error occurs while querying the database.
+ * @throws {HttpException} - If an error occurs while querying the database.
  */
   static async checkSubjectLegalBasisAssociations (subjectId) {
     try {
@@ -310,7 +310,7 @@ class SubjectsRepository {
       }
     } catch (error) {
       console.error('Error checking subject legal basis associations:', error.message)
-      throw new ErrorUtils(500, 'Error checking subject legal basis associations')
+      throw new HttpException(500, 'Error checking subject legal basis associations')
     }
   }
 
@@ -322,7 +322,7 @@ class SubjectsRepository {
  *    - `id` (number): The subject ID.
  *    - `name` (string): The name of the subject.
  *    - `isAssociatedToLegalBasis` (boolean): True if the subject is linked to at least one legal basis.
- * @throws {ErrorUtils} - If an error occurs while querying the database.
+ * @throws {HttpException} - If an error occurs while querying the database.
  */
   static async checkSubjectsLegalBasisAssociationsBatch (subjectIds) {
     try {
@@ -346,7 +346,7 @@ class SubjectsRepository {
       }))
     } catch (error) {
       console.error('Error checking batch subject legal basis associations:', error.message)
-      throw new ErrorUtils(500, 'Error checking batch subject legal basis associations')
+      throw new HttpException(500, 'Error checking batch subject legal basis associations')
     }
   }
 
@@ -356,7 +356,7 @@ class SubjectsRepository {
  * @returns {Promise<{ isAssociatedToRequirements: boolean }>}
  * - Returns an object containing:
    - `isAssociatedToRequirements` (boolean): True if the subject is linked to at least one requirement.
- * @throws {ErrorUtils} - If an error occurs while querying the database.
+ * @throws {HttpException} - If an error occurs while querying the database.
  */
   static async checkSubjectRequirementAssociations (subjectId) {
     try {
@@ -373,7 +373,7 @@ class SubjectsRepository {
       }
     } catch (error) {
       console.error('Error checking subject requirement associations:', error.message)
-      throw new ErrorUtils(500, 'Error checking subject requirement associations')
+      throw new HttpException(500, 'Error checking subject requirement associations')
     }
   }
 
@@ -385,7 +385,7 @@ class SubjectsRepository {
  *    - `id` (number): The subject ID.
  *    - `name` (string): The name of the subject.
  *    - `isAssociatedToRequirements` (boolean): True if the subject has at least one associated requirement.
- * @throws {ErrorUtils} - If an error occurs while querying the database.
+ * @throws {HttpException} - If an error occurs while querying the database.
  */
   static async checkSubjectsRequirementAssociationsBatch (subjectIds) {
     try {
@@ -409,7 +409,7 @@ class SubjectsRepository {
       }))
     } catch (error) {
       console.error('Error checking batch subject requirement associations:', error.message)
-      throw new ErrorUtils(500, 'Error checking batch subject requirement associations')
+      throw new HttpException(500, 'Error checking batch subject requirement associations')
     }
   }
 }

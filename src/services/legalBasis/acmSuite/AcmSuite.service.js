@@ -1,5 +1,5 @@
 import { BaseAcmSuiteService } from './BaseAcmSuite.service.js'
-import ErrorUtils from '../../../utils/Error.js'
+import HttpException from '../../../utils/HttpException.js'
 
 /**
  * AcmSuiteService provides methods to interact with the ACM Suite API endpoints.
@@ -17,7 +17,7 @@ export class AcmSuiteService extends BaseAcmSuiteService {
  * @param {number} [legalBasis.municipalityId] - ID of the municipality.
  * @param {string} legalBasis.lastReform - The date of the last reform.
  * @returns {Promise<number>} The ID of the created legal basis in ACM Suite.
- * @throws {ErrorUtils} If the request fails or the creation is not successful.
+ * @throws {HttpException} If the request fails or the creation is not successful.
  */
   async sendLegalBasis (legalBasis) {
     try {
@@ -34,12 +34,12 @@ export class AcmSuiteService extends BaseAcmSuiteService {
       if (success && data?.id_guideline) {
         return data.id_guideline
       }
-      throw new ErrorUtils(500, message)
+      throw new HttpException(500, message)
     } catch (error) {
       if (error.response?.data?.message) {
-        throw new ErrorUtils(500, error.response.data.message)
+        throw new HttpException(500, error.response.data.message)
       }
-      throw new ErrorUtils(500, 'Failed to create LegalBasis')
+      throw new HttpException(500, 'Failed to create LegalBasis')
     }
   }
 
@@ -51,7 +51,7 @@ export class AcmSuiteService extends BaseAcmSuiteService {
  * @param {string} article.description - The full content of the article.
  * @param {number} article.article_order - The display order for the article.
  * @returns {Promise<void>} Resolves if successful; throws an error if failed.
- * @throws {ErrorUtils} If the request fails or the creation is not successful.
+ * @throws {HttpException} If the request fails or the creation is not successful.
  */
   async sendArticle (legalBasisId, article) {
     try {
@@ -63,13 +63,13 @@ export class AcmSuiteService extends BaseAcmSuiteService {
       })
       const { success, message } = response.data
       if (!success) {
-        throw new ErrorUtils(500, message)
+        throw new HttpException(500, message)
       }
     } catch (error) {
       if (error.response?.data?.message) {
-        throw new ErrorUtils(500, error.response.data.message)
+        throw new HttpException(500, error.response.data.message)
       }
-      throw new ErrorUtils(500, 'Failed to create Article')
+      throw new HttpException(500, 'Failed to create Article')
     }
   }
 
@@ -77,7 +77,7 @@ export class AcmSuiteService extends BaseAcmSuiteService {
  * Fetches the classification ID from ACM Suite based on a given classification name.
  * @param {string} classification - The classification name to find.
  * @returns {Promise<number>} The ID of the classification.
- * @throws {ErrorUtils} If the request fails or the response is not as expected.
+ * @throws {HttpException} If the request fails or the response is not as expected.
  */
   async getClassificationId (classification) {
     try {
@@ -91,14 +91,14 @@ export class AcmSuiteService extends BaseAcmSuiteService {
         if (data.length > 0) {
           return data[0].id_legal_c
         }
-        throw new ErrorUtils(500, 'Failed to fetch classification ID')
+        throw new HttpException(500, 'Failed to fetch classification ID')
       }
-      throw new ErrorUtils(500, message)
+      throw new HttpException(500, message)
     } catch (error) {
       if (error.response?.data?.message) {
-        throw new ErrorUtils(500, error.response.data.message)
+        throw new HttpException(500, error.response.data.message)
       }
-      throw new ErrorUtils(500, 'Failed to fetch classification ID')
+      throw new HttpException(500, 'Failed to fetch classification ID')
     }
   }
 
@@ -106,7 +106,7 @@ export class AcmSuiteService extends BaseAcmSuiteService {
  * Retrieves the application type ID (jurisdiction) from ACM Suite based on a given jurisdiction name.
  * @param {string} jurisdiction - The name of the jurisdiction to find.
  * @returns {Promise<number>} The ID of the jurisdiction.
- * @throws {ErrorUtils} If the request fails or the jurisdiction is not found.
+ * @throws {HttpException} If the request fails or the jurisdiction is not found.
  */
   async getJurisdictionId (jurisdiction) {
     try {
@@ -120,14 +120,14 @@ export class AcmSuiteService extends BaseAcmSuiteService {
         if (data.length > 0) {
           return data[0].id_application_type
         }
-        throw new ErrorUtils(500, 'Failed to fetch jurisdiction ID')
+        throw new HttpException(500, 'Failed to fetch jurisdiction ID')
       }
-      throw new ErrorUtils(500, message)
+      throw new HttpException(500, message)
     } catch (error) {
       if (error.response?.data?.message) {
-        throw new ErrorUtils(500, error.response.data.message)
+        throw new HttpException(500, error.response.data.message)
       }
-      throw new ErrorUtils(500, 'Failed to fetch jurisdiction ID')
+      throw new HttpException(500, 'Failed to fetch jurisdiction ID')
     }
   }
 
@@ -136,7 +136,7 @@ export class AcmSuiteService extends BaseAcmSuiteService {
  * @param {string} state - The name of the state to find.
  * @param {number} [countryId=1] - The ID of the country to filter states.
  * @returns {Promise<number>} The ID of the state.
- * @throws {ErrorUtils} If the request fails or the state is not found.
+ * @throws {HttpException} If the request fails or the state is not found.
  */
   async getStateId (state, countryId = 1) {
     try {
@@ -154,14 +154,14 @@ export class AcmSuiteService extends BaseAcmSuiteService {
         if (data.length > 0) {
           return data[0].id_state
         }
-        throw new ErrorUtils(500, 'Failed to fetch state ID')
+        throw new HttpException(500, 'Failed to fetch state ID')
       }
-      throw new ErrorUtils(500, message)
+      throw new HttpException(500, message)
     } catch (error) {
       if (error.response?.data?.message) {
-        throw new ErrorUtils(500, error.response.data.message)
+        throw new HttpException(500, error.response.data.message)
       }
-      throw new ErrorUtils(500, 'Failed to fetch state ID')
+      throw new HttpException(500, 'Failed to fetch state ID')
     }
   }
 
@@ -170,7 +170,7 @@ export class AcmSuiteService extends BaseAcmSuiteService {
  * @param {number} stateId - ID of the state to filter cities.
  * @param {string} municipality - The name of the municipality to find.
  * @returns {Promise<number>} The ID of the municipality.
- * @throws {ErrorUtils} If the request fails or the municipality is not found.
+ * @throws {HttpException} If the request fails or the municipality is not found.
  */
   async getMunicipalityId (stateId, municipality) {
     try {
@@ -188,14 +188,14 @@ export class AcmSuiteService extends BaseAcmSuiteService {
         if (data.length > 0) {
           return data[0].id_city
         }
-        throw new ErrorUtils(500, 'Failed to fetch municipality ID')
+        throw new HttpException(500, 'Failed to fetch municipality ID')
       }
-      throw new ErrorUtils(500, message)
+      throw new HttpException(500, message)
     } catch (error) {
       if (error.response?.data?.message) {
-        throw new ErrorUtils(500, error.response.data.message)
+        throw new HttpException(500, error.response.data.message)
       }
-      throw new ErrorUtils(500, 'Failed to fetch municipality ID')
+      throw new HttpException(500, 'Failed to fetch municipality ID')
     }
   }
 }

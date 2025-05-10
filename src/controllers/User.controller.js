@@ -5,7 +5,7 @@
  */
 
 import UserService from '../services/users/User.service.js'
-import ErrorUtils from '../utils/Error.js'
+import HttpException from '../utils/HttpException.js'
 import jsonwebtoken from 'jsonwebtoken'
 import { JWT_SECRET } from '../config/variables.config.js'
 
@@ -26,7 +26,7 @@ export const loginUser = async (req, res) => {
     const token = await UserService.loginUser(req.body)
     return res.status(200).json({ token })
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({
         message: error.message,
         ...(error.errors && { errors: error.errors })
@@ -53,7 +53,7 @@ export const loginUserMicrosoftAuth = async (req, res) => {
     const token = await UserService.microsoftLogin(accessToken)
     return res.status(200).json({ token })
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({
         message: error.message,
         ...(error.errors && { errors: error.errors })
@@ -89,7 +89,7 @@ export const registerUser = async (req, res) => {
     )
     return res.status(201).json({ user })
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({
         message: error.message,
         ...(error.errors && { errors: error.errors })
@@ -115,7 +115,7 @@ export const getAllUsers = async (req, res) => {
     const users = await UserService.getAllUsers()
     return res.status(200).json({ users })
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({
         message: error.message,
         ...(error.errors && { errors: error.errors })
@@ -141,7 +141,7 @@ export const getAllRoles = async (req, res) => {
     const roles = await UserService.getAllRoles()
     return res.status(200).json({ roles })
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({
         message: error.message,
         ...(error.errors && { errors: error.errors })
@@ -168,7 +168,7 @@ export const getUserById = async (req, res) => {
     const user = await UserService.getUserById(id)
     return res.status(200).json({ user })
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({
         message: error.message,
         ...(error.errors && { errors: error.errors })
@@ -195,7 +195,7 @@ export const getUsersByNameOrGmail = async (req, res) => {
     const users = await UserService.getUsersByNameOrGmail(nameOrEmail)
     return res.status(200).json({ users })
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({
         message: error.message,
         ...(error.errors && { errors: error.errors })
@@ -221,7 +221,7 @@ export const getUsersByRole = async (req, res) => {
     const users = await UserService.getUsersByRole(roleId)
     return res.status(200).json({ users })
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({
         message: error.message,
         ...(error.errors && { errors: error.errors })
@@ -258,7 +258,7 @@ export const updateUser = async (req, res) => {
       token
     })
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({
         message: error.message,
         ...(error.errors && { errors: error.errors })
@@ -292,7 +292,7 @@ export const updateUserPicture = async (req, res) => {
     )
     return res.status(200).json({ profilePictureUrl })
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({
         message: error.message,
         ...(error.errors && { errors: error.errors })
@@ -324,7 +324,7 @@ export const deleteUser = async (req, res) => {
       return res.status(500).json({ message: 'Internal Server Error' })
     }
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({
         message: error.message,
         ...(error.errors && { errors: error.errors })
@@ -361,7 +361,7 @@ export const deleteUsersBatch = async (req, res) => {
       return res.status(500).json({ message: 'Internal Server Error' })
     }
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({
         message: error.message,
         ...(error.errors && { errors: error.errors })
@@ -383,7 +383,7 @@ export const resetPassword = async (req, res) => {
     await UserService.requestPasswordReset(gmail)
     return res.sendStatus(200)
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({
         message: error.message,
         ...(error.errors && { errors: error.errors })
@@ -409,7 +409,7 @@ export const verifyCode = async (req, res) => {
       return res.status(400).json({ message: 'Invalid or expired code' })
     }
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({
         message: error.message,
         ...(error.errors && { errors: error.errors })

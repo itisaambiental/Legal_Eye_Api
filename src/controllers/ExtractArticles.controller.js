@@ -1,4 +1,4 @@
-import ErrorUtils from '../utils/Error.js'
+import HttpException from '../utils/HttpException.js'
 import UserService from '../services/users/User.service.js'
 import ExtractArticlesService from '../services/articles/extractArticles/extractArticles.service.js'
 
@@ -25,7 +25,7 @@ export const getExtractionJobStatus = async (req, res) => {
     const jobStatus = await ExtractArticlesService.getExtractionJobStatus(jobId)
     return res.status(jobStatus.status).json(jobStatus.data)
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({
         message: error.message,
         ...(error.errors && { errors: error.errors })
@@ -54,7 +54,7 @@ export const hasPendingExtractionJobs = async (req, res) => {
       await ExtractArticlesService.hasPendingExtractionJobs(legalBasisId)
     return res.status(200).json({ hasPendingJobs, jobId })
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({
         message: error.message,
         ...(error.errors && { errors: error.errors })
@@ -86,7 +86,7 @@ export const cancelExtractionJob = async (req, res) => {
       return res.status(500).json({ message: 'Internal Server Error' })
     }
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({
         message: error.message,
         ...(error.errors && { errors: error.errors })

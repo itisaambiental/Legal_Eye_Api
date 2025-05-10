@@ -1,5 +1,5 @@
 import { convert } from 'html-to-text'
-import ErrorUtils from '../../../utils/Error.js'
+import HttpException from '../../../utils/HttpException.js'
 import { sleep } from '../../../utils/sleep.js'
 /**
  * Base class for article extractors.
@@ -55,7 +55,7 @@ class ArticleExtractor {
 
     for (let i = 0; i < totalArticles; i++) {
       if (await this.job.isFailed()) {
-        throw new ErrorUtils(500, 'Job was canceled')
+        throw new HttpException(500, 'Job was canceled')
       }
       const article = articles[i]
       try {
@@ -97,7 +97,7 @@ class ArticleExtractor {
     try {
       const { sections, isValid } = await this._extractSections(text)
       if (!isValid || !Array.isArray(sections) || sections.length === 0) {
-        throw new ErrorUtils(500, 'Article Processing Error')
+        throw new HttpException(500, 'Article Processing Error')
       }
       const lines = text.split('\n')
       const sortedSections = sections.sort((a, b) => a.line - b.line)
@@ -119,7 +119,7 @@ class ArticleExtractor {
       }
       return articles
     } catch (error) {
-      throw new ErrorUtils(500, 'Article Processing Error', error)
+      throw new HttpException(500, 'Article Processing Error', error)
     }
   }
 

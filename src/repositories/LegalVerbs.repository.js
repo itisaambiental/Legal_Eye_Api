@@ -1,5 +1,5 @@
 import { pool } from '../config/db.config.js'
-import ErrorUtils from '../utils/Error.js'
+import HttpException from '../utils/HttpException.js'
 import LegalVerb from '../models/LegalVerbs.model.js'
 
 /**
@@ -12,7 +12,7 @@ class LegalVerbsRepository {
    * @param {string} description - A description of the legal verb.
    * @param {string} translation - The translation of the legal verb.
    * @returns {Promise<LegalVerb>} - Returns the created LegalVerb.
-   * @throws {ErrorUtils} - If an error occurs during insertion.
+   * @throws {HttpException} - If an error occurs during insertion.
    */
   static async create (name, description, translation) {
     const query = `
@@ -29,14 +29,14 @@ class LegalVerbsRepository {
       return legalVerb
     } catch (error) {
       console.error('Error creating legal verb:', error.message)
-      throw new ErrorUtils(500, 'Error inserting legal verb into the database')
+      throw new HttpException(500, 'Error inserting legal verb into the database')
     }
   }
 
   /**
    * Fetches all legal verbs from the database.
    * @returns {Promise<LegalVerb[] | null>} - Returns a list of LegalVerb instances.
-   * @throws {ErrorUtils} - If an error occurs during retrieval.
+   * @throws {HttpException} - If an error occurs during retrieval.
    */
   static async findAll () {
     try {
@@ -50,7 +50,7 @@ class LegalVerbsRepository {
       )
     } catch (error) {
       console.error('Error fetching legal verbs:', error.message)
-      throw new ErrorUtils(500, 'Error fetching legal verbs from the database')
+      throw new HttpException(500, 'Error fetching legal verbs from the database')
     }
   }
 
@@ -58,7 +58,7 @@ class LegalVerbsRepository {
    * Fetches a legal verb by its ID from the database.
    * @param {number} id - The ID of the legal verb to retrieve.
    * @returns {Promise<LegalVerb|null>} - Returns the LegalVerb instance or null if not found.
-   * @throws {ErrorUtils} - If an error occurs during retrieval.
+   * @throws {HttpException} - If an error occurs during retrieval.
    */
   static async findById (id) {
     try {
@@ -75,7 +75,7 @@ class LegalVerbsRepository {
       return new LegalVerb(row.id, row.name, row.description, row.translation)
     } catch (error) {
       console.error('Error fetching legal verb by ID:', error.message)
-      throw new ErrorUtils(500, 'Error fetching legal verb from the database')
+      throw new HttpException(500, 'Error fetching legal verb from the database')
     }
   }
 
@@ -83,7 +83,7 @@ class LegalVerbsRepository {
    * Finds legal verbs in the database using an array of IDs.
    * @param {number[]} ids - Array of legal verb IDs to find.
    * @returns {Promise<LegalVerb[]>} - Array of LegalVerb instances.
-   * @throws {ErrorUtils} - If an error occurs during retrieval.
+   * @throws {HttpException} - If an error occurs during retrieval.
    */
   static async findByIds (ids) {
     if (ids.length === 0) {
@@ -103,7 +103,7 @@ class LegalVerbsRepository {
       )
     } catch (error) {
       console.error('Error finding legal verbs by IDs:', error.message)
-      throw new ErrorUtils(
+      throw new HttpException(
         500,
         'Error finding legal verbs by IDs from the database'
       )
@@ -128,7 +128,7 @@ class LegalVerbsRepository {
       return rows.length > 0
     } catch (error) {
       console.error('Error checking if legal verb name exists:', error.message)
-      throw new ErrorUtils(500, 'Error checking if legal verb name exists')
+      throw new HttpException(500, 'Error checking if legal verb name exists')
     }
   }
 
@@ -149,7 +149,7 @@ class LegalVerbsRepository {
       return rows.length > 0
     } catch (error) {
       console.error('Error checking if legal verb name exists:', error.message)
-      throw new ErrorUtils(500, 'Error checking if legal verb name exists')
+      throw new HttpException(500, 'Error checking if legal verb name exists')
     }
   }
 
@@ -174,7 +174,7 @@ class LegalVerbsRepository {
         'Error checking if legal verb translation exists:',
         error.message
       )
-      throw new ErrorUtils(
+      throw new HttpException(
         500,
         'Error checking if legal verb translation exists'
       )
@@ -201,7 +201,7 @@ class LegalVerbsRepository {
         'Error checking if legal verb translation exists:',
         error.message
       )
-      throw new ErrorUtils(
+      throw new HttpException(
         500,
         'Error checking if legal verb translation exists'
       )
@@ -232,7 +232,7 @@ class LegalVerbsRepository {
       )
     } catch (error) {
       console.error('Error fetching legal verbs by name:', error.message)
-      throw new ErrorUtils(500, 'Error fetching legal verbs by name')
+      throw new HttpException(500, 'Error fetching legal verbs by name')
     }
   }
 
@@ -261,7 +261,7 @@ class LegalVerbsRepository {
         'Error fetching legal verbs by description:',
         error.message
       )
-      throw new ErrorUtils(500, 'Error fetching legal verbs by description')
+      throw new HttpException(500, 'Error fetching legal verbs by description')
     }
   }
 
@@ -290,7 +290,7 @@ class LegalVerbsRepository {
         'Error fetching legal verbs by translation:',
         error.message
       )
-      throw new ErrorUtils(500, 'Error fetching legal verbs by translation')
+      throw new HttpException(500, 'Error fetching legal verbs by translation')
     }
   }
 
@@ -320,7 +320,7 @@ class LegalVerbsRepository {
       return legalVerb
     } catch (error) {
       console.error('Error updating legal verb:', error.message)
-      throw new ErrorUtils(500, 'Error updating legal verb in the database')
+      throw new HttpException(500, 'Error updating legal verb in the database')
     }
   }
 
@@ -338,7 +338,7 @@ class LegalVerbsRepository {
       return result.affectedRows > 0
     } catch (error) {
       console.error('Error deleting legal verb:', error.message)
-      throw new ErrorUtils(500, 'Error deleting legal verb from the database')
+      throw new HttpException(500, 'Error deleting legal verb from the database')
     }
   }
 
@@ -357,7 +357,7 @@ class LegalVerbsRepository {
       return result.affectedRows > 0
     } catch (error) {
       console.error('Error deleting legal verbs batch:', error.message)
-      throw new ErrorUtils(
+      throw new HttpException(
         500,
         'Error deleting legal verbs batch from the database'
       )
@@ -373,7 +373,7 @@ class LegalVerbsRepository {
       await pool.query('DELETE FROM legal_verbs')
     } catch (error) {
       console.error('Error deleting all legal verbs:', error.message)
-      throw new ErrorUtils(
+      throw new HttpException(
         500,
         'Error deleting all legal verbs from the database'
       )

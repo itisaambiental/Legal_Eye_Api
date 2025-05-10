@@ -2,7 +2,7 @@ import ArticleExtractor from './ArticleExtractor.js'
 import openai from '../../../config/openapi.config.js'
 import { singleArticleModelSchema, sectionsResponseSchema } from '../../../schemas/article.schema.js'
 import { zodResponseFormat } from 'openai/helpers/zod'
-import ErrorUtils from '../../../utils/Error.js'
+import HttpException from '../../../utils/HttpException.js'
 
 /**
  * Class extending ArticleExtractor to extract articles from (Laws).
@@ -43,7 +43,7 @@ class LawArticleExtractor extends ArticleExtractor {
           await new Promise((resolve) => setTimeout(resolve, backoffTime))
           return attemptRequest(retryCount + 1)
         }
-        throw new ErrorUtils(500, 'Article Processing Error', error)
+        throw new HttpException(500, 'Article Processing Error', error)
       }
     }
 
@@ -203,10 +203,10 @@ You MUST return the extracted sections **in the exact order in which they appear
             await new Promise((resolve) => setTimeout(resolve, backoffTime))
             return attemptRequest(retryCount + 1)
           } else {
-            throw new ErrorUtils(500, 'Article Processing Error', error)
+            throw new HttpException(500, 'Article Processing Error', error)
           }
         }
-        throw new ErrorUtils(500, 'Article Processing Error', error)
+        throw new HttpException(500, 'Article Processing Error', error)
       }
     }
     return attemptRequest()

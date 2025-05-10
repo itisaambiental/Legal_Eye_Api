@@ -1,5 +1,5 @@
 import FileService from '../services/files/File.service.js'
-import ErrorUtils from '../utils/Error.js'
+import HttpException from '../utils/HttpException.js'
 import UserService from '../services/users/User.service.js'
 
 /**
@@ -29,7 +29,7 @@ export const uploadFile = async (req, res) => {
     const url = FileService.getPermanentFileUrl(uniqueFileName)
     return res.status(201).json({ url })
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({
         message: error.message,
         ...(error.errors && { errors: error.errors })
@@ -60,7 +60,7 @@ export const getFile = async (req, res) => {
     const { file, contentType } = await FileService.getFileFromUrl(url)
     return res.status(200).json({ file, contentType })
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({
         message: error.message,
         ...(error.errors && { errors: error.errors })

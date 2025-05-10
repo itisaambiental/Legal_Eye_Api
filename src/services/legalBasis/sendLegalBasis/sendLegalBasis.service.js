@@ -1,4 +1,4 @@
-import ErrorUtils from '../../../utils/Error.js'
+import HttpException from '../../../utils/HttpException.js'
 import sendLegalBasisQueue from '../../../workers/sendLegalBasisWorker.js'
 import QueueService from '../../queue/Queue.service.js'
 import LegalBasisRepository from '../../../repositories/LegalBasis.repository.js'
@@ -12,7 +12,7 @@ class SendLegalBasisService {
    * @param {number} userId - The ID of the user sending legal basis.
    * @param {Array<number>} legalBasisIds - An array of Legal Basis IDs to send.
    * @returns {Promise<{ jobId: string|number|null }>} - The job ID created for sending legal basis.
-   * @throws {ErrorUtils} - If validation fails or no valid records are found.
+   * @throws {HttpException} - If validation fails or no valid records are found.
    */
   static async sendLegalBasis (userId, legalBasisIds) {
     try {
@@ -21,7 +21,7 @@ class SendLegalBasisService {
         const notFoundIds = legalBasisIds.filter(
           (id) => !legalBasis.some((legalBase) => legalBase.id === id)
         )
-        throw new ErrorUtils(404, 'LegalBasis not found for IDs', {
+        throw new HttpException(404, 'LegalBasis not found for IDs', {
           notFoundIds
         })
       }
@@ -31,10 +31,10 @@ class SendLegalBasisService {
       })
       return { jobId: job.id }
     } catch (error) {
-      if (error instanceof ErrorUtils) {
+      if (error instanceof HttpException) {
         throw error
       }
-      throw new ErrorUtils(
+      throw new HttpException(
         500,
         'Unexpected error during send LegalBasis operation'
       )
@@ -45,7 +45,7 @@ class SendLegalBasisService {
    * Retrieves the status of a send legal basis job from the queue.
    * @param {string} jobId - The job ID.
    * @returns {Promise<import('../../queue/Queue.service.js').JobStateResponse>} - The job state and relevant data.
-   * @throws {ErrorUtils} - If an error occurs while retrieving the job state.
+   * @throws {HttpException} - If an error occurs while retrieving the job state.
    */
   static async getSendLegalBasisJobStatus (jobId) {
     try {
@@ -59,10 +59,10 @@ class SendLegalBasisService {
       const result = await QueueService.getJobState(job)
       return result
     } catch (error) {
-      if (error instanceof ErrorUtils) {
+      if (error instanceof HttpException) {
         throw error
       }
-      throw new ErrorUtils(
+      throw new HttpException(
         500,
         'Failed to retrieve send legal basis job status',
         [{ jobId }]
@@ -76,13 +76,13 @@ class SendLegalBasisService {
  *
  * @param {number} legalBasisId - The ID of the legal basis to check.
  * @returns {Promise<{ hasPendingJobs: boolean, jobId: string | number | null }>}
- * @throws {ErrorUtils} - If an error occurs while checking the send queue.
+ * @throws {HttpException} - If an error occurs while checking the send queue.
  */
   static async hasPendingSendJobs (legalBasisId) {
     try {
       const legalBase = await LegalBasisRepository.findById(legalBasisId)
       if (!legalBase) {
-        throw new ErrorUtils(404, 'LegalBasis not found')
+        throw new HttpException(404, 'LegalBasis not found')
       }
       const statesToCheck = ['waiting', 'paused', 'active', 'delayed']
       const jobs = await QueueService.getJobsByStates(sendLegalBasisQueue, statesToCheck)
@@ -92,10 +92,10 @@ class SendLegalBasisService {
       }
       return { hasPendingJobs: false, jobId: null }
     } catch (error) {
-      if (error instanceof ErrorUtils) {
+      if (error instanceof HttpException) {
         throw error
       }
-      throw new ErrorUtils(500, 'Failed to check pending send jobs', [{ legalBasisId }])
+      throw new HttpException(500, 'Failed to check pending send jobs', [{ legalBasisId }])
     }
   }
 }

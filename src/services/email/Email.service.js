@@ -1,5 +1,5 @@
 import transporter from '../../config/email.config.js'
-import ErrorUtils from '../../utils/Error.js'
+import HttpException from '../../utils/HttpException.js'
 import { EMAIL_USER, APP_URL } from '../../config/variables.config.js'
 
 /**
@@ -26,7 +26,7 @@ class EmailService {
    * Sends an email using the configured transporter.
    * @param {EmailData} mailData - The email data.
    * @returns {Promise<void>} - Resolves when the email is sent successfully.
-   * @throws {ErrorUtils} - Throws an error if the email fails to send.
+   * @throws {HttpException} - Throws an error if the email fails to send.
    */
   static async sendEmail (mailData) {
     try {
@@ -40,7 +40,7 @@ class EmailService {
       }
       await transporter.sendMail(mailOptions)
     } catch (error) {
-      throw new ErrorUtils(500, 'Error sending email', error)
+      throw new HttpException(500, 'Error sending email', error)
     }
   }
 

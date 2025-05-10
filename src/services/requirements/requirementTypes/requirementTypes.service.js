@@ -1,5 +1,5 @@
 import RequirementTypesRepository from '../../../repositories/RequirementTypes.repository.js'
-import ErrorUtils from '../../../utils/Error.js'
+import HttpException from '../../../utils/HttpException.js'
 import requirementTypesSchema from '../../../schemas/requirementTypes.schema.js'
 import { z } from 'zod'
 
@@ -14,7 +14,7 @@ class RequirementTypesService {
    * @param {string} params.description - The description of the requirement type.
    * @param {string} params.classification - The classification of the requirement type.
    * @returns {Promise<RequirementType>} - The created requirement type data.
-   * @throws {ErrorUtils} - If an error occurs during creation.
+   * @throws {HttpException} - If an error occurs during creation.
    */
   static async create ({ name, description, classification }) {
     try {
@@ -28,7 +28,7 @@ class RequirementTypesService {
           parsedRequirementType.name
         )
       if (requirementTypeNameExists) {
-        throw new ErrorUtils(409, 'Requirement type name already exists')
+        throw new HttpException(409, 'Requirement type name already exists')
       }
       const createdRequirementType = await RequirementTypesRepository.create(
         parsedRequirementType.name,
@@ -42,19 +42,19 @@ class RequirementTypesService {
           field: e.path[0],
           message: e.message
         }))
-        throw new ErrorUtils(400, 'Validation failed', validationErrors)
+        throw new HttpException(400, 'Validation failed', validationErrors)
       }
-      if (error instanceof ErrorUtils) {
+      if (error instanceof HttpException) {
         throw error
       }
-      throw new ErrorUtils(500, 'Failed to create requirement type')
+      throw new HttpException(500, 'Failed to create requirement type')
     }
   }
 
   /**
    * Fetches all requirement types.
    * @returns {Promise<Array<RequirementType>>} - List of all requirement types.
-   * @throws {ErrorUtils} - If an error occurs during retrieval.
+   * @throws {HttpException} - If an error occurs during retrieval.
    */
   static async getAll () {
     try {
@@ -64,10 +64,10 @@ class RequirementTypesService {
       }
       return requirementTypes
     } catch (error) {
-      if (error instanceof ErrorUtils) {
+      if (error instanceof HttpException) {
         throw error
       }
-      throw new ErrorUtils(500, 'Failed to fetch requirement types')
+      throw new HttpException(500, 'Failed to fetch requirement types')
     }
   }
 
@@ -75,20 +75,20 @@ class RequirementTypesService {
    * Fetches a requirement type by ID.
    * @param {number} id - The ID of the requirement type to retrieve.
    * @returns {Promise<RequirementType>} - The requirement type data or throws if not found.
-   * @throws {ErrorUtils} - If an error occurs during retrieval or not found.
+   * @throws {HttpException} - If an error occurs during retrieval or not found.
    */
   static async getById (id) {
     try {
       const requirementType = await RequirementTypesRepository.findById(id)
       if (!requirementType) {
-        throw new ErrorUtils(404, 'Requirement type not found')
+        throw new HttpException(404, 'Requirement type not found')
       }
       return requirementType
     } catch (error) {
-      if (error instanceof ErrorUtils) {
+      if (error instanceof HttpException) {
         throw error
       }
-      throw new ErrorUtils(500, 'Failed to fetch requirement type')
+      throw new HttpException(500, 'Failed to fetch requirement type')
     }
   }
 
@@ -96,7 +96,7 @@ class RequirementTypesService {
    * Fetches requirement types by partial or full name match.
    * @param {string} name - The name or partial name to search.
    * @returns {Promise<Array<RequirementType>>} - List of matching requirement types.
-   * @throws {ErrorUtils} - If an error occurs during retrieval.
+   * @throws {HttpException} - If an error occurs during retrieval.
    */
   static async getByName (name) {
     try {
@@ -106,10 +106,10 @@ class RequirementTypesService {
       }
       return requirementTypes
     } catch (error) {
-      if (error instanceof ErrorUtils) {
+      if (error instanceof HttpException) {
         throw error
       }
-      throw new ErrorUtils(500, 'Failed to fetch requirement types by name')
+      throw new HttpException(500, 'Failed to fetch requirement types by name')
     }
   }
 
@@ -117,7 +117,7 @@ class RequirementTypesService {
    * Fetches requirement types by partial or full description match.
    * @param {string} description - The description or partial description to search.
    * @returns {Promise<Array<RequirementType>>} - List of matching requirement types.
-   * @throws {ErrorUtils} - If an error occurs during retrieval.
+   * @throws {HttpException} - If an error occurs during retrieval.
    */
   static async getByDescription (description) {
     try {
@@ -129,10 +129,10 @@ class RequirementTypesService {
       }
       return requirementTypes
     } catch (error) {
-      if (error instanceof ErrorUtils) {
+      if (error instanceof HttpException) {
         throw error
       }
-      throw new ErrorUtils(
+      throw new HttpException(
         500,
         'Failed to fetch requirement types by description'
       )
@@ -143,7 +143,7 @@ class RequirementTypesService {
    * Fetches requirement types by partial or full classification match.
    * @param {string} classification - The classification or partial classification to search.
    * @returns {Promise<Array<RequirementType>>} - List of matching requirement types.
-   * @throws {ErrorUtils} - If an error occurs during retrieval.
+   * @throws {HttpException} - If an error occurs during retrieval.
    */
   static async getByClassification (classification) {
     try {
@@ -155,10 +155,10 @@ class RequirementTypesService {
       }
       return requirementTypes
     } catch (error) {
-      if (error instanceof ErrorUtils) {
+      if (error instanceof HttpException) {
         throw error
       }
-      throw new ErrorUtils(
+      throw new HttpException(
         500,
         'Failed to fetch requirement types by classification'
       )
@@ -173,7 +173,7 @@ class RequirementTypesService {
    * @param {string} params.description - The new description.
    * @param {string} params.classification - The new classification.
    * @returns {Promise<RequirementType>} - Returns the updated requirement type data.
-   * @throws {ErrorUtils} - If not found, name already exists, validation fails, or any unexpected error occurs.
+   * @throws {HttpException} - If not found, name already exists, validation fails, or any unexpected error occurs.
    */
   static async updateById (id, { name, description, classification }) {
     try {
@@ -184,7 +184,7 @@ class RequirementTypesService {
       })
       const requirementType = await RequirementTypesRepository.findById(id)
       if (!requirementType) {
-        throw new ErrorUtils(404, 'Requirement type not found')
+        throw new HttpException(404, 'Requirement type not found')
       }
       const requirementTypeNameExists =
         await RequirementTypesRepository.existsByNameExcludingId(
@@ -192,7 +192,7 @@ class RequirementTypesService {
           id
         )
       if (requirementTypeNameExists) {
-        throw new ErrorUtils(409, 'Requirement type name already exists')
+        throw new HttpException(409, 'Requirement type name already exists')
       }
 
       const updatedRequirementType = await RequirementTypesRepository.update(
@@ -202,7 +202,7 @@ class RequirementTypesService {
         parsedRequirementType.classification
       )
       if (!updatedRequirementType) {
-        throw new ErrorUtils(404, 'Requirement type not found')
+        throw new HttpException(404, 'Requirement type not found')
       }
       return updatedRequirementType
     } catch (error) {
@@ -211,14 +211,14 @@ class RequirementTypesService {
           field: e.path[0],
           message: e.message
         }))
-        throw new ErrorUtils(400, 'Validation failed', validationErrors)
+        throw new HttpException(400, 'Validation failed', validationErrors)
       }
 
-      if (error instanceof ErrorUtils) {
+      if (error instanceof HttpException) {
         throw error
       }
 
-      throw new ErrorUtils(500, 'Failed to update requirement type')
+      throw new HttpException(500, 'Failed to update requirement type')
     }
   }
 
@@ -226,24 +226,24 @@ class RequirementTypesService {
    * Deletes a requirement type by ID.
    * @param {number} id - The ID of the requirement type to delete.
    * @returns {Promise<{ success: boolean }>} - An object indicating whether the deletion was successful.
-   * @throws {ErrorUtils} - If the requirement type is not found or an error occurs during deletion.
+   * @throws {HttpException} - If the requirement type is not found or an error occurs during deletion.
    */
   static async deleteById (id) {
     try {
       const requirementType = await RequirementTypesRepository.findById(id)
       if (!requirementType) {
-        throw new ErrorUtils(404, 'Requirement type not found')
+        throw new HttpException(404, 'Requirement type not found')
       }
       const requirementTypeDeleted = await RequirementTypesRepository.deleteById(id)
       if (!requirementTypeDeleted) {
-        throw new ErrorUtils(404, 'Requirement type not found')
+        throw new HttpException(404, 'Requirement type not found')
       }
       return { success: true }
     } catch (error) {
-      if (error instanceof ErrorUtils) {
+      if (error instanceof HttpException) {
         throw error
       }
-      throw new ErrorUtils(500, 'Failed to delete requirement type')
+      throw new HttpException(500, 'Failed to delete requirement type')
     }
   }
 
@@ -251,7 +251,7 @@ class RequirementTypesService {
    * Deletes multiple requirement types by their IDs.
    * @param {Array<number>} requirementTypeIds - Array of requirement type IDs to delete.
    * @returns {Promise<{ success: boolean }>} - An object indicating the deletion was successful.
-   * @throws {ErrorUtils} - If IDs not found or deletion fails.
+   * @throws {HttpException} - If IDs not found or deletion fails.
    */
   static async deleteBatch (requirementTypeIds) {
     try {
@@ -262,7 +262,7 @@ class RequirementTypesService {
         const notFoundIds = requirementTypeIds.filter(
           (id) => !existingRequirementTypes.some((type) => type.id === id)
         )
-        throw new ErrorUtils(404, 'Requirement types not found for IDs', {
+        throw new HttpException(404, 'Requirement types not found for IDs', {
           notFoundIds
         })
       }
@@ -270,14 +270,14 @@ class RequirementTypesService {
         requirementTypeIds
       )
       if (!requirementTypesDeleted) {
-        throw new ErrorUtils(404, 'Requirement types not found')
+        throw new HttpException(404, 'Requirement types not found')
       }
       return { success: true }
     } catch (error) {
-      if (error instanceof ErrorUtils) {
+      if (error instanceof HttpException) {
         throw error
       }
-      throw new ErrorUtils(500, 'Failed to delete requirement types')
+      throw new HttpException(500, 'Failed to delete requirement types')
     }
   }
 }

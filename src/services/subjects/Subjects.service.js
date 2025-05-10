@@ -1,5 +1,5 @@
 import SubjectsRepository from '../../repositories/Subject.repository.js'
-import ErrorUtils from '../../utils/Error.js'
+import HttpException from '../../utils/HttpException.js'
 import subjectSchema from '../../schemas/subject.schema.js'
 import { z } from 'zod'
 
@@ -14,7 +14,7 @@ class SubjectsService {
    * @param {string} params.abbreviation - The abbreviation of the subject.
    * @param {number} params.orderIndex - The display order of the subject.
    * @returns {Promise<Subject>} - The created subject data.
-   * @throws {ErrorUtils} - If an error occurs during creation.
+   * @throws {HttpException} - If an error occurs during creation.
    */
   static async create ({ subjectName, abbreviation, orderIndex }) {
     try {
@@ -22,7 +22,7 @@ class SubjectsService {
 
       const subjectExists = await SubjectsRepository.existsBySubjectName(parsedSubject.subjectName)
       if (subjectExists) {
-        throw new ErrorUtils(409, 'Subject already exists')
+        throw new HttpException(409, 'Subject already exists')
       }
       const createdSubject = await SubjectsRepository.create(
         parsedSubject.subjectName,
@@ -36,19 +36,19 @@ class SubjectsService {
           field: e.path[0],
           message: e.message
         }))
-        throw new ErrorUtils(400, 'Validation failed', validationErrors)
+        throw new HttpException(400, 'Validation failed', validationErrors)
       }
-      if (error instanceof ErrorUtils) {
+      if (error instanceof HttpException) {
         throw error
       }
-      throw new ErrorUtils(500, 'Failed to create subject')
+      throw new HttpException(500, 'Failed to create subject')
     }
   }
 
   /**
    * Fetches all subjects.
    * @returns {Promise<Array<Subject>>} - List of all subjects.
-   * @throws {ErrorUtils} - If an error occurs during retrieval.
+   * @throws {HttpException} - If an error occurs during retrieval.
    */
   static async getAll () {
     try {
@@ -58,10 +58,10 @@ class SubjectsService {
       }
       return subjects
     } catch (error) {
-      if (error instanceof ErrorUtils) {
+      if (error instanceof HttpException) {
         throw error
       }
-      throw new ErrorUtils(500, 'Failed to fetch subjects')
+      throw new HttpException(500, 'Failed to fetch subjects')
     }
   }
 
@@ -69,20 +69,20 @@ class SubjectsService {
    * Fetches a subject by ID.
    * @param {number} id - The ID of the subject to retrieve.
    * @returns {Promise<Subject>} - The subject data or null if not found.
-   * @throws {ErrorUtils} - If an error occurs during retrieval.
+   * @throws {HttpException} - If an error occurs during retrieval.
    */
   static async getById (id) {
     try {
       const subject = await SubjectsRepository.findById(id)
       if (!subject) {
-        throw new ErrorUtils(404, 'Subject not found')
+        throw new HttpException(404, 'Subject not found')
       }
       return subject
     } catch (error) {
-      if (error instanceof ErrorUtils) {
+      if (error instanceof HttpException) {
         throw error
       }
-      throw new ErrorUtils(500, 'Failed to fetch subject')
+      throw new HttpException(500, 'Failed to fetch subject')
     }
   }
 
@@ -90,7 +90,7 @@ class SubjectsService {
    * Fetches subjects by name.
    * @param {string} subjectName - The name of the subject to retrieve.
    * @returns {Promise<Array<Subject>>} - The subject data.
-   * @throws {ErrorUtils} - If an error occurs during retrieval.
+   * @throws {HttpException} - If an error occurs during retrieval.
    */
   static async getByName (subjectName) {
     try {
@@ -100,10 +100,10 @@ class SubjectsService {
       }
       return subjects
     } catch (error) {
-      if (error instanceof ErrorUtils) {
+      if (error instanceof HttpException) {
         throw error
       }
-      throw new ErrorUtils(500, 'Failed to fetch subject')
+      throw new HttpException(500, 'Failed to fetch subject')
     }
   }
 
@@ -115,7 +115,7 @@ class SubjectsService {
  * @param {string} params.abbreviation - The new abbreviation.
  * @param {number} params.orderIndex - The new display order.
  * @returns {Promise<Subject>} - Returns the updated subject data.
- * @throws {ErrorUtils} - Throws an error if the subject is not found, the name already exists, or an unexpected error occurs.
+ * @throws {HttpException} - Throws an error if the subject is not found, the name already exists, or an unexpected error occurs.
  */
   static async updateById (id, { subjectName, abbreviation, orderIndex }) {
     try {
@@ -123,12 +123,12 @@ class SubjectsService {
 
       const currentSubject = await SubjectsRepository.findById(id)
       if (!currentSubject) {
-        throw new ErrorUtils(404, 'Subject not found')
+        throw new HttpException(404, 'Subject not found')
       }
 
       const subjectExists = await SubjectsRepository.existsByNameExcludingId(parsedSubject.subjectName, id)
       if (subjectExists) {
-        throw new ErrorUtils(409, 'Subject already exists')
+        throw new HttpException(409, 'Subject already exists')
       }
 
       const updatedSubject = await SubjectsRepository.update(
@@ -139,7 +139,7 @@ class SubjectsService {
       )
 
       if (!updatedSubject) {
-        throw new ErrorUtils(404, 'Subject not found')
+        throw new HttpException(404, 'Subject not found')
       }
 
       return updatedSubject
@@ -149,14 +149,14 @@ class SubjectsService {
           field: e.path[0],
           message: e.message
         }))
-        throw new ErrorUtils(400, 'Validation failed', validationErrors)
+        throw new HttpException(400, 'Validation failed', validationErrors)
       }
 
-      if (error instanceof ErrorUtils) {
+      if (error instanceof HttpException) {
         throw error
       }
 
-      throw new ErrorUtils(500, 'Failed to update subject')
+      throw new HttpException(500, 'Failed to update subject')
     }
   }
 
@@ -164,38 +164,38 @@ class SubjectsService {
  * Deletes a subject by ID.
  * @param {number} id - The ID of the subject to delete.
  * @returns {Promise<{ success: boolean }>} - An object indicating the deletion was successful.
- * @throws {ErrorUtils} - If an error occurs during deletion.
+ * @throws {HttpException} - If an error occurs during deletion.
  */
   static async deleteById (id) {
     try {
       const currentSubject = await SubjectsRepository.findById(id)
       if (!currentSubject) {
-        throw new ErrorUtils(404, 'Subject not found')
+        throw new HttpException(404, 'Subject not found')
       }
       const { isAssociatedToLegalBasis } = await SubjectsRepository.checkSubjectLegalBasisAssociations(id)
       if (isAssociatedToLegalBasis) {
-        throw new ErrorUtils(
+        throw new HttpException(
           409,
           'The subject is associated with one or more legal bases'
         )
       }
       const { isAssociatedToRequirements } = await SubjectsRepository.checkSubjectRequirementAssociations(id)
       if (isAssociatedToRequirements) {
-        throw new ErrorUtils(
+        throw new HttpException(
           409,
           'The subject is associated with one or more requirements'
         )
       }
       const subjectDeleted = await SubjectsRepository.deleteById(id)
       if (!subjectDeleted) {
-        throw new ErrorUtils(404, 'Subject not found')
+        throw new HttpException(404, 'Subject not found')
       }
       return { success: true }
     } catch (error) {
-      if (error instanceof ErrorUtils) {
+      if (error instanceof HttpException) {
         throw error
       }
-      throw new ErrorUtils(500, 'Failed to delete subject')
+      throw new HttpException(500, 'Failed to delete subject')
     }
   }
 
@@ -203,7 +203,7 @@ class SubjectsService {
  * Deletes multiple subjects by their IDs.
  * @param {Array<number>} subjectIds - Array of subject IDs to delete.
  * @returns {Promise<{ success: boolean }>} - An object indicating the deletion was successful.
- * @throws {ErrorUtils} - If subjects not found, have associations preventing deletion, or deletion fails.
+ * @throws {HttpException} - If subjects not found, have associations preventing deletion, or deletion fails.
  */
   static async deleteSubjectsBatch (subjectIds) {
     try {
@@ -212,7 +212,7 @@ class SubjectsService {
         const notFoundIds = subjectIds.filter(
           (id) => !existingSubjects.some((subject) => subject.id === id)
         )
-        throw new ErrorUtils(404, 'Subjects not found for IDs', { notFoundIds })
+        throw new HttpException(404, 'Subjects not found for IDs', { notFoundIds })
       }
       const legalBasisAssociations = await SubjectsRepository.checkSubjectsLegalBasisAssociationsBatch(subjectIds)
       const subjectsWithLegalBasisAssociations = legalBasisAssociations.filter(
@@ -223,7 +223,7 @@ class SubjectsService {
         (subject) => subject.isAssociatedToRequirements
       )
       if (subjectsWithLegalBasisAssociations.length > 0) {
-        throw new ErrorUtils(409, 'Subjects are associated with legal bases', {
+        throw new HttpException(409, 'Subjects are associated with legal bases', {
           associatedSubjects: subjectsWithLegalBasisAssociations.map((subject) => ({
             id: subject.id,
             name: subject.name
@@ -231,7 +231,7 @@ class SubjectsService {
         })
       }
       if (subjectsWithRequirementAssociations.length > 0) {
-        throw new ErrorUtils(409, 'Subjects are associated with requirements', {
+        throw new HttpException(409, 'Subjects are associated with requirements', {
           associatedSubjects: subjectsWithRequirementAssociations.map((subject) => ({
             id: subject.id,
             name: subject.name
@@ -240,14 +240,14 @@ class SubjectsService {
       }
       const subjectsDeleted = await SubjectsRepository.deleteBatch(subjectIds)
       if (!subjectsDeleted) {
-        throw new ErrorUtils(404, 'Subjects not found')
+        throw new HttpException(404, 'Subjects not found')
       }
       return { success: true }
     } catch (error) {
-      if (error instanceof ErrorUtils) {
+      if (error instanceof HttpException) {
         throw error
       }
-      throw new ErrorUtils(500, 'Failed to delete subjects')
+      throw new HttpException(500, 'Failed to delete subjects')
     }
   }
 }

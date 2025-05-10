@@ -1,5 +1,5 @@
 import { pool } from '../config/db.config.js'
-import ErrorUtils from '../utils/Error.js'
+import HttpException from '../utils/HttpException.js'
 import RequirementType from '../models/RequirementTypes.model.js'
 
 /**
@@ -12,7 +12,7 @@ class RequirementTypesRepository {
    * @param {string} description - A description of the requirement type.
    * @param {string} classification - The classification of the requirement type.
    * @returns {Promise<RequirementType>} - Returns the created RequirementType.
-   * @throws {ErrorUtils} - If an error occurs during insertion.
+   * @throws {HttpException} - If an error occurs during insertion.
    */
   static async create (name, description, classification) {
     const query = `
@@ -29,7 +29,7 @@ class RequirementTypesRepository {
       return requirementType
     } catch (error) {
       console.error('Error creating requirement type:', error.message)
-      throw new ErrorUtils(
+      throw new HttpException(
         500,
         'Error inserting requirement type into the database'
       )
@@ -39,7 +39,7 @@ class RequirementTypesRepository {
   /**
    * Fetches all requirement types from the database.
    * @returns {Promise<RequirementType[] | null>} - Returns a list of RequirementType instances.
-   * @throws {ErrorUtils} - If an error occurs during retrieval.
+   * @throws {HttpException} - If an error occurs during retrieval.
    */
   static async findAll () {
     try {
@@ -60,7 +60,7 @@ class RequirementTypesRepository {
       )
     } catch (error) {
       console.error('Error fetching requirement types:', error.message)
-      throw new ErrorUtils(
+      throw new HttpException(
         500,
         'Error fetching requirement types from the database'
       )
@@ -71,7 +71,7 @@ class RequirementTypesRepository {
    * Fetches a requirement type by its ID from the database.
    * @param {number} id - The ID of the requirement type to retrieve.
    * @returns {Promise<RequirementType|null>} - Returns the RequirementType instance or null if not found.
-   * @throws {ErrorUtils} - If an error occurs during retrieval.
+   * @throws {HttpException} - If an error occurs during retrieval.
    */
   static async findById (id) {
     try {
@@ -93,7 +93,7 @@ class RequirementTypesRepository {
       )
     } catch (error) {
       console.error('Error fetching requirement type by ID:', error.message)
-      throw new ErrorUtils(
+      throw new HttpException(
         500,
         'Error fetching requirement type from the database'
       )
@@ -104,7 +104,7 @@ class RequirementTypesRepository {
    * Finds requirement types in the database using an array of IDs.
    * @param {number[]} requirementTypesIds - Array of requirement type IDs to find.
    * @returns {Promise<RequirementType[]>} - Array of RequirementType instances.
-   * @throws {ErrorUtils} - If an error occurs during retrieval.
+   * @throws {HttpException} - If an error occurs during retrieval.
    */
   static async findByIds (requirementTypesIds) {
     if (requirementTypesIds.length === 0) {
@@ -129,7 +129,7 @@ class RequirementTypesRepository {
       )
     } catch (error) {
       console.error('Error finding requirement types by IDs:', error.message)
-      throw new ErrorUtils(
+      throw new HttpException(
         500,
         'Error finding requirement types by IDs from the database'
       )
@@ -157,7 +157,7 @@ class RequirementTypesRepository {
         'Error checking if requirement type name exists:',
         error.message
       )
-      throw new ErrorUtils(
+      throw new HttpException(
         500,
         'Error checking if requirement type name exists'
       )
@@ -184,7 +184,7 @@ class RequirementTypesRepository {
         'Error checking if requirement type name exists:',
         error.message
       )
-      throw new ErrorUtils(
+      throw new HttpException(
         500,
         'Error checking if requirement type name exists'
       )
@@ -220,7 +220,7 @@ class RequirementTypesRepository {
       )
     } catch (error) {
       console.error('Error fetching requirement types by name:', error.message)
-      throw new ErrorUtils(500, 'Error fetching requirement types by name')
+      throw new HttpException(500, 'Error fetching requirement types by name')
     }
   }
 
@@ -254,7 +254,7 @@ class RequirementTypesRepository {
         'Error fetching requirement types by description:',
         error.message
       )
-      throw new ErrorUtils(
+      throw new HttpException(
         500,
         'Error fetching requirement types by description'
       )
@@ -291,7 +291,7 @@ class RequirementTypesRepository {
         'Error fetching requirement types by classification:',
         error.message
       )
-      throw new ErrorUtils(
+      throw new HttpException(
         500,
         'Error fetching requirement types by classification'
       )
@@ -324,7 +324,7 @@ class RequirementTypesRepository {
       return requirementType
     } catch (error) {
       console.error('Error updating requirement type:', error.message)
-      throw new ErrorUtils(
+      throw new HttpException(
         500,
         'Error updating requirement type in the database'
       )
@@ -345,7 +345,7 @@ class RequirementTypesRepository {
       return result.affectedRows > 0
     } catch (error) {
       console.error('Error deleting requirement type:', error.message)
-      throw new ErrorUtils(
+      throw new HttpException(
         500,
         'Error deleting requirement type from the database'
       )
@@ -367,7 +367,7 @@ class RequirementTypesRepository {
       return result.affectedRows > 0
     } catch (error) {
       console.error('Error deleting requirement types batch:', error.message)
-      throw new ErrorUtils(
+      throw new HttpException(
         500,
         'Error deleting requirement types from the database'
       )
@@ -377,14 +377,14 @@ class RequirementTypesRepository {
   /**
    * Deletes all requirement types from the database.
    * @returns {Promise<void>}
-   * @throws {ErrorUtils} - If an error occurs during deletion.
+   * @throws {HttpException} - If an error occurs during deletion.
    */
   static async deleteAll () {
     try {
       await pool.query('DELETE FROM requirement_types')
     } catch (error) {
       console.error('Error deleting all requirement types:', error.message)
-      throw new ErrorUtils(
+      throw new HttpException(
         500,
         'Error deleting all requirement types from the database'
       )

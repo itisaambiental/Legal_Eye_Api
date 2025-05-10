@@ -1,6 +1,6 @@
 import ArticlesService from '../services/articles/Articles.service.js'
 import UserService from '../services/users/User.service.js'
-import ErrorUtils from '../utils/Error.js'
+import HttpException from '../utils/HttpException.js'
 
 /**
  * Controller for Articles operations.
@@ -30,7 +30,7 @@ export const createArticle = async (req, res) => {
     })
     return res.status(201).json({ article: createdArticle })
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({
         message: error.message,
         ...(error.errors && { errors: error.errors })
@@ -58,7 +58,7 @@ export const getArticlesByLegalBasisId = async (req, res) => {
     const articles = await ArticlesService.getByLegalBasisId(legalBasisId)
     return res.status(200).json({ articles })
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({
         message: error.message,
         ...(error.errors && { errors: error.errors })
@@ -86,7 +86,7 @@ export const getArticlesByName = async (req, res) => {
     const articles = await ArticlesService.getByName(legalBasisId, name)
     return res.status(200).json({ articles })
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({
         message: error.message,
         ...(error.errors && { errors: error.errors })
@@ -118,7 +118,7 @@ export const getArticlesByDescription = async (req, res) => {
     )
     return res.status(200).json({ articles })
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({
         message: error.message,
         ...(error.errors && { errors: error.errors })
@@ -146,7 +146,7 @@ export const getArticleById = async (req, res) => {
     const article = await ArticlesService.getById(id)
     return res.status(200).json({ article })
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({
         message: error.message,
         ...(error.errors && { errors: error.errors })
@@ -179,7 +179,7 @@ export const updateArticle = async (req, res) => {
     })
     return res.status(200).json({ article: updatedArticle })
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({
         message: error.message,
         ...(error.errors && { errors: error.errors })
@@ -211,7 +211,7 @@ export const deleteArticle = async (req, res) => {
       return res.status(500).json({ message: 'Internal Server Error' })
     }
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({
         message: error.message,
         ...(error.errors && { errors: error.errors })
@@ -248,7 +248,7 @@ export const deleteArticlesBatch = async (req, res) => {
       return res.status(500).json({ message: 'Internal Server Error' })
     }
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({
         message: error.message,
         ...(error.errors && { errors: error.errors })

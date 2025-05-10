@@ -1,6 +1,6 @@
 import RequirementTypesService from '../services/requirements/requirementTypes/requirementTypes.service.js'
 import UserService from '../services/users/User.service.js'
-import ErrorUtils from '../utils/Error.js'
+import HttpException from '../utils/HttpException.js'
 
 /**
  * Controller for requirement types operations.
@@ -29,7 +29,7 @@ export const createRequirementType = async (req, res) => {
     })
     return res.status(201).json({ requirementType })
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({
         message: error.message,
         ...(error.errors && { errors: error.errors })
@@ -56,7 +56,7 @@ export const getRequirementTypes = async (req, res) => {
     const requirementTypes = await RequirementTypesService.getAll()
     return res.status(200).json({ requirementTypes })
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({
         message: error.message,
         ...(error.errors && { errors: error.errors })
@@ -84,7 +84,7 @@ export const getRequirementTypeById = async (req, res) => {
     const requirementType = await RequirementTypesService.getById(id)
     return res.status(200).json({ requirementType })
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({
         message: error.message,
         ...(error.errors && { errors: error.errors })
@@ -112,7 +112,7 @@ export const getRequirementTypesByName = async (req, res) => {
     const requirementTypes = await RequirementTypesService.getByName(name)
     return res.status(200).json({ requirementTypes })
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({
         message: error.message,
         ...(error.errors && { errors: error.errors })
@@ -141,7 +141,7 @@ export const getRequirementTypesByDescription = async (req, res) => {
     )
     return res.status(200).json({ requirementTypes })
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({
         message: error.message,
         ...(error.errors && { errors: error.errors })
@@ -171,7 +171,7 @@ export const getRequirementTypesByClassification = async (req, res) => {
     )
     return res.status(200).json({ requirementTypes })
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({
         message: error.message,
         ...(error.errors && { errors: error.errors })
@@ -204,7 +204,7 @@ export const updateRequirementType = async (req, res) => {
     })
     return res.status(200).json({ requirementType })
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({
         message: error.message,
         ...(error.errors && { errors: error.errors })
@@ -236,7 +236,7 @@ export const deleteRequirementType = async (req, res) => {
       return res.status(500).json({ message: 'Internal Server Error' })
     }
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({
         message: error.message,
         ...(error.errors && { errors: error.errors })
@@ -279,7 +279,7 @@ export const deleteRequirementTypesBatch = async (req, res) => {
       return res.status(500).json({ message: 'Internal Server Error' })
     }
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({
         message: error.message,
         ...(error.errors && { errors: error.errors })

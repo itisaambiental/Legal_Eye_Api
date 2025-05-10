@@ -1,5 +1,5 @@
 import AspectsService from '../services/aspects/Aspects.service.js'
-import ErrorUtils from '../utils/Error.js'
+import HttpException from '../utils/HttpException.js'
 import UserService from '../services/users/User.service.js'
 
 /**
@@ -31,7 +31,7 @@ export const createAspect = async (req, res) => {
     })
     return res.status(201).json({ aspect })
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({
         message: error.message,
         ...(error.errors && { errors: error.errors })
@@ -59,7 +59,7 @@ export const getAspectsBySubject = async (req, res) => {
     const aspects = await AspectsService.getBySubjectId(subjectId)
     return res.status(200).json({ aspects })
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({
         message: error.message,
         ...(error.errors && { errors: error.errors })
@@ -87,7 +87,7 @@ export const getAspectById = async (req, res) => {
     const aspect = await AspectsService.getById(id)
     return res.status(200).json({ aspect })
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({
         message: error.message,
         ...(error.errors && { errors: error.errors })
@@ -116,7 +116,7 @@ export const getAspectsByName = async (req, res) => {
     const aspects = await AspectsService.getByName(aspectName, subjectId)
     return res.status(200).json({ aspects })
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({
         message: error.message,
         ...(error.errors && { errors: error.errors })
@@ -149,7 +149,7 @@ export const updateAspect = async (req, res) => {
     })
     return res.status(200).json({ aspect })
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({
         message: error.message,
         ...(error.errors && { errors: error.errors })
@@ -181,7 +181,7 @@ export const deleteAspect = async (req, res) => {
       return res.status(500).json({ message: 'Internal Server Error' })
     }
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({
         message: error.message,
         ...(error.errors && { errors: error.errors })
@@ -218,7 +218,7 @@ export const deleteAspectsBatch = async (req, res) => {
       return res.status(500).json({ message: 'Internal Server Error' })
     }
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({
         message: error.message,
         ...(error.errors && { errors: error.errors })

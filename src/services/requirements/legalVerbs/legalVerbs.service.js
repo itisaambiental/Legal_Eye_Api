@@ -1,5 +1,5 @@
 import LegalVerbsRepository from '../../../repositories/LegalVerbs.repository.js'
-import ErrorUtils from '../../../utils/Error.js'
+import HttpException from '../../../utils/HttpException.js'
 import legalVerbsSchema from '../../../schemas/legalVerbs.schema.js'
 import { z } from 'zod'
 
@@ -14,14 +14,14 @@ class LegalVerbsService {
    * @param {string} params.description - The description of the legal verb.
    * @param {string} params.translation - The translation of the legal verb.
    * @returns {Promise<LegalVerb>} - The created legal verb data.
-   * @throws {ErrorUtils} - If an error occurs during creation.
+   * @throws {HttpException} - If an error occurs during creation.
    */
   static async create ({ name, description, translation }) {
     try {
       const legalVerbParsed = legalVerbsSchema.parse({ name, description, translation })
       const LegalVerbNameExists = await LegalVerbsRepository.existsByName(legalVerbParsed.name)
       if (LegalVerbNameExists) {
-        throw new ErrorUtils(409, 'Legal verb name already exists')
+        throw new HttpException(409, 'Legal verb name already exists')
       }
       const createdLegalVerb = await LegalVerbsRepository.create(
         legalVerbParsed.name,
@@ -35,19 +35,19 @@ class LegalVerbsService {
           field: e.path[0],
           message: e.message
         }))
-        throw new ErrorUtils(400, 'Validation failed', validationErrors)
+        throw new HttpException(400, 'Validation failed', validationErrors)
       }
-      if (error instanceof ErrorUtils) {
+      if (error instanceof HttpException) {
         throw error
       }
-      throw new ErrorUtils(500, 'Failed to create legal verb')
+      throw new HttpException(500, 'Failed to create legal verb')
     }
   }
 
   /**
    * Fetches all legal verbs.
    * @returns {Promise<Array<LegalVerb>>} - List of all legal verbs.
-   * @throws {ErrorUtils} - If an error occurs during retrieval.
+   * @throws {HttpException} - If an error occurs during retrieval.
    */
   static async getAll () {
     try {
@@ -57,8 +57,8 @@ class LegalVerbsService {
       }
       return legalVerbs
     } catch (error) {
-      if (error instanceof ErrorUtils) throw error
-      throw new ErrorUtils(500, 'Failed to fetch legal verbs')
+      if (error instanceof HttpException) throw error
+      throw new HttpException(500, 'Failed to fetch legal verbs')
     }
   }
 
@@ -66,18 +66,18 @@ class LegalVerbsService {
    * Fetches a legal verb by ID.
    * @param {number} id - The ID of the legal verb to retrieve.
    * @returns {Promise<LegalVerb>} - The legal verb data or throws if not found.
-   * @throws {ErrorUtils} - If an error occurs during retrieval or not found.
+   * @throws {HttpException} - If an error occurs during retrieval or not found.
    */
   static async getById (id) {
     try {
       const legalVerb = await LegalVerbsRepository.findById(id)
       if (!legalVerb) {
-        throw new ErrorUtils(404, 'Legal verb not found')
+        throw new HttpException(404, 'Legal verb not found')
       }
       return legalVerb
     } catch (error) {
-      if (error instanceof ErrorUtils) throw error
-      throw new ErrorUtils(500, 'Failed to fetch legal verb')
+      if (error instanceof HttpException) throw error
+      throw new HttpException(500, 'Failed to fetch legal verb')
     }
   }
 
@@ -85,7 +85,7 @@ class LegalVerbsService {
    * Fetches legal verbs by partial or full name match.
    * @param {string} name - The name or partial name to search.
    * @returns {Promise<Array<LegalVerb>>} - List of matching legal verbs.
-   * @throws {ErrorUtils} - If an error occurs during retrieval.
+   * @throws {HttpException} - If an error occurs during retrieval.
    */
   static async getByName (name) {
     try {
@@ -95,8 +95,8 @@ class LegalVerbsService {
       }
       return legalVerbs
     } catch (error) {
-      if (error instanceof ErrorUtils) throw error
-      throw new ErrorUtils(500, 'Failed to fetch legal verbs by name')
+      if (error instanceof HttpException) throw error
+      throw new HttpException(500, 'Failed to fetch legal verbs by name')
     }
   }
 
@@ -104,7 +104,7 @@ class LegalVerbsService {
    * Fetches legal verbs by partial or full description match.
    * @param {string} description - The description or partial description to search.
    * @returns {Promise<Array<LegalVerb>>} - List of matching legal verbs.
-   * @throws {ErrorUtils} - If an error occurs during retrieval.
+   * @throws {HttpException} - If an error occurs during retrieval.
    */
   static async getByDescription (description) {
     try {
@@ -114,8 +114,8 @@ class LegalVerbsService {
       }
       return legalVerbs
     } catch (error) {
-      if (error instanceof ErrorUtils) throw error
-      throw new ErrorUtils(500, 'Failed to fetch legal verbs by description')
+      if (error instanceof HttpException) throw error
+      throw new HttpException(500, 'Failed to fetch legal verbs by description')
     }
   }
 
@@ -123,7 +123,7 @@ class LegalVerbsService {
    * Fetches legal verbs by partial or full translation match.
    * @param {string} translation - The translation or partial translation to search.
    * @returns {Promise<Array<LegalVerb>>} - List of matching legal verbs.
-   * @throws {ErrorUtils} - If an error occurs during retrieval.
+   * @throws {HttpException} - If an error occurs during retrieval.
    */
   static async getByTranslation (translation) {
     try {
@@ -133,8 +133,8 @@ class LegalVerbsService {
       }
       return legalVerbs
     } catch (error) {
-      if (error instanceof ErrorUtils) throw error
-      throw new ErrorUtils(500, 'Failed to fetch legal verbs by translation')
+      if (error instanceof HttpException) throw error
+      throw new HttpException(500, 'Failed to fetch legal verbs by translation')
     }
   }
 
@@ -146,21 +146,21 @@ class LegalVerbsService {
    * @param {string} params.description - The new description.
    * @param {string} params.translation - The new translation.
    * @returns {Promise<LegalVerb>} - Returns the updated legal verb data.
-   * @throws {ErrorUtils} - If not found, name already exists, validation fails, or any unexpected error occurs.
+   * @throws {HttpException} - If not found, name already exists, validation fails, or any unexpected error occurs.
    */
   static async updateById (id, { name, description, translation }) {
     try {
       const legalVerbParsed = legalVerbsSchema.parse({ name, description, translation })
       const legalVerb = await LegalVerbsRepository.findById(id)
       if (!legalVerb) {
-        throw new ErrorUtils(404, 'Legal verb not found')
+        throw new HttpException(404, 'Legal verb not found')
       }
       const LegalVerbNameExists = await LegalVerbsRepository.existsByNameExcludingId(
         legalVerbParsed.name,
         id
       )
       if (LegalVerbNameExists) {
-        throw new ErrorUtils(409, 'Legal verb name already exists')
+        throw new HttpException(409, 'Legal verb name already exists')
       }
       const updatedLegalVerb = await LegalVerbsRepository.update(
         id,
@@ -169,7 +169,7 @@ class LegalVerbsService {
         legalVerbParsed.translation
       )
       if (!updatedLegalVerb) {
-        throw new ErrorUtils(404, 'Legal verb not found')
+        throw new HttpException(404, 'Legal verb not found')
       }
       return updatedLegalVerb
     } catch (error) {
@@ -178,10 +178,10 @@ class LegalVerbsService {
           field: e.path[0],
           message: e.message
         }))
-        throw new ErrorUtils(400, 'Validation failed', validationErrors)
+        throw new HttpException(400, 'Validation failed', validationErrors)
       }
-      if (error instanceof ErrorUtils) throw error
-      throw new ErrorUtils(500, 'Failed to update legal verb')
+      if (error instanceof HttpException) throw error
+      throw new HttpException(500, 'Failed to update legal verb')
     }
   }
 
@@ -189,22 +189,22 @@ class LegalVerbsService {
    * Deletes a legal verb by ID.
    * @param {number} id - The ID of the legal verb to delete.
    * @returns {Promise<{ success: boolean }>} - An object indicating whether the deletion was successful.
-   * @throws {ErrorUtils} - If the legal verb is not found or an error occurs during deletion.
+   * @throws {HttpException} - If the legal verb is not found or an error occurs during deletion.
    */
   static async deleteById (id) {
     try {
       const legalVerb = await LegalVerbsRepository.findById(id)
       if (!legalVerb) {
-        throw new ErrorUtils(404, 'Legal verb not found')
+        throw new HttpException(404, 'Legal verb not found')
       }
       const deletedLegalVerb = await LegalVerbsRepository.deleteById(id)
       if (!deletedLegalVerb) {
-        throw new ErrorUtils(404, 'Legal verb not found')
+        throw new HttpException(404, 'Legal verb not found')
       }
       return { success: true }
     } catch (error) {
-      if (error instanceof ErrorUtils) throw error
-      throw new ErrorUtils(500, 'Failed to delete legal verb')
+      if (error instanceof HttpException) throw error
+      throw new HttpException(500, 'Failed to delete legal verb')
     }
   }
 
@@ -212,7 +212,7 @@ class LegalVerbsService {
    * Deletes multiple legal verbs by their IDs.
    * @param {Array<number>} legalVerbsIds - Array of legal verb IDs to delete.
    * @returns {Promise<{ success: boolean }>} - An object indicating the deletion was successful.
-   * @throws {ErrorUtils} - If IDs not found or deletion fails.
+   * @throws {HttpException} - If IDs not found or deletion fails.
    */
   static async deleteBatch (legalVerbsIds) {
     try {
@@ -221,18 +221,18 @@ class LegalVerbsService {
         const notFoundIds = legalVerbsIds.filter(
           (id) => !legalVerbs.some((lv) => lv.id === id)
         )
-        throw new ErrorUtils(404, 'Legal verbs not found for IDs', {
+        throw new HttpException(404, 'Legal verbs not found for IDs', {
           notFoundIds
         })
       }
       const deletedLegalVerbs = await LegalVerbsRepository.deleteBatch(legalVerbsIds)
       if (!deletedLegalVerbs) {
-        throw new ErrorUtils(404, 'Legal verbs not found')
+        throw new HttpException(404, 'Legal verbs not found')
       }
       return { success: true }
     } catch (error) {
-      if (error instanceof ErrorUtils) throw error
-      throw new ErrorUtils(500, 'Failed to delete legal verbs')
+      if (error instanceof HttpException) throw error
+      throw new HttpException(500, 'Failed to delete legal verbs')
     }
   }
 }

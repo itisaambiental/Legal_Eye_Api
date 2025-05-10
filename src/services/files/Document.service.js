@@ -1,6 +1,6 @@
 import { S3_BUCKET_NAME } from '../../config/variables.config.js'
 import { textractClient } from '../../config/aws.config.js'
-import ErrorUtils from '../../utils/Error.js'
+import HttpException from '../../utils/HttpException.js'
 import {
   StartDocumentAnalysisCommand,
   GetDocumentAnalysisCommand,
@@ -49,7 +49,7 @@ class DocumentService {
       const { JobId } = await textractClient.send(startCommand)
       return JobId
     } catch (error) {
-      throw new ErrorUtils(`Failed to start text extraction for ${fileKey}`)
+      throw new HttpException(`Failed to start text extraction for ${fileKey}`)
     }
   }
 
@@ -65,7 +65,7 @@ class DocumentService {
     let retries = 0
     while (jobStatus === JobStatus.IN_PROGRESS) {
       if (retries >= maxRetries) {
-        throw new ErrorUtils('Textract job timed out')
+        throw new HttpException('Textract job timed out')
       }
       await new Promise(resolve => setTimeout(resolve, secondsWait))
       try {
@@ -73,17 +73,17 @@ class DocumentService {
         const response = await textractClient.send(command)
         jobStatus = response.JobStatus
         if (jobStatus === JobStatus.FAILED) {
-          throw new ErrorUtils('Textract job failed')
+          throw new HttpException('Textract job failed')
         }
       } catch (error) {
-        throw new ErrorUtils('Failed to check job status')
+        throw new HttpException('Failed to check job status')
       }
       retries++
     }
     if (jobStatus === JobStatus.SUCCEEDED) {
       return true
     }
-    throw new ErrorUtils('Unexpected job status')
+    throw new HttpException('Unexpected job status')
   }
 
   /**
@@ -106,7 +106,7 @@ class DocumentService {
         extractedText.push(...textBlocks)
         nextToken = response.NextToken
       } catch (error) {
-        throw new ErrorUtils('Failed to retrieve extracted text')
+        throw new HttpException('Failed to retrieve extracted text')
       }
     } while (nextToken)
     return extractedText.join('\n')

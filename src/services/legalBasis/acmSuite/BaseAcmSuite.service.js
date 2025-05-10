@@ -1,6 +1,6 @@
 import axios from 'axios'
 import { ACM_SUITE_API_URL, ACM_SUITE_EMAIL, ACM_SUITE_PASSWORD } from '../../../config/variables.config.js'
-import ErrorUtils from '../../../utils/Error.js'
+import HttpException from '../../../utils/HttpException.js'
 
 /**
  * BaseAcmSuiteService is responsible for authenticating with the ACM Suite API.
@@ -25,7 +25,7 @@ export class BaseAcmSuiteService {
  * Performs login and sets up request and response interceptors.
  * Automatically attaches Authorization headers and refreshes token if needed.
  * @returns {Promise<void>}
- * @throws {ErrorUtils} If login or token refresh fails.
+ * @throws {HttpException} If login or token refresh fails.
  */
   async auth () {
     const { accessToken, refreshToken } = await this.login()
@@ -65,7 +65,7 @@ export class BaseAcmSuiteService {
             this.refreshingPromise = null
           }
         }
-        throw new ErrorUtils(500, error.response?.data?.message)
+        throw new HttpException(500, error.response?.data?.message)
       }
     )
   }
@@ -73,7 +73,7 @@ export class BaseAcmSuiteService {
   /**
  * Logs in to the ACM Suite API and retrieves access and refresh tokens.
  * @returns {Promise<{ accessToken: string, refreshToken: string }>}
- * @throws {ErrorUtils} If login fails or response is invalid.
+ * @throws {HttpException} If login fails or response is invalid.
  */
   async login () {
     try {
@@ -83,22 +83,22 @@ export class BaseAcmSuiteService {
       })
       const { success, data, message } = response.data
       if (!success) {
-        throw new ErrorUtils(401, message)
+        throw new HttpException(401, message)
       }
       const { access_token: accessToken, refresh_token: refreshToken } = data
       return { accessToken, refreshToken }
     } catch (error) {
       if (error.response?.status === 401) {
-        throw new ErrorUtils(401, error.response?.data?.message)
+        throw new HttpException(401, error.response?.data?.message)
       }
-      throw new ErrorUtils(500, 'Failed to login to ACM Suite')
+      throw new HttpException(500, 'Failed to login to ACM Suite')
     }
   }
 
   /**
  * Refreshes the access token using the stored refresh token.
  * @returns {Promise<{ accessToken: string, refreshToken: string }>}
- * @throws {ErrorUtils} If refresh token is invalid or refresh fails.
+ * @throws {HttpException} If refresh token is invalid or refresh fails.
  */
   async refreshToken () {
     try {
@@ -107,15 +107,15 @@ export class BaseAcmSuiteService {
       })
       const { success, data, message } = response.data
       if (!success) {
-        throw new ErrorUtils(401, message)
+        throw new HttpException(401, message)
       }
       const { access_token: accessToken, refresh_token: refreshToken } = data
       return { accessToken, refreshToken }
     } catch (error) {
       if (error.response?.status === 401) {
-        throw new ErrorUtils(401, error.response?.data?.message)
+        throw new HttpException(401, error.response?.data?.message)
       }
-      throw new ErrorUtils(500, 'Failed to refresh token in ACM Suite')
+      throw new HttpException(500, 'Failed to refresh token in ACM Suite')
     }
   }
 }

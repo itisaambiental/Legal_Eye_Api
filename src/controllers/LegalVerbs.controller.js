@@ -1,6 +1,6 @@
 import LegalVerbsService from '../services/requirements/legalVerbs/legalVerbs.service.js'
 import UserService from '../services/users/User.service.js'
-import ErrorUtils from '../utils/Error.js'
+import HttpException from '../utils/HttpException.js'
 
 /**
  * Controller for legal verbs operations.
@@ -29,7 +29,7 @@ export const createLegalVerb = async (req, res) => {
     })
     return res.status(201).json({ legalVerb })
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({
         message: error.message,
         ...(error.errors && { errors: error.errors })
@@ -56,7 +56,7 @@ export const getLegalVerbs = async (req, res) => {
     const legalVerbs = await LegalVerbsService.getAll()
     return res.status(200).json({ legalVerbs })
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({
         message: error.message,
         ...(error.errors && { errors: error.errors })
@@ -84,7 +84,7 @@ export const getLegalVerbById = async (req, res) => {
     const legalVerb = await LegalVerbsService.getById(id)
     return res.status(200).json({ legalVerb })
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({
         message: error.message,
         ...(error.errors && { errors: error.errors })
@@ -112,7 +112,7 @@ export const getLegalVerbsByName = async (req, res) => {
     const legalVerbs = await LegalVerbsService.getByName(name)
     return res.status(200).json({ legalVerbs })
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({
         message: error.message,
         ...(error.errors && { errors: error.errors })
@@ -140,7 +140,7 @@ export const getLegalVerbsByDescription = async (req, res) => {
     const legalVerbs = await LegalVerbsService.getByDescription(description)
     return res.status(200).json({ legalVerbs })
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({
         message: error.message,
         ...(error.errors && { errors: error.errors })
@@ -168,7 +168,7 @@ export const getLegalVerbsByTranslation = async (req, res) => {
     const legalVerbs = await LegalVerbsService.getByTranslation(translation)
     return res.status(200).json({ legalVerbs })
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({
         message: error.message,
         ...(error.errors && { errors: error.errors })
@@ -201,7 +201,7 @@ export const updateLegalVerb = async (req, res) => {
     })
     return res.status(200).json({ legalVerb })
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({
         message: error.message,
         ...(error.errors && { errors: error.errors })
@@ -233,7 +233,7 @@ export const deleteLegalVerb = async (req, res) => {
       return res.status(500).json({ message: 'Internal Server Error' })
     }
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({
         message: error.message,
         ...(error.errors && { errors: error.errors })
@@ -274,7 +274,7 @@ export const deleteLegalVerbsBatch = async (req, res) => {
       return res.status(500).json({ message: 'Internal Server Error' })
     }
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({
         message: error.message,
         ...(error.errors && { errors: error.errors })

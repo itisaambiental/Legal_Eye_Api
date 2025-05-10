@@ -1,7 +1,7 @@
 import { pool } from '../config/db.config.js'
 import Role from '../models/Roles.model.js'
 import User from '../models/User.model.js'
-import ErrorUtils from '../utils/Error.js'
+import HttpException from '../utils/HttpException.js'
 
 /**
  * Repository class for handling database operations related to Users.
@@ -18,7 +18,7 @@ class UserRepository {
    * @param {number} userData.roleId - ID of the user's role.
    * @param {string} userData.profilePicture - URL of the user's profile picture.
    * @returns {Promise<User>} - The ID of the created user.
-   * @throws {ErrorUtils} - If an error occurs during user creation.
+   * @throws {HttpException} - If an error occurs during user creation.
    */
   static async create (userData) {
     const { name, password, gmail, roleId, profilePicture } = userData
@@ -38,7 +38,7 @@ class UserRepository {
       return user
     } catch (error) {
       console.error('Error creating user:', error)
-      throw new ErrorUtils(500, 'Error creating user in the database')
+      throw new HttpException(500, 'Error creating user in the database')
     }
   }
 
@@ -47,7 +47,7 @@ class UserRepository {
    * @param {string} gmail - User's email address.
    * @param {string} hashedPassword - The new hashed password.
    * @returns {Promise<boolean>} - True if the password was updated, otherwise false.
-   * @throws {ErrorUtils} - If an error occurs during the update.
+   * @throws {HttpException} - If an error occurs during the update.
    */
   static async updateUserPassword (gmail, hashedPassword) {
     const query = `
@@ -64,7 +64,7 @@ class UserRepository {
       return true
     } catch (error) {
       console.error('Error updating user password:', error)
-      throw new ErrorUtils(500, 'Error updating user password')
+      throw new HttpException(500, 'Error updating user password')
     }
   }
 
@@ -78,7 +78,7 @@ class UserRepository {
    * @param {number} [userData.roleId] - New role ID for the user.
    * @param {string} [userData.profilePicture] - New profile picture URL.
    * @returns {Promise<User|null>} - Updated user data without the password or null if not found.
-   * @throws {ErrorUtils} - If an error occurs during the update.
+   * @throws {HttpException} - If an error occurs during the update.
    */
   static async update (id, userData) {
     const { name, password, gmail, roleId, profilePicture } = userData
@@ -108,7 +108,7 @@ class UserRepository {
       return updatedUser
     } catch (error) {
       console.error('Error updating user:', error)
-      throw new ErrorUtils(500, 'Error updating user in the database')
+      throw new HttpException(500, 'Error updating user in the database')
     }
   }
 
@@ -117,7 +117,7 @@ class UserRepository {
    * @param {number} id - User's ID.
    * @param {string} profilePicture - New profile picture URL.
    * @returns {Promise<boolean|User>} - True if the profile picture was updated, otherwise false.
-   * @throws {ErrorUtils} - If an error occurs during the update.
+   * @throws {HttpException} - If an error occurs during the update.
    */
   static async updateProfilePicture (id, profilePicture) {
     const query = `
@@ -135,7 +135,7 @@ class UserRepository {
       return user
     } catch (error) {
       console.error('Error updating user profile picture:', error)
-      throw new ErrorUtils(
+      throw new HttpException(
         500,
         'Error updating profile picture in the database'
       )
@@ -146,7 +146,7 @@ class UserRepository {
    * Deletes a user from the database by their ID.
    * @param {number} id - User's ID to delete.
    * @returns {Promise<boolean>} - True if the user was deleted, otherwise false.
-   * @throws {ErrorUtils} - If an error occurs during the deletion.
+   * @throws {HttpException} - If an error occurs during the deletion.
    */
   static async delete (id) {
     const query = `
@@ -160,7 +160,7 @@ class UserRepository {
       return true
     } catch (error) {
       console.error('Error deleting user:', error)
-      throw new ErrorUtils(500, 'Error deleting user from the database')
+      throw new HttpException(500, 'Error deleting user from the database')
     }
   }
 
@@ -168,7 +168,7 @@ class UserRepository {
    * Deletes multiple users from the database using an array of IDs.
    * @param {Array<number>} userIds - Array of user IDs to delete.
    * @returns {Promise<boolean>} - True if users were deleted, otherwise false.
-   * @throws {ErrorUtils} - If an error occurs during the deletion.
+   * @throws {HttpException} - If an error occurs during the deletion.
    */
   static async deleteBatch (userIds) {
     const query = `
@@ -182,7 +182,7 @@ class UserRepository {
       return true
     } catch (error) {
       console.error('Error deleting users:', error)
-      throw new ErrorUtils(500, 'Error deleting users from the database')
+      throw new HttpException(500, 'Error deleting users from the database')
     }
   }
 
@@ -190,7 +190,7 @@ class UserRepository {
    * Finds a user in the database by their ID.
    * @param {number} id - User's ID to find.
    * @returns {Promise<User|null>} - The found user or a empty array if not found.
-   * @throws {ErrorUtils} - If an error occurs during retrieval.
+   * @throws {HttpException} - If an error occurs during retrieval.
    */
   static async findById (id) {
     const query = `
@@ -210,7 +210,7 @@ class UserRepository {
       )
     } catch (error) {
       console.error('Error retrieving user by ID:', error)
-      throw new ErrorUtils(500, 'Error retrieving user by ID')
+      throw new HttpException(500, 'Error retrieving user by ID')
     }
   }
 
@@ -219,7 +219,7 @@ class UserRepository {
    * Constructs and returns instances of User.
    * @param {Array<number>} userIds - Array of user IDs to find.
    * @returns {Promise<Array<User>>} - Array of User instances with relevant data.
-   * @throws {ErrorUtils} - If an error occurs during retrieval.
+   * @throws {HttpException} - If an error occurs during retrieval.
    */
   static async findByIds (userIds) {
     if (userIds.length === 0) {
@@ -243,7 +243,7 @@ class UserRepository {
       )
     } catch (error) {
       console.error('Error finding users by IDs:', error)
-      throw new ErrorUtils(500, 'Error finding users by IDs')
+      throw new HttpException(500, 'Error finding users by IDs')
     }
   }
 
@@ -251,7 +251,7 @@ class UserRepository {
    * Retrieves users from the database by their role ID.
    * @param {number} roleId - The role ID to filter users by.
    * @returns {Promise<Array<User|null>>} - Array of users with the specified role ID.
-   * @throws {ErrorUtils} - If an error occurs during retrieval.
+   * @throws {HttpException} - If an error occurs during retrieval.
    */
   static async findByRole (roleId) {
     const query = `
@@ -276,7 +276,7 @@ class UserRepository {
       )
     } catch (error) {
       console.error('Error retrieving users by role:', error)
-      throw new ErrorUtils(500, 'Error retrieving users by role')
+      throw new HttpException(500, 'Error retrieving users by role')
     }
   }
 
@@ -284,7 +284,7 @@ class UserRepository {
    * Checks if a user exists in the database by their ID.
    * @param {number} id - User's ID to check.
    * @returns {Promise<boolean>} - True if the user exists, otherwise false.
-   * @throws {ErrorUtils} - If an error occurs during the check.
+   * @throws {HttpException} - If an error occurs during the check.
    */
   static async userExists (id) {
     const query = `
@@ -295,7 +295,7 @@ class UserRepository {
       return rows.length > 0
     } catch (error) {
       console.error('Error checking if user exists by ID:', error)
-      throw new ErrorUtils(500, 'Error checking if user exists by ID')
+      throw new HttpException(500, 'Error checking if user exists by ID')
     }
   }
 
@@ -303,7 +303,7 @@ class UserRepository {
    * Finds a user by Gmail.
    * @param {string} gmail - The Gmail to find.
    * @returns {Promise<User|null>} - The user object if found, or null if not found.
-   * @throws {ErrorUtils} - If an error occurs during the check.
+   * @throws {HttpException} - If an error occurs during the check.
    */
   static async existsByGmail (gmail) {
     const query = `
@@ -326,7 +326,7 @@ class UserRepository {
       )
     } catch (error) {
       console.error('Error finding user by Gmail:', error.message)
-      throw new ErrorUtils(500, 'Error finding user by Gmail')
+      throw new HttpException(500, 'Error finding user by Gmail')
     }
   }
 
@@ -334,7 +334,7 @@ class UserRepository {
    * Retrieves users from the database by their name or email (gmail).
    * @param {string} [nameOrEmail] - The name or email of the user to search for.
    * @returns {Promise<Array<User|null>>} - Array of users matching the search criteria.
-   * @throws {ErrorUtils} - If an error occurs during retrieval.
+   * @throws {HttpException} - If an error occurs during retrieval.
    */
   static async findByNameOrGmail (nameOrEmail) {
     const query = `
@@ -360,7 +360,7 @@ class UserRepository {
       )
     } catch (error) {
       console.error('Error retrieving users by value:', error)
-      throw new ErrorUtils(500, 'Error retrieving users by value')
+      throw new HttpException(500, 'Error retrieving users by value')
     }
   }
 
@@ -369,7 +369,7 @@ class UserRepository {
    * @param {string} gmail - The Gmail to check for existence.
    * @param {number} userId - The user ID to exclude from the check.
    * @returns {Promise<User|null>} - True if a user with the same Gmail (excluding the given ID) exists, false otherwise.
-   * @throws {ErrorUtils} - If an error occurs during the check.
+   * @throws {HttpException} - If an error occurs during the check.
    */
   static async existsByGmailExcludingId (gmail, userId) {
     const query = `
@@ -395,7 +395,7 @@ class UserRepository {
         'Error checking if user exists by Gmail excluding ID:',
         error.message
       )
-      throw new ErrorUtils(
+      throw new HttpException(
         500,
         'Error checking if user exists by Gmail excluding ID'
       )
@@ -405,7 +405,7 @@ class UserRepository {
   /**
    * Retrieves all users from the database.
    * @returns {Promise<Array<User|null>>} - Array of all users.
-   * @throws {ErrorUtils} - If an error occurs during retrieval.
+   * @throws {HttpException} - If an error occurs during retrieval.
    */
   static async findAll () {
     const query = `
@@ -429,14 +429,14 @@ class UserRepository {
       )
     } catch (error) {
       console.error('Error retrieving all users:', error)
-      throw new ErrorUtils(500, 'Error retrieving all users')
+      throw new HttpException(500, 'Error retrieving all users')
     }
   }
 
   /**
    * Retrieves all roles from the database.
    * @returns {Promise<Array<Role|null>>} - Array of all roles.
-   * @throws {ErrorUtils} - If an error occurs during retrieval.
+   * @throws {HttpException} - If an error occurs during retrieval.
    */
 
   static async findAllRoles () {
@@ -449,7 +449,7 @@ class UserRepository {
       return rows.map((role) => new Role(role.id, role.name))
     } catch (error) {
       console.error('Error retrieving all roles:', error)
-      throw new ErrorUtils(500, 'Error retrieving all roles')
+      throw new HttpException(500, 'Error retrieving all roles')
     }
   }
 
@@ -458,7 +458,7 @@ class UserRepository {
    * Its used only for testing.
    * @param {string} gmail - Gmail of the user to exclude from deletion.
    * @returns {Promise<void>}
-   * @throws {ErrorUtils} - If an error occurs during deletion.
+   * @throws {HttpException} - If an error occurs during deletion.
    */
   static async deleteAllExceptByGmail (gmail) {
     const query = `
@@ -468,7 +468,7 @@ class UserRepository {
       await pool.query(query, [gmail])
     } catch (error) {
       console.error('Error deleting all users except one by gmail:', error)
-      throw new ErrorUtils(500, 'Error deleting users from the database')
+      throw new HttpException(500, 'Error deleting users from the database')
     }
   }
   /**
@@ -478,7 +478,7 @@ class UserRepository {
    * @param {string} data.code - The verification code.
    * @param {Date} data.expiresAt - Expiration date of the code.
    * @returns {Promise<void>}
-   * @throws {ErrorUtils} - If an error occurs during insertion.
+   * @throws {HttpException} - If an error occurs during insertion.
    */
 
   static async saveVerificationCode ({ gmail, code, expiresAt }) {
@@ -491,7 +491,7 @@ class UserRepository {
       await pool.query(query, values)
     } catch (error) {
       console.error('Error saving verification code to database:', error)
-      throw new ErrorUtils(500, 'Error saving verification code to database')
+      throw new HttpException(500, 'Error saving verification code to database')
     }
   }
 
@@ -500,7 +500,7 @@ class UserRepository {
    * @param {string} gmail - Gmail associated with the code.
    * @param {string} code - The verification code.
    * @returns {Promise<{ expiresAt: Date } | null>} - The expiration info or null if not found.
-   * @throws {ErrorUtils} - If an error occurs during retrieval.
+   * @throws {HttpException} - If an error occurs during retrieval.
    */
   static async getVerificationCode (gmail, code) {
     const query = `
@@ -515,7 +515,7 @@ class UserRepository {
       return result[0] || null
     } catch (error) {
       console.error('Error retrieving verification code from database:', error)
-      throw new ErrorUtils(
+      throw new HttpException(
         500,
         'Error retrieving verification code from database'
       )

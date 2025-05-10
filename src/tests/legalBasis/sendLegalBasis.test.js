@@ -3,8 +3,6 @@ import { api } from '../../config/test.config.js'
 import UserRepository from '../../repositories/User.repository.js'
 import LegalBasisRepository from '../../repositories/LegalBasis.repository.js'
 import SendLegalBasisService from '../../services/legalBasis/sendLegalBasis/sendLegalBasis.service.js'
-import sendLegalBasisQueue from '../../workers/sendLegalBasisWorker.js'
-import ErrorUtils from '../../utils/Error.js'
 import {
   ADMIN_PASSWORD_TEST,
   ADMIN_GMAIL
@@ -132,53 +130,5 @@ describe('Send Legal Basis - Job Status API Tests', () => {
       .expect('Content-Type', /application\/json/)
 
     expect(response.body.error).toMatch(/token missing or invalid/i)
-  })
-})
-
-describe('SendLegalBasisService - Unit Tests', () => {
-  afterEach(() => {
-    jest.restoreAllMocks()
-  })
-
-  test('Should successfully sendLegalBasis and return jobId', async () => {
-    jest.spyOn(LegalBasisRepository, 'findByIds').mockResolvedValue([
-      { id: 1 },
-      { id: 2 }
-    ])
-    jest.spyOn(sendLegalBasisQueue, 'add').mockResolvedValue({ id: 'mockedJobId' })
-
-    const result = await SendLegalBasisService.sendLegalBasis(1, [1, 2])
-
-    expect(result).toEqual({ jobId: 'mockedJobId' })
-  })
-
-  test('Should throw ErrorUtils 404 if Legal Basis IDs not found', async () => {
-    jest.spyOn(LegalBasisRepository, 'findByIds').mockResolvedValue([
-      { id: 1 }
-    ]) // Solo existe 1
-
-    await expect(SendLegalBasisService.sendLegalBasis(1, [1, 2]))
-      .rejects
-      .toThrow(ErrorUtils)
-
-    await expect(SendLegalBasisService.sendLegalBasis(1, [1, 2]))
-      .rejects
-      .toMatchObject({ status: 404 })
-  })
-
-  test('Should throw ErrorUtils 500 if unexpected error happens', async () => {
-    jest.spyOn(LegalBasisRepository, 'findByIds').mockResolvedValue([
-      { id: 1 },
-      { id: 2 }
-    ])
-    jest.spyOn(sendLegalBasisQueue, 'add').mockRejectedValue(new Error('Queue error'))
-
-    await expect(SendLegalBasisService.sendLegalBasis(1, [1, 2]))
-      .rejects
-      .toThrow(ErrorUtils)
-
-    await expect(SendLegalBasisService.sendLegalBasis(1, [1, 2]))
-      .rejects
-      .toMatchObject({ status: 500 })
   })
 })

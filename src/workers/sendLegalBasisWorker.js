@@ -1,5 +1,5 @@
 import sendLegalBasisQueue from '../queues/sendLegalBasisQueue.js'
-import ErrorUtils from '../utils/Error.js'
+import HttpException from '../utils/HttpException.js'
 import LegalBasisRepository from '../repositories/LegalBasis.repository.js'
 import ArticlesRepository from '../repositories/Articles.repository.js'
 import UserRepository from '../repositories/User.repository.js'
@@ -33,7 +33,7 @@ sendLegalBasisQueue.process(CONCURRENCY, async (job, done) => {
   const { userId, legalBasisIds } = job.data
   try {
     const currentJob = await sendLegalBasisQueue.getJob(job.id)
-    if (!currentJob) throw new ErrorUtils(404, 'Job not found')
+    if (!currentJob) throw new HttpException(404, 'Job not found')
 
     let totalTasks = 0
     let completedTasks = 0
@@ -170,8 +170,8 @@ sendLegalBasisQueue.process(CONCURRENCY, async (job, done) => {
     } catch (notifyErr) {
       console.error('Error sending total failure notification:', notifyErr)
     }
-    if (error instanceof ErrorUtils) return done(error)
-    done(new ErrorUtils(500, 'Unexpected error sending legal basis'))
+    if (error instanceof HttpException) return done(error)
+    done(new HttpException(500, 'Unexpected error sending legal basis'))
   }
 })
 

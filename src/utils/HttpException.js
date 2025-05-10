@@ -1,10 +1,10 @@
 /**
- * Custom error class for handling application-specific errors.
+ * Custom error class for handling HTTP exceptions in the application.
  * Extends the built-in Error class to include HTTP status codes and additional error details.
  */
-class ErrorUtils extends Error {
+class HttpException extends Error {
   /**
-   * Constructs an ErrorUtils instance.
+   * Constructs an HttpException instance.
    * @param {number} status - The HTTP status code.
    * @param {string} message - The error message.
    * @param {Array<Object>|null} [errors=null] - Additional error details, if any.
@@ -16,4 +16,4 @@ class ErrorUtils extends Error {
   }
 }
 
-export default ErrorUtils
+export default HttpException

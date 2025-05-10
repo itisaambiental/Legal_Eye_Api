@@ -1,4 +1,4 @@
-import ErrorUtils from '../../utils/Error.js'
+import HttpException from '../../utils/HttpException.js'
 
 /**
  * @typedef {Object} JobStateResponse
@@ -50,7 +50,7 @@ class QueueService {
    * Fetches the state of a job and maps it to a human-readable response.
    * @param {import('bull').Job} job - The Bull job instance.
    * @returns {Promise<JobStateResponse>} - An object containing status and data (message and additionalData).
-   * @throws {ErrorUtils} - If an error occurs while fetching the job state.
+   * @throws {HttpException} - If an error occurs while fetching the job state.
    */
   static async getJobState (job) {
     try {
@@ -66,7 +66,7 @@ class QueueService {
         }
       }
     } catch (error) {
-      throw new ErrorUtils(500, 'Failed to retrieve job state')
+      throw new HttpException(500, 'Failed to retrieve job state')
     }
   }
 
@@ -75,14 +75,14 @@ class QueueService {
    * @param {import('bull').Queue} queue - The Bull queue instance.
    * @param {Array<string>} states - Array of job states to retrieve (e.g., ['waiting', 'active']).
    * @returns {Promise<Array<import('bull').Job>>} - Array of jobs in the specified states.
-   * @throws {ErrorUtils} - If an error occurs while retrieving jobs.
+   * @throws {HttpException} - If an error occurs while retrieving jobs.
    */
   static async getJobsByStates (queue, states = []) {
     try {
       const jobs = await queue.getJobs(states)
       return jobs
     } catch (error) {
-      throw new ErrorUtils(500, 'Failed to retrieve jobs by states')
+      throw new HttpException(500, 'Failed to retrieve jobs by states')
     }
   }
 
@@ -91,7 +91,7 @@ class QueueService {
  * Jobs in 'completed' or 'failed' states cannot be modified.
  * @param {import('bull').Job} job - The Bull job instance.
  * @returns {Promise<boolean>} - True if the job was successfully canceled.
- * @throws {ErrorUtils} - If the job cannot be canceled or removed.
+ * @throws {HttpException} - If the job cannot be canceled or removed.
  */
   static async cancelJob (job) {
     try {
@@ -99,7 +99,7 @@ class QueueService {
       const isCompleted = await job.isCompleted()
       const isFailed = await job.isFailed()
       if (isCompleted || isFailed) {
-        throw new ErrorUtils(
+        throw new HttpException(
           400,
           `Job cannot be canceled. Jobs in '${isCompleted ? 'completed' : 'failed'}' state cannot be modified.`
         )
@@ -112,10 +112,10 @@ class QueueService {
       }
       return true
     } catch (error) {
-      if (error instanceof ErrorUtils) {
+      if (error instanceof HttpException) {
         throw error
       }
-      throw new ErrorUtils(500, 'Failed to cancel job')
+      throw new HttpException(500, 'Failed to cancel job')
     }
   }
 }

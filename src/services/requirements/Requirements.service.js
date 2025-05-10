@@ -2,7 +2,7 @@ import RequirementRepository from '../../repositories/Requirements.repository.js
 import requirementSchema from '../../schemas/requirement.schema.js'
 import SubjectsRepository from '../../repositories/Subject.repository.js'
 import AspectsRepository from '../../repositories/Aspects.repository.js'
-import ErrorUtils from '../../utils/Error.js'
+import HttpException from '../../utils/HttpException.js'
 import { z } from 'zod'
 
 /**
@@ -82,7 +82,7 @@ class RequirementService {
    * @param {string} requirement.specifyEvidence - The description of the specific evidence.
    * @param {string} requirement.periodicity - 'Anual', etc.
    * @returns {Promise<Requirement>} - The created requirement.
-   * @throws {ErrorUtils} - If an error occurs during validation or creation.
+   * @throws {HttpException} - If an error occurs during validation or creation.
    */
   static async create (requirement) {
     try {
@@ -91,7 +91,7 @@ class RequirementService {
         parsedRequirement.subjectId
       )
       if (!subjectExists) {
-        throw new ErrorUtils(404, 'Subject not found')
+        throw new HttpException(404, 'Subject not found')
       }
       const validAspectIds = await AspectsRepository.findByIds(
         parsedRequirement.aspectsIds
@@ -100,28 +100,28 @@ class RequirementService {
         const notFoundIds = parsedRequirement.aspectsIds.filter(
           (id) => !validAspectIds.includes(id)
         )
-        throw new ErrorUtils(404, 'Aspects not found for IDs', { notFoundIds })
+        throw new HttpException(404, 'Aspects not found for IDs', { notFoundIds })
       }
       const requirementExistsByNumber =
         await RequirementRepository.existsByRequirementNumber(
           parsedRequirement.requirementNumber
         )
       if (requirementExistsByNumber) {
-        throw new ErrorUtils(409, 'Requirement number already exists')
+        throw new HttpException(409, 'Requirement number already exists')
       }
       const requirementExistsByName =
         await RequirementRepository.existsByRequirementName(
           parsedRequirement.requirementName
         )
       if (requirementExistsByName) {
-        throw new ErrorUtils(409, 'Requirement name already exists')
+        throw new HttpException(409, 'Requirement name already exists')
       }
       const createdRequirement = await RequirementRepository.create(
         parsedRequirement
       )
       return RequirementService._formatRequirementWithSpecificValues(createdRequirement)
     } catch (error) {
-      if (error instanceof ErrorUtils) {
+      if (error instanceof HttpException) {
         throw error
       }
       if (error instanceof z.ZodError) {
@@ -129,16 +129,16 @@ class RequirementService {
           field: e.path[0],
           message: e.message
         }))
-        throw new ErrorUtils(400, 'Validation failed', validationErrors)
+        throw new HttpException(400, 'Validation failed', validationErrors)
       }
-      throw new ErrorUtils(500, 'Unexpected error during requirement creation')
+      throw new HttpException(500, 'Unexpected error during requirement creation')
     }
   }
 
   /**
  * Retrieves all requirements from the database.
  * @returns {Promise<Array<Requirement>>} - A list of all requirements.
- * @throws {ErrorUtils} - If an error occurs during retrieval.
+ * @throws {HttpException} - If an error occurs during retrieval.
  */
   static async getAll () {
     try {
@@ -148,10 +148,10 @@ class RequirementService {
       }
       return this._formatRequirementsListWithSpecificValues(requirements)
     } catch (error) {
-      if (error instanceof ErrorUtils) {
+      if (error instanceof HttpException) {
         throw error
       }
-      throw new ErrorUtils(500, 'Failed to retrieve requirement records')
+      throw new HttpException(500, 'Failed to retrieve requirement records')
     }
   }
 
@@ -159,20 +159,20 @@ class RequirementService {
    * Retrieves a requirement entry by its ID.
    * @param {number} id - The ID of the requirement to retrieve.
    * @returns {Promise<Requirement>} - The requirement entry.
-   * @throws {ErrorUtils} - If an error occurs during retrieval.
+   * @throws {HttpException} - If an error occurs during retrieval.
    */
   static async getById (id) {
     try {
       const requirement = await RequirementRepository.findById(id)
       if (!requirement) {
-        throw new ErrorUtils(404, 'Requirement not found')
+        throw new HttpException(404, 'Requirement not found')
       }
       return this._formatRequirementWithSpecificValues(requirement)
     } catch (error) {
-      if (error instanceof ErrorUtils) {
+      if (error instanceof HttpException) {
         throw error
       }
-      throw new ErrorUtils(500, 'Failed to retrieve requirement record by ID')
+      throw new HttpException(500, 'Failed to retrieve requirement record by ID')
     }
   }
 
@@ -180,7 +180,7 @@ class RequirementService {
    * Retrieves requirements by their requirement number or part of it.
    * @param {string} requirementNumber - The requirement number or partial match.
    * @returns {Promise<Array<Requirement>>} - A list of matching requirements.
-   * @throws {ErrorUtils} - If an error occurs during retrieval.
+   * @throws {HttpException} - If an error occurs during retrieval.
    */
   static async getByNumber (requirementNumber) {
     try {
@@ -192,10 +192,10 @@ class RequirementService {
       }
       return this._formatRequirementsListWithSpecificValues(requirements)
     } catch (error) {
-      if (error instanceof ErrorUtils) {
+      if (error instanceof HttpException) {
         throw error
       }
-      throw new ErrorUtils(500, 'Failed to retrieve requirements by number')
+      throw new HttpException(500, 'Failed to retrieve requirements by number')
     }
   }
 
@@ -203,7 +203,7 @@ class RequirementService {
    * Retrieves requirements by their name or part of it.
    * @param {string} requirementName - The requirement name or partial match.
    * @returns {Promise<Array<Requirement>>} - A list of matching requirements.
-   * @throws {ErrorUtils} - If an error occurs during retrieval.
+   * @throws {HttpException} - If an error occurs during retrieval.
    */
   static async getByName (requirementName) {
     try {
@@ -215,10 +215,10 @@ class RequirementService {
       }
       return this._formatRequirementsListWithSpecificValues(requirements)
     } catch (error) {
-      if (error instanceof ErrorUtils) {
+      if (error instanceof HttpException) {
         throw error
       }
-      throw new ErrorUtils(500, 'Failed to retrieve requirements by name')
+      throw new HttpException(500, 'Failed to retrieve requirements by name')
     }
   }
 
@@ -226,13 +226,13 @@ class RequirementService {
    * Retrieves requirements by a specific subject.
    * @param {number} subjectId - The subject ID to filter by.
    * @returns {Promise<Array<Requirement>>} - A list of requirements filtered by the subject.
-   * @throws {ErrorUtils} - If an error occurs during retrieval.
+   * @throws {HttpException} - If an error occurs during retrieval.
    */
   static async getBySubject (subjectId) {
     try {
       const subject = await SubjectsRepository.findById(subjectId)
       if (!subject) {
-        throw new ErrorUtils(404, 'Subject not found')
+        throw new HttpException(404, 'Subject not found')
       }
       const requirements = await RequirementRepository.findBySubject(subjectId)
       if (!requirements) {
@@ -240,10 +240,10 @@ class RequirementService {
       }
       return this._formatRequirementsListWithSpecificValues(requirements)
     } catch (error) {
-      if (error instanceof ErrorUtils) {
+      if (error instanceof HttpException) {
         throw error
       }
-      throw new ErrorUtils(500, 'Failed to retrieve requirements by subject')
+      throw new HttpException(500, 'Failed to retrieve requirements by subject')
     }
   }
 
@@ -252,20 +252,20 @@ class RequirementService {
    * @param {number} subjectId - The subject ID to filter by.
    * @param {Array<number>} [aspectIds] - Optional array of aspect IDs to further filter by.
    * @returns {Promise<Array<Requirement>>} - A list of requirements matching the filters.
-   * @throws {ErrorUtils} - If an error occurs during retrieval.
+   * @throws {HttpException} - If an error occurs during retrieval.
    */
   static async getBySubjectAndAspects (subjectId, aspectIds = []) {
     try {
       const subject = await SubjectsRepository.findById(subjectId)
       if (!subject) {
-        throw new ErrorUtils(404, 'Subject not found')
+        throw new HttpException(404, 'Subject not found')
       }
       const existingAspects = await AspectsRepository.findByIds(aspectIds)
       if (existingAspects.length !== aspectIds.length) {
         const notFoundIds = aspectIds.filter(
           (id) => !existingAspects.some((aspect) => aspect.id === id)
         )
-        throw new ErrorUtils(404, 'Aspects not found for IDs', { notFoundIds })
+        throw new HttpException(404, 'Aspects not found for IDs', { notFoundIds })
       }
       const requirements = await RequirementRepository.findBySubjectAndAspects(
         subjectId,
@@ -276,10 +276,10 @@ class RequirementService {
       }
       return this._formatRequirementsListWithSpecificValues(requirements)
     } catch (error) {
-      if (error instanceof ErrorUtils) {
+      if (error instanceof HttpException) {
         throw error
       }
-      throw new ErrorUtils(
+      throw new HttpException(
         500,
         'Failed to retrieve requirements by subject and aspects'
       )
@@ -290,7 +290,7 @@ class RequirementService {
    * Retrieves requirements by a flexible full-text match in their mandatory description.
    * @param {string} description - The description or part of the description to search for.
    * @returns {Promise<Array<Requirement>>} - A list of requirements matching the description.
-   * @throws {ErrorUtils} - If an error occurs during retrieval.
+   * @throws {HttpException} - If an error occurs during retrieval.
    */
   static async getByMandatoryDescription (description) {
     try {
@@ -301,10 +301,10 @@ class RequirementService {
       }
       return this._formatRequirementsListWithSpecificValues(requirements)
     } catch (error) {
-      if (error instanceof ErrorUtils) {
+      if (error instanceof HttpException) {
         throw error
       }
-      throw new ErrorUtils(
+      throw new HttpException(
         500,
         'Failed to retrieve requirements by mandatory description'
       )
@@ -315,7 +315,7 @@ class RequirementService {
    * Retrieves requirements by a flexible full-text match in their complementary description.
    * @param {string} description - The description or part of the description to search for.
    * @returns {Promise<Array<Requirement>>} - A list of requirements matching the complementary description.
-   * @throws {ErrorUtils} - If an error occurs during retrieval.
+   * @throws {HttpException} - If an error occurs during retrieval.
    */
   static async getByComplementaryDescription (description) {
     try {
@@ -326,10 +326,10 @@ class RequirementService {
       }
       return this._formatRequirementsListWithSpecificValues(requirements)
     } catch (error) {
-      if (error instanceof ErrorUtils) {
+      if (error instanceof HttpException) {
         throw error
       }
-      throw new ErrorUtils(
+      throw new HttpException(
         500,
         'Failed to retrieve requirements by complementary description'
       )
@@ -340,7 +340,7 @@ class RequirementService {
    * Retrieves requirements by a flexible full-text match in their mandatory sentences.
    * @param {string} sentence - The sentence or part of the sentence to search for.
    * @returns {Promise<Array<Requirement>>} - A list of requirements matching the mandatory sentence.
-   * @throws {ErrorUtils} - If an error occurs during retrieval.
+   * @throws {HttpException} - If an error occurs during retrieval.
    */
   static async getByMandatorySentences (sentence) {
     try {
@@ -352,10 +352,10 @@ class RequirementService {
       }
       return this._formatRequirementsListWithSpecificValues(requirements)
     } catch (error) {
-      if (error instanceof ErrorUtils) {
+      if (error instanceof HttpException) {
         throw error
       }
-      throw new ErrorUtils(
+      throw new HttpException(
         500,
         'Failed to retrieve requirements by mandatory sentences'
       )
@@ -366,7 +366,7 @@ class RequirementService {
    * Retrieves requirements by a flexible full-text match in their complementary sentences.
    * @param {string} sentence - The sentence or part of the sentence to search for.
    * @returns {Promise<Array<Requirement>>} - A list of requirements matching the complementary sentence.
-   * @throws {ErrorUtils} - If an error occurs during retrieval.
+   * @throws {HttpException} - If an error occurs during retrieval.
    */
   static async getByComplementarySentences (sentence) {
     try {
@@ -377,10 +377,10 @@ class RequirementService {
       }
       return this._formatRequirementsListWithSpecificValues(requirements)
     } catch (error) {
-      if (error instanceof ErrorUtils) {
+      if (error instanceof HttpException) {
         throw error
       }
-      throw new ErrorUtils(
+      throw new HttpException(
         500,
         'Failed to retrieve requirements by complementary sentences'
       )
@@ -391,7 +391,7 @@ class RequirementService {
    * Retrieves requirements by a flexible full-text match in their mandatory keywords.
    * @param {string} keyword - The keyword or part of the keyword to search for.
    * @returns {Promise<Array<Requirement>>} - A list of requirements matching the mandatory keyword.
-   * @throws {ErrorUtils} - If an error occurs during retrieval.
+   * @throws {HttpException} - If an error occurs during retrieval.
    */
   static async getByMandatoryKeywords (keyword) {
     try {
@@ -403,10 +403,10 @@ class RequirementService {
       }
       return this._formatRequirementsListWithSpecificValues(requirements)
     } catch (error) {
-      if (error instanceof ErrorUtils) {
+      if (error instanceof HttpException) {
         throw error
       }
-      throw new ErrorUtils(
+      throw new HttpException(
         500,
         'Failed to retrieve requirements by mandatory keywords'
       )
@@ -417,7 +417,7 @@ class RequirementService {
    * Retrieves requirements by a flexible full-text match in their complementary keywords.
    * @param {string} keyword - The keyword or part of the keyword to search for.
    * @returns {Promise<Array<Requirement>>} - A list of requirements matching the complementary keyword.
-   * @throws {ErrorUtils} - If an error occurs during retrieval.
+   * @throws {HttpException} - If an error occurs during retrieval.
    */
   static async getByComplementaryKeywords (keyword) {
     try {
@@ -427,10 +427,10 @@ class RequirementService {
       }
       return this._formatRequirementsListWithSpecificValues(requirements)
     } catch (error) {
-      if (error instanceof ErrorUtils) {
+      if (error instanceof HttpException) {
         throw error
       }
-      throw new ErrorUtils(
+      throw new HttpException(
         500,
         'Failed to retrieve requirements by complementary keywords'
       )
@@ -441,7 +441,7 @@ class RequirementService {
    * Retrieves requirements filtered by a specific condition.
    * @param {string} condition - The condition type ('Crítica', 'Operativa', 'Recomendación', 'Pendiente') to filter by.
    * @returns {Promise<Array<Requirement>>} - A list of Requirement instances matching the condition.
-   * @throws {ErrorUtils} - If an error occurs during retrieval.
+   * @throws {HttpException} - If an error occurs during retrieval.
    */
   static async getByCondition (condition) {
     try {
@@ -453,10 +453,10 @@ class RequirementService {
       }
       return this._formatRequirementsListWithSpecificValues(requirements)
     } catch (error) {
-      if (error instanceof ErrorUtils) {
+      if (error instanceof HttpException) {
         throw error
       }
-      throw new ErrorUtils(500, 'Failed to retrieve requirements by condition')
+      throw new HttpException(500, 'Failed to retrieve requirements by condition')
     }
   }
 
@@ -464,7 +464,7 @@ class RequirementService {
    * Retrieves requirements filtered by a specific evidence type.
    * @param {string} evidence - The evidence type ('Trámite', 'Registro', 'Específico', 'Documento') to filter by.
    * @returns {Promise<Array<Requirement>>} - A list of Requirement instances matching the evidence type.
-   * @throws {ErrorUtils} - If an error occurs during retrieval.
+   * @throws {HttpException} - If an error occurs during retrieval.
    */
   static async getByEvidence (evidence) {
     try {
@@ -474,10 +474,10 @@ class RequirementService {
       }
       return this._formatRequirementsListWithSpecificValues(requirements)
     } catch (error) {
-      if (error instanceof ErrorUtils) {
+      if (error instanceof HttpException) {
         throw error
       }
-      throw new ErrorUtils(
+      throw new HttpException(
         500,
         'Failed to retrieve requirements by evidence type'
       )
@@ -488,7 +488,7 @@ class RequirementService {
    * Retrieves requirements filtered by a specific periodicity.
    * @param {string} periodicity - The periodicity ('Anual', '2 años', 'Por evento', 'Única vez') to filter by.
    * @returns {Promise<Array<Requirement>>} - A list of Requirement instances matching the periodicity.
-   * @throws {ErrorUtils} - If an error occurs during retrieval.
+   * @throws {HttpException} - If an error occurs during retrieval.
    */
   static async getByPeriodicity (periodicity) {
     try {
@@ -500,10 +500,10 @@ class RequirementService {
       }
       return this._formatRequirementsListWithSpecificValues(requirements)
     } catch (error) {
-      if (error instanceof ErrorUtils) {
+      if (error instanceof HttpException) {
         throw error
       }
-      throw new ErrorUtils(
+      throw new HttpException(
         500,
         'Failed to retrieve requirements by periodicity'
       )
@@ -531,7 +531,7 @@ class RequirementService {
    * @param {string} [requirement.periodicity] - The updated periodicity (optional).
    * @param {string} requirement.specifyEvidence - The description of the specific evidence (optional).
    * @returns {Promise<Requirement>} - The updated requirement.
-   * @throws {ErrorUtils} - If an error occurs during validation or update.
+   * @throws {HttpException} - If an error occurs during validation or update.
    */
   static async updateById (requirementId, requirement) {
     try {
@@ -540,14 +540,14 @@ class RequirementService {
         requirementId
       )
       if (!existingRequirement) {
-        throw new ErrorUtils(404, 'Requirement not found')
+        throw new HttpException(404, 'Requirement not found')
       }
       if (parsedRequirement.subjectId) {
         const subjectExists = await SubjectsRepository.findById(
           parsedRequirement.subjectId
         )
         if (!subjectExists) {
-          throw new ErrorUtils(404, 'Subject not found')
+          throw new HttpException(404, 'Subject not found')
         }
       }
       const validAspectIds = await AspectsRepository.findByIds(
@@ -557,7 +557,7 @@ class RequirementService {
         const notFoundIds = parsedRequirement.aspectsIds.filter(
           (id) => !validAspectIds.includes(id)
         )
-        throw new ErrorUtils(404, 'Aspects not found for IDs', { notFoundIds })
+        throw new HttpException(404, 'Aspects not found for IDs', { notFoundIds })
       }
       if (parsedRequirement.requirementNumber) {
         const requirementExistsByNumber =
@@ -566,7 +566,7 @@ class RequirementService {
             requirementId
           )
         if (requirementExistsByNumber) {
-          throw new ErrorUtils(409, 'Requirement number already exists')
+          throw new HttpException(409, 'Requirement number already exists')
         }
       }
       if (parsedRequirement.requirementName) {
@@ -576,7 +576,7 @@ class RequirementService {
             requirementId
           )
         if (requirementExistsByName) {
-          throw new ErrorUtils(409, 'Requirement name already exists')
+          throw new HttpException(409, 'Requirement name already exists')
         }
       }
       const updatedRequirement = await RequirementRepository.update(
@@ -585,7 +585,7 @@ class RequirementService {
       )
       return RequirementService._formatRequirementWithSpecificValues(updatedRequirement)
     } catch (error) {
-      if (error instanceof ErrorUtils) {
+      if (error instanceof HttpException) {
         throw error
       }
       if (error instanceof z.ZodError) {
@@ -593,9 +593,9 @@ class RequirementService {
           field: e.path[0],
           message: e.message
         }))
-        throw new ErrorUtils(400, 'Validation failed', validationErrors)
+        throw new HttpException(400, 'Validation failed', validationErrors)
       }
-      throw new ErrorUtils(500, 'Unexpected error during requirement update')
+      throw new HttpException(500, 'Unexpected error during requirement update')
     }
   }
 
@@ -603,7 +603,7 @@ class RequirementService {
    * Deletes a requirement by ID.
    * @param {number} requirementId - The ID of the requirement to delete.
    * @returns {Promise<{ success: boolean }>} - An object indicating whether the deletion was successful.
-   * @throws {ErrorUtils} - If an error occurs during deletion.
+   * @throws {HttpException} - If an error occurs during deletion.
    */
   static async deleteById (requirementId) {
     try {
@@ -611,20 +611,20 @@ class RequirementService {
         requirementId
       )
       if (!existingRequirement) {
-        throw new ErrorUtils(404, 'Requirement not found')
+        throw new HttpException(404, 'Requirement not found')
       }
       const requirementDeleted = await RequirementRepository.delete(
         requirementId
       )
       if (!requirementDeleted) {
-        throw new ErrorUtils(404, 'Requirement not found')
+        throw new HttpException(404, 'Requirement not found')
       }
       return { success: true }
     } catch (error) {
-      if (error instanceof ErrorUtils) {
+      if (error instanceof HttpException) {
         throw error
       }
-      throw new ErrorUtils(500, 'Unexpected error during requirement deletion')
+      throw new HttpException(500, 'Unexpected error during requirement deletion')
     }
   }
 
@@ -632,7 +632,7 @@ class RequirementService {
  * Deletes multiple requirements by their IDs.
  * @param {Array<number>} requirementIds - Array of requirement IDs to delete.
  * @returns {Promise<{ success: boolean }>} - An object indicating whether the deletion was successful.
- * @throws {ErrorUtils} - If requirements not found, have active jobs, or deletion fails.
+ * @throws {HttpException} - If requirements not found, have active jobs, or deletion fails.
  */
   static async deleteBatch (requirementIds) {
     try {
@@ -641,18 +641,18 @@ class RequirementService {
         const notFoundIds = requirementIds.filter(
           (id) => !requirements.some((requirement) => requirement.id === id)
         )
-        throw new ErrorUtils(404, 'Requirements not found for IDs', { notFoundIds })
+        throw new HttpException(404, 'Requirements not found for IDs', { notFoundIds })
       }
       const requirementsDeleted = await RequirementRepository.deleteBatch(requirementIds)
       if (!requirementsDeleted) {
-        throw new ErrorUtils(404, 'Requirements not found')
+        throw new HttpException(404, 'Requirements not found')
       }
       return { success: true }
     } catch (error) {
-      if (error instanceof ErrorUtils) {
+      if (error instanceof HttpException) {
         throw error
       }
-      throw new ErrorUtils(500, 'Unexpected error during batch deletion of Requirements')
+      throw new HttpException(500, 'Unexpected error during batch deletion of Requirements')
     }
   }
 }

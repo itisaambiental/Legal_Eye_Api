@@ -1,4 +1,4 @@
-import ErrorUtils from '../utils/Error.js'
+import HttpException from '../utils/HttpException.js'
 import UserService from '../services/users/User.service.js'
 import SendLegalBasisService from '../services/legalBasis/sendLegalBasis/sendLegalBasis.service.js'
 
@@ -37,7 +37,7 @@ export const sendLegalBasis = async (req, res) => {
     )
     return res.status(201).json({ jobId })
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({
         message: error.message,
         ...(error.errors && { errors: error.errors })
@@ -67,7 +67,7 @@ export const getSendLegalBasisJobStatus = async (req, res) => {
     )
     return res.status(jobStatus.status).json(jobStatus.data)
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({
         message: error.message,
         ...(error.errors && { errors: error.errors })

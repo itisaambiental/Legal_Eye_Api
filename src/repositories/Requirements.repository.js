@@ -1,5 +1,5 @@
 import { pool } from '../config/db.config.js'
-import ErrorUtils from '../utils/Error.js'
+import HttpException from '../utils/HttpException.js'
 import Requirement from '../models/Requirement.model.js'
 
 /**
@@ -24,7 +24,7 @@ class RequirementRepository {
  * @param {string} requirement.specifyEvidence
  * @param {string} requirement.periodicity
  * @returns {Promise<Requirement>}
- * @throws {ErrorUtils}
+ * @throws {HttpException}
  */
   static async create (requirement) {
     const {
@@ -88,14 +88,14 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       return createdRequirement
     } catch (error) {
       console.error('Error creating requirement:', error.message)
-      throw new ErrorUtils(500, 'Error creating requirement in the database')
+      throw new HttpException(500, 'Error creating requirement in the database')
     }
   }
 
   /**
  * Retrieves all requirements from the database along with their subjects and associated aspects.
  * @returns {Promise<Array<Requirement|null>>} - A list of all requirements.
- * @throws {ErrorUtils} - If an error occurs during retrieval.
+ * @throws {HttpException} - If an error occurs during retrieval.
  */
   static async findAll () {
     const query = `
@@ -183,7 +183,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       })
     } catch (error) {
       console.error('Error retrieving all requirements:', error.message)
-      throw new ErrorUtils(500, 'Error retrieving all requirements from the database')
+      throw new HttpException(500, 'Error retrieving all requirements from the database')
     }
   }
 
@@ -191,7 +191,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
  * Checks if a requirement exists with the given requirement number.
  * @param {string} requirementNumber - The requirement number to check for existence.
  * @returns {Promise<boolean>} - True if a requirement with the same requirement number exists, false otherwise.
- * @throws {ErrorUtils} - If an error occurs during the check.
+ * @throws {HttpException} - If an error occurs during the check.
  */
   static async existsByRequirementNumber (requirementNumber) {
     const query = `
@@ -205,7 +205,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       return rows.length > 0
     } catch (error) {
       console.error('Error checking if requirement number exists:', error.message)
-      throw new ErrorUtils(500, 'Error checking if requirement number exists')
+      throw new HttpException(500, 'Error checking if requirement number exists')
     }
   }
 
@@ -213,7 +213,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
    * Checks if a requirement exists with the given name.
    * @param {string} requirementName - The requirement name to check for existence.
    * @returns {Promise<boolean>} - True if a requirement with the same name exists, false otherwise.
-   * @throws {ErrorUtils} - If an error occurs during the check.
+   * @throws {HttpException} - If an error occurs during the check.
    */
   static async existsByRequirementName (requirementName) {
     const query = `
@@ -227,7 +227,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       return rows.length > 0
     } catch (error) {
       console.error('Error checking if requirement exists:', error.message)
-      throw new ErrorUtils(500, 'Error checking if requirement exists')
+      throw new HttpException(500, 'Error checking if requirement exists')
     }
   }
 
@@ -235,7 +235,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
  * Retrieves a requirement record by its ID, including its subject and all associated aspects.
  * @param {number} requirementId - The ID of the requirement to retrieve.
  * @returns {Promise<Requirement|null>} - The requirement record or null if not found.
- * @throws {ErrorUtils} - If an error occurs during retrieval.
+ * @throws {HttpException} - If an error occurs during retrieval.
  */
   static async findById (requirementId) {
     const query = `
@@ -300,7 +300,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       )
     } catch (error) {
       console.error('Error retrieving requirement by ID:', error.message)
-      throw new ErrorUtils(500, 'Error retrieving requirement by ID')
+      throw new HttpException(500, 'Error retrieving requirement by ID')
     }
   }
 
@@ -308,7 +308,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
  * Finds multiple requirements by their IDs.
  * @param {Array<number>} requirementIds - Array of requirement IDs to find.
  * @returns {Promise<Requirement[]>} - Array of found requirement objects.
- * @throws {ErrorUtils} - If an error occurs during retrieval.
+ * @throws {HttpException} - If an error occurs during retrieval.
  */
   static async findByIds (requirementIds) {
     if (requirementIds.length === 0) return []
@@ -399,7 +399,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       })
     } catch (error) {
       console.error('Error finding requirements by IDs:', error.message)
-      throw new ErrorUtils(500, 'Error retrieving requirements by IDs from the database')
+      throw new HttpException(500, 'Error retrieving requirements by IDs from the database')
     }
   }
 
@@ -408,7 +408,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
  * including their subjects and associated aspects.
  * @param {string} requirementNumber - The number or part of the number of the requirement to retrieve.
  * @returns {Promise<Array<Requirement|null>>} - A list of matching requirements.
- * @throws {ErrorUtils} - If an error occurs during retrieval.
+ * @throws {HttpException} - If an error occurs during retrieval.
  */
   static async findByNumber (requirementNumber) {
     const query = `
@@ -497,7 +497,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       })
     } catch (error) {
       console.error('Error retrieving requirements by number:', error.message)
-      throw new ErrorUtils(500, 'Error retrieving requirements by number')
+      throw new HttpException(500, 'Error retrieving requirements by number')
     }
   }
 
@@ -505,7 +505,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
  * Retrieves all requirements that match the given name, including their subjects and associated aspects.
  * @param {string} requirementName - The name or part of the name of the requirement to retrieve.
  * @returns {Promise<Array<Requirement|null>>} - A list of requirements matching the name.
- * @throws {ErrorUtils} - If an error occurs during retrieval.
+ * @throws {HttpException} - If an error occurs during retrieval.
  */
   static async findByName (requirementName) {
     const query = `
@@ -594,7 +594,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       })
     } catch (error) {
       console.error('Error retrieving requirements by name:', error.message)
-      throw new ErrorUtils(500, 'Error retrieving requirements by name')
+      throw new HttpException(500, 'Error retrieving requirements by name')
     }
   }
 
@@ -602,7 +602,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
  * Retrieves all requirements filtered by a specific subject, including their aspects.
  * @param {number} subjectId - The subject ID to filter by.
  * @returns {Promise<Array<Requirement>|null>} - A list of requirements filtered by the subject, or null if no records are found.
- * @throws {ErrorUtils} - If an error occurs during retrieval.
+ * @throws {HttpException} - If an error occurs during retrieval.
  */
   static async findBySubject (subjectId) {
     const query = `
@@ -690,7 +690,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       )
     } catch (error) {
       console.error('Error retrieving requirements by subject:', error.message)
-      throw new ErrorUtils(500, 'Error retrieving requirements by subject')
+      throw new HttpException(500, 'Error retrieving requirements by subject')
     }
   }
 
@@ -700,7 +700,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
  * @param {number} subjectId - The subject ID to filter by.
  * @param {Array<number>} [aspectIds] - Optional array of aspect IDs to further filter by.
  * @returns {Promise<Array<Requirement>|null>} - A list of requirements matching the filters, or null if none found.
- * @throws {ErrorUtils} - If an error occurs during retrieval.
+ * @throws {HttpException} - If an error occurs during retrieval.
  */
   static async findBySubjectAndAspects (subjectId, aspectIds = []) {
     try {
@@ -806,7 +806,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       )
     } catch (error) {
       console.error('Error retrieving requirements by subject and aspects:', error.message)
-      throw new ErrorUtils(500, 'Error retrieving requirements by subject and aspects')
+      throw new HttpException(500, 'Error retrieving requirements by subject and aspects')
     }
   }
 
@@ -814,7 +814,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
  * Retrieves requirements by a flexible full-text match in their mandatory description.
  * @param {string} description - The description or part of the description to search for.
  * @returns {Promise<Array<Requirement>|null>} - A list of Requirement instances matching the description.
- * @throws {ErrorUtils} - If an error occurs during retrieval.
+ * @throws {HttpException} - If an error occurs during retrieval.
  */
   static async findByMandatoryDescription (description) {
     const query = `
@@ -901,7 +901,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       )
     } catch (error) {
       console.error('Error retrieving requirements by mandatory description:', error.message)
-      throw new ErrorUtils(500, 'Error retrieving requirements by mandatory description')
+      throw new HttpException(500, 'Error retrieving requirements by mandatory description')
     }
   }
 
@@ -909,7 +909,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
  * Retrieves requirements by a flexible full-text match in their complementary description.
  * @param {string} description - The description or part of the description to search for.
  * @returns {Promise<Array<Requirement>|null>} - A list of Requirement instances matching the description.
- * @throws {ErrorUtils} - If an error occurs during retrieval.
+ * @throws {HttpException} - If an error occurs during retrieval.
  */
   static async findByComplementaryDescription (description) {
     const query = `
@@ -996,7 +996,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       )
     } catch (error) {
       console.error('Error retrieving requirements by complementary description:', error.message)
-      throw new ErrorUtils(500, 'Error retrieving requirements by complementary description')
+      throw new HttpException(500, 'Error retrieving requirements by complementary description')
     }
   }
 
@@ -1004,7 +1004,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
  * Retrieves requirements by a flexible full-text match in their mandatory sentences.
  * @param {string} sentence - The sentence or part of the sentence to search for.
  * @returns {Promise<Array<Requirement>|null>} - A list of Requirement instances matching the sentence.
- * @throws {ErrorUtils} - If an error occurs during retrieval.
+ * @throws {HttpException} - If an error occurs during retrieval.
  */
   static async findByMandatorySentences (sentence) {
     const query = `
@@ -1089,7 +1089,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       )
     } catch (error) {
       console.error('Error retrieving requirements by mandatory sentences:', error.message)
-      throw new ErrorUtils(500, 'Error retrieving requirements by mandatory sentences')
+      throw new HttpException(500, 'Error retrieving requirements by mandatory sentences')
     }
   }
 
@@ -1097,7 +1097,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
  * Retrieves requirements by a flexible full-text match in their complementary sentences.
  * @param {string} sentence - The sentence or part of the sentence to search for.
  * @returns {Promise<Array<Requirement>|null>} - A list of Requirement instances matching the sentence.
- * @throws {ErrorUtils} - If an error occurs during retrieval.
+ * @throws {HttpException} - If an error occurs during retrieval.
  */
   static async findByComplementarySentences (sentence) {
     const query = `
@@ -1183,7 +1183,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       )
     } catch (error) {
       console.error('Error retrieving requirements by complementary sentences:', error.message)
-      throw new ErrorUtils(500, 'Error retrieving requirements by complementary sentences')
+      throw new HttpException(500, 'Error retrieving requirements by complementary sentences')
     }
   }
 
@@ -1191,7 +1191,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
  * Retrieves requirements by a flexible full-text match in their mandatory keywords.
  * @param {string} keyword - The keyword or part of it to search for.
  * @returns {Promise<Array<Requirement>|null>} - A list of Requirement instances matching the keyword.
- * @throws {ErrorUtils} - If an error occurs during retrieval.
+ * @throws {HttpException} - If an error occurs during retrieval.
  */
   static async findByMandatoryKeywords (keyword) {
     const query = `
@@ -1278,7 +1278,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       )
     } catch (error) {
       console.error('Error retrieving requirements by mandatory keywords:', error.message)
-      throw new ErrorUtils(500, 'Error retrieving requirements by mandatory keywords')
+      throw new HttpException(500, 'Error retrieving requirements by mandatory keywords')
     }
   }
 
@@ -1286,7 +1286,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
  * Retrieves requirements by a flexible full-text match in their complementary keywords.
  * @param {string} keyword - The keyword or part of it to search for.
  * @returns {Promise<Array<Requirement>|null>} - A list of Requirement instances matching the keyword.
- * @throws {ErrorUtils} - If an error occurs during retrieval.
+ * @throws {HttpException} - If an error occurs during retrieval.
  */
   static async findByComplementaryKeywords (keyword) {
     const query = `
@@ -1373,7 +1373,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       )
     } catch (error) {
       console.error('Error retrieving requirements by complementary keywords:', error.message)
-      throw new ErrorUtils(500, 'Error retrieving requirements by complementary keywords')
+      throw new HttpException(500, 'Error retrieving requirements by complementary keywords')
     }
   }
 
@@ -1381,7 +1381,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
  * Retrieves requirements filtered by a specific condition.
  * @param {string} condition - The condition type to filter by.
  * @returns {Promise<Array<Requirement>|null>} - A list of Requirement instances matching the condition.
- * @throws {ErrorUtils} - If an error occurs during retrieval.
+ * @throws {HttpException} - If an error occurs during retrieval.
  */
   static async findByCondition (condition) {
     const query = `
@@ -1470,7 +1470,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       )
     } catch (error) {
       console.error('Error retrieving requirements by condition:', error.message)
-      throw new ErrorUtils(500, 'Error retrieving requirements by condition')
+      throw new HttpException(500, 'Error retrieving requirements by condition')
     }
   }
 
@@ -1478,7 +1478,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
  * Retrieves requirements filtered by a specific evidence type.
  * @param {string} evidence - The evidence type to filter by.
  * @returns {Promise<Array<Requirement>|null>} - A list of Requirement instances matching the evidence type.
- * @throws {ErrorUtils} - If an error occurs during retrieval.
+ * @throws {HttpException} - If an error occurs during retrieval.
  */
   static async findByEvidence (evidence) {
     const query = `
@@ -1567,7 +1567,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       )
     } catch (error) {
       console.error('Error retrieving requirements by evidence:', error.message)
-      throw new ErrorUtils(500, 'Error retrieving requirements by evidence')
+      throw new HttpException(500, 'Error retrieving requirements by evidence')
     }
   }
 
@@ -1575,7 +1575,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
  * Retrieves requirements filtered by a specific periodicity.
  * @param {string} periodicity - The periodicity to filter by.
  * @returns {Promise<Array<Requirement>|null>} - A list of Requirement instances matching the periodicity.
- * @throws {ErrorUtils} - If an error occurs during retrieval.
+ * @throws {HttpException} - If an error occurs during retrieval.
  */
   static async findByPeriodicity (periodicity) {
     const query = `
@@ -1664,7 +1664,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       )
     } catch (error) {
       console.error('Error retrieving requirements by periodicity:', error.message)
-      throw new ErrorUtils(500, 'Error retrieving requirements by periodicity')
+      throw new HttpException(500, 'Error retrieving requirements by periodicity')
     }
   }
 
@@ -1673,7 +1673,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
  * @param {string} requirementNumber - The requirement number to check for uniqueness.
  * @param {number} requirementId - The requirement ID to exclude from the check.
  * @returns {Promise<boolean>} - True if a requirement with the same number exists (excluding the given ID), false otherwise.
- * @throws {ErrorUtils} - If an error occurs during the check.
+ * @throws {HttpException} - If an error occurs during the check.
  */
   static async existsByNumberExcludingId (requirementNumber, requirementId) {
     const query = `
@@ -1687,7 +1687,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       return rows.length > 0
     } catch (error) {
       console.error('Error checking requirement number uniqueness:', error.message)
-      throw new ErrorUtils(500, 'Error checking requirement number uniqueness')
+      throw new HttpException(500, 'Error checking requirement number uniqueness')
     }
   }
 
@@ -1696,7 +1696,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
    * @param {string} requirementName - The requirement name to check for uniqueness.
    * @param {number} requirementId - The requirement ID to exclude from the check.
    * @returns {Promise<boolean>} - True if a requirement with the same name exists (excluding the given ID), false otherwise.
-   * @throws {ErrorUtils} - If an error occurs during the check.
+   * @throws {HttpException} - If an error occurs during the check.
    */
   static async existsByNameExcludingId (requirementName, requirementId) {
     const query = `
@@ -1710,7 +1710,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       return rows.length > 0
     } catch (error) {
       console.error('Error checking requirement name uniqueness:', error.message)
-      throw new ErrorUtils(500, 'Error checking requirement name uniqueness')
+      throw new HttpException(500, 'Error checking requirement name uniqueness')
     }
   }
 
@@ -1734,7 +1734,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
  * @param {string} requirement.specifyEvidence
  * @param {string} requirement.periodicity
  * @returns {Promise<Requirement|null>} - The updated Requirement instance or null.
- * @throws {ErrorUtils} - If an error occurs during update.
+ * @throws {HttpException} - If an error occurs during update.
  */
   static async update (requirementId, requirement) {
     const {
@@ -1833,7 +1833,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 
         if (insertResult.affectedRows !== aspectsIds.length) {
           await connection.rollback()
-          throw new ErrorUtils(500, 'Failed to insert aspects')
+          throw new HttpException(500, 'Failed to insert aspects')
         }
       }
 
@@ -1843,7 +1843,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     } catch (error) {
       await connection.rollback()
       console.error('Error updating requirement:', error.message)
-      throw new ErrorUtils(500, 'Error updating requirement in the database')
+      throw new HttpException(500, 'Error updating requirement in the database')
     } finally {
       connection.release()
     }
@@ -1853,7 +1853,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
  * Deletes a requirement by its ID, including related aspects in the intermediate table.
  * @param {number} requirementId - The ID of the requirement to delete.
  * @returns {Promise<boolean>} - Returns true if the deletion is successful, false otherwise.
- * @throws {ErrorUtils} - If an error occurs during deletion.
+ * @throws {HttpException} - If an error occurs during deletion.
  */
   static async delete (requirementId) {
     const checkAspectsQuery = `
@@ -1885,7 +1885,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ])
         if (deletedAspects.affectedRows === 0) {
           await connection.rollback()
-          throw new ErrorUtils(500, 'Failed to delete associated aspects.')
+          throw new HttpException(500, 'Failed to delete associated aspects.')
         }
       }
       const [deletedRequirement] = await connection.query(deleteRequirementQuery, [
@@ -1900,7 +1900,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     } catch (error) {
       await connection.rollback()
       console.error('Error deleting requirement:', error.message)
-      throw new ErrorUtils(500, 'Error deleting requirement from the database')
+      throw new HttpException(500, 'Error deleting requirement from the database')
     } finally {
       connection.release()
     }
@@ -1910,7 +1910,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
  * Deletes multiple requirements by their IDs, including associated aspects from the intermediate table.
  * @param {number[]} requirementIds - An array of requirement IDs to delete.
  * @returns {Promise<boolean>} - Returns true if all deletions are successful, false otherwise.
- * @throws {ErrorUtils} - If an error occurs during deletion.
+ * @throws {HttpException} - If an error occurs during deletion.
  */
   static async deleteBatch (requirementIds) {
     const checkAspectsQuery = `
@@ -1936,7 +1936,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         const [deletedAspectsResult] = await connection.query(deleteAspectsQuery, [requirementIdsWithAspects])
         if (deletedAspectsResult.affectedRows < requirementIdsWithAspects.length) {
           await connection.rollback()
-          throw new ErrorUtils(500, 'Failed to delete aspects for some requirement IDs')
+          throw new HttpException(500, 'Failed to delete aspects for some requirement IDs')
         }
       }
       const [deletedRequirementsResult] = await connection.query(deleteRequirementsQuery, [requirementIds])
@@ -1949,7 +1949,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     } catch (error) {
       await connection.rollback()
       console.error('Error deleting requirements in batch:', error.message)
-      throw new ErrorUtils(500, 'Error deleting requirement records in batch')
+      throw new HttpException(500, 'Error deleting requirement records in batch')
     } finally {
       connection.release()
     }
@@ -1958,7 +1958,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   /**
  * Deletes all requirements and their relationships from the database.
  * @returns {Promise<void>}
- * @throws {ErrorUtils} - If an error occurs during deletion.
+ * @throws {HttpException} - If an error occurs during deletion.
  */
   static async deleteAll () {
     const deleteAspectsQuery = 'DELETE FROM requirement_subject_aspect'
@@ -1972,7 +1972,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     } catch (error) {
       await connection.rollback()
       console.error('Error deleting all requirements:', error.message)
-      throw new ErrorUtils(500, 'Error deleting all requirements from the database')
+      throw new HttpException(500, 'Error deleting all requirements from the database')
     } finally {
       connection.release()
     }
