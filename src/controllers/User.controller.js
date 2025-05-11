@@ -5,7 +5,7 @@
  */
 
 import UserService from '../services/users/User.service.js'
-import HttpException from '../utils/HttpException.js'
+import HttpException from '../services/errors/HttpException.js'
 import jsonwebtoken from 'jsonwebtoken'
 import { JWT_SECRET } from '../config/variables.config.js'
 

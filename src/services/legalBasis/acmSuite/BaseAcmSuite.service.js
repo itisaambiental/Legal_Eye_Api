@@ -1,6 +1,6 @@
 import axios from 'axios'
 import { ACM_SUITE_API_URL, ACM_SUITE_EMAIL, ACM_SUITE_PASSWORD } from '../../../config/variables.config.js'
-import HttpException from '../../../utils/HttpException.js'
+import HttpException from '../../errors/HttpException.js'
 
 /**
  * BaseAcmSuiteService is responsible for authenticating with the ACM Suite API.

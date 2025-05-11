@@ -1,6 +1,6 @@
 import extractArticlesQueue from '../queues/extractArticlesQueue.js'
 import ArticleExtractorFactory from '../services/articles/articleExtraction/ArticleExtractorFactory.js'
-import HttpException from '../utils/HttpException.js'
+import HttpException from '../services/errors/HttpException.js'
 import DocumentService from '../services/files/Document.service.js'
 import LegalBasisRepository from '../repositories/LegalBasis.repository.js'
 import ArticlesService from '../services/articles/Articles.service.js'

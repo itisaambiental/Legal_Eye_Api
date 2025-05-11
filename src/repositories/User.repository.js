@@ -1,7 +1,7 @@
 import { pool } from '../config/db.config.js'
 import Role from '../models/Roles.model.js'
 import User from '../models/User.model.js'
-import HttpException from '../utils/HttpException.js'
+import HttpException from '../services/errors/HttpException.js'
 
 /**
  * Repository class for handling database operations related to Users.

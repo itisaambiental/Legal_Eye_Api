@@ -1,7 +1,7 @@
 import LegalBasisService from '../services/legalBasis/LegalBasis.service.js'
-import HttpException from '../utils/HttpException.js'
+import HttpException from '../services/errors/HttpException.js'
 import UserService from '../services/users/User.service.js'
-import validateDate from '../utils/validateDate.js'
+import parseDate from '../utils/parseDate.js'
 
 /**
  * Controller for legal basis operations.
@@ -423,10 +423,10 @@ export const getLegalBasisByLastReform = async (req, res) => {
   const { userId } = req
   const { from, to } = req.query
   const { date: parsedFrom, error: fromError } = from
-    ? validateDate(from, 'from')
+    ? parseDate(from, 'from')
     : { date: null, error: null }
   const { date: parsedTo, error: toError } = to
-    ? validateDate(to, 'to')
+    ? parseDate(to, 'to')
     : { date: null, error: null }
   if (fromError || toError) {
     return res.status(400).json({

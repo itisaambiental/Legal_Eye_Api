@@ -1,6 +1,6 @@
 import AspectsRepository from '../../repositories/Aspects.repository.js'
 import SubjectsRepository from '../../repositories/Subject.repository.js'
-import HttpException from '../../utils/HttpException.js'
+import HttpException from '../errors/HttpException.js'
 import aspectSchema from '../../schemas/aspect.schema.js'
 import { z } from 'zod'
 

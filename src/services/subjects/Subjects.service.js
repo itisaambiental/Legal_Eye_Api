@@ -1,5 +1,5 @@
 import SubjectsRepository from '../../repositories/Subject.repository.js'
-import HttpException from '../../utils/HttpException.js'
+import HttpException from '../errors/HttpException.js'
 import subjectSchema from '../../schemas/subject.schema.js'
 import { z } from 'zod'
 

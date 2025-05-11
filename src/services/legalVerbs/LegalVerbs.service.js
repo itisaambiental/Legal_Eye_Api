@@ -1,6 +1,6 @@
-import LegalVerbsRepository from '../../../repositories/LegalVerbs.repository.js'
-import HttpException from '../../../utils/HttpException.js'
-import legalVerbsSchema from '../../../schemas/legalVerbs.schema.js'
+import LegalVerbsRepository from '../../repositories/LegalVerbs.repository.js'
+import HttpException from '../errors/HttpException.js'
+import legalVerbsSchema from '../../schemas/legalVerbs.schema.js'
 import { z } from 'zod'
 
 /**

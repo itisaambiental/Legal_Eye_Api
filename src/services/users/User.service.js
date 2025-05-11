@@ -5,7 +5,7 @@ import userSchema from '../../schemas/user.schema.js'
 import loginSchema from '../../schemas/login.schema.js'
 import { generatePassword } from '../../utils/generatePassword.js'
 import { z } from 'zod'
-import HttpException from '../../utils/HttpException.js'
+import HttpException from '../errors/HttpException.js'
 import emailQueue from '../../workers/emailWorker.js'
 import jwt from 'jsonwebtoken'
 import {

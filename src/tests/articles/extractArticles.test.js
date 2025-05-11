@@ -5,7 +5,7 @@ import SubjectsRepository from '../../repositories/Subject.repository.js'
 import LegalBasisRepository from '../../repositories/LegalBasis.repository.js'
 import RequirementRepository from '../../repositories/Requirements.repository.js'
 import AspectsRepository from '../../repositories/Aspects.repository.js'
-import extractArticlesService from '../../services/articles/extractArticles/extractArticles.service.js'
+import extractArticlesService from '../../services/articles/extractArticles/ExtractArticles.service.js'
 import generateLegalBasisData from '../../utils/generateLegalBasisData.js'
 import extractArticlesQueue from '../../queues/extractArticlesQueue.js'
 import {

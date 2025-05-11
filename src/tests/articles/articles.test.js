@@ -8,7 +8,7 @@ import AspectsRepository from '../../repositories/Aspects.repository.js'
 import RequirementRepository from '../../repositories/Requirements.repository.js'
 import generateLegalBasisData from '../../utils/generateLegalBasisData.js'
 import generateArticleData from '../../utils/generateArticleData.js'
-import SendLegalBasisService from '../../services/legalBasis/sendLegalBasis/sendLegalBasis.service.js'
+import SendLegalBasisService from '../../services/legalBasis/sendLegalBasis/SendLegalBasis.service.js'
 
 import {
   ADMIN_PASSWORD_TEST,

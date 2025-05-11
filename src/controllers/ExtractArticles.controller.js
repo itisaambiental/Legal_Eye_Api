@@ -1,6 +1,6 @@
-import HttpException from '../utils/HttpException.js'
+import HttpException from '../services/errors/HttpException.js'
 import UserService from '../services/users/User.service.js'
-import ExtractArticlesService from '../services/articles/extractArticles/extractArticles.service.js'
+import ExtractArticlesService from '../services/articles/extractArticles/ExtractArticles.service.js'
 
 /**
  * Controller for extract Articles Jobs operations.

@@ -1,6 +1,6 @@
-import RequirementTypesRepository from '../../../repositories/RequirementTypes.repository.js'
-import HttpException from '../../../utils/HttpException.js'
-import requirementTypesSchema from '../../../schemas/requirementTypes.schema.js'
+import RequirementTypesRepository from '../../repositories/RequirementTypes.repository.js'
+import HttpException from '../errors/HttpException.js'
+import requirementTypesSchema from '../../schemas/requirementTypes.schema.js'
 import { z } from 'zod'
 
 /**

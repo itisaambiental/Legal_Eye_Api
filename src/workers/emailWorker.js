@@ -1,6 +1,6 @@
 import emailQueue from '../queues/emailQueue.js'
 import EmailService from '../services/email/Email.service.js'
-import HttpException from '../utils/HttpException.js'
+import HttpException from '../services/errors/HttpException.js'
 
 /**
  * Worker for processing email jobs from the email queue.

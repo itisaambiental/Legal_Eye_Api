@@ -2,7 +2,7 @@
 import { api } from '../../config/test.config.js'
 import UserRepository from '../../repositories/User.repository.js'
 import LegalBasisRepository from '../../repositories/LegalBasis.repository.js'
-import SendLegalBasisService from '../../services/legalBasis/sendLegalBasis/sendLegalBasis.service.js'
+import SendLegalBasisService from '../../services/legalBasis/sendLegalBasis/SendLegalBasis.service.js'
 import {
   ADMIN_PASSWORD_TEST,
   ADMIN_GMAIL

@@ -1,5 +1,5 @@
 import { pool } from '../config/db.config.js'
-import HttpException from '../utils/HttpException.js'
+import HttpException from '../services/errors/HttpException.js'
 import LegalVerb from '../models/LegalVerbs.model.js'
 
 /**

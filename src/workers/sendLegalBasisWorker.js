@@ -1,5 +1,5 @@
 import sendLegalBasisQueue from '../queues/sendLegalBasisQueue.js'
-import HttpException from '../utils/HttpException.js'
+import HttpException from '../services/errors/HttpException.js'
 import LegalBasisRepository from '../repositories/LegalBasis.repository.js'
 import ArticlesRepository from '../repositories/Articles.repository.js'
 import UserRepository from '../repositories/User.repository.js'

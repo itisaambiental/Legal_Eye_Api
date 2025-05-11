@@ -5,7 +5,7 @@ import {
   ADMIN_NAME,
   ADMIN_ROLE
 } from './variables.config.js'
-import HttpException from '../utils/HttpException.js'
+import HttpException from '../services/errors/HttpException.js'
 /**
  * Initializes the admin user in the database.
  * @async

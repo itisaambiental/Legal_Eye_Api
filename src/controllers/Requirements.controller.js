@@ -1,6 +1,6 @@
 import RequirementService from '../services/requirements/Requirements.service.js'
 import UserService from '../services/users/User.service.js'
-import HttpException from '../utils/HttpException.js'
+import HttpException from '../services/errors/HttpException.js'
 
 /**
  * Controller for requirement operations.

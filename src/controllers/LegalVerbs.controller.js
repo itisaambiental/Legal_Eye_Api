@@ -1,6 +1,6 @@
-import LegalVerbsService from '../services/requirements/legalVerbs/legalVerbs.service.js'
+import LegalVerbsService from '../services/legalVerbs/LegalVerbs.service.js'
 import UserService from '../services/users/User.service.js'
-import HttpException from '../utils/HttpException.js'
+import HttpException from '../services/errors/HttpException.js'
 
 /**
  * Controller for legal verbs operations.

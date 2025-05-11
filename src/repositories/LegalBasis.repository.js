@@ -2,7 +2,7 @@
 
 import { pool } from '../config/db.config.js'
 import LegalBasis from '../models/LegalBasis.model.js'
-import HttpException from '../utils/HttpException.js'
+import HttpException from '../services/errors/HttpException.js'
 
 /**
  * Repository class for handling database operations related to LegalBasis.

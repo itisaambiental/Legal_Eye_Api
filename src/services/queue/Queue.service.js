@@ -1,4 +1,4 @@
-import HttpException from '../../utils/HttpException.js'
+import HttpException from '../errors/HttpException.js'
 
 /**
  * @typedef {Object} JobStateResponse

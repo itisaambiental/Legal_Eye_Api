@@ -1,6 +1,6 @@
-import HttpException from '../utils/HttpException.js'
+import HttpException from '../services/errors/HttpException.js'
 import UserService from '../services/users/User.service.js'
-import SendLegalBasisService from '../services/legalBasis/sendLegalBasis/sendLegalBasis.service.js'
+import SendLegalBasisService from '../services/legalBasis/sendLegalBasis/SendLegalBasis.service.js'
 
 /**
  * Controller for Send Legal Basis Jobs operations.

@@ -1,4 +1,4 @@
-import HttpException from '../../utils/HttpException.js'
+import HttpException from '../errors/HttpException.js'
 import { S3_BUCKET_NAME, AWS_REGION } from '../../config/variables.config.js'
 import { s3Client } from '../../config/aws.config.js'
 import {

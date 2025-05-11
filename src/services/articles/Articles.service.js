@@ -4,8 +4,8 @@ import {
   singleArticleSchema,
   articlesSchema
 } from '../../schemas/article.schema.js'
-import SendLegalBasisService from '../legalBasis/sendLegalBasis/sendLegalBasis.service.js'
-import HttpException from '../../utils/HttpException.js'
+import SendLegalBasisService from '../legalBasis/sendLegalBasis/SendLegalBasis.service.js'
+import HttpException from '../errors/HttpException.js'
 import { z } from 'zod'
 import { convert } from 'html-to-text'
 

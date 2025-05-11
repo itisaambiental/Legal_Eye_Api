@@ -1,4 +1,4 @@
-import HttpException from '../../../utils/HttpException.js'
+import HttpException from '../../errors/HttpException.js'
 import sendLegalBasisQueue from '../../../workers/sendLegalBasisWorker.js'
 import QueueService from '../../queue/Queue.service.js'
 import LegalBasisRepository from '../../../repositories/LegalBasis.repository.js'

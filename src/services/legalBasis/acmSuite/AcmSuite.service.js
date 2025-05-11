@@ -1,5 +1,5 @@
 import { BaseAcmSuiteService } from './BaseAcmSuite.service.js'
-import HttpException from '../../../utils/HttpException.js'
+import HttpException from '../../errors/HttpException.js'
 
 /**
  * AcmSuiteService provides methods to interact with the ACM Suite API endpoints.

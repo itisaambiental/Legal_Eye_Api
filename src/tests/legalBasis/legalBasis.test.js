@@ -5,8 +5,8 @@ import SubjectsRepository from '../../repositories/Subject.repository.js'
 import LegalBasisRepository from '../../repositories/LegalBasis.repository.js'
 import AspectsRepository from '../../repositories/Aspects.repository.js'
 import RequirementRepository from '../../repositories/Requirements.repository.js'
-import extractArticlesService from '../../services/articles/extractArticles/extractArticles.service.js'
-import SendLegalBasisService from '../../services/legalBasis/sendLegalBasis/sendLegalBasis.service.js'
+import extractArticlesService from '../../services/articles/extractArticles/ExtractArticles.service.js'
+import SendLegalBasisService from '../../services/legalBasis/sendLegalBasis/SendLegalBasis.service.js'
 
 import {
   ADMIN_PASSWORD_TEST,

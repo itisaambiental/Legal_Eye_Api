@@ -1,4 +1,4 @@
-import HttpException from '../../../utils/HttpException.js'
+import HttpException from '../../errors/HttpException.js'
 import extractArticlesQueue from '../../../workers/extractArticlesWorker.js'
 import QueueService from '../../queue/Queue.service.js'
 import LegalBasisRepository from '../../../repositories/LegalBasis.repository.js'

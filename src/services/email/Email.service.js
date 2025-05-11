@@ -1,5 +1,5 @@
 import transporter from '../../config/email.config.js'
-import HttpException from '../../utils/HttpException.js'
+import HttpException from '../errors/HttpException.js'
 import { EMAIL_USER, APP_URL } from '../../config/variables.config.js'
 
 /**

@@ -2,7 +2,7 @@ import ArticleExtractor from './ArticleExtractor.js'
 import openai from '../../../config/openapi.config.js'
 import { singleArticleModelSchema, sectionsResponseSchema } from '../../../schemas/article.schema.js'
 import { zodResponseFormat } from 'openai/helpers/zod'
-import HttpException from '../../../utils/HttpException.js'
+import HttpException from '../../errors/HttpException.js'
 
 /**
  * Class extending ArticleExtractor to extract articles from (Regulations).

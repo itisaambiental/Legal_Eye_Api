@@ -1,5 +1,5 @@
 import { convert } from 'html-to-text'
-import HttpException from '../../../utils/HttpException.js'
+import HttpException from '../../errors/HttpException.js'
 import { sleep } from '../../../utils/sleep.js'
 /**
  * Base class for article extractors.
