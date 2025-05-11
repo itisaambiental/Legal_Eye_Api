@@ -260,7 +260,7 @@ class RequirementTypesService {
       )
       if (existingRequirementTypes.length !== requirementTypeIds.length) {
         const notFoundIds = requirementTypeIds.filter(
-          (id) => !existingRequirementTypes.some((type) => type.id === id)
+          (id) => !existingRequirementTypes.some((rt) => rt.id === id)
         )
         throw new HttpException(404, 'Requirement types not found for IDs', {
           notFoundIds
