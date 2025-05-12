@@ -1,5 +1,5 @@
 import AspectsService from '../services/aspects/Aspects.service.js'
-import ErrorUtils from '../utils/Error.js'
+import HttpException from '../services/errors/HttpException.js'
 import UserService from '../services/users/User.service.js'
 
 /**
@@ -10,23 +10,28 @@ import UserService from '../services/users/User.service.js'
 /**
  * Creates a new aspect.
  * @function createAspect
- * @param {import('express').Request} req - Request object, expects { subjectId, aspectName } in body.
+ * @param {import('express').Request} req - Request object, expects { aspectName, abbreviation, orderIndex } in body and { subjectId } in params.
  * @param {import('express').Response} res - Response object.
  * @returns {Object} - The created aspect data.
  */
 export const createAspect = async (req, res) => {
   const { userId } = req
-  const { aspectName } = req.body
+  const { aspectName, abbreviation, orderIndex } = req.body
   const { subjectId } = req.params
   try {
     const isAuthorized = await UserService.userExists(userId)
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-    const aspect = await AspectsService.create({ subjectId, aspectName })
+    const aspect = await AspectsService.create({
+      subjectId,
+      aspectName,
+      abbreviation,
+      orderIndex
+    })
     return res.status(201).json({ aspect })
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({
         message: error.message,
         ...(error.errors && { errors: error.errors })
@@ -54,7 +59,7 @@ export const getAspectsBySubject = async (req, res) => {
     const aspects = await AspectsService.getBySubjectId(subjectId)
     return res.status(200).json({ aspects })
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({
         message: error.message,
         ...(error.errors && { errors: error.errors })
@@ -82,7 +87,7 @@ export const getAspectById = async (req, res) => {
     const aspect = await AspectsService.getById(id)
     return res.status(200).json({ aspect })
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({
         message: error.message,
         ...(error.errors && { errors: error.errors })
@@ -111,7 +116,7 @@ export const getAspectsByName = async (req, res) => {
     const aspects = await AspectsService.getByName(aspectName, subjectId)
     return res.status(200).json({ aspects })
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({
         message: error.message,
         ...(error.errors && { errors: error.errors })
@@ -124,23 +129,27 @@ export const getAspectsByName = async (req, res) => {
 /**
  * Updates an aspect by ID.
  * @function updateAspect
- * @param {import('express').Request} req - Request object, expects { aspectName } in body and { id } as URL parameter.
+ * @param {import('express').Request} req - Request object, expects { aspectName, abbreviation, orderIndex } in body and { id } as URL parameter.
  * @param {import('express').Response} res - Response object.
  * @returns {Object} - The updated aspect data.
  */
 export const updateAspect = async (req, res) => {
   const { userId } = req
   const { id } = req.params
-  const { aspectName } = req.body
+  const { aspectName, abbreviation, orderIndex } = req.body
   try {
     const isAuthorized = await UserService.userExists(userId)
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-    const aspect = await AspectsService.updateById(id, aspectName)
+    const aspect = await AspectsService.updateById(id, {
+      aspectName,
+      abbreviation,
+      orderIndex
+    })
     return res.status(200).json({ aspect })
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({
         message: error.message,
         ...(error.errors && { errors: error.errors })
@@ -172,7 +181,7 @@ export const deleteAspect = async (req, res) => {
       return res.status(500).json({ message: 'Internal Server Error' })
     }
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({
         message: error.message,
         ...(error.errors && { errors: error.errors })
@@ -209,7 +218,7 @@ export const deleteAspectsBatch = async (req, res) => {
       return res.status(500).json({ message: 'Internal Server Error' })
     }
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({
         message: error.message,
         ...(error.errors && { errors: error.errors })

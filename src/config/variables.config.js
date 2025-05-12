@@ -1,8 +1,3 @@
-/**
- * Loads environment variables from a .env file into process.env.
- * Exports the required environment variables for use throughout the application.
- */
-
 import dotenv from 'dotenv'
 dotenv.config()
 
@@ -16,6 +11,9 @@ export const {
   APP_URL,
   JWT_SECRET,
   JWT_EXPIRATION,
+  ACM_SUITE_API_URL,
+  ACM_SUITE_EMAIL,
+  ACM_SUITE_PASSWORD,
   DB_PORT,
   DB_HOST,
   DB_USER,
@@ -60,5 +58,8 @@ export const {
   OPENAI_API_KEY,
   ORGANIZATION_ID,
   PROJECT_ID,
-  CONCURRENCY_EXTRACT_ARTICLES
+  LIMIT_EXTRACT_ARTICLES,
+  CONCURRENCY_EXTRACT_ARTICLES,
+  LIMIT_SEND_LEGAL_BASIS,
+  CONCURRENCY_SEND_LEGAL_BASIS
 } = process.env

@@ -44,14 +44,6 @@ const articlesSchema = z
   .nonempty('At least one article is required')
 
 /**
-   * Zod validation schema for article verification.
-*/
-const ArticleVerificationSchema = z.object({
-  isValid: z.boolean(),
-  reason: z.enum(['IsContinuation', 'IsIncomplete']).optional()
-})
-
-/**
  * Simplified Zod schema for a single article.
  * This schema is designed for OpenAI models compatibility.
  */
@@ -81,4 +73,17 @@ const singleArticleModelSchema = z.object({
   order: z.number()
 })
 
-export { singleArticleSchema, articlesSchema, ArticleVerificationSchema, singleArticleModelSchema }
+/**
+ * Zod validation schema for the Index response.
+ */
+const sectionsResponseSchema = z.object({
+  sections: z.array(
+    z.object({
+      title: z.string(),
+      line: z.number()
+    })
+  ),
+  isValid: z.boolean()
+})
+
+export { singleArticleSchema, articlesSchema, singleArticleModelSchema, sectionsResponseSchema }

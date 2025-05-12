@@ -4,7 +4,7 @@
  */
 
 import { Router } from 'express'
-import UserExtractor from '../middlewares/access_token.js'
+import UserExtractor from '../middlewares/user_extractor.js'
 import {
   createLegalBasis,
   getAllLegalBasis,
@@ -18,11 +18,12 @@ import {
   getLegalBasisBySubject,
   getLegalBasisBySubjectAndAspects,
   getLegalBasisByLastReform,
+  getLegalBasisByCriteria,
   updateLegalBasis,
   deleteLegalBasis,
   deleteLegalBasisBatch
 } from '../controllers/LegalBasis.controller.js'
-import { upload } from '../config/multer.config.js'
+import { upload } from '../middlewares/multer.js'
 
 /**
  * LegalBasisRouter
@@ -139,6 +140,23 @@ router.get('/legalBasis/subject/:subjectId', UserExtractor, getLegalBasisBySubje
  * @middleware UserExtractor
  */
 router.get('/legalBasis/subject/:subjectId/aspects', UserExtractor, getLegalBasisBySubjectAndAspects)
+
+/**
+ * Route to retrieve legal basis entries by dynamic filters.
+ *
+ * @method GET
+ * @path /legalBasis/criteria/query
+ * @description Retrieves legal basis entries filtered dynamically by jurisdiction, state, municipalities, subject, and aspects.
+ *
+ * @query {string} [jurisdiction] - Optional jurisdiction level (e.g., "Federal", "Estatal", "Local").
+ * @query {string} [state] - Optional state to filter by.
+ * @query {Array<string>} [municipalities] - Optional array of municipalities to filter by.
+ * @query {number} [subjectId] - Optional subject ID to filter by.
+ * @query {Array<number>} [aspectIds] - Optional array of aspect IDs to further filter by.
+ *
+ * @middleware UserExtractor - Middleware to extract and validate user identity.
+ */
+router.get('/legalBasis/criteria/query', UserExtractor, getLegalBasisByCriteria)
 
 /**
  * Route to retrieve legal basis entries filtered by a date range for the last_reform field.

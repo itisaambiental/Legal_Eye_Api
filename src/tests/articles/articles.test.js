@@ -8,6 +8,7 @@ import AspectsRepository from '../../repositories/Aspects.repository.js'
 import RequirementRepository from '../../repositories/Requirements.repository.js'
 import generateLegalBasisData from '../../utils/generateLegalBasisData.js'
 import generateArticleData from '../../utils/generateArticleData.js'
+import SendLegalBasisService from '../../services/legalBasis/sendLegalBasis/SendLegalBasis.service.js'
 
 import {
   ADMIN_PASSWORD_TEST,
@@ -21,6 +22,7 @@ let createdSubjectId
 const createdAspectIds = []
 let createdLegalBasisId
 
+const timeout = 20000
 beforeAll(async () => {
   await RequirementRepository.deleteAll()
   await LegalBasisRepository.deleteAll()
@@ -42,7 +44,11 @@ beforeAll(async () => {
   const subjectResponse = await api
     .post('/api/subjects')
     .set('Authorization', `Bearer ${tokenAdmin}`)
-    .send({ subjectName })
+    .send({
+      subjectName,
+      abbreviation: 'AMB',
+      orderIndex: 1
+    })
     .expect(201)
     .expect('Content-Type', /application\/json/)
 
@@ -52,14 +58,18 @@ beforeAll(async () => {
     const aspectResponse = await api
       .post(`/api/subjects/${createdSubjectId}/aspects`)
       .set('Authorization', `Bearer ${tokenAdmin}`)
-      .send({ aspectName })
+      .send({
+        aspectName,
+        abbreviation: 'ORG',
+        orderIndex: 1
+      })
       .expect(201)
       .expect('Content-Type', /application\/json/)
 
     const { aspect } = aspectResponse.body
     createdAspectIds.push(aspect.id)
   }
-}, 10000)
+}, timeout)
 
 beforeEach(async () => {
   const legalBasisData = generateLegalBasisData({
@@ -475,6 +485,7 @@ describe('Update an article', () => {
 
 describe('Delete an article', () => {
   let createdArticleId
+
   beforeEach(async () => {
     const articleData = generateArticleData()
     const response = await api
@@ -485,6 +496,10 @@ describe('Delete an article', () => {
       .expect('Content-Type', /application\/json/)
 
     createdArticleId = response.body.article.id
+  })
+
+  afterEach(async () => {
+    jest.restoreAllMocks()
   })
 
   test('Should successfully delete an article by its ID', async () => {
@@ -531,11 +546,30 @@ describe('Delete an article', () => {
 
     expect(response.body.error).toMatch(/token missing or invalid/i)
   })
+
+  test('Should prevent deleting a single article if there is a pending Send Legal Basis job', async () => {
+    jest.spyOn(SendLegalBasisService, 'hasPendingSendJobs').mockResolvedValue({
+      hasPendingJobs: true,
+      jobId: 'mockedJobId'
+    })
+
+    const response = await api
+      .delete(`/api/article/${createdArticleId}`)
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .expect(409)
+      .expect('Content-Type', /application\/json/)
+
+    expect(response.body.message).toMatch(
+      /Cannot delete Article with pending Send Legal Basis jobs/i
+    )
+  })
 })
 
 describe('Delete multiple articles', () => {
   let createdArticleIds = []
+
   beforeEach(async () => {
+    createdArticleIds = []
     for (let i = 0; i < 5; i++) {
       const articleData = generateArticleData()
       const response = await api
@@ -550,6 +584,7 @@ describe('Delete multiple articles', () => {
   })
 
   afterEach(async () => {
+    jest.restoreAllMocks()
     createdArticleIds = []
   })
 
@@ -623,5 +658,26 @@ describe('Delete multiple articles', () => {
       .expect('Content-Type', /application\/json/)
 
     expect(response.body.error).toMatch(/token missing or invalid/i)
+  })
+
+  test('Should prevent deleting multiple articles if at least one has a pending Send Legal Basis job', async () => {
+    jest.spyOn(SendLegalBasisService, 'hasPendingSendJobs')
+      .mockImplementation(async (legalBasisId) => {
+        if (legalBasisId) {
+          return { hasPendingJobs: true, jobId: 'mockedJobId' }
+        }
+        return { hasPendingJobs: false, jobId: null }
+      })
+
+    const response = await api
+      .delete('/api/articles/batch')
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .send({ articleIds: createdArticleIds })
+      .expect(409)
+      .expect('Content-Type', /application\/json/)
+
+    expect(response.body.message).toMatch(
+      /Cannot delete Articles with pending Send Legal Basis jobs/i
+    )
   })
 })

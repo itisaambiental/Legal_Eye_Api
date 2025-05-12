@@ -13,6 +13,11 @@ const serverPort = Number(PORT || 3000)
 /**
  * Variable to hold the server instance, initialized only if not in test environment.
  */
+
+/**
+ * Configure the Server.
+ * @type {import('http').Server}
+ */
 let server
 
 /**

@@ -1,16 +1,11 @@
-/**
- * Sets up the testing environment using supertest.
- * Exports the API object for making HTTP requests in tests.
- * Cleans up resources after all tests are completed.
- */
-
 /* eslint-disable no-undef */
 import supertest from 'supertest'
 import { server, app } from '../index.js'
 import { pool } from '../config/db.config.js'
+import { redisClient } from './redis.config.js'
 import emailQueue from '../workers/emailWorker.js'
-import articlesQueue from '../workers/articlesWorker.js'
-import requirementsIdentificationQueue from '../queues/requirementsIdentificationQueue.js'
+import extractArticlesQueue from '../workers/extractArticlesWorker.js'
+import sendLegalBasisQueue from '../workers/sendLegalBasisWorker.js'
 
 const timeout = 500000
 
@@ -22,9 +17,11 @@ export const api = supertest(app)
 
 /**
  * Initializes the server only once for all test files.
- * Uses a random port in test environment to avoid port conflicts.
+ * Uses a random port in test environment to avoid port conflicts
+ * @type {import('http').Server}
  */
 let serverInstance
+
 beforeAll(async () => {
   if (!server || !server.listening) {
     serverInstance = app.listen(0)
@@ -37,10 +34,16 @@ beforeAll(async () => {
  */
 afterAll(async () => {
   await emailQueue.close()
-  await articlesQueue.close()
-  requirementsIdentificationQueue.close()
+  await extractArticlesQueue.close()
+  await sendLegalBasisQueue.close()
   if (serverInstance) {
-    serverInstance.close()
+    await new Promise((resolve, reject) => {
+      serverInstance.close((err) => {
+        if (err) return reject(err)
+        resolve()
+      })
+    })
   }
+  await redisClient.quit()
   await pool.end()
 }, timeout)

@@ -1,6 +1,6 @@
 import RequirementService from '../services/requirements/Requirements.service.js'
 import UserService from '../services/users/User.service.js'
-import ErrorUtils from '../utils/Error.js'
+import HttpException from '../services/errors/HttpException.js'
 
 /**
  * Controller for requirement operations.
@@ -18,7 +18,7 @@ export const createRequirement = async (req, res) => {
   const { userId } = req
   const {
     subjectId,
-    aspectId,
+    aspectsIds,
     requirementNumber,
     requirementName,
     mandatoryDescription,
@@ -29,11 +29,8 @@ export const createRequirement = async (req, res) => {
     complementaryKeywords,
     condition,
     evidence,
-    periodicity,
-    requirementType,
-    jurisdiction,
-    state,
-    municipality
+    specifyEvidence,
+    periodicity
   } = req.body
   try {
     const isAuthorized = await UserService.userExists(userId)
@@ -42,7 +39,7 @@ export const createRequirement = async (req, res) => {
     }
     const requirement = await RequirementService.create({
       subjectId,
-      aspectId,
+      aspectsIds,
       requirementNumber,
       requirementName,
       mandatoryDescription,
@@ -53,15 +50,12 @@ export const createRequirement = async (req, res) => {
       complementaryKeywords,
       condition,
       evidence,
-      periodicity,
-      requirementType,
-      jurisdiction,
-      state,
-      municipality
+      specifyEvidence,
+      periodicity
     })
     return res.status(201).json({ requirement })
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({
         message: error.message,
         ...(error.errors && { errors: error.errors })
@@ -88,7 +82,7 @@ export const getAllRequirements = async (req, res) => {
     const requirements = await RequirementService.getAll()
     return res.status(200).json({ requirements })
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({ message: error.message })
     }
     return res.status(500).json({ message: 'Internal Server Error' })
@@ -113,7 +107,7 @@ export const getRequirementById = async (req, res) => {
     const requirement = await RequirementService.getById(id)
     return res.status(200).json({ requirement })
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({ message: error.message })
     }
     return res.status(500).json({ message: 'Internal Server Error' })
@@ -138,7 +132,7 @@ export const getRequirementsByNumber = async (req, res) => {
     const requirements = await RequirementService.getByNumber(number)
     return res.status(200).json({ requirements })
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({ message: error.message })
     }
     return res.status(500).json({ message: 'Internal Server Error' })
@@ -163,7 +157,7 @@ export const getRequirementsByName = async (req, res) => {
     const requirements = await RequirementService.getByName(name)
     return res.status(200).json({ requirements })
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({ message: error.message })
     }
     return res.status(500).json({ message: 'Internal Server Error' })
@@ -188,7 +182,7 @@ export const getRequirementsBySubject = async (req, res) => {
     const requirements = await RequirementService.getBySubject(subjectId)
     return res.status(200).json({ requirements })
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({ message: error.message })
     }
     return res.status(500).json({ message: 'Internal Server Error' })
@@ -205,24 +199,24 @@ export const getRequirementsBySubject = async (req, res) => {
 export const getRequirementsBySubjectAndAspects = async (req, res) => {
   const { userId } = req
   const { subjectId } = req.params
-  let { aspectIds } = req.query
+  const { aspectIds } = req.query
   try {
     const isAuthorized = await UserService.userExists(userId)
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-    aspectIds = Array.isArray(aspectIds)
+    const aspects = Array.isArray(aspectIds)
       ? aspectIds.map(Number).filter(Number.isInteger)
       : typeof aspectIds === 'string'
         ? aspectIds.split(',').map(Number).filter(Number.isInteger)
         : []
     const requirements = await RequirementService.getBySubjectAndAspects(
       subjectId,
-      aspectIds
+      aspects
     )
     return res.status(200).json({ requirements })
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({
         message: error.message,
         ...(error.errors && { errors: error.errors })
@@ -252,7 +246,7 @@ export const getRequirementsByMandatoryDescription = async (req, res) => {
     )
     return res.status(200).json({ requirements })
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({ message: error.message })
     }
     return res.status(500).json({ message: 'Internal Server Error' })
@@ -279,7 +273,7 @@ export const getRequirementsByComplementaryDescription = async (req, res) => {
     )
     return res.status(200).json({ requirements })
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({ message: error.message })
     }
     return res.status(500).json({ message: 'Internal Server Error' })
@@ -306,7 +300,7 @@ export const getRequirementsByMandatorySentences = async (req, res) => {
     )
     return res.status(200).json({ requirements })
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({ message: error.message })
     }
     return res.status(500).json({ message: 'Internal Server Error' })
@@ -333,7 +327,7 @@ export const getRequirementsByComplementarySentences = async (req, res) => {
     )
     return res.status(200).json({ requirements })
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({ message: error.message })
     }
     return res.status(500).json({ message: 'Internal Server Error' })
@@ -360,7 +354,7 @@ export const getRequirementsByMandatoryKeywords = async (req, res) => {
     )
     return res.status(200).json({ requirements })
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({ message: error.message })
     }
     return res.status(500).json({ message: 'Internal Server Error' })
@@ -387,7 +381,7 @@ export const getRequirementsByComplementaryKeywords = async (req, res) => {
     )
     return res.status(200).json({ requirements })
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({ message: error.message })
     }
     return res.status(500).json({ message: 'Internal Server Error' })
@@ -412,7 +406,7 @@ export const getRequirementsByCondition = async (req, res) => {
     const requirements = await RequirementService.getByCondition(condition)
     return res.status(200).json({ requirements })
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({ message: error.message })
     }
     return res.status(500).json({ message: 'Internal Server Error' })
@@ -437,7 +431,7 @@ export const getRequirementsByEvidence = async (req, res) => {
     const requirements = await RequirementService.getByEvidence(evidence)
     return res.status(200).json({ requirements })
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({ message: error.message })
     }
     return res.status(500).json({ message: 'Internal Server Error' })
@@ -462,125 +456,7 @@ export const getRequirementsByPeriodicity = async (req, res) => {
     const requirements = await RequirementService.getByPeriodicity(periodicity)
     return res.status(200).json({ requirements })
   } catch (error) {
-    if (error instanceof ErrorUtils) {
-      return res.status(error.status).json({ message: error.message })
-    }
-    return res.status(500).json({ message: 'Internal Server Error' })
-  }
-}
-
-/**
- * Retrieves requirements filtered by a specific requirement type.
- * @function getRequirementsByRequirementType
- * @param {import('express').Request} req - Request object, expects { requirementType } in query.
- * @param {import('express').Response} res - Response object.
- * @returns {Array<Object>} - A list of requirements matching the requirement type.
- */
-export const getRequirementsByRequirementType = async (req, res) => {
-  const { userId } = req
-  const { requirementType } = req.query
-  try {
-    const isAuthorized = await UserService.userExists(userId)
-    if (!isAuthorized) {
-      return res.status(403).json({ message: 'Unauthorized' })
-    }
-    const requirements = await RequirementService.getByRequirementType(
-      requirementType
-    )
-    return res.status(200).json({ requirements })
-  } catch (error) {
-    if (error instanceof ErrorUtils) {
-      return res.status(error.status).json({ message: error.message })
-    }
-    return res.status(500).json({ message: 'Internal Server Error' })
-  }
-}
-
-/**
- * Retrieves requirements filtered by a specific jurisdiction.
- * @function getRequirementsByJurisdiction
- * @param {import('express').Request} req - Request object, expects { jurisdiction } in query.
- * @param {import('express').Response} res - Response object.
- * @returns {Array<Object>} - A list of requirements matching the jurisdiction.
- */
-export const getRequirementsByJurisdiction = async (req, res) => {
-  const { userId } = req
-  const { jurisdiction } = req.query
-  try {
-    const isAuthorized = await UserService.userExists(userId)
-    if (!isAuthorized) {
-      return res.status(403).json({ message: 'Unauthorized' })
-    }
-    const requirements = await RequirementService.getByJurisdiction(
-      jurisdiction
-    )
-    return res.status(200).json({ requirements })
-  } catch (error) {
-    if (error instanceof ErrorUtils) {
-      return res.status(error.status).json({ message: error.message })
-    }
-    return res.status(500).json({ message: 'Internal Server Error' })
-  }
-}
-
-/**
- * Retrieves requirements filtered by a specific state.
- * @function getRequirementsByState
- * @param {import('express').Request} req - Request object, expects { state } in query.
- * @param {import('express').Response} res - Response object.
- * @returns {Array<Object>} - A list of requirements matching the state.
- */
-export const getRequirementsByState = async (req, res) => {
-  const { userId } = req
-  const { state } = req.query
-  try {
-    const isAuthorized = await UserService.userExists(userId)
-    if (!isAuthorized) {
-      return res.status(403).json({ message: 'Unauthorized' })
-    }
-    const requirements = await RequirementService.getByState(state)
-    return res.status(200).json({ requirements })
-  } catch (error) {
-    if (error instanceof ErrorUtils) {
-      return res.status(error.status).json({ message: error.message })
-    }
-    return res.status(500).json({ message: 'Internal Server Error' })
-  }
-}
-
-/**
- * Retrieves requirements filtered by state and optionally by municipalities.
- * @function getRequirementsByStateAndMunicipalities
- * @param {import('express').Request} req - Request object, expects { state } in query and { municipalities } as an optional array in query.
- * @param {import('express').Response} res - Response object.
- * @returns {Array<Object>} - A list of requirements matching the filters.
- */
-export const getRequirementsByStateAndMunicipalities = async (req, res) => {
-  const { userId } = req
-  const { state } = req.query
-  let { municipalities } = req.query
-  try {
-    const isAuthorized = await UserService.userExists(userId)
-    if (!isAuthorized) {
-      return res.status(403).json({ message: 'Unauthorized' })
-    }
-    municipalities = Array.isArray(municipalities)
-      ? municipalities
-        .map((municipality) => String(municipality).trim())
-        .filter((municipality) => municipality.length > 0)
-      : typeof municipalities === 'string'
-        ? municipalities
-          .split(',')
-          .map((municipality) => String(municipality).trim())
-          .filter((municipality) => municipality.length > 0)
-        : []
-    const requirements = await RequirementService.getByStateAndMunicipalities(
-      state,
-      municipalities
-    )
-    return res.status(200).json({ requirements })
-  } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({ message: error.message })
     }
     return res.status(500).json({ message: 'Internal Server Error' })
@@ -599,7 +475,7 @@ export const updateRequirement = async (req, res) => {
   const { id } = req.params
   const {
     subjectId,
-    aspectId,
+    aspectsIds,
     requirementNumber,
     requirementName,
     mandatoryDescription,
@@ -610,11 +486,8 @@ export const updateRequirement = async (req, res) => {
     complementaryKeywords,
     condition,
     evidence,
-    periodicity,
-    requirementType,
-    jurisdiction,
-    state,
-    municipality
+    specifyEvidence,
+    periodicity
   } = req.body
   try {
     const isAuthorized = await UserService.userExists(userId)
@@ -623,7 +496,7 @@ export const updateRequirement = async (req, res) => {
     }
     const requirement = await RequirementService.updateById(id, {
       subjectId,
-      aspectId,
+      aspectsIds,
       requirementNumber,
       requirementName,
       mandatoryDescription,
@@ -634,15 +507,12 @@ export const updateRequirement = async (req, res) => {
       complementaryKeywords,
       condition,
       evidence,
-      periodicity,
-      requirementType,
-      jurisdiction,
-      state,
-      municipality
+      specifyEvidence,
+      periodicity
     })
     return res.status(200).json({ requirement })
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({
         message: error.message,
         ...(error.errors && { errors: error.errors })
@@ -674,7 +544,7 @@ export const deleteRequirement = async (req, res) => {
       return res.status(500).json({ message: 'Internal Server Error' })
     }
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({
         message: error.message,
         ...(error.errors && { errors: error.errors })
@@ -715,7 +585,7 @@ export const deleteRequirementBatch = async (req, res) => {
       return res.status(500).json({ message: 'Internal Server Error' })
     }
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({
         message: error.message,
         ...(error.errors && { errors: error.errors })

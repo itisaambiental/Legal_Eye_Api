@@ -1,8 +1,3 @@
-/**
- * Initializes the admin user in the database if it does not already exist.
- * Loads the admin's profile picture from the file system.
- */
-
 import UserService from '../services/users/User.service.js'
 import UserRepository from '../repositories/User.repository.js'
 import {
@@ -10,12 +5,12 @@ import {
   ADMIN_NAME,
   ADMIN_ROLE
 } from './variables.config.js'
-import ErrorUtils from '../utils/Error.js'
+import HttpException from '../services/errors/HttpException.js'
 /**
  * Initializes the admin user in the database.
  * @async
  * @function initializeAdmin
- * @throws {ErrorUtils} If an error occurs during initialization.
+ * @throws {HttpException} If an error occurs during initialization.
  */
 export const initializeAdmin = async () => {
   try {
@@ -29,9 +24,9 @@ export const initializeAdmin = async () => {
       await UserService.registerUser(adminData)
     }
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       console.error('Error during admin initialization:', error.message)
     }
-    throw new ErrorUtils(500, 'Failed to initialize admin user', error)
+    throw new HttpException(500, 'Failed to initialize admin user', error)
   }
 }

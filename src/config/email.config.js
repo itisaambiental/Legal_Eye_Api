@@ -1,10 +1,3 @@
-/**
- * Module for configuring Nodemailer transport.
- * Sets up email transport based on the environment variables and current environment.
- * Supports development, test, and production environments.
- * @module EmailTransporter
- */
-
 import nodemailer from 'nodemailer'
 import { NODE_ENV, EMAIL_HOST, AWS_USER_EMAIL, EMAIL_PASS } from './variables.config.js'
 

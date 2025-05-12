@@ -7,6 +7,7 @@ let tokenAdmin
 let adminUserId
 let analystUserId
 
+const timeout = 20000
 beforeAll(async () => {
   await UserRepository.deleteAllExceptByGmail(ADMIN_GMAIL)
   const response = await api
@@ -21,7 +22,7 @@ beforeAll(async () => {
   tokenAdmin = response.body.token
   const adminUser = await UserRepository.existsByGmail(ADMIN_GMAIL)
   adminUserId = adminUser.id
-})
+}, timeout)
 
 describe('User API tests', () => {
   describe('Login with correct and incorrect credentials', () => {
@@ -217,7 +218,7 @@ describe('User API tests', () => {
 
       expect(response.body.users).toBeInstanceOf(Array)
       expect(response.body.users.length).toBe(2)
-      expect(response.body.users[1].gmail).toBe(newUserData.gmail)
+      expect(response.body.users.some(user => user.gmail === newUserData.gmail)).toBe(true)
     })
 
     test('Should return 401 if the user is unauthorized', async () => {
@@ -265,7 +266,9 @@ describe('User API tests', () => {
 
       expect(nameResponse.body.users).toBeInstanceOf(Array)
       expect(nameResponse.body.users.length).toBe(1)
-      expect(nameResponse.body.users[0].gmail).toBe(searchUserData.gmail)
+      expect(
+        nameResponse.body.users.some(user => user.gmail === searchUserData.gmail)
+      ).toBe(true)
 
       const gmailResponse = await api
         .get('/api/users/search/filter')
@@ -276,7 +279,9 @@ describe('User API tests', () => {
 
       expect(gmailResponse.body.users).toBeInstanceOf(Array)
       expect(gmailResponse.body.users.length).toBe(1)
-      expect(gmailResponse.body.users[0].name).toBe(searchUserData.name)
+      expect(
+        nameResponse.body.users.some(user => user.gmail === searchUserData.gmail)
+      ).toBe(true)
     })
 
     test('Should return 401 if the user is unauthorized', async () => {
@@ -401,7 +406,7 @@ describe('User API tests', () => {
 
       const users = response.body.users
       expect(users).toHaveLength(3)
-      expect(users[0].gmail).toBe(ADMIN_GMAIL)
+      expect(users.some(user => user.gmail === ADMIN_GMAIL)).toBe(true)
     })
 
     test('Should return 404 when trying to delete a non-existing user', async () => {

@@ -17,6 +17,7 @@ let createdSubjectId
 const createdSubjectIds = []
 const createdAspectIds = []
 
+const timeout = 20000
 beforeAll(async () => {
   await RequirementRepository.deleteAll()
   await LegalBasisRepository.deleteAll()
@@ -32,7 +33,7 @@ beforeAll(async () => {
     .expect(200)
     .expect('Content-Type', /application\/json/)
   tokenAdmin = response.body.token
-})
+}, timeout)
 
 describe('Subjects API tests', () => {
   describe('POST /subjects - Create a new subject', () => {
@@ -40,13 +41,19 @@ describe('Subjects API tests', () => {
       const response = await api
         .post('/api/subjects')
         .set('Authorization', `Bearer ${tokenAdmin}`)
-        .send({ subjectName })
+        .send({
+          subjectName,
+          abbreviation: 'AMB',
+          orderIndex: 1
+        })
         .expect(201)
         .expect('Content-Type', /application\/json/)
 
       const { subject } = response.body
       expect(subject).toHaveProperty('id')
       expect(subject.subject_name).toBe(subjectName)
+      expect(subject.abbreviation).toBe('AMB')
+      expect(subject.order_index).toBe(1)
       createdSubjectId = subject.id
     })
 
@@ -54,7 +61,10 @@ describe('Subjects API tests', () => {
       const response = await api
         .post('/api/subjects')
         .set('Authorization', `Bearer ${tokenAdmin}`)
-        .send({})
+        .send({
+          abbreviation: 'ERR',
+          orderIndex: 2
+        })
         .expect(400)
         .expect('Content-Type', /application\/json/)
 
@@ -64,6 +74,11 @@ describe('Subjects API tests', () => {
     test('Should return 401 if the user is unauthorized', async () => {
       const response = await api
         .post('/api/subjects')
+        .send({
+          subjectName: 'Unauthorized Subject',
+          abbreviation: 'UNAUTH',
+          orderIndex: 3
+        })
         .expect(401)
         .expect('Content-Type', /application\/json/)
 
@@ -74,11 +89,43 @@ describe('Subjects API tests', () => {
       const response = await api
         .post('/api/subjects')
         .set('Authorization', `Bearer ${tokenAdmin}`)
-        .send({ subjectName })
+        .send({
+          subjectName,
+          abbreviation: 'AMB',
+          orderIndex: 1
+        })
         .expect(409)
         .expect('Content-Type', /application\/json/)
 
       expect(response.body.message).toMatch(/Subject already exists/i)
+    })
+
+    test('Should return 400 if abbreviation is too long', async () => {
+      const response = await api
+        .post('/api/subjects')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send({
+          subjectName: 'Too Long Abbreviation',
+          abbreviation: 'ABCDEFGHIJK', // 11 characters
+          orderIndex: 1
+        })
+        .expect(400)
+      expect(response.body.message).toMatch(/Validation failed/i)
+      expect(response.body.errors.some(e => e.field === 'abbreviation')).toBe(true)
+    })
+
+    test('Should return 400 if orderIndex is 0', async () => {
+      const response = await api
+        .post('/api/subjects')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send({
+          subjectName: 'Invalid Order',
+          abbreviation: 'INV',
+          orderIndex: 0
+        })
+        .expect(400)
+      expect(response.body.message).toMatch(/Validation failed/i)
+      expect(response.body.errors.some(e => e.field === 'orderIndex')).toBe(true)
     })
   })
 
@@ -89,9 +136,11 @@ describe('Subjects API tests', () => {
         .set('Authorization', `Bearer ${tokenAdmin}`)
         .expect(200)
         .expect('Content-Type', /application\/json/)
-
       expect(response.body.subjects).toHaveLength(1)
-      expect(response.body.subjects[0].subject_name).toBe(subjectName)
+      const subject = response.body.subjects[0]
+      expect(subject.subject_name).toBe(subjectName)
+      expect(subject.abbreviation).toBe('AMB')
+      expect(subject.order_index).toBe(1)
     })
     test('Should return 401 if the user is unauthorized', async () => {
       const response = await api
@@ -114,6 +163,8 @@ describe('Subjects API tests', () => {
       const { subject } = response.body
       expect(subject).toHaveProperty('id', createdSubjectId)
       expect(subject.subject_name).toBe(subjectName)
+      expect(subject.abbreviation).toBe('AMB')
+      expect(subject.order_index).toBe(1)
     })
 
     test('Should return an error 404 for a subject not found', async () => {
@@ -147,8 +198,11 @@ describe('Subjects API tests', () => {
 
       const { subjects } = response.body
       expect(subjects).toHaveLength(1)
-      expect(subjects[0]).toHaveProperty('id')
-      expect(subjects[0].subject_name).toBe(subjectName)
+      const subject = subjects[0]
+      expect(subject).toHaveProperty('id')
+      expect(subject.subject_name).toBe(subjectName)
+      expect(subject.abbreviation).toBe('AMB')
+      expect(subject.order_index).toBe(1)
     })
 
     test('Should return an empty array if the subject does not exist', async () => {
@@ -164,7 +218,6 @@ describe('Subjects API tests', () => {
       expect(subjects).toBeInstanceOf(Array)
       expect(subjects).toHaveLength(0)
     })
-
     test('Should return 401 if the user is unauthorized', async () => {
       const response = await api
         .get('/api/subjects/name')
@@ -182,22 +235,31 @@ describe('Subjects API tests', () => {
       const response = await api
         .patch(`/api/subject/${createdSubjectId}`)
         .set('Authorization', `Bearer ${tokenAdmin}`)
-        .send({ subjectName: newSubjectName })
+        .send({
+          subjectName: newSubjectName,
+          abbreviation: 'ACT',
+          orderIndex: 5
+        })
         .expect(200)
         .expect('Content-Type', /application\/json/)
 
       const { subject } = response.body
       expect(subject).toHaveProperty('id', createdSubjectId)
       expect(subject.subject_name).toBe(newSubjectName)
+      expect(subject.abbreviation).toBe('ACT')
+      expect(subject.order_index).toBe(5)
     })
 
     test('Should return 404 if the subject does not exist', async () => {
       const nonExistentSubjectId = -1
-      const newSubjectName = 'Ambiental Actualizado'
       const response = await api
         .patch(`/api/subject/${nonExistentSubjectId}`)
         .set('Authorization', `Bearer ${tokenAdmin}`)
-        .send({ subjectName: newSubjectName })
+        .send({
+          subjectName: 'No Existe',
+          abbreviation: 'NA',
+          orderIndex: 2
+        })
         .expect(404)
         .expect('Content-Type', /application\/json/)
 
@@ -221,28 +283,68 @@ describe('Subjects API tests', () => {
       await api
         .post('/api/subjects')
         .set('Authorization', `Bearer ${tokenAdmin}`)
-        .send({ subjectName: duplicateSubjectName })
+        .send({
+          subjectName: duplicateSubjectName,
+          abbreviation: 'DUP',
+          orderIndex: 3
+        })
         .expect(201)
         .expect('Content-Type', /application\/json/)
 
       const response = await api
         .patch(`/api/subject/${createdSubjectId}`)
         .set('Authorization', `Bearer ${tokenAdmin}`)
-        .send({ subjectName: duplicateSubjectName })
+        .send({
+          subjectName: duplicateSubjectName,
+          abbreviation: 'ACT',
+          orderIndex: 1
+        })
         .expect(409)
         .expect('Content-Type', /application\/json/)
 
       expect(response.body.message).toMatch(/Subject already exists/i)
     })
     test('Should return 401 if the user is unauthorized', async () => {
-      const newSubjectName = 'Ambiental Actualizado'
       const response = await api
         .patch(`/api/subject/${createdSubjectId}`)
-        .send({ subjectName: newSubjectName })
+        .send({
+          subjectName: 'Otro Cambio',
+          abbreviation: 'OTR',
+          orderIndex: 10
+        })
         .expect(401)
         .expect('Content-Type', /application\/json/)
 
       expect(response.body.error).toMatch(/token missing or invalid/i)
+    })
+
+    test('Should return 400 if abbreviation is too long during update', async () => {
+      const response = await api
+        .patch(`/api/subject/${createdSubjectId}`)
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send({
+          subjectName: 'Update Test',
+          abbreviation: 'ABCDEFGHIJK',
+          orderIndex: 1
+        })
+        .expect(400)
+
+      expect(response.body.message).toMatch(/Validation failed/i)
+      expect(response.body.errors.some(e => e.field === 'abbreviation')).toBe(true)
+    })
+
+    test('Should return 400 if orderIndex is 0 during update', async () => {
+      const response = await api
+        .patch(`/api/subject/${createdSubjectId}`)
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send({
+          subjectName: 'Update Test',
+          abbreviation: 'UPD',
+          orderIndex: 0
+        })
+        .expect(400)
+      expect(response.body.message).toMatch(/Validation failed/i)
+      expect(response.body.errors.some(e => e.field === 'orderIndex')).toBe(true)
     })
   })
 
@@ -255,20 +357,28 @@ describe('Subjects API tests', () => {
       const subjectResponse = await api
         .post('/api/subjects')
         .set('Authorization', `Bearer ${tokenAdmin}`)
-        .send({ subjectName })
+        .send({
+          subjectName,
+          abbreviation: 'AMB',
+          orderIndex: 1
+        })
         .expect(201)
         .expect('Content-Type', /application\/json/)
 
       createdSubjectId = subjectResponse.body.subject.id
 
-      for (const aspectName of aspectsToCreate) {
+      for (let i = 0; i < aspectsToCreate.length; i++) {
+        const aspectName = aspectsToCreate[i]
         const aspectResponse = await api
           .post(`/api/subjects/${createdSubjectId}/aspects`)
           .set('Authorization', `Bearer ${tokenAdmin}`)
-          .send({ aspectName })
+          .send({
+            aspectName,
+            abbreviation: `A${i + 1}`,
+            orderIndex: i + 1
+          })
           .expect(201)
           .expect('Content-Type', /application\/json/)
-
         const { aspect } = aspectResponse.body
         createdAspectIds.push(aspect.id)
       }
@@ -289,7 +399,7 @@ describe('Subjects API tests', () => {
 
       const requirementData = generateRequirementData({
         subjectId: String(createdSubjectId),
-        aspectId: String(createdAspectIds[0])
+        aspectsIds: JSON.stringify(createdAspectIds)
       })
 
       const requirementResponse = await api
@@ -389,18 +499,27 @@ describe('Subjects API tests', () => {
         const subjectResponse = await api
           .post('/api/subjects')
           .set('Authorization', `Bearer ${tokenAdmin}`)
-          .send({ subjectName: name })
+          .send({
+            subjectName: name,
+            abbreviation: `S${i + 1}`,
+            orderIndex: i + 1
+          })
           .expect(201)
 
         const subject = subjectResponse.body.subject
         createdSubjectIds.push(subject.id)
 
         const aspectIdsForSubject = []
-        for (const aspectName of aspectsToCreate) {
+        for (let j = 0; j < aspectsToCreate.length; j++) {
+          const aspectName = aspectsToCreate[j]
           const aspectResponse = await api
             .post(`/api/subjects/${subject.id}/aspects`)
             .set('Authorization', `Bearer ${tokenAdmin}`)
-            .send({ aspectName })
+            .send({
+              aspectName,
+              abbreviation: `A${i + 1}${j + 1}`,
+              orderIndex: j + 1
+            })
             .expect(201)
 
           aspectIdsForSubject.push(aspectResponse.body.aspect.id)
@@ -426,7 +545,7 @@ describe('Subjects API tests', () => {
           requirementNumber: `REQ-${i + 1}`,
           requirementName: `Requirement Test ${i + 1}`,
           subjectId: String(subject.id),
-          aspectId: String(aspectIdsForSubject[0])
+          aspectsIds: JSON.stringify(aspectIdsForSubject)
         })
 
         const requirementResponse = await api
@@ -450,6 +569,7 @@ describe('Subjects API tests', () => {
     })
 
     describe('After removing all legal bases', () => {
+      const timeout = 20000
       beforeAll(async () => {
         for (const legalBasis of createdLegalBases) {
           await api
@@ -457,7 +577,7 @@ describe('Subjects API tests', () => {
             .set('Authorization', `Bearer ${tokenAdmin}`)
             .expect(204)
         }
-      })
+      }, timeout)
 
       test('Should block deletion if subjects are still associated with requirements', async () => {
         const response = await api
@@ -470,6 +590,7 @@ describe('Subjects API tests', () => {
       })
 
       describe('After removing all requirements', () => {
+        const timeout = 20000
         beforeAll(async () => {
           for (const req of createdRequirements) {
             await api
@@ -477,7 +598,7 @@ describe('Subjects API tests', () => {
               .set('Authorization', `Bearer ${tokenAdmin}`)
               .expect(204)
           }
-        })
+        }, timeout)
 
         test('Should return 401 if the user is unauthorized', async () => {
           const response = await api

@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS users (
     password VARCHAR(255) NOT NULL,
     gmail VARCHAR(255) NOT NULL UNIQUE,
     role_id BIGINT NOT NULL,
-    profile_picture VARCHAR(255) DEFAULT NULL, 
+    profile_picture TEXT DEFAULT NULL,
     FOREIGN KEY (role_id) REFERENCES roles(id)
 );
 
@@ -46,9 +46,13 @@ CREATE TABLE IF NOT EXISTS verification_codes (
 -- Columns:
 -- - id: Unique identifier for each subject, auto-incremented.
 -- - subject_name: Name of the subject, such as 'Environmental', 'Security', etc.
+-- - abbreviation: Optional short code for the subject.
+-- - order_index: Optional ordering index for display purposes.
 CREATE TABLE IF NOT EXISTS subjects (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    subject_name VARCHAR(255) NOT NULL
+    subject_name VARCHAR(255) NOT NULL,
+    abbreviation VARCHAR(10),
+    order_index INT DEFAULT 0
 );
 
 -- Table: aspects
@@ -57,12 +61,15 @@ CREATE TABLE IF NOT EXISTS subjects (
 -- - id: Unique identifier for each aspect, auto-incremented.
 -- - subject_id: Foreign key referencing the 'subjects' table.
 -- - aspect_name: Name of the aspect related to the subject.
+-- - abbreviation: Optional short code for the aspect.
+-- - order_index: Optional ordering index for display purposes.
 CREATE TABLE IF NOT EXISTS aspects (
-    id INT AUTO_INCREMENT,
+    id INT AUTO_INCREMENT PRIMARY KEY,
     subject_id INT NOT NULL,
     aspect_name VARCHAR(255) NOT NULL,
-    PRIMARY KEY (id),
-    UNIQUE KEY (subject_id, id), 
+    abbreviation VARCHAR(10),
+    order_index INT DEFAULT 0,
+    UNIQUE KEY (subject_id, id),
     FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE CASCADE
 );
 
@@ -81,29 +88,29 @@ CREATE TABLE IF NOT EXISTS aspects (
 -- - subject_id: Id of the associated subject.
 CREATE TABLE IF NOT EXISTS legal_basis (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    legal_name VARCHAR(255) NOT NULL,
-    abbreviation VARCHAR(20),
+    legal_name VARCHAR(1000) NOT NULL,
+    abbreviation VARCHAR(255),
     classification ENUM(
-        'Ley', 
-        'Reglamento', 
-        'Norma', 
-        'Acuerdos', 
-        'Código', 
-        'Decreto', 
-        'Lineamiento', 
-        'Orden Jurídico', 
-        'Aviso', 
-        'Convocatoria', 
-        'Plan', 
+        'Ley',
+        'Reglamento',
+        'Norma',
+        'Acuerdos',
+        'Código',
+        'Decreto',
+        'Lineamiento',
+        'Orden Jurídico',
+        'Aviso',
+        'Convocatoria',
+        'Plan',
         'Programa',
         'Recomendaciones'
     ) NOT NULL,
     jurisdiction ENUM('Estatal', 'Federal', 'Local') NOT NULL,
     state VARCHAR(255),
     municipality VARCHAR(255),
-    url VARCHAR(255),
+    url TEXT,
     last_reform DATE,
-    subject_id INT NOT NULL, 
+    subject_id INT NOT NULL,
     FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE RESTRICT
 );
 
@@ -149,8 +156,8 @@ CREATE TABLE IF NOT EXISTS legal_basis_subject_aspect (
     subject_id INT NOT NULL,
     aspect_id INT NOT NULL,
     PRIMARY KEY (legal_basis_id, subject_id, aspect_id),
-    FOREIGN KEY (legal_basis_id) REFERENCES legal_basis(id) ON DELETE CASCADE, 
-    FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE RESTRICT,  
+    FOREIGN KEY (legal_basis_id) REFERENCES legal_basis(id) ON DELETE CASCADE,
+    FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE RESTRICT,
     FOREIGN KEY (aspect_id) REFERENCES aspects(id) ON DELETE RESTRICT
 );
 
@@ -160,7 +167,6 @@ CREATE TABLE IF NOT EXISTS legal_basis_subject_aspect (
 CREATE TABLE IF NOT EXISTS requirements (
     id INT AUTO_INCREMENT PRIMARY KEY,
     subject_id INT NOT NULL,
-    aspect_id INT NOT NULL,
     requirement_number VARCHAR(255) NOT NULL,
     requirement_name VARCHAR(255) NOT NULL,
     mandatory_description LONGTEXT NOT NULL,
@@ -169,77 +175,66 @@ CREATE TABLE IF NOT EXISTS requirements (
     complementary_sentences LONGTEXT NOT NULL,
     mandatory_keywords LONGTEXT NOT NULL,
     complementary_keywords LONGTEXT NOT NULL,
-    requirement_condition ENUM('Crítica', 'Operativa', 'Recomendación', 'Pendiente') NOT NULL,
-    evidence ENUM('Trámite', 'Registro', 'Específico', 'Documento') NOT NULL,
-    periodicity ENUM('Anual', '2 años', 'Por evento', 'Única vez') NOT NULL,
-    requirement_type ENUM(
-        'Identificación Estatal',
-        'Identificación Federal',
-        'Identificación Local',
-        'Requerimiento Compuesto',
-        'Requerimiento Compuesto e Identificación',
-        'Requerimiento Estatal',
-        'Requerimiento Local'
+    requirement_condition ENUM(
+        'Crítica',
+        'Operativa',
+        'Recomendación',
+        'Pendiente'
     ) NOT NULL,
-    jurisdiction ENUM('Estatal', 'Federal', 'Local') NOT NULL,
-    state VARCHAR(255),
-    municipality VARCHAR(255),
-    UNIQUE (subject_id, aspect_id, requirement_name),
-    FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE RESTRICT, 
-    FOREIGN KEY (aspect_id) REFERENCES aspects(id) ON DELETE RESTRICT, 
+    evidence ENUM('Trámite', 'Registro', 'Específica', 'Documento') NOT NULL,
+    specify_evidence VARCHAR(255),
+    periodicity ENUM(
+        'Anual',
+        '2 años',
+        'Por evento',
+        'Única vez',
+        'Específica'
+    ) NOT NULL,
+    FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE RESTRICT,
     FULLTEXT(mandatory_description),
     FULLTEXT(complementary_description),
     FULLTEXT(mandatory_sentences),
-    FULLTEXT(complementary_sentences)
+    FULLTEXT(complementary_sentences),
+    FULLTEXT(mandatory_keywords),
+    FULLTEXT(complementary_keywords)
 );
 
--- Table: requirements_identification
--- Description: This master table records the analysis (identification) that groups the evaluated requirements,
--- including the analysis name, description, status, and the associated user.
-CREATE TABLE IF NOT EXISTS requirements_identification (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    identification_name VARCHAR(255) NOT NULL,
-    identification_description TEXT,
-    status ENUM('Activo', 'Completado', 'Fallido') NOT NULL DEFAULT 'Activo';
-    failed_reason TEXT,
-    user_id BIGINT NULL,  
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
-);
-
--- Table: identification_requirements
--- Description: This table creates a relationship between an analysis (from requirements_identification)
--- and the requirements used in that analysis.
--- Note: The subject and aspect are derived from the requirements table.
-CREATE TABLE IF NOT EXISTS identification_requirements (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    requirements_identification_id INT NOT NULL,
+-- Table: requirement_subject_aspect
+-- Description:
+-- This table establishes a many-to-many relationship between 'requirements',
+-- a specific subject, and one or more aspects.
+-- A requirement always belongs to one main subject via 'requirements.subject_id',
+-- but can be associated to multiple aspects (within the same or different subjects).
+CREATE TABLE IF NOT EXISTS requirement_subject_aspect (
     requirement_id INT NOT NULL,
-    FOREIGN KEY (requirements_identification_id) REFERENCES requirements_identification(id) ON DELETE CASCADE,
-    FOREIGN KEY (requirement_id) REFERENCES requirements(id) ON DELETE RESTRICT
+    subject_id INT NOT NULL,
+    aspect_id INT NOT NULL,
+    PRIMARY KEY (requirement_id, subject_id, aspect_id),
+    FOREIGN KEY (requirement_id) REFERENCES requirements(id) ON DELETE CASCADE,
+    FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE RESTRICT,
+    FOREIGN KEY (aspect_id) REFERENCES aspects(id) ON DELETE RESTRICT
 );
 
--- Table: identification_legal_basis
--- Description: This table links each requirement (within an analysis) to one or more legal bases,
--- establishing a many-to-many relationship between the analyzed requirement and legal documents.
-CREATE TABLE IF NOT EXISTS identification_legal_basis (
-    identification_requirement_id INT NOT NULL,
-    legal_basis_id INT NOT NULL,
-    PRIMARY KEY (identification_requirement_id, legal_basis_id),
-    FOREIGN KEY (identification_requirement_id) REFERENCES identification_requirements(id) ON DELETE CASCADE,
-    FOREIGN KEY (legal_basis_id) REFERENCES legal_basis(id) ON DELETE RESTRICT
+
+-- Table: requirement_types
+-- Description: This table stores the types of requirements that can be associated with identificacion requirements.
+-- including the type name,  description and a classification.
+CREATE TABLE IF NOT EXISTS requirement_types (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  description LONGTEXT NOT NULL,
+  classification LONGTEXT NOT NULL,
+  FULLTEXT(description),
+  FULLTEXT(classification)
 );
 
--- Table: identification_legal_basis_articles
--- Description: This table associates legal articles with a given legal basis linked to a requirement
--- within an analysis, classifying each article as either 'Obligatory' or 'Complementary'.
-CREATE TABLE IF NOT EXISTS identification_legal_basis_articles (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    identification_requirement_id INT NOT NULL,
-    legal_basis_id INT NOT NULL,
-    article_id INT NOT NULL,
-    classification ENUM('Obligatory', 'Complementary') NOT NULL,
-    FOREIGN KEY (identification_requirement_id) REFERENCES identification_requirements(id) ON DELETE CASCADE,
-    FOREIGN KEY (legal_basis_id) REFERENCES legal_basis(id) ON DELETE RESTRICT,
-    FOREIGN KEY (article_id) REFERENCES article(id) ON DELETE RESTRICT
+-- Table: legal_verbs
+-- Description: Esta tabla almacena los verbos legales junto con su descripción y su traducción.
+CREATE TABLE IF NOT EXISTS legal_verbs (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  description LONGTEXT NOT NULL,
+  translation LONGTEXT NOT NULL,
+  FULLTEXT (description),
+  FULLTEXT (translation)
 );

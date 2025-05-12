@@ -1,7 +1,7 @@
 import LegalBasisService from '../services/legalBasis/LegalBasis.service.js'
-import ErrorUtils from '../utils/Error.js'
+import HttpException from '../services/errors/HttpException.js'
 import UserService from '../services/users/User.service.js'
-import validateDate from '../utils/validateDate.js'
+import parseDate from '../utils/parseDate.js'
 
 /**
  * Controller for legal basis operations.
@@ -37,6 +37,7 @@ export const createLegalBasis = async (req, res) => {
       return res.status(403).json({ message: 'Unauthorized' })
     }
     const { jobId, legalBasis } = await LegalBasisService.create(
+      userId,
       {
         legalName,
         abbreviation,
@@ -54,7 +55,7 @@ export const createLegalBasis = async (req, res) => {
     )
     return res.status(201).json({ jobId, legalBasis })
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({
         message: error.message,
         ...(error.errors && { errors: error.errors })
@@ -81,7 +82,7 @@ export const getAllLegalBasis = async (req, res) => {
     const legalBasis = await LegalBasisService.getAll()
     return res.status(200).json({ legalBasis })
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({
         message: error.message,
         ...(error.errors && { errors: error.errors })
@@ -109,7 +110,7 @@ export const getLegalBasisById = async (req, res) => {
     const legalBasis = await LegalBasisService.getById(id)
     return res.status(200).json({ legalBasis })
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({
         message: error.message,
         ...(error.errors && { errors: error.errors })
@@ -137,7 +138,7 @@ export const getLegalBasisByName = async (req, res) => {
     const legalBasis = await LegalBasisService.getByName(name)
     return res.status(200).json({ legalBasis })
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({
         message: error.message,
         ...(error.errors && { errors: error.errors })
@@ -165,7 +166,7 @@ export const getLegalBasisByAbbreviation = async (req, res) => {
     const legalBasis = await LegalBasisService.getByAbbreviation(abbreviation)
     return res.status(200).json({ legalBasis })
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({
         message: error.message,
         ...(error.errors && { errors: error.errors })
@@ -195,7 +196,7 @@ export const getLegalBasisByClassification = async (req, res) => {
     )
     return res.status(200).json({ legalBasis })
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({
         message: error.message,
         ...(error.errors && { errors: error.errors })
@@ -223,7 +224,7 @@ export const getLegalBasisByJurisdiction = async (req, res) => {
     const legalBasis = await LegalBasisService.getByJurisdiction(jurisdiction)
     return res.status(200).json({ legalBasis })
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({
         message: error.message,
         ...(error.errors && { errors: error.errors })
@@ -251,7 +252,7 @@ export const getLegalBasisByState = async (req, res) => {
     const legalBasis = await LegalBasisService.getByState(state)
     return res.status(200).json({ legalBasis })
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({
         message: error.message,
         ...(error.errors && { errors: error.errors })
@@ -270,8 +271,7 @@ export const getLegalBasisByState = async (req, res) => {
  */
 export const getLegalBasisByStateAndMunicipalities = async (req, res) => {
   const { userId } = req
-  const { state } = req.query
-  let { municipalities } = req.query
+  const { state, municipalities } = req.query
   if (municipalities && municipalities.length > 0 && !state) {
     return res.status(400).json({
       message: 'State is required if municipalities are provided'
@@ -282,7 +282,7 @@ export const getLegalBasisByStateAndMunicipalities = async (req, res) => {
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-    municipalities = Array.isArray(municipalities)
+    const municipalitiesList = Array.isArray(municipalities)
       ? municipalities
         .map((municipality) => String(municipality).trim())
         .filter((municipality) => municipality.length > 0)
@@ -294,11 +294,11 @@ export const getLegalBasisByStateAndMunicipalities = async (req, res) => {
         : []
     const legalBasis = await LegalBasisService.getByStateAndMunicipalities(
       state,
-      municipalities
+      municipalitiesList
     )
     return res.status(200).json({ legalBasis })
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({
         message: error.message,
         ...(error.errors && { errors: error.errors })
@@ -326,7 +326,7 @@ export const getLegalBasisBySubject = async (req, res) => {
     const legalBasis = await LegalBasisService.getBySubject(subjectId)
     return res.status(200).json({ legalBasis })
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({
         message: error.message,
         ...(error.errors && { errors: error.errors })
@@ -346,24 +346,63 @@ export const getLegalBasisBySubject = async (req, res) => {
 export const getLegalBasisBySubjectAndAspects = async (req, res) => {
   const { userId } = req
   const { subjectId } = req.params
-  let { aspectIds } = req.query
+  const { aspectIds } = req.query
   try {
     const isAuthorized = await UserService.userExists(userId)
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-    aspectIds = Array.isArray(aspectIds)
+    const aspects = Array.isArray(aspectIds)
       ? aspectIds.map(Number).filter(Number.isInteger)
       : typeof aspectIds === 'string'
         ? aspectIds.split(',').map(Number).filter(Number.isInteger)
         : []
     const legalBasis = await LegalBasisService.getBySubjectAndAspects(
       subjectId,
-      aspectIds
+      aspects
     )
     return res.status(200).json({ legalBasis })
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
+      return res.status(error.status).json({
+        message: error.message,
+        ...(error.errors && { errors: error.errors })
+      })
+    }
+    return res.status(500).json({ message: 'Internal Server Error' })
+  }
+}
+
+/**
+ * Retrieves legal basis entries by filters.
+ * @function getLegalBasisByCriteria
+ * @param {import('express').Request} req - Request object, expects { subjectId, aspectIds, state, municipalities, jurisdiction } in query parameters.
+ * @param {import('express').Response} res - Response object.
+ * @returns {Object} - A list of filtered legal basis entries.
+ */
+export const getLegalBasisByCriteria = async (req, res) => {
+  const { userId } = req
+  const { jurisdiction, state, municipality, subjectId, aspectIds } = req.query
+  try {
+    const isAuthorized = await UserService.userExists(userId)
+    if (!isAuthorized) {
+      return res.status(403).json({ message: 'Unauthorized' })
+    }
+    const aspects = Array.isArray(aspectIds)
+      ? aspectIds.map(Number).filter(Number.isInteger)
+      : typeof aspectIds === 'string'
+        ? aspectIds.split(',').map(Number).filter(Number.isInteger)
+        : []
+    const legalBasis = await LegalBasisService.getLegalBasisByCriteria({
+      jurisdiction,
+      state,
+      municipality,
+      subjectId,
+      aspectIds: aspects
+    })
+    return res.status(200).json({ legalBasis })
+  } catch (error) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({
         message: error.message,
         ...(error.errors && { errors: error.errors })
@@ -383,8 +422,12 @@ export const getLegalBasisBySubjectAndAspects = async (req, res) => {
 export const getLegalBasisByLastReform = async (req, res) => {
   const { userId } = req
   const { from, to } = req.query
-  const { date: parsedFrom, error: fromError } = from ? validateDate(from, 'from') : { date: null, error: null }
-  const { date: parsedTo, error: toError } = to ? validateDate(to, 'to') : { date: null, error: null }
+  const { date: parsedFrom, error: fromError } = from
+    ? parseDate(from, 'from')
+    : { date: null, error: null }
+  const { date: parsedTo, error: toError } = to
+    ? parseDate(to, 'to')
+    : { date: null, error: null }
   if (fromError || toError) {
     return res.status(400).json({
       message: 'Invalid date format',
@@ -396,10 +439,13 @@ export const getLegalBasisByLastReform = async (req, res) => {
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-    const legalBasis = await LegalBasisService.getByLastReform(parsedFrom, parsedTo)
+    const legalBasis = await LegalBasisService.getByLastReform(
+      parsedFrom,
+      parsedTo
+    )
     return res.status(200).json({ legalBasis })
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({
         message: error.message,
         ...(error.errors && { errors: error.errors })
@@ -440,6 +486,7 @@ export const updateLegalBasis = async (req, res) => {
       return res.status(403).json({ message: 'Unauthorized' })
     }
     const { jobId, legalBasis } = await LegalBasisService.updateById(
+      userId,
       id,
       {
         legalName,
@@ -462,7 +509,7 @@ export const updateLegalBasis = async (req, res) => {
       legalBasis
     })
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({
         message: error.message,
         ...(error.errors && { errors: error.errors })
@@ -494,7 +541,7 @@ export const deleteLegalBasis = async (req, res) => {
       return res.status(500).json({ message: 'Internal Server Error' })
     }
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({
         message: error.message,
         ...(error.errors && { errors: error.errors })
@@ -535,7 +582,7 @@ export const deleteLegalBasisBatch = async (req, res) => {
       return res.status(500).json({ message: 'Internal Server Error' })
     }
   } catch (error) {
-    if (error instanceof ErrorUtils) {
+    if (error instanceof HttpException) {
       return res.status(error.status).json({
         message: error.message,
         ...(error.errors && { errors: error.errors })

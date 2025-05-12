@@ -5,6 +5,7 @@ import { ADMIN_PASSWORD_TEST, ADMIN_GMAIL } from '../../config/variables.config.
 
 let tokenAdmin
 
+const timeout = 20000
 beforeAll(async () => {
   await UserRepository.deleteAllExceptByGmail(ADMIN_GMAIL)
   const response = await api
@@ -17,7 +18,7 @@ beforeAll(async () => {
     .expect('Content-Type', /application\/json/)
 
   tokenAdmin = response.body.token
-})
+}, timeout)
 
 describe('File Upload & Fetch API Tests', () => {
   let uploadedFileUrl

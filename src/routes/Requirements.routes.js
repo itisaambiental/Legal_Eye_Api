@@ -4,7 +4,7 @@
  */
 
 import { Router } from 'express'
-import UserExtractor from '../middlewares/access_token.js'
+import UserExtractor from '../middlewares/user_extractor.js'
 import {
   createRequirement,
   getAllRequirements,
@@ -22,10 +22,6 @@ import {
   getRequirementsByCondition,
   getRequirementsByEvidence,
   getRequirementsByPeriodicity,
-  getRequirementsByRequirementType,
-  getRequirementsByJurisdiction,
-  getRequirementsByState,
-  getRequirementsByStateAndMunicipalities,
   updateRequirement,
   deleteRequirement,
   deleteRequirementBatch
@@ -222,55 +218,6 @@ router.get('/requirements/search/evidence', UserExtractor, getRequirementsByEvid
  * @returns {Array<Object>} - A list of requirements matching the periodicity.
  */
 router.get('/requirements/search/periodicity', UserExtractor, getRequirementsByPeriodicity)
-
-/**
- * Route to retrieve requirements filtered by a specific requirement type.
- * @method GET
- * @path /requirements/search/type
- * @description Fetches requirements matching the specified requirement type.
- *
- * @param {string} requirementType - The type of requirement to filter by.
- * @middlewares UserExtractor - Middleware to ensure that the user is authorized and extracted from the request.
- * @returns {Array<Object>} - A list of requirements matching the requirement type.
- */
-router.get('/requirements/search/type', UserExtractor, getRequirementsByRequirementType)
-
-/**
- * Route to retrieve requirements filtered by a specific jurisdiction.
- * @method GET
- * @path /requirements/search/jurisdiction
- * @description Fetches requirements matching the specified jurisdiction.
- *
- * @param {string} jurisdiction - The jurisdiction type to filter by.
- * @middlewares UserExtractor - Middleware to ensure that the user is authorized and extracted from the request.
- * @returns {Array<Object>} - A list of requirements matching the jurisdiction.
- */
-router.get('/requirements/search/jurisdiction', UserExtractor, getRequirementsByJurisdiction)
-
-/**
- * Route to retrieve requirements filtered by a specific state.
- * @method GET
- * @path /requirements/search/state
- * @description Fetches requirements matching the specified state.
- *
- * @param {string} state - The state to filter by.
- * @middlewares UserExtractor - Middleware to ensure that the user is authorized and extracted from the request.
- * @returns {Array<Object>} - A list of requirements matching the state.
- */
-router.get('/requirements/search/state', UserExtractor, getRequirementsByState)
-
-/**
- * Route to retrieve requirements filtered by state and optionally by municipalities.
- * @method GET
- * @path /requirements/search/state/municipalities
- * @description Fetches requirements matching the specified state and optionally filtered by municipalities.
- *
- * @param {string} state - The state to filter by.
- * @param {Array<string>} [municipalities] - Optional comma-separated list of municipalities to filter by.
- * @middlewares UserExtractor - Middleware to ensure that the user is authorized and extracted from the request.
- * @returns {Array<Object>} - A list of requirements matching the filters.
- */
-router.get('/requirements/search/state/municipalities', UserExtractor, getRequirementsByStateAndMunicipalities)
 
 /**
  * Route to update an existing requirement by its ID.

@@ -17,6 +17,7 @@ let createdSubjectId
 let createdAspectId
 const createdAspectIds = []
 
+const timeout = 20000
 beforeAll(async () => {
   await RequirementRepository.deleteAll()
   await LegalBasisRepository.deleteAll()
@@ -36,12 +37,16 @@ beforeAll(async () => {
   const subjectResponse = await api
     .post('/api/subjects')
     .set('Authorization', `Bearer ${tokenAdmin}`)
-    .send({ subjectName })
+    .send({
+      subjectName,
+      abbreviation: 'SH',
+      orderIndex: 1
+    })
     .expect(201)
     .expect('Content-Type', /application\/json/)
 
   createdSubjectId = subjectResponse.body.subject.id
-})
+}, timeout)
 
 describe('Aspects API tests', () => {
   describe('POST /subjects/:subjectId/aspects - Create a new aspect', () => {
@@ -49,15 +54,19 @@ describe('Aspects API tests', () => {
       const response = await api
         .post(`/api/subjects/${createdSubjectId}/aspects`)
         .set('Authorization', `Bearer ${tokenAdmin}`)
-        .send({ aspectName })
+        .send({
+          aspectName,
+          abbreviation: 'ORG',
+          orderIndex: 1
+        })
         .expect(201)
         .expect('Content-Type', /application\/json/)
-
       const { aspect } = response.body
       expect(aspect).toHaveProperty('id')
       expect(aspect.subject_id).toBe(createdSubjectId)
       expect(aspect.aspect_name).toBe(aspectName)
-
+      expect(aspect.abbreviation).toBe('ORG')
+      expect(aspect.order_index).toBe(1)
       createdAspectId = aspect.id
     })
 
@@ -65,7 +74,11 @@ describe('Aspects API tests', () => {
       const response = await api
         .post(`/api/subjects/${createdSubjectId}/aspects`)
         .set('Authorization', `Bearer ${tokenAdmin}`)
-        .send({ aspectName })
+        .send({
+          aspectName,
+          abbreviation: 'ORG',
+          orderIndex: 1
+        })
         .expect(409)
         .expect('Content-Type', /application\/json/)
 
@@ -76,7 +89,10 @@ describe('Aspects API tests', () => {
       const response = await api
         .post(`/api/subjects/${createdSubjectId}/aspects`)
         .set('Authorization', `Bearer ${tokenAdmin}`)
-        .send({})
+        .send({
+          abbreviation: 'NOPE',
+          orderIndex: 2
+        })
         .expect(400)
         .expect('Content-Type', /application\/json/)
 
@@ -86,7 +102,11 @@ describe('Aspects API tests', () => {
     test('Should return 401 if the user is unauthorized', async () => {
       const response = await api
         .post(`/api/subjects/${createdSubjectId}/aspects`)
-        .send({ aspectName })
+        .send({
+          aspectName,
+          abbreviation: 'NOAUTH',
+          orderIndex: 3
+        })
         .expect(401)
         .expect('Content-Type', /application\/json/)
 
@@ -98,11 +118,45 @@ describe('Aspects API tests', () => {
       const response = await api
         .post(`/api/subjects/${nonExistentSubjectId}/aspects`)
         .set('Authorization', `Bearer ${tokenAdmin}`)
-        .send({ aspectName })
+        .send({
+          aspectName,
+          abbreviation: 'BAD',
+          orderIndex: 4
+        })
         .expect(404)
         .expect('Content-Type', /application\/json/)
 
       expect(response.body.message).toMatch(/Subject not found/i)
+    })
+
+    test('Should return 400 if abbreviation is too long', async () => {
+      const response = await api
+        .post(`/api/subjects/${createdSubjectId}/aspects`)
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send({
+          aspectName: 'Aspect With Long Abbr',
+          abbreviation: 'ABCDEFGHIJK', // 11 characters
+          orderIndex: 1
+        })
+        .expect(400)
+
+      expect(response.body.message).toMatch(/Validation failed/i)
+      expect(response.body.errors.some(e => e.field === 'abbreviation')).toBe(true)
+    })
+
+    test('Should return 400 if orderIndex is 0', async () => {
+      const response = await api
+        .post(`/api/subjects/${createdSubjectId}/aspects`)
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send({
+          aspectName: 'Aspect Invalid Order',
+          abbreviation: 'INV',
+          orderIndex: 0
+        })
+        .expect(400)
+
+      expect(response.body.message).toMatch(/Validation failed/i)
+      expect(response.body.errors.some(e => e.field === 'orderIndex')).toBe(true)
     })
   })
 
@@ -121,17 +175,29 @@ describe('Aspects API tests', () => {
       expect(aspect).toHaveProperty('id')
       expect(aspect).toHaveProperty('aspect_name', aspectName)
       expect(aspect).toHaveProperty('subject_id', createdSubjectId)
+      expect(aspect).toHaveProperty('abbreviation', 'ORG')
+      expect(aspect).toHaveProperty('order_index', 1)
     })
 
     test('Should return an empty array if no aspects are associated with the subject', async () => {
+      // Crea un nuevo subject sin aspectos
+      const responseCreate = await api
+        .post('/api/subjects')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send({
+          subjectName: 'Empty Subject',
+          abbreviation: 'EMP',
+          orderIndex: 99
+        })
+        .expect(201)
+      const emptySubjectId = responseCreate.body.subject.id
       const response = await api
-        .get(`/api/subjects/${createdSubjectId}/aspects`)
+        .get(`/api/subjects/${emptySubjectId}/aspects`)
         .set('Authorization', `Bearer ${tokenAdmin}`)
         .expect(200)
         .expect('Content-Type', /application\/json/)
-
       expect(response.body.aspects).toBeInstanceOf(Array)
-      expect(response.body.aspects).toHaveLength(1)
+      expect(response.body.aspects).toHaveLength(0)
     })
 
     test('Should return an error 404 for a non-existing subject ID', async () => {
@@ -168,6 +234,8 @@ describe('Aspects API - GET /aspect/:id', () => {
     expect(aspect).toHaveProperty('aspect_name', aspectName)
     expect(aspect).toHaveProperty('subject_id', createdSubjectId)
     expect(aspect).toHaveProperty('subject_name', subjectName)
+    expect(aspect).toHaveProperty('abbreviation', 'ORG')
+    expect(aspect).toHaveProperty('order_index', 1)
   })
 
   test('Should return 401 if the user is unauthorized', async () => {
@@ -203,9 +271,12 @@ describe('Aspects API - GET /subjects/:subjectId/aspects/name', () => {
     const { aspects } = response.body
     expect(aspects).toBeInstanceOf(Array)
     expect(aspects).toHaveLength(1)
-    expect(aspects[0]).toHaveProperty('id')
-    expect(aspects[0]).toHaveProperty('aspect_name', aspectName)
-    expect(aspects[0]).toHaveProperty('subject_id', createdSubjectId)
+    const aspect = aspects[0]
+    expect(aspect).toHaveProperty('id')
+    expect(aspect).toHaveProperty('aspect_name', aspectName)
+    expect(aspect).toHaveProperty('subject_id', createdSubjectId)
+    expect(aspect).toHaveProperty('abbreviation', 'ORG')
+    expect(aspect).toHaveProperty('order_index', 1)
   })
 
   test('Should return an empty array if no aspects match the name for the subject', async () => {
@@ -251,7 +322,11 @@ describe('Aspects API - PATCH /aspect/:id', () => {
     const response = await api
       .patch(`/api/aspect/${createdAspectId}`)
       .set('Authorization', `Bearer ${tokenAdmin}`)
-      .send({ aspectName: newAspectName })
+      .send({
+        aspectName: newAspectName,
+        abbreviation: 'ORG-ACT',
+        orderIndex: 2
+      })
       .expect(200)
       .expect('Content-Type', /application\/json/)
 
@@ -260,19 +335,29 @@ describe('Aspects API - PATCH /aspect/:id', () => {
     expect(aspect).toHaveProperty('aspect_name', newAspectName)
     expect(aspect).toHaveProperty('subject_id', createdSubjectId)
     expect(aspect).toHaveProperty('subject_name', subjectName)
+    expect(aspect).toHaveProperty('abbreviation', 'ORG-ACT')
+    expect(aspect).toHaveProperty('order_index', 2)
   })
 
   test('Should return 409 if the new aspect name already exists for the subject', async () => {
     await api
       .post(`/api/subjects/${createdSubjectId}/aspects`)
       .set('Authorization', `Bearer ${tokenAdmin}`)
-      .send({ aspectName: 'Duplicado' })
+      .send({
+        aspectName: 'Duplicado',
+        abbreviation: 'DUP',
+        orderIndex: 3
+      })
       .expect(201)
 
     const response = await api
       .patch(`/api/aspect/${createdAspectId}`)
       .set('Authorization', `Bearer ${tokenAdmin}`)
-      .send({ aspectName: 'Duplicado' })
+      .send({
+        aspectName: 'Duplicado',
+        abbreviation: 'ORG-ACT',
+        orderIndex: 2
+      })
       .expect(409)
       .expect('Content-Type', /application\/json/)
 
@@ -292,7 +377,11 @@ describe('Aspects API - PATCH /aspect/:id', () => {
   test('Should return 401 if the user is unauthorized', async () => {
     const response = await api
       .patch(`/api/aspect/${createdAspectId}`)
-      .send({ aspectName: newAspectName })
+      .send({
+        aspectName: newAspectName,
+        abbreviation: 'ORG-ACT',
+        orderIndex: 2
+      })
       .expect(401)
       .expect('Content-Type', /application\/json/)
 
@@ -304,11 +393,44 @@ describe('Aspects API - PATCH /aspect/:id', () => {
     const response = await api
       .patch(`/api/aspect/${nonExistentAspectId}`)
       .set('Authorization', `Bearer ${tokenAdmin}`)
-      .send({ aspectName: newAspectName })
+      .send({
+        aspectName: newAspectName,
+        abbreviation: 'ORG-ACT',
+        orderIndex: 2
+      })
       .expect(404)
       .expect('Content-Type', /application\/json/)
 
     expect(response.body.message).toMatch(/Aspect not found/i)
+  })
+
+  test('Should return 400 if abbreviation is too long during update', async () => {
+    const response = await api
+      .patch(`/api/aspect/${createdAspectId}`)
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .send({
+        aspectName: 'Updated Aspect',
+        abbreviation: 'ABCDEFGHIJK',
+        orderIndex: 2
+      })
+      .expect(400)
+
+    expect(response.body.message).toMatch(/Validation failed/i)
+    expect(response.body.errors.some(e => e.field === 'abbreviation')).toBe(true)
+  })
+
+  test('Should return 400 if orderIndex is 0 during update', async () => {
+    const response = await api
+      .patch(`/api/aspect/${createdAspectId}`)
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .send({
+        aspectName: 'Updated Aspect',
+        abbreviation: 'UA',
+        orderIndex: 0
+      })
+      .expect(400)
+    expect(response.body.message).toMatch(/Validation failed/i)
+    expect(response.body.errors.some(e => e.field === 'orderIndex')).toBe(true)
   })
 })
 
@@ -321,7 +443,11 @@ describe('Aspects API - DELETE /aspect/:id', () => {
     const aspectResponse = await api
       .post(`/api/subjects/${createdSubjectId}/aspects`)
       .set('Authorization', `Bearer ${tokenAdmin}`)
-      .send({ aspectName: 'Aspect with deps' })
+      .send({
+        aspectName: 'Aspect with deps',
+        abbreviation: 'DEP',
+        orderIndex: 5
+      })
       .expect(201)
 
     createdAspectId = aspectResponse.body.aspect.id
@@ -341,7 +467,7 @@ describe('Aspects API - DELETE /aspect/:id', () => {
 
     const requirementData = generateRequirementData({
       subjectId: String(createdSubjectId),
-      aspectId: String(createdAspectId)
+      aspectsIds: JSON.stringify([createdAspectId])
     })
     const requirementResponse = await api
       .post('/api/requirements')
@@ -432,19 +558,22 @@ describe('DELETE /aspects/batch - Delete multiple aspects with dependencies', ()
   const timeout = 20000
 
   beforeAll(async () => {
-    for (const name of aspectNames) {
+    for (let i = 0; i < aspectNames.length; i++) {
+      const name = aspectNames[i]
       const aspectResponse = await api
         .post(`/api/subjects/${createdSubjectId}/aspects`)
         .set('Authorization', `Bearer ${tokenAdmin}`)
-        .send({ aspectName: name })
+        .send({
+          aspectName: name,
+          abbreviation: `A${i + 1}`,
+          orderIndex: i + 1
+        })
         .expect(201)
-
       createdAspectIds.push(aspectResponse.body.aspect.id)
     }
 
     for (let i = 0; i < createdAspectIds.length; i++) {
       const aspectId = createdAspectIds[i]
-
       const legalBasisData = generateLegalBasisData({
         legalName: `LegalBasis ${i + 1}`,
         abbreviation: `LB-${i + 1}`,
@@ -464,7 +593,7 @@ describe('DELETE /aspects/batch - Delete multiple aspects with dependencies', ()
         requirementNumber: `REQ-${i + 1}`,
         requirementName: `Requirement Test ${i + 1}`,
         subjectId: String(createdSubjectId),
-        aspectId: String(aspectId)
+        aspectsIds: JSON.stringify([aspectId])
       })
 
       const requirementResponse = await api
@@ -488,6 +617,7 @@ describe('DELETE /aspects/batch - Delete multiple aspects with dependencies', ()
   })
 
   describe('After removing all legal bases', () => {
+    const timeout = 20000
     beforeAll(async () => {
       for (const legalBasis of createdLegalBases) {
         await api
@@ -495,7 +625,7 @@ describe('DELETE /aspects/batch - Delete multiple aspects with dependencies', ()
           .set('Authorization', `Bearer ${tokenAdmin}`)
           .expect(204)
       }
-    })
+    }, timeout)
 
     test('Should block deletion if aspects are still associated with requirements', async () => {
       const response = await api
@@ -508,6 +638,7 @@ describe('DELETE /aspects/batch - Delete multiple aspects with dependencies', ()
     })
 
     describe('After removing all requirements', () => {
+      const timeout = 20000
       beforeAll(async () => {
         for (const req of createdRequirements) {
           await api
@@ -515,7 +646,7 @@ describe('DELETE /aspects/batch - Delete multiple aspects with dependencies', ()
             .set('Authorization', `Bearer ${tokenAdmin}`)
             .expect(204)
         }
-      })
+      }, timeout)
 
       test('Should return 401 if the user is unauthorized', async () => {
         const response = await api

@@ -3,11 +3,11 @@ import { api } from '../../config/test.config.js'
 import UserRepository from '../../repositories/User.repository.js'
 import SubjectsRepository from '../../repositories/Subject.repository.js'
 import LegalBasisRepository from '../../repositories/LegalBasis.repository.js'
+import RequirementRepository from '../../repositories/Requirements.repository.js'
 import AspectsRepository from '../../repositories/Aspects.repository.js'
-import extractArticlesService from '../../services/articles/extractArticles/extractArticles.service.js'
+import extractArticlesService from '../../services/articles/extractArticles/ExtractArticles.service.js'
 import generateLegalBasisData from '../../utils/generateLegalBasisData.js'
-import articlesQueue from '../../queues/articlesQueue.js'
-
+import extractArticlesQueue from '../../queues/extractArticlesQueue.js'
 import {
   ADMIN_PASSWORD_TEST,
   ADMIN_GMAIL
@@ -20,7 +20,9 @@ let createdSubjectId
 const createdAspectIds = []
 let createdLegalBasis
 
+const timeout = 20000
 beforeAll(async () => {
+  await RequirementRepository.deleteAll()
   await LegalBasisRepository.deleteAll()
   await SubjectsRepository.deleteAll()
   await AspectsRepository.deleteAll()
@@ -39,7 +41,11 @@ beforeAll(async () => {
   const subjectResponse = await api
     .post('/api/subjects')
     .set('Authorization', `Bearer ${tokenAdmin}`)
-    .send({ subjectName })
+    .send({
+      subjectName,
+      abbreviation: 'AMB',
+      orderIndex: 1
+    })
     .expect(201)
     .expect('Content-Type', /application\/json/)
 
@@ -48,14 +54,18 @@ beforeAll(async () => {
     const aspectResponse = await api
       .post(`/api/subjects/${createdSubjectId}/aspects`)
       .set('Authorization', `Bearer ${tokenAdmin}`)
-      .send({ aspectName })
+      .send({
+        aspectName,
+        abbreviation: 'ORG',
+        orderIndex: 1
+      })
       .expect(201)
       .expect('Content-Type', /application\/json/)
 
     const { aspect } = aspectResponse.body
     createdAspectIds.push(aspect.id)
   }
-})
+}, timeout)
 
 afterEach(async () => {
   jest.restoreAllMocks()
@@ -220,7 +230,7 @@ describe('Cancel job', () => {
       isFailed: jest.fn().mockResolvedValue(false)
     }
 
-    jest.spyOn(articlesQueue, 'getJob').mockResolvedValue(mockJob)
+    jest.spyOn(extractArticlesQueue, 'getJob').mockResolvedValue(mockJob)
 
     await api
       .delete(`/api/jobs/articles/${jobId}`)
@@ -252,7 +262,7 @@ describe('Cancel job', () => {
         getState: jest.fn().mockResolvedValue(state)
       }
 
-      jest.spyOn(articlesQueue, 'getJob').mockResolvedValue(mockJob)
+      jest.spyOn(extractArticlesQueue, 'getJob').mockResolvedValue(mockJob)
 
       await api
         .delete(`/api/jobs/articles/${jobId}`)
@@ -279,7 +289,7 @@ describe('Cancel job', () => {
         remove: jest.fn()
       }
 
-      jest.spyOn(articlesQueue, 'getJob').mockResolvedValue(mockJob)
+      jest.spyOn(extractArticlesQueue, 'getJob').mockResolvedValue(mockJob)
 
       const response = await api
         .delete(`/api/jobs/articles/${jobId}`)
@@ -298,7 +308,7 @@ describe('Cancel job', () => {
   test('Should return 404 if the job does not exist', async () => {
     const nonExistentJobId = 'non-existent-job'
 
-    jest.spyOn(articlesQueue, 'getJob').mockResolvedValue(null)
+    jest.spyOn(extractArticlesQueue, 'getJob').mockResolvedValue(null)
 
     const response = await api
       .delete(`/api/jobs/articles/${nonExistentJobId}`)

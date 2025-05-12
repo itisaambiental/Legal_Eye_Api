@@ -1,5 +1,5 @@
 import { pool } from '../config/db.config.js'
-import ErrorUtils from '../utils/Error.js'
+import HttpException from '../services/errors/HttpException.js'
 import Article from '../models/Article.model.js'
 
 /**
@@ -19,7 +19,7 @@ class ArticlesRepository {
  * @param {string} article.plainArticle - The plain text equivalent of the article content.
  * @param {number} article.order - The order of the article.
  * @returns {Promise<Article>} - Returns the created Article instance.
- * @throws {ErrorUtils} - If an error occurs during insertion.
+ * @throws {HttpException} - If an error occurs during insertion.
  */
   static async create (legalBasisId, article) {
     const query = `
@@ -39,7 +39,7 @@ class ArticlesRepository {
       return createdArticle
     } catch (error) {
       console.error('Error creating article:', error.message)
-      throw new ErrorUtils(500, 'Error creating article in the database')
+      throw new HttpException(500, 'Error creating article in the database')
     }
   }
 
@@ -56,7 +56,7 @@ class ArticlesRepository {
  * @param {string} articles[].plainArticle - The plain text equivalent of the article content.
  * @param {number} articles[].order - The order of the article.
  * @returns {Promise<boolean>} - Returns true if insertion is successful, false otherwise.
- * @throws {ErrorUtils} - If an error occurs during insertion.
+ * @throws {HttpException} - If an error occurs during insertion.
  */
   static async createMany (legalBasisId, articles) {
     if (articles.length === 0) {
@@ -81,7 +81,7 @@ class ArticlesRepository {
       return true
     } catch (error) {
       console.error('Error inserting articles:', error.message)
-      throw new ErrorUtils(500, 'Error inserting articles into the database')
+      throw new HttpException(500, 'Error inserting articles into the database')
     }
   }
 
@@ -89,7 +89,7 @@ class ArticlesRepository {
    * Fetches an article by its ID from the database.
    * @param {number} id - The ID of the article to retrieve.
    * @returns {Promise<Article|null>} - Returns the Article instance or null if not found.
-   * @throws {ErrorUtils} - If an error occurs during retrieval.
+   * @throws {HttpException} - If an error occurs during retrieval.
    */
   static async findById (id) {
     const query = `
@@ -110,7 +110,7 @@ class ArticlesRepository {
       )
     } catch (error) {
       console.error('Error fetching article by ID:', error.message)
-      throw new ErrorUtils(500, 'Error fetching article from the database')
+      throw new HttpException(500, 'Error fetching article from the database')
     }
   }
 
@@ -118,7 +118,7 @@ class ArticlesRepository {
  * Finds articles in the database using an array of IDs.
  * @param {Array<number>} articleIds - Array of article IDs to find.
  * @returns {Promise<Array<Article>>} - Array of Article instances matching the provided IDs.
- * @throws {ErrorUtils} - If an error occurs during retrieval.
+ * @throws {HttpException} - If an error occurs during retrieval.
  */
   static async findByIds (articleIds) {
     if (articleIds.length === 0) {
@@ -143,7 +143,7 @@ class ArticlesRepository {
       )
     } catch (error) {
       console.error('Error finding articles by IDs:', error.message)
-      throw new ErrorUtils(500, 'Error finding articles by IDs from the database')
+      throw new HttpException(500, 'Error finding articles by IDs from the database')
     }
   }
 
@@ -152,7 +152,7 @@ class ArticlesRepository {
    * Returns a list of Article instances.
    * @param {number} legalBasisId - The ID of the legal basis.
    * @returns {Promise<Array<Article|null>>} - The list of ordered Article instances.
-   * @throws {ErrorUtils} - If an error occurs during retrieval.
+   * @throws {HttpException} - If an error occurs during retrieval.
    */
   static async findByLegalBasisId (legalBasisId) {
     try {
@@ -178,7 +178,7 @@ class ArticlesRepository {
       )
     } catch (error) {
       console.error('Error fetching articles:', error.message)
-      throw new ErrorUtils(500, 'Error fetching articles from the database')
+      throw new HttpException(500, 'Error fetching articles from the database')
     }
   }
 
@@ -187,7 +187,7 @@ class ArticlesRepository {
  * @param {number} legalBasisId - The ID of the legal basis to filter articles by.
  * @param {string} articleName - The name or part of the name of the article to retrieve.
  * @returns {Promise<Array<Article|null>>} - A list of Article instances matching the name for the given legal basis.
- * @throws {ErrorUtils} - If an error occurs during retrieval.
+ * @throws {HttpException} - If an error occurs during retrieval.
  */
   static async findByName (legalBasisId, articleName) {
     const query = `
@@ -211,7 +211,7 @@ class ArticlesRepository {
       )
     } catch (error) {
       console.error('Error retrieving articles by name:', error.message)
-      throw new ErrorUtils(500, 'Error retrieving articles by name')
+      throw new HttpException(500, 'Error retrieving articles by name')
     }
   }
 
@@ -220,36 +220,17 @@ class ArticlesRepository {
  * @param {number} legalBasisId - The ID of the legal basis to filter articles by.
  * @param {string} description - The description or part of the description to search for.
  * @returns {Promise<Array<Article|null>>} - A list of Article instances matching the description for the given legal basis.
- * @throws {ErrorUtils} - If an error occurs during retrieval.
+ * @throws {HttpException} - If an error occurs during retrieval.
  */
   static async findByDescription (legalBasisId, description) {
     try {
-      const likeQuery = `
-      SELECT id, legal_basis_id, article_name, description, article_order
-      FROM article
-      WHERE legal_basis_id = ? 
-        AND plain_description LIKE ?
-    `
-      const [rows] = await pool.query(likeQuery, [legalBasisId, `%${description}%`])
-      if (rows.length > 0) {
-        return rows.map(
-          (row) =>
-            new Article(
-              row.id,
-              row.legal_basis_id,
-              row.article_name,
-              row.description,
-              row.article_order
-            )
-        )
-      }
-      const matchQuery = `
+      const query = `
       SELECT id, legal_basis_id, article_name, description, article_order
       FROM article
       WHERE legal_basis_id = ?
         AND MATCH(plain_description) AGAINST(? IN BOOLEAN MODE)
     `
-      const [result] = await pool.query(matchQuery, [legalBasisId, `%${description}%`])
+      const [result] = await pool.query(query, [legalBasisId, description])
       if (result.length === 0) return null
       return result.map(
         (row) =>
@@ -263,7 +244,7 @@ class ArticlesRepository {
       )
     } catch (error) {
       console.error('Error retrieving articles by description:', error.message)
-      throw new ErrorUtils(500, 'Error retrieving articles by description')
+      throw new HttpException(500, 'Error retrieving articles by description')
     }
   }
 
@@ -276,7 +257,7 @@ class ArticlesRepository {
  * @param {string|null} article.plainArticle - The plain text equivalent of the article content.
  * @param {number|null} article.order - The new order of the article, or null to keep the current order.
  * @returns {Promise<boolean|Article>} - Returns the updated Article instance if successful, false otherwise.
- * @throws {ErrorUtils} - If an error occurs during update.
+ * @throws {HttpException} - If an error occurs during update.
  */
   static async updateById (id, article) {
     const query = `
@@ -298,7 +279,7 @@ class ArticlesRepository {
       return article
     } catch (error) {
       console.error('Error updating article:', error.message)
-      throw new ErrorUtils(500, 'Error updating article in the database')
+      throw new HttpException(500, 'Error updating article in the database')
     }
   }
 
@@ -306,7 +287,7 @@ class ArticlesRepository {
  * Deletes an article by its ID.
  * @param {number} id - The ID of the article to delete.
  * @returns {Promise<boolean>} - Returns true if the deletion is successful, false otherwise.
- * @throws {ErrorUtils} - If an error occurs during deletion.
+ * @throws {HttpException} - If an error occurs during deletion.
  */
   static async deleteById (id) {
     const query = `
@@ -321,7 +302,7 @@ class ArticlesRepository {
       return true
     } catch (error) {
       console.error('Error deleting article:', error.message)
-      throw new ErrorUtils(500, 'Error deleting article from the database')
+      throw new HttpException(500, 'Error deleting article from the database')
     }
   }
 
@@ -329,7 +310,7 @@ class ArticlesRepository {
  * Deletes multiple articles from the database using an array of IDs.
  * @param {Array<number>} articleIds - Array of article IDs to delete.
  * @returns {Promise<boolean>} - True if articles were deleted, otherwise false.
- * @throws {ErrorUtils} - If an error occurs during the deletion.
+ * @throws {HttpException} - If an error occurs during the deletion.
  */
   static async deleteBatch (articleIds) {
     const query = `
@@ -343,21 +324,21 @@ class ArticlesRepository {
       return true
     } catch (error) {
       console.error('Error deleting articles:', error.message)
-      throw new ErrorUtils(500, 'Error deleting articles from the database')
+      throw new HttpException(500, 'Error deleting articles from the database')
     }
   }
 
   /**
  * Deletes all articles from the database.
  * @returns {Promise<void>}
- * @throws {ErrorUtils} - If an error occurs during deletion.
+ * @throws {HttpException} - If an error occurs during deletion.
  */
   static async deleteAll () {
     try {
       await pool.query('DELETE FROM article')
     } catch (error) {
       console.error('Error deleting all articles:', error.message)
-      throw new ErrorUtils(500, 'Error deleting all articles from the database')
+      throw new HttpException(500, 'Error deleting all articles from the database')
     }
   }
 }

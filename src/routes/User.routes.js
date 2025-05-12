@@ -21,8 +21,8 @@ import {
   resetPassword,
   verifyCode
 } from '../controllers/User.controller.js'
-import UserExtractor from '../middlewares/access_token.js'
-import { upload } from '../config/multer.config.js'
+import UserExtractor from '../middlewares/user_extractor.js'
+import { upload } from '../middlewares/multer.js'
 
 /**
  * UserRouter

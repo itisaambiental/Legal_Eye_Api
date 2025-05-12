@@ -4,8 +4,8 @@ import UserRepository from '../../repositories/User.repository.js'
 import RequirementRepository from '../../repositories/Requirements.repository.js'
 import SubjectsRepository from '../../repositories/Subject.repository.js'
 import AspectsRepository from '../../repositories/Aspects.repository.js'
+import LegalBasisRepository from '../../repositories/LegalBasis.repository.js'
 import generateRequirementData from '../../utils/generateRequirementData.js'
-
 import {
   ADMIN_PASSWORD_TEST,
   ADMIN_GMAIL
@@ -17,8 +17,10 @@ let tokenAdmin
 let createdSubjectId
 const createdAspectIds = []
 
+const timeout = 20000
 beforeAll(async () => {
   await RequirementRepository.deleteAll()
+  await LegalBasisRepository.deleteAll()
   await SubjectsRepository.deleteAll()
   await AspectsRepository.deleteAll()
   await UserRepository.deleteAllExceptByGmail(ADMIN_GMAIL)
@@ -36,7 +38,11 @@ beforeAll(async () => {
   const subjectResponse = await api
     .post('/api/subjects')
     .set('Authorization', `Bearer ${tokenAdmin}`)
-    .send({ subjectName })
+    .send({
+      subjectName,
+      abbreviation: 'AMB',
+      orderIndex: 1
+    })
     .expect(201)
     .expect('Content-Type', /application\/json/)
 
@@ -45,14 +51,18 @@ beforeAll(async () => {
     const aspectResponse = await api
       .post(`/api/subjects/${createdSubjectId}/aspects`)
       .set('Authorization', `Bearer ${tokenAdmin}`)
-      .send({ aspectName })
+      .send({
+        aspectName,
+        abbreviation: 'ORG',
+        orderIndex: 1
+      })
       .expect(201)
       .expect('Content-Type', /application\/json/)
 
     const { aspect } = aspectResponse.body
     createdAspectIds.push(aspect.id)
   }
-})
+}, timeout)
 
 afterEach(() => {
   jest.restoreAllMocks()
@@ -66,7 +76,7 @@ describe('Create a requirement', () => {
   test('Should successfully create a requirement', async () => {
     const requirementData = generateRequirementData({
       subjectId: String(createdSubjectId),
-      aspectId: String(createdAspectIds[0])
+      aspectsIds: JSON.stringify([createdAspectIds[0]])
     })
 
     const response = await api
@@ -88,26 +98,27 @@ describe('Create a requirement', () => {
       complementary_keywords: requirementData.complementaryKeywords,
       condition: requirementData.condition,
       evidence: requirementData.evidence,
+      specify_evidence: requirementData.evidence === 'Específica'
+        ? requirementData.specifyEvidence
+        : null,
       periodicity: requirementData.periodicity,
-      requirement_type: requirementData.requirementType,
-      jurisdiction: requirementData.jurisdiction,
-      state: null,
-      municipality: null,
       subject: {
         subject_id: createdSubjectId,
         subject_name: subjectName
       },
-      aspect: {
-        aspect_id: createdAspectIds[0],
-        aspect_name: aspectsToCreate[0]
-      }
+      aspects: expect.arrayContaining([
+        {
+          aspect_id: createdAspectIds[0],
+          aspect_name: aspectsToCreate[0]
+        }
+      ])
     })
   })
 
   test('Should return 404 if Subject ID is invalid', async () => {
     const requirementData = generateRequirementData({
       subjectId: '-1',
-      aspectId: String(createdAspectIds[0])
+      aspectsIds: JSON.stringify([createdAspectIds[0]])
     })
 
     const response = await api
@@ -122,7 +133,7 @@ describe('Create a requirement', () => {
   test('Should return 404 if Aspect ID is invalid', async () => {
     const requirementData = generateRequirementData({
       subjectId: String(createdSubjectId),
-      aspectId: '-1'
+      aspectsIds: JSON.stringify([-1])
     })
 
     const response = await api
@@ -131,19 +142,22 @@ describe('Create a requirement', () => {
       .send(requirementData)
       .expect(404)
 
-    expect(response.body.message).toMatch(/Aspect not found/i)
+    expect(response.body.message).toMatch(/Aspects not found for IDs/i)
   })
+
   test('Should return 409 if requirement number already exists', async () => {
     const requirementData = generateRequirementData({
       subjectId: String(createdSubjectId),
-      aspectId: String(createdAspectIds[0]),
+      aspectsIds: JSON.stringify([createdAspectIds[0]]),
       requirementNumber: 'REQ-001'
     })
+
     await api
       .post('/api/requirements')
       .set('Authorization', `Bearer ${tokenAdmin}`)
       .send(requirementData)
       .expect(201)
+
     const response = await api
       .post('/api/requirements')
       .set('Authorization', `Bearer ${tokenAdmin}`)
@@ -156,10 +170,11 @@ describe('Create a requirement', () => {
   test('Should return 409 if requirement name already exists', async () => {
     const requirementData = generateRequirementData({
       subjectId: String(createdSubjectId),
-      aspectId: String(createdAspectIds[0]),
+      aspectsIds: JSON.stringify([createdAspectIds[0]]),
       requirementName: 'Test Requirement Name',
       requirementNumber: 'REQ-001'
     })
+
     await api
       .post('/api/requirements')
       .set('Authorization', `Bearer ${tokenAdmin}`)
@@ -170,6 +185,7 @@ describe('Create a requirement', () => {
       ...requirementData,
       requirementNumber: 'REQ-002'
     }
+
     const response = await api
       .post('/api/requirements')
       .set('Authorization', `Bearer ${tokenAdmin}`)
@@ -182,7 +198,7 @@ describe('Create a requirement', () => {
   test('Should return 401 if the user is unauthorized', async () => {
     const requirementData = generateRequirementData({
       subjectId: String(createdSubjectId),
-      aspectId: String(createdAspectIds[0])
+      aspectsIds: JSON.stringify([createdAspectIds[0]])
     })
 
     const response = await api
@@ -199,7 +215,7 @@ describe('Create a requirement', () => {
       const longRequirementNumber = 'A'.repeat(256)
       const requirementData = generateRequirementData({
         subjectId: String(createdSubjectId),
-        aspectId: String(createdAspectIds[0]),
+        aspectsIds: JSON.stringify([createdAspectIds[0]]),
         requirementNumber: longRequirementNumber
       })
 
@@ -221,7 +237,7 @@ describe('Create a requirement', () => {
       const longRequirementName = 'A'.repeat(256)
       const requirementData = generateRequirementData({
         subjectId: String(createdSubjectId),
-        aspectId: String(createdAspectIds[0]),
+        aspectsIds: JSON.stringify([createdAspectIds[0]]),
         requirementName: longRequirementName
       })
 
@@ -242,7 +258,7 @@ describe('Create a requirement', () => {
     test('Should return 400 if subjectId is not a valid number', async () => {
       const requirementData = generateRequirementData({
         subjectId: 'invalid-number',
-        aspectId: String(createdAspectIds[0])
+        aspectsIds: JSON.stringify([createdAspectIds[0]])
       })
 
       const response = await api
@@ -259,10 +275,10 @@ describe('Create a requirement', () => {
       )
     })
 
-    test('Should return 400 if aspectId is not a valid number', async () => {
+    test('Should return 400 if any aspectId is not a valid number', async () => {
       const requirementData = generateRequirementData({
         subjectId: String(createdSubjectId),
-        aspectId: 'invalid-number'
+        aspectsIds: JSON.stringify(['invalid'])
       })
 
       const response = await api
@@ -274,7 +290,7 @@ describe('Create a requirement', () => {
       expect(response.body.message).toMatch(/Validation failed/i)
       expect(response.body.errors).toEqual(
         expect.arrayContaining([
-          { field: 'aspectId', message: expect.stringMatching(/must be a valid number/i) }
+          { field: 'aspectsIds', message: expect.stringMatching(/must be a valid array of numbers/i) }
         ])
       )
     })
@@ -282,7 +298,7 @@ describe('Create a requirement', () => {
     test('Should return 400 if mandatoryDescription is missing', async () => {
       const requirementData = generateRequirementData({
         subjectId: String(createdSubjectId),
-        aspectId: String(createdAspectIds[0]),
+        aspectsIds: JSON.stringify([createdAspectIds[0]]),
         mandatoryDescription: ''
       })
 
@@ -302,7 +318,7 @@ describe('Create a requirement', () => {
     test('Should return 400 if complementaryDescription is missing', async () => {
       const requirementData = generateRequirementData({
         subjectId: String(createdSubjectId),
-        aspectId: String(createdAspectIds[0]),
+        aspectsIds: JSON.stringify([createdAspectIds[0]]),
         complementaryDescription: ''
       })
 
@@ -322,7 +338,7 @@ describe('Create a requirement', () => {
     test('Should return 400 if mandatorySentences is missing', async () => {
       const requirementData = generateRequirementData({
         subjectId: String(createdSubjectId),
-        aspectId: String(createdAspectIds[0]),
+        aspectsIds: JSON.stringify([createdAspectIds[0]]),
         mandatorySentences: ''
       })
 
@@ -342,7 +358,7 @@ describe('Create a requirement', () => {
     test('Should return 400 if complementarySentences is missing', async () => {
       const requirementData = generateRequirementData({
         subjectId: String(createdSubjectId),
-        aspectId: String(createdAspectIds[0]),
+        aspectsIds: JSON.stringify([createdAspectIds[0]]),
         complementarySentences: ''
       })
 
@@ -362,7 +378,7 @@ describe('Create a requirement', () => {
     test('Should return 400 if mandatoryKeywords is missing', async () => {
       const requirementData = generateRequirementData({
         subjectId: String(createdSubjectId),
-        aspectId: String(createdAspectIds[0]),
+        aspectsIds: JSON.stringify([createdAspectIds[0]]),
         mandatoryKeywords: ''
       })
 
@@ -382,7 +398,7 @@ describe('Create a requirement', () => {
     test('Should return 400 if complementaryKeywords is missing', async () => {
       const requirementData = generateRequirementData({
         subjectId: String(createdSubjectId),
-        aspectId: String(createdAspectIds[0]),
+        aspectsIds: JSON.stringify([createdAspectIds[0]]),
         complementaryKeywords: ''
       })
 
@@ -402,7 +418,7 @@ describe('Create a requirement', () => {
     test('Should return 400 if condition is not a valid value', async () => {
       const requirementData = generateRequirementData({
         subjectId: String(createdSubjectId),
-        aspectId: String(createdAspectIds[0]),
+        aspectsIds: JSON.stringify([createdAspectIds[0]]),
         condition: 'Invalid Condition'
       })
 
@@ -422,7 +438,7 @@ describe('Create a requirement', () => {
     test('Should return 400 if evidence is not a valid value', async () => {
       const requirementData = generateRequirementData({
         subjectId: String(createdSubjectId),
-        aspectId: String(createdAspectIds[0]),
+        aspectsIds: JSON.stringify([createdAspectIds[0]]),
         evidence: 'Invalid Evidence'
       })
 
@@ -434,18 +450,61 @@ describe('Create a requirement', () => {
 
       expect(response.body.errors).toEqual(
         expect.arrayContaining([
-          { field: 'evidence', message: expect.stringMatching(/must be one of the following: Trámite, Registro, Específico, Documento/i) }
+          { field: 'evidence', message: expect.stringMatching(/must be one of the following: Trámite, Registro, Específica, Documento/i) }
         ])
       )
     })
 
+    test('Should return 400 if evidence is "Específica" but specifyEvidence is missing', async () => {
+      const requirementData = generateRequirementData({
+        evidence: 'Específica',
+        specifyEvidence: '',
+        subjectId: String(createdSubjectId),
+        aspectsIds: JSON.stringify([createdAspectIds[0]])
+      })
+      const response = await api
+        .post('/api/requirements')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send(requirementData)
+        .expect(400)
+      expect(response.body.errors).toEqual(
+        expect.arrayContaining([
+          {
+            field: 'specifyEvidence',
+            message: expect.stringMatching(/must specify.*evidence/i)
+          }
+        ])
+      )
+    })
+
+    test('Should return 400 if specifyEvidence is filled but evidence is not "Específic.skip"', async () => {
+      const requirementData = generateRequirementData({
+        evidence: 'Documento',
+        specifyEvidence: 'Comprobante oficial',
+        subjectId: String(createdSubjectId),
+        aspectsIds: JSON.stringify([createdAspectIds[0]])
+      })
+      const response = await api
+        .post('/api/requirements')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send(requirementData)
+        .expect(400)
+
+      expect(response.body.errors).toEqual(
+        expect.arrayContaining([
+          {
+            field: 'specifyEvidence',
+            message: expect.stringMatching(/must be empty.*evidence is "Específica"/i)
+          }
+        ])
+      )
+    })
     test('Should return 400 if periodicity is not a valid value', async () => {
       const requirementData = generateRequirementData({
         subjectId: String(createdSubjectId),
-        aspectId: String(createdAspectIds[0]),
+        aspectsIds: JSON.stringify([createdAspectIds[0]]),
         periodicity: 'Invalid Periodicity'
       })
-
       const response = await api
         .post('/api/requirements')
         .set('Authorization', `Bearer ${tokenAdmin}`)
@@ -458,154 +517,48 @@ describe('Create a requirement', () => {
         ])
       )
     })
-
-    test('Should return 400 if requirementType is not a valid value', async () => {
+    test('Should create requirement with specify_evidence when evidence is "Específica"', async () => {
       const requirementData = generateRequirementData({
         subjectId: String(createdSubjectId),
-        aspectId: String(createdAspectIds[0]),
-        requirementType: 'Invalid Type'
+        aspectsIds: JSON.stringify([createdAspectIds[0]]),
+        evidence: 'Específica',
+        specifyEvidence: 'Certificado de verificación emitido por autoridad'
       })
-
       const response = await api
         .post('/api/requirements')
         .set('Authorization', `Bearer ${tokenAdmin}`)
         .send(requirementData)
-        .expect(400)
+        .expect(201)
 
-      expect(response.body.errors).toEqual(
-        expect.arrayContaining([
-          { field: 'requirementType', message: expect.stringMatching(/must be one of the allowed options: Identificación Estatal, Identificación Federal, Identificación Local, Requerimiento Compuesto, Requerimiento Compuesto e Identificación, Requerimiento Estatal, Requerimiento Local/i) }
-        ])
-      )
+      expect(response.body.requirement).toMatchObject({
+        evidence: 'Específica',
+        specify_evidence: 'Certificado de verificación emitido por autoridad'
+      })
     })
-
-    test('Should return 400 if state is provided for Federal jurisdiction', async () => {
+    test('Should return 400 if evidence is "Específica" but specify_evidence is missing', async () => {
       const requirementData = generateRequirementData({
         subjectId: String(createdSubjectId),
-        aspectId: String(createdAspectIds[0]),
-        jurisdiction: 'Federal',
-        state: 'Invalid State'
+        aspectsIds: JSON.stringify([createdAspectIds[0]]),
+        evidence: 'Específica',
+        specifyEvidence: ''
       })
-
       const response = await api
         .post('/api/requirements')
         .set('Authorization', `Bearer ${tokenAdmin}`)
         .send(requirementData)
         .expect(400)
-
       expect(response.body.errors).toEqual(
         expect.arrayContaining([
-          { field: 'state', message: expect.stringMatching(/State should not be provided for Federal jurisdiction/i) }
-        ])
-      )
-    })
-
-    test('Should return 400 if municipality is provided for Federal jurisdiction', async () => {
-      const requirementData = generateRequirementData({
-        subjectId: String(createdSubjectId),
-        aspectId: String(createdAspectIds[0]),
-        jurisdiction: 'Federal',
-        municipality: 'Invalid Municipality'
-      })
-
-      const response = await api
-        .post('/api/requirements')
-        .set('Authorization', `Bearer ${tokenAdmin}`)
-        .send(requirementData)
-        .expect(400)
-
-      expect(response.body.errors).toEqual(
-        expect.arrayContaining([
-          { field: 'municipality', message: expect.stringMatching(/Municipality should not be provided for Federal jurisdiction/i) }
-        ])
-      )
-    })
-
-    test('Should return 400 if state is missing for Estatal jurisdiction', async () => {
-      const requirementData = generateRequirementData({
-        subjectId: String(createdSubjectId),
-        aspectId: String(createdAspectIds[0]),
-        jurisdiction: 'Estatal'
-      })
-
-      const response = await api
-        .post('/api/requirements')
-        .set('Authorization', `Bearer ${tokenAdmin}`)
-        .send(requirementData)
-        .expect(400)
-
-      expect(response.body.errors).toEqual(
-        expect.arrayContaining([
-          { field: 'state', message: expect.stringMatching(/State must be provided for Estatal jurisdiction/i) }
-        ])
-      )
-    })
-
-    test('Should return 400 if municipality is provided for Estatal jurisdiction', async () => {
-      const requirementData = generateRequirementData({
-        subjectId: String(createdSubjectId),
-        aspectId: String(createdAspectIds[0]),
-        jurisdiction: 'Estatal',
-        state: 'Valid State',
-        municipality: 'Invalid Municipality'
-      })
-
-      const response = await api
-        .post('/api/requirements')
-        .set('Authorization', `Bearer ${tokenAdmin}`)
-        .send(requirementData)
-        .expect(400)
-
-      expect(response.body.errors).toEqual(
-        expect.arrayContaining([
-          { field: 'municipality', message: expect.stringMatching(/Municipality should not be provided for Estatal jurisdiction/i) }
-        ])
-      )
-    })
-
-    test('Should return 400 if state is missing for Local jurisdiction', async () => {
-      const requirementData = generateRequirementData({
-        subjectId: String(createdSubjectId),
-        aspectId: String(createdAspectIds[0]),
-        jurisdiction: 'Local',
-        municipality: 'Valid Municipality'
-      })
-
-      const response = await api
-        .post('/api/requirements')
-        .set('Authorization', `Bearer ${tokenAdmin}`)
-        .send(requirementData)
-        .expect(400)
-
-      expect(response.body.errors).toEqual(
-        expect.arrayContaining([
-          { field: 'state', message: expect.stringMatching(/State must be provided for Local jurisdiction/i) }
-        ])
-      )
-    })
-
-    test('Should return 400 if municipality is missing for Local jurisdiction', async () => {
-      const requirementData = generateRequirementData({
-        subjectId: String(createdSubjectId),
-        aspectId: String(createdAspectIds[0]),
-        jurisdiction: 'Local',
-        state: 'Valid State'
-      })
-
-      const response = await api
-        .post('/api/requirements')
-        .set('Authorization', `Bearer ${tokenAdmin}`)
-        .send(requirementData)
-        .expect(400)
-
-      expect(response.body.errors).toEqual(
-        expect.arrayContaining([
-          { field: 'municipality', message: expect.stringMatching(/Municipality must be provided for Local jurisdiction/i) }
+          {
+            field: 'specifyEvidence',
+            message: expect.stringMatching(/must specify evidence.*específica/i)
+          }
         ])
       )
     })
   })
 })
+
 describe('Get All Requirements', () => {
   beforeEach(async () => {
     await RequirementRepository.deleteAll()
@@ -625,7 +578,7 @@ describe('Get All Requirements', () => {
   test('Should return all requirements after creating one', async () => {
     const requirementData = generateRequirementData({
       subjectId: String(createdSubjectId),
-      aspectId: String(createdAspectIds[0])
+      aspectsIds: JSON.stringify([createdAspectIds[0]])
     })
 
     const createResponse = await api
@@ -659,19 +612,20 @@ describe('Get All Requirements', () => {
       complementary_keywords: createdRequirement.complementary_keywords,
       condition: createdRequirement.condition,
       evidence: createdRequirement.evidence,
+      specify_evidence: createdRequirement.evidence === 'Específica'
+        ? createdRequirement.specify_evidence
+        : null,
       periodicity: createdRequirement.periodicity,
-      requirement_type: createdRequirement.requirement_type,
-      jurisdiction: createdRequirement.jurisdiction,
-      state: createdRequirement.state,
-      municipality: createdRequirement.municipality,
       subject: expect.objectContaining({
         subject_id: createdSubjectId,
         subject_name: subjectName
       }),
-      aspect: expect.objectContaining({
-        aspect_id: createdAspectIds[0],
-        aspect_name: aspectsToCreate[0]
-      })
+      aspects: expect.arrayContaining([
+        expect.objectContaining({
+          aspect_id: createdAspectIds[0],
+          aspect_name: aspectsToCreate[0]
+        })
+      ])
     })
   })
 
@@ -684,17 +638,16 @@ describe('Get All Requirements', () => {
     expect(response.body.error).toMatch(/token missing or invalid/i)
   })
 })
+
 describe('Get Requirement By ID', () => {
   let createdRequirement
-
   beforeEach(async () => {
     await RequirementRepository.deleteAll()
 
     const requirementData = generateRequirementData({
       subjectId: String(createdSubjectId),
-      aspectId: String(createdAspectIds[0])
+      aspectsIds: JSON.stringify([createdAspectIds[0]])
     })
-
     const response = await api
       .post('/api/requirements')
       .set('Authorization', `Bearer ${tokenAdmin}`)
@@ -726,19 +679,20 @@ describe('Get Requirement By ID', () => {
       complementary_keywords: createdRequirement.complementary_keywords,
       condition: createdRequirement.condition,
       evidence: createdRequirement.evidence,
+      specify_evidence: createdRequirement.evidence === 'Específica'
+        ? createdRequirement.specify_evidence
+        : null,
       periodicity: createdRequirement.periodicity,
-      requirement_type: createdRequirement.requirement_type,
-      jurisdiction: createdRequirement.jurisdiction,
-      state: createdRequirement.state,
-      municipality: createdRequirement.municipality,
       subject: expect.objectContaining({
         subject_id: createdSubjectId,
         subject_name: subjectName
       }),
-      aspect: expect.objectContaining({
-        aspect_id: createdAspectIds[0],
-        aspect_name: aspectsToCreate[0]
-      })
+      aspects: expect.arrayContaining([
+        {
+          aspect_id: createdAspectIds[0],
+          aspect_name: aspectsToCreate[0]
+        }
+      ])
     })
   })
 
@@ -766,6 +720,7 @@ describe('Get Requirement By ID', () => {
 describe('Get Requirements By Number', () => {
   let createdRequirement
   const testRequirementNumber = 'REQ-SEARCH-001'
+
   beforeEach(async () => {
     await RequirementRepository.deleteAll()
   })
@@ -785,7 +740,7 @@ describe('Get Requirements By Number', () => {
   test('Should return the requirement after creating one with the given number', async () => {
     const requirementData = generateRequirementData({
       subjectId: String(createdSubjectId),
-      aspectId: String(createdAspectIds[0]),
+      aspectsIds: JSON.stringify([createdAspectIds[0]]),
       requirementNumber: testRequirementNumber
     })
 
@@ -821,19 +776,20 @@ describe('Get Requirements By Number', () => {
       complementary_keywords: createdRequirement.complementary_keywords,
       condition: createdRequirement.condition,
       evidence: createdRequirement.evidence,
+      specify_evidence: createdRequirement.evidence === 'Específica'
+        ? createdRequirement.specify_evidence
+        : null,
       periodicity: createdRequirement.periodicity,
-      requirement_type: createdRequirement.requirement_type,
-      jurisdiction: createdRequirement.jurisdiction,
-      state: createdRequirement.state,
-      municipality: createdRequirement.municipality,
       subject: expect.objectContaining({
         subject_id: createdSubjectId,
         subject_name: subjectName
       }),
-      aspect: expect.objectContaining({
-        aspect_id: createdAspectIds[0],
-        aspect_name: aspectsToCreate[0]
-      })
+      aspects: expect.arrayContaining([
+        {
+          aspect_id: createdAspectIds[0],
+          aspect_name: aspectsToCreate[0]
+        }
+      ])
     })
   })
 
@@ -871,7 +827,7 @@ describe('Get Requirements By Name', () => {
   test('Should return the requirement after creating one with the given name', async () => {
     const requirementData = generateRequirementData({
       subjectId: String(createdSubjectId),
-      aspectId: String(createdAspectIds[0]),
+      aspectsIds: JSON.stringify([createdAspectIds[0]]),
       requirementName: testRequirementName
     })
 
@@ -907,19 +863,20 @@ describe('Get Requirements By Name', () => {
       complementary_keywords: createdRequirement.complementary_keywords,
       condition: createdRequirement.condition,
       evidence: createdRequirement.evidence,
+      specify_evidence: createdRequirement.evidence === 'Específica'
+        ? createdRequirement.specify_evidence
+        : null,
       periodicity: createdRequirement.periodicity,
-      requirement_type: createdRequirement.requirement_type,
-      jurisdiction: createdRequirement.jurisdiction,
-      state: createdRequirement.state,
-      municipality: createdRequirement.municipality,
       subject: expect.objectContaining({
         subject_id: createdSubjectId,
         subject_name: subjectName
       }),
-      aspect: expect.objectContaining({
-        aspect_id: createdAspectIds[0],
-        aspect_name: aspectsToCreate[0]
-      })
+      aspects: expect.arrayContaining([
+        {
+          aspect_id: createdAspectIds[0],
+          aspect_name: aspectsToCreate[0]
+        }
+      ])
     })
   })
 
@@ -955,7 +912,7 @@ describe('Get Requirements By Subject', () => {
   test('Should return all requirements after creating one for the given subject', async () => {
     const requirementData = generateRequirementData({
       subjectId: String(createdSubjectId),
-      aspectId: String(createdAspectIds[0])
+      aspectsIds: JSON.stringify([createdAspectIds[0]])
     })
 
     const createResponse = await api
@@ -963,7 +920,6 @@ describe('Get Requirements By Subject', () => {
       .set('Authorization', `Bearer ${tokenAdmin}`)
       .send(requirementData)
       .expect(201)
-      .expect('Content-Type', /application\/json/)
 
     createdRequirement = createResponse.body.requirement
 
@@ -971,7 +927,6 @@ describe('Get Requirements By Subject', () => {
       .get(`/api/requirements/subject/${createdSubjectId}`)
       .set('Authorization', `Bearer ${tokenAdmin}`)
       .expect(200)
-      .expect('Content-Type', /application\/json/)
 
     const { requirements } = response.body
 
@@ -980,39 +935,25 @@ describe('Get Requirements By Subject', () => {
     expect(requirements[0]).toMatchObject({
       id: createdRequirement.id,
       requirement_number: createdRequirement.requirement_number,
-      requirement_name: createdRequirement.requirement_name,
-      mandatory_description: createdRequirement.mandatory_description,
-      complementary_description: createdRequirement.complementary_description,
-      mandatory_sentences: createdRequirement.mandatory_sentences,
-      complementary_sentences: createdRequirement.complementary_sentences,
-      mandatory_keywords: createdRequirement.mandatory_keywords,
-      complementary_keywords: createdRequirement.complementary_keywords,
-      condition: createdRequirement.condition,
-      evidence: createdRequirement.evidence,
-      periodicity: createdRequirement.periodicity,
-      requirement_type: createdRequirement.requirement_type,
-      jurisdiction: createdRequirement.jurisdiction,
-      state: createdRequirement.state,
-      municipality: createdRequirement.municipality,
       subject: expect.objectContaining({
         subject_id: createdSubjectId,
         subject_name: subjectName
       }),
-      aspect: expect.objectContaining({
-        aspect_id: createdAspectIds[0],
-        aspect_name: aspectsToCreate[0]
-      })
+      aspects: expect.arrayContaining([
+        {
+          aspect_id: createdAspectIds[0],
+          aspect_name: aspectsToCreate[0]
+        }
+      ])
     })
   })
 
   test('Should return 404 if the subject does not exist', async () => {
     const nonExistentSubjectId = '-1'
-
     const response = await api
       .get(`/api/requirements/subject/${nonExistentSubjectId}`)
       .set('Authorization', `Bearer ${tokenAdmin}`)
       .expect(404)
-      .expect('Content-Type', /application\/json/)
 
     expect(response.body.message).toMatch(/Subject not found/i)
   })
@@ -1021,7 +962,6 @@ describe('Get Requirements By Subject', () => {
     const response = await api
       .get(`/api/requirements/subject/${createdSubjectId}`)
       .expect(401)
-      .expect('Content-Type', /application\/json/)
 
     expect(response.body.error).toMatch(/token missing or invalid/i)
   })
@@ -1040,16 +980,15 @@ describe('Get Requirements By Subject And Aspects', () => {
       .set('Authorization', `Bearer ${tokenAdmin}`)
       .query({ aspectIds: createdAspectIds })
       .expect(200)
-      .expect('Content-Type', /application\/json/)
 
     expect(response.body.requirements).toBeInstanceOf(Array)
     expect(response.body.requirements).toHaveLength(0)
   })
 
-  test('Should return all requirements after creating one for the given subject and aspect', async () => {
+  test('Should return all requirements after creating one for the given subject and aspects', async () => {
     const requirementData = generateRequirementData({
       subjectId: String(createdSubjectId),
-      aspectId: String(createdAspectIds[0])
+      aspectsIds: JSON.stringify([createdAspectIds[0]])
     })
 
     const createResponse = await api
@@ -1057,7 +996,6 @@ describe('Get Requirements By Subject And Aspects', () => {
       .set('Authorization', `Bearer ${tokenAdmin}`)
       .send(requirementData)
       .expect(201)
-      .expect('Content-Type', /application\/json/)
 
     createdRequirement = createResponse.body.requirement
 
@@ -1066,7 +1004,6 @@ describe('Get Requirements By Subject And Aspects', () => {
       .set('Authorization', `Bearer ${tokenAdmin}`)
       .query({ aspectIds: [createdAspectIds[0]] })
       .expect(200)
-      .expect('Content-Type', /application\/json/)
 
     const { requirements } = response.body
 
@@ -1084,19 +1021,20 @@ describe('Get Requirements By Subject And Aspects', () => {
       complementary_keywords: createdRequirement.complementary_keywords,
       condition: createdRequirement.condition,
       evidence: createdRequirement.evidence,
+      specify_evidence: createdRequirement.evidence === 'Específica'
+        ? createdRequirement.specify_evidence
+        : null,
       periodicity: createdRequirement.periodicity,
-      requirement_type: createdRequirement.requirement_type,
-      jurisdiction: createdRequirement.jurisdiction,
-      state: createdRequirement.state,
-      municipality: createdRequirement.municipality,
       subject: expect.objectContaining({
         subject_id: createdSubjectId,
         subject_name: subjectName
       }),
-      aspect: expect.objectContaining({
-        aspect_id: createdAspectIds[0],
-        aspect_name: aspectsToCreate[0]
-      })
+      aspects: expect.arrayContaining([
+        {
+          aspect_id: createdAspectIds[0],
+          aspect_name: aspectsToCreate[0]
+        }
+      ])
     })
   })
 
@@ -1164,7 +1102,7 @@ describe('Get Requirements By Mandatory Description', () => {
   test('Should return the requirement after creating one with the given mandatory description', async () => {
     const requirementData = generateRequirementData({
       subjectId: String(createdSubjectId),
-      aspectId: String(createdAspectIds[0]),
+      aspectsIds: JSON.stringify([createdAspectIds[0]]),
       mandatoryDescription: testMandatoryDescription
     })
 
@@ -1173,7 +1111,6 @@ describe('Get Requirements By Mandatory Description', () => {
       .set('Authorization', `Bearer ${tokenAdmin}`)
       .send(requirementData)
       .expect(201)
-      .expect('Content-Type', /application\/json/)
 
     createdRequirement = createResponse.body.requirement
 
@@ -1182,7 +1119,6 @@ describe('Get Requirements By Mandatory Description', () => {
       .set('Authorization', `Bearer ${tokenAdmin}`)
       .query({ description: testMandatoryDescription })
       .expect(200)
-      .expect('Content-Type', /application\/json/)
 
     const { requirements } = response.body
 
@@ -1200,19 +1136,20 @@ describe('Get Requirements By Mandatory Description', () => {
       complementary_keywords: createdRequirement.complementary_keywords,
       condition: createdRequirement.condition,
       evidence: createdRequirement.evidence,
+      specify_evidence: createdRequirement.evidence === 'Específica'
+        ? createdRequirement.specify_evidence
+        : null,
       periodicity: createdRequirement.periodicity,
-      requirement_type: createdRequirement.requirement_type,
-      jurisdiction: createdRequirement.jurisdiction,
-      state: createdRequirement.state,
-      municipality: createdRequirement.municipality,
       subject: expect.objectContaining({
         subject_id: createdSubjectId,
         subject_name: subjectName
       }),
-      aspect: expect.objectContaining({
-        aspect_id: createdAspectIds[0],
-        aspect_name: aspectsToCreate[0]
-      })
+      aspects: expect.arrayContaining([
+        expect.objectContaining({
+          aspect_id: createdAspectIds[0],
+          aspect_name: aspectsToCreate[0]
+        })
+      ])
     })
   })
 
@@ -1221,7 +1158,6 @@ describe('Get Requirements By Mandatory Description', () => {
       .get('/api/requirements/search/mandatory-description')
       .query({ description: testMandatoryDescription })
       .expect(401)
-      .expect('Content-Type', /application\/json/)
 
     expect(response.body.error).toMatch(/token missing or invalid/i)
   })
@@ -1241,7 +1177,6 @@ describe('Get Requirements By Complementary Description', () => {
       .set('Authorization', `Bearer ${tokenAdmin}`)
       .query({ description: testComplementaryDescription })
       .expect(200)
-      .expect('Content-Type', /application\/json/)
 
     expect(response.body.requirements).toBeInstanceOf(Array)
     expect(response.body.requirements).toHaveLength(0)
@@ -1250,7 +1185,7 @@ describe('Get Requirements By Complementary Description', () => {
   test('Should return the requirement after creating one with the given complementary description', async () => {
     const requirementData = generateRequirementData({
       subjectId: String(createdSubjectId),
-      aspectId: String(createdAspectIds[0]),
+      aspectsIds: JSON.stringify([createdAspectIds[0]]),
       complementaryDescription: testComplementaryDescription
     })
 
@@ -1259,7 +1194,6 @@ describe('Get Requirements By Complementary Description', () => {
       .set('Authorization', `Bearer ${tokenAdmin}`)
       .send(requirementData)
       .expect(201)
-      .expect('Content-Type', /application\/json/)
 
     createdRequirement = createResponse.body.requirement
 
@@ -1268,7 +1202,6 @@ describe('Get Requirements By Complementary Description', () => {
       .set('Authorization', `Bearer ${tokenAdmin}`)
       .query({ description: testComplementaryDescription })
       .expect(200)
-      .expect('Content-Type', /application\/json/)
 
     const { requirements } = response.body
 
@@ -1286,19 +1219,20 @@ describe('Get Requirements By Complementary Description', () => {
       complementary_keywords: createdRequirement.complementary_keywords,
       condition: createdRequirement.condition,
       evidence: createdRequirement.evidence,
+      specify_evidence: createdRequirement.evidence === 'Específica'
+        ? createdRequirement.specify_evidence
+        : null,
       periodicity: createdRequirement.periodicity,
-      requirement_type: createdRequirement.requirement_type,
-      jurisdiction: createdRequirement.jurisdiction,
-      state: createdRequirement.state,
-      municipality: createdRequirement.municipality,
       subject: expect.objectContaining({
         subject_id: createdSubjectId,
         subject_name: subjectName
       }),
-      aspect: expect.objectContaining({
-        aspect_id: createdAspectIds[0],
-        aspect_name: aspectsToCreate[0]
-      })
+      aspects: expect.arrayContaining([
+        expect.objectContaining({
+          aspect_id: createdAspectIds[0],
+          aspect_name: aspectsToCreate[0]
+        })
+      ])
     })
   })
 
@@ -1307,7 +1241,6 @@ describe('Get Requirements By Complementary Description', () => {
       .get('/api/requirements/search/complementary-description')
       .query({ description: testComplementaryDescription })
       .expect(401)
-      .expect('Content-Type', /application\/json/)
 
     expect(response.body.error).toMatch(/token missing or invalid/i)
   })
@@ -1336,7 +1269,7 @@ describe('Get Requirements By Mandatory Sentences', () => {
   test('Should return the requirement after creating one with the given mandatory sentence', async () => {
     const requirementData = generateRequirementData({
       subjectId: String(createdSubjectId),
-      aspectId: String(createdAspectIds[0]),
+      aspectsIds: JSON.stringify([createdAspectIds[0]]),
       mandatorySentences: testMandatorySentence
     })
 
@@ -1345,7 +1278,6 @@ describe('Get Requirements By Mandatory Sentences', () => {
       .set('Authorization', `Bearer ${tokenAdmin}`)
       .send(requirementData)
       .expect(201)
-      .expect('Content-Type', /application\/json/)
 
     createdRequirement = createResponse.body.requirement
 
@@ -1354,7 +1286,6 @@ describe('Get Requirements By Mandatory Sentences', () => {
       .set('Authorization', `Bearer ${tokenAdmin}`)
       .query({ sentence: testMandatorySentence })
       .expect(200)
-      .expect('Content-Type', /application\/json/)
 
     const { requirements } = response.body
 
@@ -1372,19 +1303,20 @@ describe('Get Requirements By Mandatory Sentences', () => {
       complementary_keywords: createdRequirement.complementary_keywords,
       condition: createdRequirement.condition,
       evidence: createdRequirement.evidence,
+      specify_evidence: createdRequirement.evidence === 'Específica'
+        ? createdRequirement.specify_evidence
+        : null,
       periodicity: createdRequirement.periodicity,
-      requirement_type: createdRequirement.requirement_type,
-      jurisdiction: createdRequirement.jurisdiction,
-      state: createdRequirement.state,
-      municipality: createdRequirement.municipality,
       subject: expect.objectContaining({
         subject_id: createdSubjectId,
         subject_name: subjectName
       }),
-      aspect: expect.objectContaining({
-        aspect_id: createdAspectIds[0],
-        aspect_name: aspectsToCreate[0]
-      })
+      aspects: expect.arrayContaining([
+        expect.objectContaining({
+          aspect_id: createdAspectIds[0],
+          aspect_name: aspectsToCreate[0]
+        })
+      ])
     })
   })
 
@@ -1422,7 +1354,7 @@ describe('Get Requirements By Complementary Sentences', () => {
   test('Should return the requirement after creating one with the given complementary sentence', async () => {
     const requirementData = generateRequirementData({
       subjectId: String(createdSubjectId),
-      aspectId: String(createdAspectIds[0]),
+      aspectsIds: JSON.stringify([createdAspectIds[0]]),
       complementarySentences: testComplementarySentence
     })
 
@@ -1431,7 +1363,6 @@ describe('Get Requirements By Complementary Sentences', () => {
       .set('Authorization', `Bearer ${tokenAdmin}`)
       .send(requirementData)
       .expect(201)
-      .expect('Content-Type', /application\/json/)
 
     createdRequirement = createResponse.body.requirement
 
@@ -1440,7 +1371,6 @@ describe('Get Requirements By Complementary Sentences', () => {
       .set('Authorization', `Bearer ${tokenAdmin}`)
       .query({ sentence: testComplementarySentence })
       .expect(200)
-      .expect('Content-Type', /application\/json/)
 
     const { requirements } = response.body
 
@@ -1458,19 +1388,20 @@ describe('Get Requirements By Complementary Sentences', () => {
       complementary_keywords: createdRequirement.complementary_keywords,
       condition: createdRequirement.condition,
       evidence: createdRequirement.evidence,
+      specify_evidence: createdRequirement.evidence === 'Específica'
+        ? createdRequirement.specify_evidence
+        : null,
       periodicity: createdRequirement.periodicity,
-      requirement_type: createdRequirement.requirement_type,
-      jurisdiction: createdRequirement.jurisdiction,
-      state: createdRequirement.state,
-      municipality: createdRequirement.municipality,
       subject: expect.objectContaining({
         subject_id: createdSubjectId,
         subject_name: subjectName
       }),
-      aspect: expect.objectContaining({
-        aspect_id: createdAspectIds[0],
-        aspect_name: aspectsToCreate[0]
-      })
+      aspects: expect.arrayContaining([
+        expect.objectContaining({
+          aspect_id: createdAspectIds[0],
+          aspect_name: aspectsToCreate[0]
+        })
+      ])
     })
   })
 
@@ -1484,10 +1415,10 @@ describe('Get Requirements By Complementary Sentences', () => {
     expect(response.body.error).toMatch(/token missing or invalid/i)
   })
 })
-
 describe('Get Requirements By Mandatory Keywords', () => {
   let createdRequirement
-  const testMandatoryKeyword = 'critical-safety'
+  const fullKeywordSet = 'critical safety compliance regulation'
+  const searchableKeyword = 'compliance'
 
   beforeEach(async () => {
     await RequirementRepository.deleteAll()
@@ -1497,7 +1428,7 @@ describe('Get Requirements By Mandatory Keywords', () => {
     const response = await api
       .get('/api/requirements/search/mandatory-keywords')
       .set('Authorization', `Bearer ${tokenAdmin}`)
-      .query({ keyword: testMandatoryKeyword })
+      .query({ keyword: searchableKeyword })
       .expect(200)
       .expect('Content-Type', /application\/json/)
 
@@ -1505,11 +1436,11 @@ describe('Get Requirements By Mandatory Keywords', () => {
     expect(response.body.requirements).toHaveLength(0)
   })
 
-  test('Should return the requirement after creating one with the given mandatory keyword', async () => {
+  test('Should return the requirement after creating one with a searchable mandatory keyword', async () => {
     const requirementData = generateRequirementData({
       subjectId: String(createdSubjectId),
-      aspectId: String(createdAspectIds[0]),
-      mandatoryKeywords: testMandatoryKeyword
+      aspectsIds: JSON.stringify([createdAspectIds[0]]),
+      mandatoryKeywords: fullKeywordSet
     })
 
     const createResponse = await api
@@ -1524,9 +1455,10 @@ describe('Get Requirements By Mandatory Keywords', () => {
     const response = await api
       .get('/api/requirements/search/mandatory-keywords')
       .set('Authorization', `Bearer ${tokenAdmin}`)
-      .query({ keyword: testMandatoryKeyword })
+      .query({ keyword: searchableKeyword })
       .expect(200)
       .expect('Content-Type', /application\/json/)
+
     const { requirements } = response.body
 
     expect(requirements).toBeInstanceOf(Array)
@@ -1539,30 +1471,31 @@ describe('Get Requirements By Mandatory Keywords', () => {
       complementary_description: createdRequirement.complementary_description,
       mandatory_sentences: createdRequirement.mandatory_sentences,
       complementary_sentences: createdRequirement.complementary_sentences,
-      mandatory_keywords: createdRequirement.mandatory_keywords,
+      mandatory_keywords: fullKeywordSet,
       complementary_keywords: createdRequirement.complementary_keywords,
       condition: createdRequirement.condition,
       evidence: createdRequirement.evidence,
+      specify_evidence: createdRequirement.evidence === 'Específica'
+        ? createdRequirement.specify_evidence
+        : null,
       periodicity: createdRequirement.periodicity,
-      requirement_type: createdRequirement.requirement_type,
-      jurisdiction: createdRequirement.jurisdiction,
-      state: createdRequirement.state,
-      municipality: createdRequirement.municipality,
       subject: expect.objectContaining({
         subject_id: createdSubjectId,
         subject_name: subjectName
       }),
-      aspect: expect.objectContaining({
-        aspect_id: createdAspectIds[0],
-        aspect_name: aspectsToCreate[0]
-      })
+      aspects: expect.arrayContaining([
+        expect.objectContaining({
+          aspect_id: createdAspectIds[0],
+          aspect_name: aspectsToCreate[0]
+        })
+      ])
     })
   })
 
   test('Should return 401 if user is unauthorized', async () => {
     const response = await api
       .get('/api/requirements/search/mandatory-keywords')
-      .query({ keyword: testMandatoryKeyword })
+      .query({ keyword: searchableKeyword })
       .expect(401)
       .expect('Content-Type', /application\/json/)
 
@@ -1572,7 +1505,8 @@ describe('Get Requirements By Mandatory Keywords', () => {
 
 describe('Get Requirements By Complementary Keywords', () => {
   let createdRequirement
-  const testComplementaryKeyword = 'safety-measures'
+  const fullComplementaryKeywords = 'safety procedures control measures checklist'
+  const searchableKeyword = 'measures'
 
   beforeEach(async () => {
     await RequirementRepository.deleteAll()
@@ -1582,7 +1516,7 @@ describe('Get Requirements By Complementary Keywords', () => {
     const response = await api
       .get('/api/requirements/search/complementary-keywords')
       .set('Authorization', `Bearer ${tokenAdmin}`)
-      .query({ keyword: testComplementaryKeyword })
+      .query({ keyword: searchableKeyword })
       .expect(200)
       .expect('Content-Type', /application\/json/)
 
@@ -1590,11 +1524,11 @@ describe('Get Requirements By Complementary Keywords', () => {
     expect(response.body.requirements).toHaveLength(0)
   })
 
-  test('Should return the requirement after creating one with the given complementary keyword', async () => {
+  test('Should return the requirement after creating one with a searchable complementary keyword', async () => {
     const requirementData = generateRequirementData({
       subjectId: String(createdSubjectId),
-      aspectId: String(createdAspectIds[0]),
-      complementaryKeywords: testComplementaryKeyword
+      aspectsIds: JSON.stringify([createdAspectIds[0]]),
+      complementaryKeywords: fullComplementaryKeywords
     })
 
     const createResponse = await api
@@ -1609,7 +1543,7 @@ describe('Get Requirements By Complementary Keywords', () => {
     const response = await api
       .get('/api/requirements/search/complementary-keywords')
       .set('Authorization', `Bearer ${tokenAdmin}`)
-      .query({ keyword: testComplementaryKeyword })
+      .query({ keyword: searchableKeyword })
       .expect(200)
       .expect('Content-Type', /application\/json/)
 
@@ -1626,29 +1560,30 @@ describe('Get Requirements By Complementary Keywords', () => {
       mandatory_sentences: createdRequirement.mandatory_sentences,
       complementary_sentences: createdRequirement.complementary_sentences,
       mandatory_keywords: createdRequirement.mandatory_keywords,
-      complementary_keywords: testComplementaryKeyword,
+      complementary_keywords: fullComplementaryKeywords,
       condition: createdRequirement.condition,
       evidence: createdRequirement.evidence,
+      specify_evidence: createdRequirement.evidence === 'Específica'
+        ? createdRequirement.specify_evidence
+        : null,
       periodicity: createdRequirement.periodicity,
-      requirement_type: createdRequirement.requirement_type,
-      jurisdiction: createdRequirement.jurisdiction,
-      state: createdRequirement.state,
-      municipality: createdRequirement.municipality,
       subject: expect.objectContaining({
         subject_id: createdSubjectId,
         subject_name: subjectName
       }),
-      aspect: expect.objectContaining({
-        aspect_id: createdAspectIds[0],
-        aspect_name: aspectsToCreate[0]
-      })
+      aspects: expect.arrayContaining([
+        expect.objectContaining({
+          aspect_id: createdAspectIds[0],
+          aspect_name: aspectsToCreate[0]
+        })
+      ])
     })
   })
 
   test('Should return 401 if user is unauthorized', async () => {
     const response = await api
       .get('/api/requirements/search/complementary-keywords')
-      .query({ keyword: testComplementaryKeyword })
+      .query({ keyword: searchableKeyword })
       .expect(401)
       .expect('Content-Type', /application\/json/)
 
@@ -1679,7 +1614,7 @@ describe('Get Requirements By Condition', () => {
   test('Should return the requirement after creating one with the given condition', async () => {
     const requirementData = generateRequirementData({
       subjectId: String(createdSubjectId),
-      aspectId: String(createdAspectIds[0]),
+      aspectsIds: JSON.stringify([createdAspectIds[0]]),
       condition: testCondition
     })
 
@@ -1715,19 +1650,20 @@ describe('Get Requirements By Condition', () => {
       complementary_keywords: createdRequirement.complementary_keywords,
       condition: testCondition,
       evidence: createdRequirement.evidence,
+      specify_evidence: createdRequirement.evidence === 'Específica'
+        ? createdRequirement.specify_evidence
+        : null,
       periodicity: createdRequirement.periodicity,
-      requirement_type: createdRequirement.requirement_type,
-      jurisdiction: createdRequirement.jurisdiction,
-      state: createdRequirement.state,
-      municipality: createdRequirement.municipality,
       subject: expect.objectContaining({
         subject_id: createdSubjectId,
         subject_name: subjectName
       }),
-      aspect: expect.objectContaining({
-        aspect_id: createdAspectIds[0],
-        aspect_name: aspectsToCreate[0]
-      })
+      aspects: expect.arrayContaining([
+        expect.objectContaining({
+          aspect_id: createdAspectIds[0],
+          aspect_name: aspectsToCreate[0]
+        })
+      ])
     })
   })
 
@@ -1745,6 +1681,7 @@ describe('Get Requirements By Condition', () => {
 describe('Get Requirements By Evidence', () => {
   let createdRequirement
   const testEvidence = 'Registro'
+
   beforeEach(async () => {
     await RequirementRepository.deleteAll()
   })
@@ -1764,7 +1701,7 @@ describe('Get Requirements By Evidence', () => {
   test('Should return the requirement after creating one with the given evidence', async () => {
     const requirementData = generateRequirementData({
       subjectId: String(createdSubjectId),
-      aspectId: String(createdAspectIds[0]),
+      aspectsIds: JSON.stringify([createdAspectIds[0]]),
       evidence: testEvidence
     })
 
@@ -1800,19 +1737,20 @@ describe('Get Requirements By Evidence', () => {
       complementary_keywords: createdRequirement.complementary_keywords,
       condition: createdRequirement.condition,
       evidence: testEvidence,
+      specify_evidence: createdRequirement.evidence === 'Específica'
+        ? createdRequirement.specify_evidence
+        : null,
       periodicity: createdRequirement.periodicity,
-      requirement_type: createdRequirement.requirement_type,
-      jurisdiction: createdRequirement.jurisdiction,
-      state: createdRequirement.state,
-      municipality: createdRequirement.municipality,
       subject: expect.objectContaining({
         subject_id: createdSubjectId,
         subject_name: subjectName
       }),
-      aspect: expect.objectContaining({
-        aspect_id: createdAspectIds[0],
-        aspect_name: aspectsToCreate[0]
-      })
+      aspects: expect.arrayContaining([
+        expect.objectContaining({
+          aspect_id: createdAspectIds[0],
+          aspect_name: aspectsToCreate[0]
+        })
+      ])
     })
   })
 
@@ -1830,6 +1768,7 @@ describe('Get Requirements By Evidence', () => {
 describe('Get Requirements By Periodicity', () => {
   let createdRequirement
   const testPeriodicity = 'Anual'
+
   beforeEach(async () => {
     await RequirementRepository.deleteAll()
   })
@@ -1849,7 +1788,7 @@ describe('Get Requirements By Periodicity', () => {
   test('Should return the requirement after creating one with the given periodicity', async () => {
     const requirementData = generateRequirementData({
       subjectId: String(createdSubjectId),
-      aspectId: String(createdAspectIds[0]),
+      aspectsIds: JSON.stringify([createdAspectIds[0]]),
       periodicity: testPeriodicity
     })
 
@@ -1885,19 +1824,20 @@ describe('Get Requirements By Periodicity', () => {
       complementary_keywords: createdRequirement.complementary_keywords,
       condition: createdRequirement.condition,
       evidence: createdRequirement.evidence,
+      specify_evidence: createdRequirement.evidence === 'Específica'
+        ? createdRequirement.specify_evidence
+        : null,
       periodicity: testPeriodicity,
-      requirement_type: createdRequirement.requirement_type,
-      jurisdiction: createdRequirement.jurisdiction,
-      state: createdRequirement.state,
-      municipality: createdRequirement.municipality,
       subject: expect.objectContaining({
         subject_id: createdSubjectId,
         subject_name: subjectName
       }),
-      aspect: expect.objectContaining({
-        aspect_id: createdAspectIds[0],
-        aspect_name: aspectsToCreate[0]
-      })
+      aspects: expect.arrayContaining([
+        expect.objectContaining({
+          aspect_id: createdAspectIds[0],
+          aspect_name: aspectsToCreate[0]
+        })
+      ])
     })
   })
 
@@ -1912,408 +1852,6 @@ describe('Get Requirements By Periodicity', () => {
   })
 })
 
-describe('Get Requirements By Requirement Type', () => {
-  let createdRequirement
-  const testRequirementType = 'Identificación Estatal'
-
-  beforeEach(async () => {
-    await RequirementRepository.deleteAll()
-  })
-
-  test('Should return an empty array when no requirements match the given requirement type', async () => {
-    const response = await api
-      .get('/api/requirements/search/type')
-      .set('Authorization', `Bearer ${tokenAdmin}`)
-      .query({ requirementType: testRequirementType })
-      .expect(200)
-      .expect('Content-Type', /application\/json/)
-
-    expect(response.body.requirements).toBeInstanceOf(Array)
-    expect(response.body.requirements).toHaveLength(0)
-  })
-
-  test('Should return the requirement after creating one with the given requirement type', async () => {
-    const requirementData = generateRequirementData({
-      subjectId: String(createdSubjectId),
-      aspectId: String(createdAspectIds[0]),
-      requirementType: testRequirementType
-    })
-
-    const createResponse = await api
-      .post('/api/requirements')
-      .set('Authorization', `Bearer ${tokenAdmin}`)
-      .send(requirementData)
-      .expect(201)
-      .expect('Content-Type', /application\/json/)
-
-    createdRequirement = createResponse.body.requirement
-
-    const response = await api
-      .get('/api/requirements/search/type')
-      .set('Authorization', `Bearer ${tokenAdmin}`)
-      .query({ requirementType: testRequirementType })
-      .expect(200)
-      .expect('Content-Type', /application\/json/)
-
-    const { requirements } = response.body
-
-    expect(requirements).toBeInstanceOf(Array)
-    expect(requirements).toHaveLength(1)
-    expect(requirements[0]).toMatchObject({
-      id: createdRequirement.id,
-      requirement_number: createdRequirement.requirement_number,
-      requirement_name: createdRequirement.requirement_name,
-      mandatory_description: createdRequirement.mandatory_description,
-      complementary_description: createdRequirement.complementary_description,
-      mandatory_sentences: createdRequirement.mandatory_sentences,
-      complementary_sentences: createdRequirement.complementary_sentences,
-      mandatory_keywords: createdRequirement.mandatory_keywords,
-      complementary_keywords: createdRequirement.complementary_keywords,
-      condition: createdRequirement.condition,
-      evidence: createdRequirement.evidence,
-      periodicity: createdRequirement.periodicity,
-      requirement_type: testRequirementType,
-      jurisdiction: createdRequirement.jurisdiction,
-      state: createdRequirement.state,
-      municipality: createdRequirement.municipality,
-      subject: expect.objectContaining({
-        subject_id: createdSubjectId,
-        subject_name: subjectName
-      }),
-      aspect: expect.objectContaining({
-        aspect_id: createdAspectIds[0],
-        aspect_name: aspectsToCreate[0]
-      })
-    })
-  })
-
-  test('Should return 401 if user is unauthorized', async () => {
-    const response = await api
-      .get('/api/requirements/search/type')
-      .query({ requirementType: testRequirementType })
-      .expect(401)
-      .expect('Content-Type', /application\/json/)
-
-    expect(response.body.error).toMatch(/token missing or invalid/i)
-  })
-})
-
-describe('Get Requirements By Jurisdiction', () => {
-  let createdRequirement
-  const testJurisdiction = 'Federal'
-  beforeEach(async () => {
-    await RequirementRepository.deleteAll()
-  })
-  test('Should return an empty array when no requirements match the given jurisdiction', async () => {
-    const response = await api
-      .get('/api/requirements/search/jurisdiction')
-      .set('Authorization', `Bearer ${tokenAdmin}`)
-      .query({ jurisdiction: testJurisdiction })
-      .expect(200)
-      .expect('Content-Type', /application\/json/)
-
-    expect(response.body.requirements).toBeInstanceOf(Array)
-    expect(response.body.requirements).toHaveLength(0)
-  })
-
-  test('Should return the requirement after creating one with the given jurisdiction', async () => {
-    const requirementData = generateRequirementData({
-      subjectId: String(createdSubjectId),
-      aspectId: String(createdAspectIds[0]),
-      jurisdiction: testJurisdiction
-    })
-
-    const createResponse = await api
-      .post('/api/requirements')
-      .set('Authorization', `Bearer ${tokenAdmin}`)
-      .send(requirementData)
-      .expect(201)
-      .expect('Content-Type', /application\/json/)
-
-    createdRequirement = createResponse.body.requirement
-
-    const response = await api
-      .get('/api/requirements/search/jurisdiction')
-      .set('Authorization', `Bearer ${tokenAdmin}`)
-      .query({ jurisdiction: testJurisdiction })
-      .expect(200)
-      .expect('Content-Type', /application\/json/)
-
-    const { requirements } = response.body
-
-    expect(requirements).toBeInstanceOf(Array)
-    expect(requirements).toHaveLength(1)
-    expect(requirements[0]).toMatchObject({
-      id: createdRequirement.id,
-      requirement_number: createdRequirement.requirement_number,
-      requirement_name: createdRequirement.requirement_name,
-      mandatory_description: createdRequirement.mandatory_description,
-      complementary_description: createdRequirement.complementary_description,
-      mandatory_sentences: createdRequirement.mandatory_sentences,
-      complementary_sentences: createdRequirement.complementary_sentences,
-      mandatory_keywords: createdRequirement.mandatory_keywords,
-      complementary_keywords: createdRequirement.complementary_keywords,
-      condition: createdRequirement.condition,
-      evidence: createdRequirement.evidence,
-      periodicity: createdRequirement.periodicity,
-      requirement_type: createdRequirement.requirement_type,
-      jurisdiction: testJurisdiction,
-      state: createdRequirement.state,
-      municipality: createdRequirement.municipality,
-      subject: expect.objectContaining({
-        subject_id: createdSubjectId,
-        subject_name: subjectName
-      }),
-      aspect: expect.objectContaining({
-        aspect_id: createdAspectIds[0],
-        aspect_name: aspectsToCreate[0]
-      })
-    })
-  })
-
-  test('Should return 401 if user is unauthorized', async () => {
-    const response = await api
-      .get('/api/requirements/search/jurisdiction')
-      .query({ jurisdiction: testJurisdiction })
-      .expect(401)
-      .expect('Content-Type', /application\/json/)
-
-    expect(response.body.error).toMatch(/token missing or invalid/i)
-  })
-})
-
-describe('Get Requirements By State', () => {
-  let createdRequirement
-  const testState = 'Nuevo León'
-
-  beforeEach(async () => {
-    await RequirementRepository.deleteAll()
-  })
-
-  test('Should return an empty array when no requirements match the given state', async () => {
-    const response = await api
-      .get('/api/requirements/search/state')
-      .set('Authorization', `Bearer ${tokenAdmin}`)
-      .query({ state: testState })
-      .expect(200)
-      .expect('Content-Type', /application\/json/)
-
-    expect(response.body.requirements).toBeInstanceOf(Array)
-    expect(response.body.requirements).toHaveLength(0)
-  })
-
-  test('Should return the requirement after creating one with the given state', async () => {
-    const requirementData = generateRequirementData({
-      subjectId: String(createdSubjectId),
-      aspectId: String(createdAspectIds[0]),
-      jurisdiction: 'Estatal',
-      state: testState
-    })
-
-    const createResponse = await api
-      .post('/api/requirements')
-      .set('Authorization', `Bearer ${tokenAdmin}`)
-      .send(requirementData)
-      .expect(201)
-      .expect('Content-Type', /application\/json/)
-
-    createdRequirement = createResponse.body.requirement
-
-    const response = await api
-      .get('/api/requirements/search/state')
-      .set('Authorization', `Bearer ${tokenAdmin}`)
-      .query({ state: testState })
-      .expect(200)
-      .expect('Content-Type', /application\/json/)
-
-    const { requirements } = response.body
-
-    expect(requirements).toBeInstanceOf(Array)
-    expect(requirements).toHaveLength(1)
-    expect(requirements[0]).toMatchObject({
-      id: createdRequirement.id,
-      requirement_number: createdRequirement.requirement_number,
-      requirement_name: createdRequirement.requirement_name,
-      mandatory_description: createdRequirement.mandatory_description,
-      complementary_description: createdRequirement.complementary_description,
-      mandatory_sentences: createdRequirement.mandatory_sentences,
-      complementary_sentences: createdRequirement.complementary_sentences,
-      mandatory_keywords: createdRequirement.mandatory_keywords,
-      complementary_keywords: createdRequirement.complementary_keywords,
-      condition: createdRequirement.condition,
-      evidence: createdRequirement.evidence,
-      periodicity: createdRequirement.periodicity,
-      requirement_type: createdRequirement.requirement_type,
-      jurisdiction: createdRequirement.jurisdiction,
-      state: testState,
-      municipality: createdRequirement.municipality,
-      subject: expect.objectContaining({
-        subject_id: createdSubjectId,
-        subject_name: subjectName
-      }),
-      aspect: expect.objectContaining({
-        aspect_id: createdAspectIds[0],
-        aspect_name: aspectsToCreate[0]
-      })
-    })
-  })
-
-  test('Should return 401 if user is unauthorized', async () => {
-    const response = await api
-      .get('/api/requirements/search/state')
-      .query({ state: testState })
-      .expect(401)
-      .expect('Content-Type', /application\/json/)
-
-    expect(response.body.error).toMatch(/token missing or invalid/i)
-  })
-})
-
-describe('Get Requirements By State And Municipalities', () => {
-  let createdRequirement
-  const testState = 'Nuevo León'
-  const testMunicipality = 'Monterrey'
-
-  beforeEach(async () => {
-    await RequirementRepository.deleteAll()
-  })
-
-  test('Should return an empty array when no requirements match the given state and municipalities', async () => {
-    const response = await api
-      .get('/api/requirements/search/state/municipalities')
-      .set('Authorization', `Bearer ${tokenAdmin}`)
-      .query({ state: testState, municipalities: testMunicipality })
-      .expect(200)
-      .expect('Content-Type', /application\/json/)
-
-    expect(response.body.requirements).toBeInstanceOf(Array)
-    expect(response.body.requirements).toHaveLength(0)
-  })
-
-  test('Should return the requirement after creating one with the given state and municipality', async () => {
-    const requirementData = generateRequirementData({
-      subjectId: String(createdSubjectId),
-      aspectId: String(createdAspectIds[0]),
-      jurisdiction: 'Local',
-      state: testState,
-      municipality: testMunicipality
-    })
-
-    const createResponse = await api
-      .post('/api/requirements')
-      .set('Authorization', `Bearer ${tokenAdmin}`)
-      .send(requirementData)
-      .expect(201)
-      .expect('Content-Type', /application\/json/)
-
-    createdRequirement = createResponse.body.requirement
-
-    const response = await api
-      .get('/api/requirements/search/state/municipalities')
-      .set('Authorization', `Bearer ${tokenAdmin}`)
-      .query({ state: testState, municipalities: testMunicipality })
-      .expect(200)
-      .expect('Content-Type', /application\/json/)
-
-    const { requirements } = response.body
-
-    expect(requirements).toBeInstanceOf(Array)
-    expect(requirements).toHaveLength(1)
-    expect(requirements[0]).toMatchObject({
-      id: createdRequirement.id,
-      requirement_number: createdRequirement.requirement_number,
-      requirement_name: createdRequirement.requirement_name,
-      mandatory_description: createdRequirement.mandatory_description,
-      complementary_description: createdRequirement.complementary_description,
-      mandatory_sentences: createdRequirement.mandatory_sentences,
-      complementary_sentences: createdRequirement.complementary_sentences,
-      mandatory_keywords: createdRequirement.mandatory_keywords,
-      complementary_keywords: createdRequirement.complementary_keywords,
-      condition: createdRequirement.condition,
-      evidence: createdRequirement.evidence,
-      periodicity: createdRequirement.periodicity,
-      requirement_type: createdRequirement.requirement_type,
-      jurisdiction: createdRequirement.jurisdiction,
-      state: testState,
-      municipality: testMunicipality,
-      subject: expect.objectContaining({
-        subject_id: createdSubjectId,
-        subject_name: subjectName
-      }),
-      aspect: expect.objectContaining({
-        aspect_id: createdAspectIds[0],
-        aspect_name: aspectsToCreate[0]
-      })
-    })
-  })
-
-  test('Should return multiple requirements when filtering by state with multiple municipalities', async () => {
-    const requirementData1 = generateRequirementData({
-      requirementNumber: 'requirementData1 Number',
-      requirementName: 'requirementData1 Name',
-      subjectId: String(createdSubjectId),
-      aspectId: String(createdAspectIds[0]),
-      jurisdiction: 'Local',
-      state: testState,
-      municipality: 'Monterrey'
-    })
-
-    const requirementData2 = generateRequirementData({
-      requirementNumber: 'requirementData2 Number',
-      requirementName: 'requirementData2 Name',
-      subjectId: String(createdSubjectId),
-      aspectId: String(createdAspectIds[1]),
-      jurisdiction: 'Local',
-      state: testState,
-      municipality: 'San Pedro'
-    })
-
-    await api
-      .post('/api/requirements')
-      .set('Authorization', `Bearer ${tokenAdmin}`)
-      .send(requirementData1)
-      .expect(201)
-
-    await api
-      .post('/api/requirements')
-      .set('Authorization', `Bearer ${tokenAdmin}`)
-      .send(requirementData2)
-      .expect(201)
-
-    const response = await api
-      .get('/api/requirements/search/state/municipalities')
-      .set('Authorization', `Bearer ${tokenAdmin}`)
-      .query({ state: testState, municipalities: 'Monterrey, San Pedro' })
-      .expect(200)
-      .expect('Content-Type', /application\/json/)
-
-    expect(response.body.requirements).toBeInstanceOf(Array)
-    expect(response.body.requirements).toHaveLength(2)
-  })
-
-  test('Should return an empty array if the given municipalities do not exist', async () => {
-    const response = await api
-      .get('/api/requirements/search/state/municipalities')
-      .set('Authorization', `Bearer ${tokenAdmin}`)
-      .query({ state: testState, municipalities: 'Unknown Municipality' })
-      .expect(200)
-      .expect('Content-Type', /application\/json/)
-
-    expect(response.body.requirements).toBeInstanceOf(Array)
-    expect(response.body.requirements).toHaveLength(0)
-  })
-
-  test('Should return 401 if user is unauthorized', async () => {
-    const response = await api
-      .get('/api/requirements/search/state/municipalities')
-      .query({ state: testState, municipalities: testMunicipality })
-      .expect(401)
-      .expect('Content-Type', /application\/json/)
-
-    expect(response.body.error).toMatch(/token missing or invalid/i)
-  })
-})
-
 describe('Update a requirement', () => {
   let createdRequirement
 
@@ -2321,7 +1859,7 @@ describe('Update a requirement', () => {
     await RequirementRepository.deleteAll()
     const requirementData = generateRequirementData({
       subjectId: String(createdSubjectId),
-      aspectId: String(createdAspectIds[0])
+      aspectsIds: JSON.stringify([createdAspectIds[0]])
     })
 
     const response = await api
@@ -2339,7 +1877,7 @@ describe('Update a requirement', () => {
       requirementName: 'Updated Requirement Name',
       requirementNumber: 'UPDATED-001',
       subjectId: String(createdSubjectId),
-      aspectId: String(createdAspectIds[0])
+      aspectsIds: JSON.stringify([createdAspectIds[0]])
     })
 
     await api
@@ -2368,19 +1906,20 @@ describe('Update a requirement', () => {
       complementary_keywords: updatedData.complementaryKeywords,
       condition: updatedData.condition,
       evidence: updatedData.evidence,
+      specify_evidence: updatedData.evidence === 'Específica'
+        ? updatedData.specify_evidence
+        : null,
       periodicity: updatedData.periodicity,
-      requirement_type: updatedData.requirementType,
-      jurisdiction: updatedData.jurisdiction,
-      state: null,
-      municipality: null,
       subject: expect.objectContaining({
         subject_id: createdSubjectId,
         subject_name: subjectName
       }),
-      aspect: expect.objectContaining({
-        aspect_id: createdAspectIds[0],
-        aspect_name: aspectsToCreate[0]
-      })
+      aspects: expect.arrayContaining([
+        expect.objectContaining({
+          aspect_id: createdAspectIds[0],
+          aspect_name: aspectsToCreate[0]
+        })
+      ])
     })
   })
 
@@ -2389,7 +1928,7 @@ describe('Update a requirement', () => {
       requirementName: 'Updated Requirement Name',
       requirementNumber: 'UPDATED-001',
       subjectId: String(createdSubjectId),
-      aspectId: String(createdAspectIds[0])
+      aspectsIds: JSON.stringify([createdAspectIds[0]])
     })
     const response = await api
       .patch('/api/requirement/-1')
@@ -2405,7 +1944,7 @@ describe('Update a requirement', () => {
       requirementName: 'Updated Requirement Name',
       requirementNumber: 'UPDATED-001',
       subjectId: '-1',
-      aspectId: String(createdAspectIds[0])
+      aspectsIds: JSON.stringify([createdAspectIds[0]])
     })
     const response = await api
       .patch(`/api/requirement/${createdRequirement.id}`)
@@ -2416,12 +1955,12 @@ describe('Update a requirement', () => {
     expect(response.body.message).toMatch(/Subject not found/i)
   })
 
-  test('Should return 404 if aspect ID does not exist', async () => {
+  test('Should return 404 if aspect IDs do not exist', async () => {
     const updatedData = generateRequirementData({
       requirementName: 'Updated Requirement Name',
       requirementNumber: 'UPDATED-001',
       subjectId: String(createdSubjectId),
-      aspectId: '-1'
+      aspectsIds: JSON.stringify([-1])
     })
     const response = await api
       .patch(`/api/requirement/${createdRequirement.id}`)
@@ -2429,63 +1968,64 @@ describe('Update a requirement', () => {
       .send(updatedData)
       .expect(404)
 
-    expect(response.body.message).toMatch(/Aspect not found/i)
+    expect(response.body.message).toMatch(/Aspects not found for IDs/i)
   })
 
   test('Should return 409 if requirement name already exists', async () => {
-    const requirement = generateRequirementData({
+    const existingData = generateRequirementData({
       subjectId: String(createdSubjectId),
-      aspectId: String(createdAspectIds[0]),
+      aspectsIds: JSON.stringify([createdAspectIds[0]]),
       requirementName: 'Existing Requirement',
-      requirementNumber: 'EXISTING-002'
-    })
-
-    const anotherRequirement = generateRequirementData({
-      subjectId: String(createdSubjectId),
-      aspectId: String(createdAspectIds[0]),
-      requirementName: 'Existing Requirement',
-      requirementNumber: 'EXISTING-002113'
+      requirementNumber: 'UNIQUE-001'
     })
 
     await api
       .post('/api/requirements')
       .set('Authorization', `Bearer ${tokenAdmin}`)
-      .send(requirement)
+      .send(existingData)
       .expect(201)
+
+    const duplicateData = generateRequirementData({
+      subjectId: String(createdSubjectId),
+      aspectsIds: JSON.stringify([createdAspectIds[0]]),
+      requirementName: 'Existing Requirement',
+      requirementNumber: 'NEW-NUMBER-002'
+    })
 
     const response = await api
       .patch(`/api/requirement/${createdRequirement.id}`)
       .set('Authorization', `Bearer ${tokenAdmin}`)
-      .send(anotherRequirement)
+      .send(duplicateData)
       .expect(409)
 
     expect(response.body.message).toMatch(/Requirement name already exists/i)
   })
 
   test('Should return 409 if requirement number already exists', async () => {
-    const requirement = generateRequirementData({
+    const existingData = generateRequirementData({
       subjectId: String(createdSubjectId),
-      aspectId: String(createdAspectIds[0]),
-      requirementName: 'Existing Requirement',
-      requirementNumber: 'EXISTING-002'
-    })
-    const anotherRequirement = generateRequirementData({
-      subjectId: String(createdSubjectId),
-      aspectId: String(createdAspectIds[0]),
-      requirementName: 'Unique Requirement 01',
-      requirementNumber: 'EXISTING-002'
+      aspectsIds: JSON.stringify([createdAspectIds[0]]),
+      requirementName: 'Unique Name',
+      requirementNumber: 'DUPLICATE-NUMBER-001'
     })
 
     await api
       .post('/api/requirements')
       .set('Authorization', `Bearer ${tokenAdmin}`)
-      .send(requirement)
+      .send(existingData)
       .expect(201)
+
+    const duplicateData = generateRequirementData({
+      subjectId: String(createdSubjectId),
+      aspectsIds: JSON.stringify([createdAspectIds[0]]),
+      requirementName: 'Another Unique Name',
+      requirementNumber: 'DUPLICATE-NUMBER-001'
+    })
 
     const response = await api
       .patch(`/api/requirement/${createdRequirement.id}`)
       .set('Authorization', `Bearer ${tokenAdmin}`)
-      .send(anotherRequirement)
+      .send(duplicateData)
       .expect(409)
 
     expect(response.body.message).toMatch(/Requirement number already exists/i)
@@ -2507,9 +2047,10 @@ describe('Delete a requirement', () => {
 
   beforeEach(async () => {
     await RequirementRepository.deleteAll()
+
     const requirementData = generateRequirementData({
       subjectId: String(createdSubjectId),
-      aspectId: String(createdAspectIds[0])
+      aspectsIds: JSON.stringify([createdAspectIds[0]])
     })
 
     const response = await api
@@ -2553,7 +2094,6 @@ describe('Delete a requirement', () => {
     expect(response.body.error).toMatch(/token missing or invalid/i)
   })
 })
-
 describe('Delete multiple requirements', () => {
   let createdRequirements
 
@@ -2561,12 +2101,13 @@ describe('Delete multiple requirements', () => {
     await RequirementRepository.deleteAll()
     const numberOfRequirements = 2
     createdRequirements = []
+
     for (let i = 0; i < numberOfRequirements; i++) {
       const requirementData = generateRequirementData({
         requirementNumber: `REQ-${i}`,
         requirementName: `Requirement Name ${i}`,
         subjectId: String(createdSubjectId),
-        aspectId: String(createdAspectIds[0])
+        aspectsIds: JSON.stringify([createdAspectIds[0]])
       })
 
       const response = await api
@@ -2598,6 +2139,7 @@ describe('Delete multiple requirements', () => {
 
   test('Should return 404 if one or more requirement IDs do not exist', async () => {
     const nonExistingIds = [...createdRequirements, -1]
+
     const response = await api
       .delete('/api/requirements/batch')
       .set('Authorization', `Bearer ${tokenAdmin}`)

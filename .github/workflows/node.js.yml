@@ -53,7 +53,10 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           ORGANIZATION_ID: ${{ secrets.ORGANIZATION_ID }}
           PROJECT_ID: ${{ secrets.PROJECT_ID }}
+          LIMIT_EXTRACT_ARTICLES: ${{ secrets.LIMIT_EXTRACT_ARTICLES }}
           CONCURRENCY_EXTRACT_ARTICLES: ${{ secrets.CONCURRENCY_EXTRACT_ARTICLES }}
+          LIMIT_SEND_LEGAL_BASIS: ${{ secrets.LIMIT_SEND_LEGAL_BASIS }}
+          CONCURRENCY_SEND_LEGAL_BASIS: ${{ secrets.CONCURRENCY_SEND_LEGAL_BASIS }}
         run: |
           npm test
 

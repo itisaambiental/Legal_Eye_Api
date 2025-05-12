@@ -3,7 +3,7 @@ import { OPENAI_API_KEY, ORGANIZATION_ID, PROJECT_ID } from './variables.config.
 
 /**
  * Client options for OpenAI API configuration.
- * @type {ClientOptions}
+ * @type {import('openai').ClientOptions}
  */
 const options = {
   apiKey: OPENAI_API_KEY,
@@ -12,9 +12,27 @@ const options = {
 }
 
 /**
- * Configures the OpenAI API with the provided options.
+ * OpenAI client instance.
  * @type {OpenAI}
  */
 const openai = new OpenAI(options)
+
+/**
+ * Available AI models.
+ */
+export const models = {
+  High: 'gpt-4.1',
+  Low: 'gpt-4.1-mini'
+}
+
+/**
+ * Selects the appropriate model based on the given intelligence level.
+ *
+ * @param {'High' | 'Low' | null | undefined} level - The desired level of intelligence.
+ * @returns {string} - The model identifier.
+ */
+export function getModel (level) {
+  return level === 'High' ? models.High : models.Low
+}
 
 export default openai

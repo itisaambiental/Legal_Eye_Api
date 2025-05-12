@@ -1,4 +1,4 @@
-import ErrorUtils from '../../utils/Error.js'
+import HttpException from '../errors/HttpException.js'
 import { S3_BUCKET_NAME, AWS_REGION } from '../../config/variables.config.js'
 import { s3Client } from '../../config/aws.config.js'
 import {
@@ -40,7 +40,7 @@ class FileService {
    * @param {string} file.originalname - The original name of the file.
    * @param {string} file.mimetype - The MIME type of the file.
    * @returns {Promise<UploadFileResult>} - An object containing the S3 response and unique file name.
-   * @throws {ErrorUtils} - If an error occurs during file upload.
+   * @throws {HttpException} - If an error occurs during file upload.
    */
   static async uploadFile (file) {
     try {
@@ -56,7 +56,7 @@ class FileService {
       const response = await s3Client.send(command)
       return { response, uniqueFileName }
     } catch (error) {
-      throw new ErrorUtils(500, 'Error uploading file', error.message)
+      throw new HttpException(500, 'Error uploading file', error.message)
     }
   }
 
@@ -65,7 +65,7 @@ class FileService {
    * The URL is valid for a specified duration.
    * @param {string} fileKey - The key of the file in the S3 bucket.
    * @returns {Promise<string>} - The presigned URL for accessing the file.
-   * @throws {ErrorUtils} - If an error occurs while generating the presigned URL.
+   * @throws {HttpException} - If an error occurs while generating the presigned URL.
    */
   static async getFile (fileKey) {
     try {
@@ -80,7 +80,7 @@ class FileService {
       })
       return presignedUrl
     } catch (error) {
-      throw new ErrorUtils(
+      throw new HttpException(
         500,
         'Error generating presigned URL',
         error.message
@@ -104,7 +104,7 @@ class FileService {
    * Fetches a file from a given URL and returns its buffer and content type.
    * @param {string} url - The URL of the file.
    * @returns {Promise<FileFetchResult>} - The file buffer and content type.
-   * @throws {ErrorUtils} - If the file cannot be fetched.
+   * @throws {HttpException} - If the file cannot be fetched.
    */
   static async getFileFromUrl (url) {
     try {
@@ -114,7 +114,7 @@ class FileService {
         contentType: response.headers['content-type']
       }
     } catch (error) {
-      throw new ErrorUtils(
+      throw new HttpException(
         error.response?.status || 500,
         'Error fetching file',
         error.message
@@ -126,7 +126,7 @@ class FileService {
    * Deletes a file from the specified S3 bucket.
    * @param {string} fileKey - The key of the file in the S3 bucket to delete.
    * @returns {Promise<DeleteFileResult>} - An object containing the S3 response for the deletion.
-   * @throws {ErrorUtils} - If an error occurs while deleting the file.
+   * @throws {HttpException} - If an error occurs while deleting the file.
    */
   static async deleteFile (fileKey) {
     try {
@@ -138,7 +138,7 @@ class FileService {
       const response = await s3Client.send(command)
       return { response }
     } catch (error) {
-      throw new ErrorUtils(500, 'Error deleting file', error.message)
+      throw new HttpException(500, 'Error deleting file', error.message)
     }
   }
 }

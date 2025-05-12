@@ -16,9 +16,7 @@ export default function generateRequirementData (overrides = {}) {
     complementaryKeywords: 'Complementary, Requirement',
     condition: 'Crítica',
     evidence: 'Documento',
-    periodicity: 'Anual',
-    requirementType: 'Identificación Estatal',
-    jurisdiction: 'Federal'
+    periodicity: 'Anual'
   }
 
   const data = { ...defaultData, ...overrides }
