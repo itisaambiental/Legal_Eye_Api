@@ -186,11 +186,11 @@ class ArticlesService {
    */
   static async getById (id) {
     try {
-      const articles = await ArticlesRepository.findById(id)
-      if (!articles) {
+      const article = await ArticlesRepository.findById(id)
+      if (!article) {
         throw new HttpException(404, 'Article not found')
       }
-      return articles
+      return article
     } catch (error) {
       if (error instanceof HttpException) {
         throw error
