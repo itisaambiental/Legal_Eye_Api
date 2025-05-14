@@ -184,9 +184,9 @@ CREATE TABLE IF NOT EXISTS legal_verbs (
 -- Description: Stores metadata of a legal requirements identification analysis.
 CREATE TABLE IF NOT EXISTS requirement_identifications (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,           -- Title of the identification
-    description TEXT,                     -- Optional description provided by the user
-    user_id BIGINT,                       -- User who created the analysis (nullable)
+    name VARCHAR(255) NOT NULL,          
+    description TEXT,                    
+    user_id BIGINT,                      
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     status ENUM('Active', 'Failed', 'Completed') DEFAULT 'Active',
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
@@ -195,8 +195,8 @@ CREATE TABLE IF NOT EXISTS requirement_identifications (
 -- Table: requirement_identification_requirements
 -- Description: Stores all requirements included in a given requirement identification.
 CREATE TABLE IF NOT EXISTS requirement_identification_requirements (
-    requirement_identification_id INT NOT NULL,  -- ID of the identification
-    requirement_id INT NOT NULL,                 -- ID of the applicable requirement
+    requirement_identification_id INT NOT NULL,  
+    requirement_id INT NOT NULL,                 
     PRIMARY KEY (requirement_identification_id, requirement_id),
     FOREIGN KEY (requirement_identification_id) REFERENCES requirement_identifications(id) ON DELETE CASCADE,
     FOREIGN KEY (requirement_id) REFERENCES requirements(id) ON DELETE RESTRICT
