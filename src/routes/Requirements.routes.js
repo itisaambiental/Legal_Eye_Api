@@ -22,6 +22,7 @@ import {
   getRequirementsByCondition,
   getRequirementsByEvidence,
   getRequirementsByPeriodicity,
+  getRequirementsByAcceptanceCriteria,
   updateRequirement,
   deleteRequirement,
   deleteRequirementBatch
@@ -218,6 +219,20 @@ router.get('/requirements/search/evidence', UserExtractor, getRequirementsByEvid
  * @returns {Array<Object>} - A list of requirements matching the periodicity.
  */
 router.get('/requirements/search/periodicity', UserExtractor, getRequirementsByPeriodicity)
+
+// Add this just after the periodicity search route:
+
+/**
+ * Route to retrieve requirements filtered by a specific acceptance criteria.
+ * @method GET
+ * @path /requirements/search/acceptance-criteria
+ * @description Fetches requirements matching the specified acceptance criteria text.
+ *
+ * @param {string} acceptanceCriteria - The acceptance criteria to filter by.
+ * @middlewares UserExtractor - Middleware to ensure that the user is authorized and extracted from the request.
+ * @returns {Array<Object>} - A list of requirements matching the acceptance criteria.
+ */
+router.get('/requirements/search/acceptance-criteria', UserExtractor, getRequirementsByAcceptanceCriteria)
 
 /**
  * Route to update an existing requirement by its ID.

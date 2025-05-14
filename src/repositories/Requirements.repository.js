@@ -7,25 +7,26 @@ import Requirement from '../models/Requirement.model.js'
  */
 class RequirementRepository {
   /**
- * Inserts a new requirement into the database and associates it with aspects.
- * @param {Object} requirement - The requirement object to insert.
- * @param {number} requirement.subjectId - The main subject ID of the requirement.
- * @param {Array<number>} requirement.aspectsIds - The aspect IDs to associate.
- * @param {string} requirement.requirementNumber
- * @param {string} requirement.requirementName
- * @param {string} requirement.mandatoryDescription
- * @param {string} requirement.complementaryDescription
- * @param {string} requirement.mandatorySentences
- * @param {string} requirement.complementarySentences
- * @param {string} requirement.mandatoryKeywords
- * @param {string} requirement.complementaryKeywords
- * @param {string} requirement.condition
- * @param {string} requirement.evidence
- * @param {string} requirement.specifyEvidence
- * @param {string} requirement.periodicity
- * @returns {Promise<Requirement>}
- * @throws {HttpException}
- */
+   * Inserts a new requirement into the database and associates it with aspects.
+   * @param {Object} requirement - The requirement object to insert.
+   * @param {number} requirement.subjectId - The main subject ID of the requirement.
+   * @param {Array<number>} requirement.aspectsIds - The aspect IDs to associate.
+   * @param {number} requirement.requirementNumber - The requirement number (integer).
+   * @param {string} requirement.requirementName - The name of the requirement.
+   * @param {string} requirement.mandatoryDescription - The mandatory description.
+   * @param {string} requirement.complementaryDescription - The complementary description.
+   * @param {string} requirement.mandatorySentences - The mandatory legal sentences.
+   * @param {string} requirement.complementarySentences - The complementary legal sentences.
+   * @param {string} requirement.mandatoryKeywords - Keywords for mandatory aspect.
+   * @param {string} requirement.complementaryKeywords - Keywords for complementary aspect.
+   * @param {string} requirement.condition - The condition type.
+   * @param {string} requirement.evidence - The type of evidence.
+   * @param {string} requirement.specifyEvidence - The description of specific evidence.
+   * @param {string} requirement.periodicity - The periodicity of the requirement.
+   * @param {string} requirement.acceptanceCriteria - The acceptance criteria for the requirement.
+   * @returns {Promise<Requirement>}
+   * @throws {HttpException}
+   */
   static async create (requirement) {
     const {
       subjectId,
@@ -41,18 +42,28 @@ class RequirementRepository {
       condition,
       evidence,
       specifyEvidence,
-      periodicity
+      periodicity,
+      acceptanceCriteria
     } = requirement
 
     const insertRequirementQuery = `
 INSERT INTO requirements (
-  subject_id, requirement_number, requirement_name, 
-  mandatory_description, complementary_description, 
-  mandatory_sentences, complementary_sentences, 
-  mandatory_keywords, complementary_keywords, 
-  requirement_condition, evidence, specify_evidence, periodicity
+  subject_id,
+  requirement_number,
+  requirement_name,
+  mandatory_description,
+  complementary_description,
+  mandatory_sentences,
+  complementary_sentences,
+  mandatory_keywords,
+  complementary_keywords,
+  requirement_condition,
+  evidence,
+  specify_evidence,
+  periodicity,
+  acceptance_criteria
 )
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `
 
     try {
@@ -69,7 +80,8 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         condition,
         evidence,
         specifyEvidence,
-        periodicity
+        periodicity,
+        acceptanceCriteria
       ])
       const requirementId = result.insertId
       if (aspectsIds && aspectsIds.length > 0) {
@@ -93,29 +105,30 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   }
 
   /**
- * Retrieves all requirements from the database along with their subjects and associated aspects.
- * @returns {Promise<Array<Requirement|null>>} - A list of all requirements.
- * @throws {HttpException} - If an error occurs during retrieval.
- */
+   * Retrieves all requirements from the database along with their subjects and associated aspects.
+   * @returns {Promise<Array<Requirement|null>>} - A list of all requirements.
+   * @throws {HttpException} - If an error occurs during retrieval.
+   */
   static async findAll () {
     const query = `
-    SELECT 
-      r.id, 
-      r.requirement_number, 
-      r.requirement_name, 
-      r.mandatory_description, 
-      r.complementary_description, 
-      r.mandatory_sentences, 
-      r.complementary_sentences, 
-      r.mandatory_keywords, 
-      r.complementary_keywords, 
-      r.requirement_condition, 
-      r.evidence, 
+    SELECT
+      r.id,
+      r.requirement_number,
+      r.requirement_name,
+      r.mandatory_description,
+      r.complementary_description,
+      r.mandatory_sentences,
+      r.complementary_sentences,
+      r.mandatory_keywords,
+      r.complementary_keywords,
+      r.requirement_condition,
+      r.evidence,
       r.specify_evidence,
-      r.periodicity, 
-      s.id AS subject_id, 
+      r.periodicity,
+      r.acceptance_criteria,
+      s.id AS subject_id,
       s.subject_name AS subject_name,
-      a.id AS aspect_id, 
+      a.id AS aspect_id,
       a.aspect_name AS aspect_name
     FROM requirements r
     JOIN subjects s ON r.subject_id = s.id
@@ -146,6 +159,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             evidence: row.evidence,
             specify_evidence: row.specify_evidence,
             periodicity: row.periodicity,
+            acceptance_criteria: row.acceptance_criteria,
             subject: {
               subject_id: row.subject_id,
               subject_name: row.subject_name
@@ -178,7 +192,8 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           req.requirement_condition,
           req.evidence,
           req.specify_evidence,
-          req.periodicity
+          req.periodicity,
+          req.acceptance_criteria
         )
       })
     } catch (error) {
@@ -188,15 +203,15 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   }
 
   /**
- * Checks if a requirement exists with the given requirement number.
- * @param {string} requirementNumber - The requirement number to check for existence.
- * @returns {Promise<boolean>} - True if a requirement with the same requirement number exists, false otherwise.
- * @throws {HttpException} - If an error occurs during the check.
- */
+   * Checks if a requirement exists with the given requirement number.
+   * @param {number} requirementNumber - The requirement number to check for existence.
+   * @returns {Promise<boolean>} - True if a requirement with the same requirement number exists, false otherwise.
+   * @throws {HttpException} - If an error occurs during the check.
+   */
   static async existsByRequirementNumber (requirementNumber) {
     const query = `
-        SELECT 1 
-        FROM requirements 
+        SELECT 1
+        FROM requirements
         WHERE requirement_number = ?
         LIMIT 1
       `
@@ -239,23 +254,24 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
  */
   static async findById (requirementId) {
     const query = `
-    SELECT 
-      r.id, 
-      r.requirement_number, 
-      r.requirement_name, 
-      r.mandatory_description, 
-      r.complementary_description, 
-      r.mandatory_sentences, 
-      r.complementary_sentences, 
-      r.mandatory_keywords, 
-      r.complementary_keywords, 
-      r.requirement_condition, 
-      r.evidence, 
+    SELECT
+      r.id,
+      r.requirement_number,
+      r.requirement_name,
+      r.mandatory_description,
+      r.complementary_description,
+      r.mandatory_sentences,
+      r.complementary_sentences,
+      r.mandatory_keywords,
+      r.complementary_keywords,
+      r.requirement_condition,
+      r.evidence,
       r.specify_evidence,
-      r.periodicity, 
-      s.id AS subject_id, 
-      s.subject_name AS subject_name, 
-      a.id AS aspect_id, 
+      r.periodicity,
+      r.acceptance_criteria,
+      s.id    AS subject_id,
+      s.subject_name AS subject_name,
+      a.id    AS aspect_id,
       a.aspect_name AS aspect_name
     FROM requirements r
     JOIN subjects s ON r.subject_id = s.id
@@ -263,40 +279,37 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     LEFT JOIN aspects a ON rsa.aspect_id = a.id
     WHERE r.id = ?
   `
+
     try {
       const [rows] = await pool.query(query, [requirementId])
       if (rows.length === 0) return null
 
-      const requirement = rows[0]
-
+      const row = rows[0]
       const subject = {
-        subject_id: requirement.subject_id,
-        subject_name: requirement.subject_name
+        subject_id: row.subject_id,
+        subject_name: row.subject_name
       }
-
       const aspects = rows
-        .map((row) => ({
-          aspect_id: row.aspect_id,
-          aspect_name: row.aspect_name
-        }))
-        .filter((aspect) => aspect.aspect_id !== null)
+        .map(r => ({ aspect_id: r.aspect_id, aspect_name: r.aspect_name }))
+        .filter(a => a.aspect_id !== null)
 
       return new Requirement(
-        requirement.id,
+        row.id,
         subject,
         aspects,
-        requirement.requirement_number,
-        requirement.requirement_name,
-        requirement.mandatory_description,
-        requirement.complementary_description,
-        requirement.mandatory_sentences,
-        requirement.complementary_sentences,
-        requirement.mandatory_keywords,
-        requirement.complementary_keywords,
-        requirement.requirement_condition,
-        requirement.evidence,
-        requirement.specify_evidence,
-        requirement.periodicity
+        row.requirement_number,
+        row.requirement_name,
+        row.mandatory_description,
+        row.complementary_description,
+        row.mandatory_sentences,
+        row.complementary_sentences,
+        row.mandatory_keywords,
+        row.complementary_keywords,
+        row.requirement_condition,
+        row.evidence,
+        row.specify_evidence,
+        row.periodicity,
+        row.acceptance_criteria
       )
     } catch (error) {
       console.error('Error retrieving requirement by ID:', error.message)
@@ -315,22 +328,23 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 
     const query = `
     SELECT 
-      r.id, 
-      r.requirement_number, 
-      r.requirement_name, 
-      r.mandatory_description, 
-      r.complementary_description, 
-      r.mandatory_sentences, 
-      r.complementary_sentences, 
-      r.mandatory_keywords, 
-      r.complementary_keywords, 
-      r.requirement_condition, 
-      r.evidence, 
+      r.id,
+      r.requirement_number,
+      r.requirement_name,
+      r.mandatory_description,
+      r.complementary_description,
+      r.mandatory_sentences,
+      r.complementary_sentences,
+      r.mandatory_keywords,
+      r.complementary_keywords,
+      r.requirement_condition,
+      r.evidence,
       r.specify_evidence,
-      r.periodicity, 
-      s.id AS subject_id, 
-      s.subject_name AS subject_name, 
-      a.id AS aspect_id, 
+      r.periodicity,
+      r.acceptance_criteria,
+      s.id   AS subject_id,
+      s.subject_name AS subject_name,
+      a.id   AS aspect_id,
       a.aspect_name AS aspect_name
     FROM requirements r
     JOIN subjects s ON r.subject_id = s.id
@@ -346,7 +360,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 
       const requirementsMap = new Map()
 
-      rows.forEach((row) => {
+      rows.forEach(row => {
         if (!requirementsMap.has(row.id)) {
           requirementsMap.set(row.id, {
             id: row.id,
@@ -362,6 +376,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             evidence: row.evidence,
             specify_evidence: row.specify_evidence,
             periodicity: row.periodicity,
+            acceptance_criteria: row.acceptance_criteria,
             subject: {
               subject_id: row.subject_id,
               subject_name: row.subject_name
@@ -369,298 +384,6 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             aspects: []
           })
         }
-
-        if (row.aspect_id !== null) {
-          requirementsMap.get(row.id).aspects.push({
-            aspect_id: row.aspect_id,
-            aspect_name: row.aspect_name
-          })
-        }
-      })
-
-      return Array.from(requirementsMap.values()).map((req) => {
-        return new Requirement(
-          req.id,
-          req.subject,
-          req.aspects,
-          req.requirement_number,
-          req.requirement_name,
-          req.mandatory_description,
-          req.complementary_description,
-          req.mandatory_sentences,
-          req.complementary_sentences,
-          req.mandatory_keywords,
-          req.complementary_keywords,
-          req.requirement_condition,
-          req.evidence,
-          req.specify_evidence,
-          req.periodicity
-        )
-      })
-    } catch (error) {
-      console.error('Error finding requirements by IDs:', error.message)
-      throw new HttpException(500, 'Error retrieving requirements by IDs from the database')
-    }
-  }
-
-  /**
- * Retrieves all requirements that match the given requirement number,
- * including their subjects and associated aspects.
- * @param {string} requirementNumber - The number or part of the number of the requirement to retrieve.
- * @returns {Promise<Array<Requirement|null>>} - A list of matching requirements.
- * @throws {HttpException} - If an error occurs during retrieval.
- */
-  static async findByNumber (requirementNumber) {
-    const query = `
-    SELECT 
-      r.id, 
-      r.requirement_number, 
-      r.requirement_name, 
-      r.mandatory_description, 
-      r.complementary_description, 
-      r.mandatory_sentences, 
-      r.complementary_sentences, 
-      r.mandatory_keywords, 
-      r.complementary_keywords, 
-      r.requirement_condition, 
-      r.evidence, 
-      r.specify_evidence,
-      r.periodicity, 
-      s.id AS subject_id, 
-      s.subject_name AS subject_name, 
-      a.id AS aspect_id, 
-      a.aspect_name AS aspect_name
-    FROM requirements r
-    JOIN subjects s ON r.subject_id = s.id
-    LEFT JOIN requirement_subject_aspect rsa ON r.id = rsa.requirement_id
-    LEFT JOIN aspects a ON rsa.aspect_id = a.id
-    WHERE r.requirement_number LIKE ?
-    ORDER BY r.id DESC;
-  `
-
-    try {
-      const [rows] = await pool.query(query, [`%${requirementNumber}%`])
-      if (rows.length === 0) return null
-
-      const requirementsMap = new Map()
-
-      rows.forEach((row) => {
-        if (!requirementsMap.has(row.id)) {
-          requirementsMap.set(row.id, {
-            id: row.id,
-            requirement_number: row.requirement_number,
-            requirement_name: row.requirement_name,
-            mandatory_description: row.mandatory_description,
-            complementary_description: row.complementary_description,
-            mandatory_sentences: row.mandatory_sentences,
-            complementary_sentences: row.complementary_sentences,
-            mandatory_keywords: row.mandatory_keywords,
-            complementary_keywords: row.complementary_keywords,
-            requirement_condition: row.requirement_condition,
-            evidence: row.evidence,
-            specify_evidence: row.specify_evidence,
-            periodicity: row.periodicity,
-            subject: {
-              subject_id: row.subject_id,
-              subject_name: row.subject_name
-            },
-            aspects: []
-          })
-        }
-
-        if (row.aspect_id !== null) {
-          requirementsMap.get(row.id).aspects.push({
-            aspect_id: row.aspect_id,
-            aspect_name: row.aspect_name
-          })
-        }
-      })
-
-      return Array.from(requirementsMap.values()).map((req) => {
-        return new Requirement(
-          req.id,
-          req.subject,
-          req.aspects,
-          req.requirement_number,
-          req.requirement_name,
-          req.mandatory_description,
-          req.complementary_description,
-          req.mandatory_sentences,
-          req.complementary_sentences,
-          req.mandatory_keywords,
-          req.complementary_keywords,
-          req.requirement_condition,
-          req.evidence,
-          req.specify_evidence,
-          req.periodicity
-        )
-      })
-    } catch (error) {
-      console.error('Error retrieving requirements by number:', error.message)
-      throw new HttpException(500, 'Error retrieving requirements by number')
-    }
-  }
-
-  /**
- * Retrieves all requirements that match the given name, including their subjects and associated aspects.
- * @param {string} requirementName - The name or part of the name of the requirement to retrieve.
- * @returns {Promise<Array<Requirement|null>>} - A list of requirements matching the name.
- * @throws {HttpException} - If an error occurs during retrieval.
- */
-  static async findByName (requirementName) {
-    const query = `
-    SELECT 
-      r.id, 
-      r.requirement_number, 
-      r.requirement_name, 
-      r.mandatory_description, 
-      r.complementary_description, 
-      r.mandatory_sentences, 
-      r.complementary_sentences, 
-      r.mandatory_keywords, 
-      r.complementary_keywords, 
-      r.requirement_condition, 
-      r.evidence, 
-      r.specify_evidence,
-      r.periodicity, 
-      s.id AS subject_id, 
-      s.subject_name AS subject_name, 
-      a.id AS aspect_id, 
-      a.aspect_name AS aspect_name
-    FROM requirements r
-    JOIN subjects s ON r.subject_id = s.id
-    LEFT JOIN requirement_subject_aspect rsa ON r.id = rsa.requirement_id
-    LEFT JOIN aspects a ON rsa.aspect_id = a.id
-    WHERE r.requirement_name LIKE ?
-    ORDER BY r.id DESC;
-  `
-
-    try {
-      const [rows] = await pool.query(query, [`%${requirementName}%`])
-      if (rows.length === 0) return null
-
-      const requirementsMap = new Map()
-
-      rows.forEach((row) => {
-        if (!requirementsMap.has(row.id)) {
-          requirementsMap.set(row.id, {
-            id: row.id,
-            requirement_number: row.requirement_number,
-            requirement_name: row.requirement_name,
-            mandatory_description: row.mandatory_description,
-            complementary_description: row.complementary_description,
-            mandatory_sentences: row.mandatory_sentences,
-            complementary_sentences: row.complementary_sentences,
-            mandatory_keywords: row.mandatory_keywords,
-            complementary_keywords: row.complementary_keywords,
-            requirement_condition: row.requirement_condition,
-            evidence: row.evidence,
-            specify_evidence: row.specify_evidence,
-            periodicity: row.periodicity,
-            subject: {
-              subject_id: row.subject_id,
-              subject_name: row.subject_name
-            },
-            aspects: []
-          })
-        }
-
-        if (row.aspect_id !== null) {
-          requirementsMap.get(row.id).aspects.push({
-            aspect_id: row.aspect_id,
-            aspect_name: row.aspect_name
-          })
-        }
-      })
-
-      return Array.from(requirementsMap.values()).map((req) => {
-        return new Requirement(
-          req.id,
-          req.subject,
-          req.aspects,
-          req.requirement_number,
-          req.requirement_name,
-          req.mandatory_description,
-          req.complementary_description,
-          req.mandatory_sentences,
-          req.complementary_sentences,
-          req.mandatory_keywords,
-          req.complementary_keywords,
-          req.requirement_condition,
-          req.evidence,
-          req.specify_evidence,
-          req.periodicity
-        )
-      })
-    } catch (error) {
-      console.error('Error retrieving requirements by name:', error.message)
-      throw new HttpException(500, 'Error retrieving requirements by name')
-    }
-  }
-
-  /**
- * Retrieves all requirements filtered by a specific subject, including their aspects.
- * @param {number} subjectId - The subject ID to filter by.
- * @returns {Promise<Array<Requirement>|null>} - A list of requirements filtered by the subject, or null if no records are found.
- * @throws {HttpException} - If an error occurs during retrieval.
- */
-  static async findBySubject (subjectId) {
-    const query = `
-    SELECT 
-      r.id, 
-      r.requirement_number, 
-      r.requirement_name, 
-      r.mandatory_description, 
-      r.complementary_description, 
-      r.mandatory_sentences, 
-      r.complementary_sentences, 
-      r.mandatory_keywords, 
-      r.complementary_keywords, 
-      r.requirement_condition, 
-      r.evidence, 
-      r.specify_evidence,
-      r.periodicity, 
-      s.id AS subject_id, 
-      s.subject_name AS subject_name, 
-      a.id AS aspect_id, 
-      a.aspect_name AS aspect_name
-    FROM requirements r
-    JOIN subjects s ON r.subject_id = s.id
-    LEFT JOIN requirement_subject_aspect rsa ON r.id = rsa.requirement_id
-    LEFT JOIN aspects a ON rsa.aspect_id = a.id
-    WHERE r.subject_id = ?
-    ORDER BY r.id DESC;
-  `
-
-    try {
-      const [rows] = await pool.query(query, [subjectId])
-      if (rows.length === 0) return null
-
-      const requirementsMap = new Map()
-      rows.forEach((row) => {
-        if (!requirementsMap.has(row.id)) {
-          requirementsMap.set(row.id, {
-            id: row.id,
-            requirement_number: row.requirement_number,
-            requirement_name: row.requirement_name,
-            mandatory_description: row.mandatory_description,
-            complementary_description: row.complementary_description,
-            mandatory_sentences: row.mandatory_sentences,
-            complementary_sentences: row.complementary_sentences,
-            mandatory_keywords: row.mandatory_keywords,
-            complementary_keywords: row.complementary_keywords,
-            requirement_condition: row.requirement_condition,
-            evidence: row.evidence,
-            specify_evidence: row.specify_evidence,
-            periodicity: row.periodicity,
-            subject: {
-              subject_id: row.subject_id,
-              subject_name: row.subject_name
-            },
-            aspects: []
-          })
-        }
-
         if (row.aspect_id !== null) {
           requirementsMap.get(row.id).aspects.push({
             aspect_id: row.aspect_id,
@@ -685,7 +408,303 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           req.requirement_condition,
           req.evidence,
           req.specify_evidence,
-          req.periodicity
+          req.periodicity,
+          req.acceptance_criteria
+        )
+      )
+    } catch (error) {
+      console.error('Error finding requirements by IDs:', error.message)
+      throw new HttpException(500, 'Error retrieving requirements by IDs from the database')
+    }
+  }
+
+  /**
+ * Retrieves all requirements that match the given requirement number,
+ * including their subjects and associated aspects.
+ * @param {number|string} requirementNumber - The number (or part of the number) of the requirement to retrieve.
+ * @returns {Promise<Array<Requirement>|null>} - A list of matching requirements or null if none.
+ * @throws {HttpException} - If an error occurs during retrieval.
+ */
+  static async findByNumber (requirementNumber) {
+    const query = `
+    SELECT 
+      r.id,
+      r.requirement_number,
+      r.requirement_name,
+      r.mandatory_description,
+      r.complementary_description,
+      r.mandatory_sentences,
+      r.complementary_sentences,
+      r.mandatory_keywords,
+      r.complementary_keywords,
+      r.requirement_condition,
+      r.evidence,
+      r.specify_evidence,
+      r.periodicity,
+      r.acceptance_criteria,
+      s.id   AS subject_id,
+      s.subject_name AS subject_name,
+      a.id   AS aspect_id,
+      a.aspect_name AS aspect_name
+    FROM requirements r
+    JOIN subjects s ON r.subject_id = s.id
+    LEFT JOIN requirement_subject_aspect rsa ON r.id = rsa.requirement_id
+    LEFT JOIN aspects a ON rsa.aspect_id = a.id
+    WHERE r.requirement_number LIKE ?
+    ORDER BY r.id DESC;
+  `
+
+    try {
+      const [rows] = await pool.query(query, [`%${requirementNumber}%`])
+      if (rows.length === 0) return null
+
+      const map = new Map()
+      rows.forEach(row => {
+        if (!map.has(row.id)) {
+          map.set(row.id, {
+            id: row.id,
+            requirement_number: row.requirement_number,
+            requirement_name: row.requirement_name,
+            mandatory_description: row.mandatory_description,
+            complementary_description: row.complementary_description,
+            mandatory_sentences: row.mandatory_sentences,
+            complementary_sentences: row.complementary_sentences,
+            mandatory_keywords: row.mandatory_keywords,
+            complementary_keywords: row.complementary_keywords,
+            requirement_condition: row.requirement_condition,
+            evidence: row.evidence,
+            specify_evidence: row.specify_evidence,
+            periodicity: row.periodicity,
+            acceptance_criteria: row.acceptance_criteria,
+            subject: {
+              subject_id: row.subject_id,
+              subject_name: row.subject_name
+            },
+            aspects: []
+          })
+        }
+        if (row.aspect_id !== null) {
+          map.get(row.id).aspects.push({
+            aspect_id: row.aspect_id,
+            aspect_name: row.aspect_name
+          })
+        }
+      })
+
+      return Array.from(map.values()).map(req =>
+        new Requirement(
+          req.id,
+          req.subject,
+          req.aspects,
+          req.requirement_number,
+          req.requirement_name,
+          req.mandatory_description,
+          req.complementary_description,
+          req.mandatory_sentences,
+          req.complementary_sentences,
+          req.mandatory_keywords,
+          req.complementary_keywords,
+          req.requirement_condition,
+          req.evidence,
+          req.specify_evidence,
+          req.periodicity,
+          req.acceptance_criteria
+        )
+      )
+    } catch (error) {
+      console.error('Error retrieving requirements by number:', error.message)
+      throw new HttpException(500, 'Error retrieving requirements by number')
+    }
+  }
+
+  /**
+ * Retrieves all requirements that match the given name, including their subjects and associated aspects.
+ * @param {string} requirementName - The name or part of the name of the requirement to retrieve.
+ * @returns {Promise<Array<Requirement>|null>} - A list of requirements matching the name, or null if none.
+ * @throws {HttpException} - If an error occurs during retrieval.
+ */
+  static async findByName (requirementName) {
+    const query = `
+    SELECT 
+      r.id,
+      r.requirement_number,
+      r.requirement_name,
+      r.mandatory_description,
+      r.complementary_description,
+      r.mandatory_sentences,
+      r.complementary_sentences,
+      r.mandatory_keywords,
+      r.complementary_keywords,
+      r.requirement_condition,
+      r.evidence,
+      r.specify_evidence,
+      r.periodicity,
+      r.acceptance_criteria,
+      s.id   AS subject_id,
+      s.subject_name AS subject_name,
+      a.id   AS aspect_id,
+      a.aspect_name AS aspect_name
+    FROM requirements r
+    JOIN subjects s ON r.subject_id = s.id
+    LEFT JOIN requirement_subject_aspect rsa ON r.id = rsa.requirement_id
+    LEFT JOIN aspects a ON rsa.aspect_id = a.id
+    WHERE r.requirement_name LIKE ?
+    ORDER BY r.id DESC;
+  `
+
+    try {
+      const [rows] = await pool.query(query, [`%${requirementName}%`])
+      if (rows.length === 0) return null
+
+      const map = new Map()
+      for (const row of rows) {
+        if (!map.has(row.id)) {
+          map.set(row.id, {
+            id: row.id,
+            requirement_number: row.requirement_number,
+            requirement_name: row.requirement_name,
+            mandatory_description: row.mandatory_description,
+            complementary_description: row.complementary_description,
+            mandatory_sentences: row.mandatory_sentences,
+            complementary_sentences: row.complementary_sentences,
+            mandatory_keywords: row.mandatory_keywords,
+            complementary_keywords: row.complementary_keywords,
+            requirement_condition: row.requirement_condition,
+            evidence: row.evidence,
+            specify_evidence: row.specify_evidence,
+            periodicity: row.periodicity,
+            acceptance_criteria: row.acceptance_criteria,
+            subject: {
+              subject_id: row.subject_id,
+              subject_name: row.subject_name
+            },
+            aspects: []
+          })
+        }
+        if (row.aspect_id !== null) {
+          map.get(row.id).aspects.push({
+            aspect_id: row.aspect_id,
+            aspect_name: row.aspect_name
+          })
+        }
+      }
+
+      return Array.from(map.values()).map(req =>
+        new Requirement(
+          req.id,
+          req.subject,
+          req.aspects,
+          req.requirement_number,
+          req.requirement_name,
+          req.mandatory_description,
+          req.complementary_description,
+          req.mandatory_sentences,
+          req.complementary_sentences,
+          req.mandatory_keywords,
+          req.complementary_keywords,
+          req.requirement_condition,
+          req.evidence,
+          req.specify_evidence,
+          req.periodicity,
+          req.acceptance_criteria
+        )
+      )
+    } catch (error) {
+      console.error('Error retrieving requirements by name:', error.message)
+      throw new HttpException(500, 'Error retrieving requirements by name')
+    }
+  }
+
+  /**
+ * Retrieves all requirements filtered by a specific subject, including their aspects.
+ * @param {number} subjectId - The subject ID to filter by.
+ * @returns {Promise<Array<Requirement>|null>} - A list of requirements filtered by the subject, or null if no records are found.
+ * @throws {HttpException} - If an error occurs during retrieval.
+ */
+  static async findBySubject (subjectId) {
+    const query = `
+    SELECT 
+      r.id,
+      r.requirement_number,
+      r.requirement_name,
+      r.mandatory_description,
+      r.complementary_description,
+      r.mandatory_sentences,
+      r.complementary_sentences,
+      r.mandatory_keywords,
+      r.complementary_keywords,
+      r.requirement_condition,
+      r.evidence,
+      r.specify_evidence,
+      r.periodicity,
+      r.acceptance_criteria,
+      s.id   AS subject_id,
+      s.subject_name AS subject_name,
+      a.id   AS aspect_id,
+      a.aspect_name AS aspect_name
+    FROM requirements r
+    JOIN subjects s ON r.subject_id = s.id
+    LEFT JOIN requirement_subject_aspect rsa ON r.id = rsa.requirement_id
+    LEFT JOIN aspects a ON rsa.aspect_id = a.id
+    WHERE r.subject_id = ?
+    ORDER BY r.id DESC;
+  `
+
+    try {
+      const [rows] = await pool.query(query, [subjectId])
+      if (rows.length === 0) return null
+
+      const map = new Map()
+      for (const row of rows) {
+        if (!map.has(row.id)) {
+          map.set(row.id, {
+            id: row.id,
+            requirement_number: row.requirement_number,
+            requirement_name: row.requirement_name,
+            mandatory_description: row.mandatory_description,
+            complementary_description: row.complementary_description,
+            mandatory_sentences: row.mandatory_sentences,
+            complementary_sentences: row.complementary_sentences,
+            mandatory_keywords: row.mandatory_keywords,
+            complementary_keywords: row.complementary_keywords,
+            requirement_condition: row.requirement_condition,
+            evidence: row.evidence,
+            specify_evidence: row.specify_evidence,
+            periodicity: row.periodicity,
+            acceptance_criteria: row.acceptance_criteria,
+            subject: {
+              subject_id: row.subject_id,
+              subject_name: row.subject_name
+            },
+            aspects: []
+          })
+        }
+        if (row.aspect_id !== null) {
+          map.get(row.id).aspects.push({
+            aspect_id: row.aspect_id,
+            aspect_name: row.aspect_name
+          })
+        }
+      }
+
+      return Array.from(map.values()).map(req =>
+        new Requirement(
+          req.id,
+          req.subject,
+          req.aspects,
+          req.requirement_number,
+          req.requirement_name,
+          req.mandatory_description,
+          req.complementary_description,
+          req.mandatory_sentences,
+          req.complementary_sentences,
+          req.mandatory_keywords,
+          req.complementary_keywords,
+          req.requirement_condition,
+          req.evidence,
+          req.specify_evidence,
+          req.periodicity,
+          req.acceptance_criteria
         )
       )
     } catch (error) {
@@ -706,6 +725,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     try {
       const values = [subjectId]
       let requirementIds = []
+
       if (aspectIds.length > 0) {
         const placeholders = aspectIds.map(() => '?').join(', ')
         const filterQuery = `
@@ -713,30 +733,32 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         FROM requirements r
         JOIN requirement_subject_aspect rsa ON r.id = rsa.requirement_id
         WHERE r.subject_id = ?
-        AND rsa.aspect_id IN (${placeholders})
+          AND rsa.aspect_id IN (${placeholders})
       `
         const [filterRows] = await pool.query(filterQuery, [subjectId, ...aspectIds])
         if (filterRows.length === 0) return null
         requirementIds = filterRows.map(row => row.id)
       }
+
       let query = `
       SELECT 
-        r.id, 
-        r.requirement_number, 
-        r.requirement_name, 
-        r.mandatory_description, 
-        r.complementary_description, 
-        r.mandatory_sentences, 
-        r.complementary_sentences, 
-        r.mandatory_keywords, 
-        r.complementary_keywords, 
-        r.requirement_condition, 
-        r.evidence, 
+        r.id,
+        r.requirement_number,
+        r.requirement_name,
+        r.mandatory_description,
+        r.complementary_description,
+        r.mandatory_sentences,
+        r.complementary_sentences,
+        r.mandatory_keywords,
+        r.complementary_keywords,
+        r.requirement_condition,
+        r.evidence,
         r.specify_evidence,
-        r.periodicity, 
-        s.id AS subject_id, 
-        s.subject_name AS subject_name, 
-        a.id AS aspect_id, 
+        r.periodicity,
+        r.acceptance_criteria,
+        s.id   AS subject_id,
+        s.subject_name AS subject_name,
+        a.id   AS aspect_id,
         a.aspect_name AS aspect_name
       FROM requirements r
       JOIN subjects s ON r.subject_id = s.id
@@ -744,18 +766,21 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       LEFT JOIN aspects a ON rsa.aspect_id = a.id
       WHERE r.subject_id = ?
     `
+
       if (requirementIds.length > 0) {
         const placeholders = requirementIds.map(() => '?').join(', ')
         query += ` AND r.id IN (${placeholders})`
         values.push(...requirementIds)
       }
       query += ' ORDER BY r.id DESC;'
+
       const [rows] = await pool.query(query, values)
       if (rows.length === 0) return null
-      const requirementsMap = new Map()
-      rows.forEach(row => {
-        if (!requirementsMap.has(row.id)) {
-          requirementsMap.set(row.id, {
+
+      const map = new Map()
+      for (const row of rows) {
+        if (!map.has(row.id)) {
+          map.set(row.id, {
             id: row.id,
             requirement_number: row.requirement_number,
             requirement_name: row.requirement_name,
@@ -769,6 +794,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             evidence: row.evidence,
             specify_evidence: row.specify_evidence,
             periodicity: row.periodicity,
+            acceptance_criteria: row.acceptance_criteria,
             subject: {
               subject_id: row.subject_id,
               subject_name: row.subject_name
@@ -776,16 +802,15 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             aspects: []
           })
         }
-
         if (row.aspect_id !== null) {
-          requirementsMap.get(row.id).aspects.push({
+          map.get(row.id).aspects.push({
             aspect_id: row.aspect_id,
             aspect_name: row.aspect_name
           })
         }
-      })
-      const requirementsArray = Array.from(requirementsMap.values())
-      return requirementsArray.map(req =>
+      }
+
+      return Array.from(map.values()).map(req =>
         new Requirement(
           req.id,
           req.subject,
@@ -801,7 +826,8 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           req.requirement_condition,
           req.evidence,
           req.specify_evidence,
-          req.periodicity
+          req.periodicity,
+          req.acceptance_criteria
         )
       )
     } catch (error) {
@@ -819,22 +845,23 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   static async findByMandatoryDescription (description) {
     const query = `
     SELECT 
-      r.id, 
-      r.requirement_number, 
-      r.requirement_name, 
-      r.mandatory_description, 
-      r.complementary_description, 
-      r.mandatory_sentences, 
-      r.complementary_sentences, 
-      r.mandatory_keywords, 
-      r.complementary_keywords, 
-      r.requirement_condition, 
-      r.evidence, 
+      r.id,
+      r.requirement_number,
+      r.requirement_name,
+      r.mandatory_description,
+      r.complementary_description,
+      r.mandatory_sentences,
+      r.complementary_sentences,
+      r.mandatory_keywords,
+      r.complementary_keywords,
+      r.requirement_condition,
+      r.evidence,
       r.specify_evidence,
-      r.periodicity, 
-      s.id AS subject_id, 
-      s.subject_name AS subject_name, 
-      a.id AS aspect_id, 
+      r.periodicity,
+      r.acceptance_criteria,
+      s.id   AS subject_id,
+      s.subject_name AS subject_name,
+      a.id   AS aspect_id,
       a.aspect_name AS aspect_name
     FROM requirements r
     JOIN subjects s ON r.subject_id = s.id
@@ -842,15 +869,15 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     LEFT JOIN aspects a ON rsa.aspect_id = a.id
     WHERE MATCH(r.mandatory_description) AGAINST(? IN BOOLEAN MODE)
   `
+
     try {
       const [rows] = await pool.query(query, [description])
       if (rows.length === 0) return null
 
-      const requirementsMap = new Map()
-
-      rows.forEach((row) => {
-        if (!requirementsMap.has(row.id)) {
-          requirementsMap.set(row.id, {
+      const map = new Map()
+      for (const row of rows) {
+        if (!map.has(row.id)) {
+          map.set(row.id, {
             id: row.id,
             requirement_number: row.requirement_number,
             requirement_name: row.requirement_name,
@@ -864,6 +891,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             evidence: row.evidence,
             specify_evidence: row.specify_evidence,
             periodicity: row.periodicity,
+            acceptance_criteria: row.acceptance_criteria,
             subject: {
               subject_id: row.subject_id,
               subject_name: row.subject_name
@@ -871,16 +899,15 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             aspects: []
           })
         }
-
         if (row.aspect_id !== null) {
-          requirementsMap.get(row.id).aspects.push({
+          map.get(row.id).aspects.push({
             aspect_id: row.aspect_id,
             aspect_name: row.aspect_name
           })
         }
-      })
+      }
 
-      return Array.from(requirementsMap.values()).map(req =>
+      return Array.from(map.values()).map(req =>
         new Requirement(
           req.id,
           req.subject,
@@ -896,7 +923,8 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           req.requirement_condition,
           req.evidence,
           req.specify_evidence,
-          req.periodicity
+          req.periodicity,
+          req.acceptance_criteria
         )
       )
     } catch (error) {
@@ -906,30 +934,31 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   }
 
   /**
- * Retrieves requirements by a flexible full-text match in their complementary description.
- * @param {string} description - The description or part of the description to search for.
- * @returns {Promise<Array<Requirement>|null>} - A list of Requirement instances matching the description.
- * @throws {HttpException} - If an error occurs during retrieval.
- */
+   * Retrieves requirements by a flexible full-text match in their complementary description.
+   * @param {string} description - The description or part of the description to search for.
+   * @returns {Promise<Array<Requirement>|null>} - A list of Requirement instances matching the description.
+   * @throws {HttpException} - If an error occurs during retrieval.
+   */
   static async findByComplementaryDescription (description) {
     const query = `
-    SELECT 
-      r.id, 
-      r.requirement_number, 
-      r.requirement_name, 
-      r.mandatory_description, 
-      r.complementary_description, 
-      r.mandatory_sentences, 
-      r.complementary_sentences, 
-      r.mandatory_keywords, 
-      r.complementary_keywords, 
-      r.requirement_condition, 
-      r.evidence, 
+    SELECT
+      r.id,
+      r.requirement_number,
+      r.requirement_name,
+      r.mandatory_description,
+      r.complementary_description,
+      r.mandatory_sentences,
+      r.complementary_sentences,
+      r.mandatory_keywords,
+      r.complementary_keywords,
+      r.requirement_condition,
+      r.evidence,
       r.specify_evidence,
       r.periodicity,
-      s.id AS subject_id, 
-      s.subject_name AS subject_name, 
-      a.id AS aspect_id, 
+      r.acceptance_criteria,
+      s.id   AS subject_id,
+      s.subject_name AS subject_name,
+      a.id   AS aspect_id,
       a.aspect_name AS aspect_name
     FROM requirements r
     JOIN subjects s ON r.subject_id = s.id
@@ -937,15 +966,15 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     LEFT JOIN aspects a ON rsa.aspect_id = a.id
     WHERE MATCH(r.complementary_description) AGAINST(? IN BOOLEAN MODE)
   `
+
     try {
       const [rows] = await pool.query(query, [description])
       if (rows.length === 0) return null
 
-      const requirementsMap = new Map()
-
-      rows.forEach((row) => {
-        if (!requirementsMap.has(row.id)) {
-          requirementsMap.set(row.id, {
+      const map = new Map()
+      for (const row of rows) {
+        if (!map.has(row.id)) {
+          map.set(row.id, {
             id: row.id,
             requirement_number: row.requirement_number,
             requirement_name: row.requirement_name,
@@ -959,6 +988,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             evidence: row.evidence,
             specify_evidence: row.specify_evidence,
             periodicity: row.periodicity,
+            acceptance_criteria: row.acceptance_criteria,
             subject: {
               subject_id: row.subject_id,
               subject_name: row.subject_name
@@ -966,16 +996,15 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             aspects: []
           })
         }
-
         if (row.aspect_id !== null) {
-          requirementsMap.get(row.id).aspects.push({
+          map.get(row.id).aspects.push({
             aspect_id: row.aspect_id,
             aspect_name: row.aspect_name
           })
         }
-      })
+      }
 
-      return Array.from(requirementsMap.values()).map(req =>
+      return Array.from(map.values()).map(req =>
         new Requirement(
           req.id,
           req.subject,
@@ -991,7 +1020,8 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           req.requirement_condition,
           req.evidence,
           req.specify_evidence,
-          req.periodicity
+          req.periodicity,
+          req.acceptance_criteria
         )
       )
     } catch (error) {
@@ -1008,23 +1038,24 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
  */
   static async findByMandatorySentences (sentence) {
     const query = `
-    SELECT 
-      r.id, 
-      r.requirement_number, 
-      r.requirement_name, 
-      r.mandatory_description, 
-      r.complementary_description, 
-      r.mandatory_sentences, 
-      r.complementary_sentences, 
-      r.mandatory_keywords, 
-      r.complementary_keywords, 
-      r.requirement_condition, 
-      r.evidence, 
+    SELECT
+      r.id,
+      r.requirement_number,
+      r.requirement_name,
+      r.mandatory_description,
+      r.complementary_description,
+      r.mandatory_sentences,
+      r.complementary_sentences,
+      r.mandatory_keywords,
+      r.complementary_keywords,
+      r.requirement_condition,
+      r.evidence,
       r.specify_evidence,
-      r.periodicity, 
-      s.id AS subject_id, 
-      s.subject_name AS subject_name, 
-      a.id AS aspect_id, 
+      r.periodicity,
+      r.acceptance_criteria,
+      s.id   AS subject_id,
+      s.subject_name AS subject_name,
+      a.id   AS aspect_id,
       a.aspect_name AS aspect_name
     FROM requirements r
     JOIN subjects s ON r.subject_id = s.id
@@ -1032,14 +1063,15 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     LEFT JOIN aspects a ON rsa.aspect_id = a.id
     WHERE MATCH(r.mandatory_sentences) AGAINST(? IN BOOLEAN MODE)
   `
+
     try {
       const [rows] = await pool.query(query, [sentence])
       if (rows.length === 0) return null
 
-      const requirementsMap = new Map()
-      rows.forEach((row) => {
-        if (!requirementsMap.has(row.id)) {
-          requirementsMap.set(row.id, {
+      const map = new Map()
+      for (const row of rows) {
+        if (!map.has(row.id)) {
+          map.set(row.id, {
             id: row.id,
             requirement_number: row.requirement_number,
             requirement_name: row.requirement_name,
@@ -1053,6 +1085,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             evidence: row.evidence,
             specify_evidence: row.specify_evidence,
             periodicity: row.periodicity,
+            acceptance_criteria: row.acceptance_criteria,
             subject: {
               subject_id: row.subject_id,
               subject_name: row.subject_name
@@ -1060,16 +1093,15 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             aspects: []
           })
         }
-
         if (row.aspect_id !== null) {
-          requirementsMap.get(row.id).aspects.push({
+          map.get(row.id).aspects.push({
             aspect_id: row.aspect_id,
             aspect_name: row.aspect_name
           })
         }
-      })
+      }
 
-      return Array.from(requirementsMap.values()).map(req =>
+      return Array.from(map.values()).map(req =>
         new Requirement(
           req.id,
           req.subject,
@@ -1085,7 +1117,9 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           req.requirement_condition,
           req.evidence,
           req.specify_evidence,
-          req.periodicity)
+          req.periodicity,
+          req.acceptance_criteria
+        )
       )
     } catch (error) {
       console.error('Error retrieving requirements by mandatory sentences:', error.message)
@@ -1101,23 +1135,24 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
  */
   static async findByComplementarySentences (sentence) {
     const query = `
-    SELECT 
-      r.id, 
-      r.requirement_number, 
-      r.requirement_name, 
-      r.mandatory_description, 
-      r.complementary_description, 
-      r.mandatory_sentences, 
-      r.complementary_sentences, 
-      r.mandatory_keywords, 
-      r.complementary_keywords, 
-      r.requirement_condition, 
-      r.evidence, 
+    SELECT
+      r.id,
+      r.requirement_number,
+      r.requirement_name,
+      r.mandatory_description,
+      r.complementary_description,
+      r.mandatory_sentences,
+      r.complementary_sentences,
+      r.mandatory_keywords,
+      r.complementary_keywords,
+      r.requirement_condition,
+      r.evidence,
       r.specify_evidence,
-      r.periodicity, 
-      s.id AS subject_id, 
-      s.subject_name AS subject_name, 
-      a.id AS aspect_id, 
+      r.periodicity,
+      r.acceptance_criteria,
+      s.id   AS subject_id,
+      s.subject_name AS subject_name,
+      a.id   AS aspect_id,
       a.aspect_name AS aspect_name
     FROM requirements r
     JOIN subjects s ON r.subject_id = s.id
@@ -1125,14 +1160,15 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     LEFT JOIN aspects a ON rsa.aspect_id = a.id
     WHERE MATCH(r.complementary_sentences) AGAINST(? IN BOOLEAN MODE)
   `
+
     try {
       const [rows] = await pool.query(query, [sentence])
       if (rows.length === 0) return null
 
-      const requirementsMap = new Map()
-      rows.forEach((row) => {
-        if (!requirementsMap.has(row.id)) {
-          requirementsMap.set(row.id, {
+      const map = new Map()
+      for (const row of rows) {
+        if (!map.has(row.id)) {
+          map.set(row.id, {
             id: row.id,
             requirement_number: row.requirement_number,
             requirement_name: row.requirement_name,
@@ -1146,6 +1182,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             evidence: row.evidence,
             specify_evidence: row.specify_evidence,
             periodicity: row.periodicity,
+            acceptance_criteria: row.acceptance_criteria,
             subject: {
               subject_id: row.subject_id,
               subject_name: row.subject_name
@@ -1153,16 +1190,15 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             aspects: []
           })
         }
-
         if (row.aspect_id !== null) {
-          requirementsMap.get(row.id).aspects.push({
+          map.get(row.id).aspects.push({
             aspect_id: row.aspect_id,
             aspect_name: row.aspect_name
           })
         }
-      })
+      }
 
-      return Array.from(requirementsMap.values()).map(req =>
+      return Array.from(map.values()).map(req =>
         new Requirement(
           req.id,
           req.subject,
@@ -1178,7 +1214,8 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           req.requirement_condition,
           req.evidence,
           req.specify_evidence,
-          req.periodicity
+          req.periodicity,
+          req.acceptance_criteria
         )
       )
     } catch (error) {
@@ -1195,23 +1232,24 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
  */
   static async findByMandatoryKeywords (keyword) {
     const query = `
-    SELECT 
-      r.id, 
-      r.requirement_number, 
-      r.requirement_name, 
-      r.mandatory_description, 
-      r.complementary_description, 
-      r.mandatory_sentences, 
-      r.complementary_sentences, 
-      r.mandatory_keywords, 
-      r.complementary_keywords, 
-      r.requirement_condition, 
-      r.evidence, 
+    SELECT
+      r.id,
+      r.requirement_number,
+      r.requirement_name,
+      r.mandatory_description,
+      r.complementary_description,
+      r.mandatory_sentences,
+      r.complementary_sentences,
+      r.mandatory_keywords,
+      r.complementary_keywords,
+      r.requirement_condition,
+      r.evidence,
       r.specify_evidence,
-      r.periodicity, 
-      s.id AS subject_id, 
-      s.subject_name AS subject_name, 
-      a.id AS aspect_id, 
+      r.periodicity,
+      r.acceptance_criteria,
+      s.id   AS subject_id,
+      s.subject_name AS subject_name,
+      a.id   AS aspect_id,
       a.aspect_name AS aspect_name
     FROM requirements r
     JOIN subjects s ON r.subject_id = s.id
@@ -1224,10 +1262,10 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       const [rows] = await pool.query(query, [keyword])
       if (rows.length === 0) return null
 
-      const requirementsMap = new Map()
-      rows.forEach((row) => {
-        if (!requirementsMap.has(row.id)) {
-          requirementsMap.set(row.id, {
+      const map = new Map()
+      for (const row of rows) {
+        if (!map.has(row.id)) {
+          map.set(row.id, {
             id: row.id,
             requirement_number: row.requirement_number,
             requirement_name: row.requirement_name,
@@ -1241,6 +1279,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             evidence: row.evidence,
             specify_evidence: row.specify_evidence,
             periodicity: row.periodicity,
+            acceptance_criteria: row.acceptance_criteria,
             subject: {
               subject_id: row.subject_id,
               subject_name: row.subject_name
@@ -1248,16 +1287,15 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             aspects: []
           })
         }
-
         if (row.aspect_id !== null) {
-          requirementsMap.get(row.id).aspects.push({
+          map.get(row.id).aspects.push({
             aspect_id: row.aspect_id,
             aspect_name: row.aspect_name
           })
         }
-      })
+      }
 
-      return Array.from(requirementsMap.values()).map(req =>
+      return Array.from(map.values()).map(req =>
         new Requirement(
           req.id,
           req.subject,
@@ -1273,7 +1311,8 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           req.requirement_condition,
           req.evidence,
           req.specify_evidence,
-          req.periodicity
+          req.periodicity,
+          req.acceptance_criteria
         )
       )
     } catch (error) {
@@ -1290,23 +1329,24 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
  */
   static async findByComplementaryKeywords (keyword) {
     const query = `
-    SELECT 
-      r.id, 
-      r.requirement_number, 
-      r.requirement_name, 
-      r.mandatory_description, 
-      r.complementary_description, 
-      r.mandatory_sentences, 
-      r.complementary_sentences, 
-      r.mandatory_keywords, 
-      r.complementary_keywords, 
-      r.requirement_condition, 
-      r.evidence, 
+    SELECT
+      r.id,
+      r.requirement_number,
+      r.requirement_name,
+      r.mandatory_description,
+      r.complementary_description,
+      r.mandatory_sentences,
+      r.complementary_sentences,
+      r.mandatory_keywords,
+      r.complementary_keywords,
+      r.requirement_condition,
+      r.evidence,
       r.specify_evidence,
-      r.periodicity, 
-      s.id AS subject_id, 
-      s.subject_name AS subject_name, 
-      a.id AS aspect_id, 
+      r.periodicity,
+      r.acceptance_criteria,
+      s.id   AS subject_id,
+      s.subject_name AS subject_name,
+      a.id   AS aspect_id,
       a.aspect_name AS aspect_name
     FROM requirements r
     JOIN subjects s ON r.subject_id = s.id
@@ -1319,10 +1359,10 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       const [rows] = await pool.query(query, [keyword])
       if (rows.length === 0) return null
 
-      const requirementsMap = new Map()
-      rows.forEach((row) => {
-        if (!requirementsMap.has(row.id)) {
-          requirementsMap.set(row.id, {
+      const map = new Map()
+      for (const row of rows) {
+        if (!map.has(row.id)) {
+          map.set(row.id, {
             id: row.id,
             requirement_number: row.requirement_number,
             requirement_name: row.requirement_name,
@@ -1336,6 +1376,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             evidence: row.evidence,
             specify_evidence: row.specify_evidence,
             periodicity: row.periodicity,
+            acceptance_criteria: row.acceptance_criteria,
             subject: {
               subject_id: row.subject_id,
               subject_name: row.subject_name
@@ -1343,16 +1384,15 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             aspects: []
           })
         }
-
         if (row.aspect_id !== null) {
-          requirementsMap.get(row.id).aspects.push({
+          map.get(row.id).aspects.push({
             aspect_id: row.aspect_id,
             aspect_name: row.aspect_name
           })
         }
-      })
+      }
 
-      return Array.from(requirementsMap.values()).map(req =>
+      return Array.from(map.values()).map(req =>
         new Requirement(
           req.id,
           req.subject,
@@ -1368,7 +1408,8 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           req.requirement_condition,
           req.evidence,
           req.specify_evidence,
-          req.periodicity
+          req.periodicity,
+          req.acceptance_criteria
         )
       )
     } catch (error) {
@@ -1385,23 +1426,24 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
  */
   static async findByCondition (condition) {
     const query = `
-    SELECT 
-      r.id, 
-      r.requirement_number, 
-      r.requirement_name, 
-      r.mandatory_description, 
-      r.complementary_description, 
-      r.mandatory_sentences, 
-      r.complementary_sentences, 
-      r.mandatory_keywords, 
-      r.complementary_keywords, 
-      r.requirement_condition, 
-      r.evidence, 
+    SELECT
+      r.id,
+      r.requirement_number,
+      r.requirement_name,
+      r.mandatory_description,
+      r.complementary_description,
+      r.mandatory_sentences,
+      r.complementary_sentences,
+      r.mandatory_keywords,
+      r.complementary_keywords,
+      r.requirement_condition,
+      r.evidence,
       r.specify_evidence,
-      r.periodicity, 
-      s.id AS subject_id, 
-      s.subject_name AS subject_name, 
-      a.id AS aspect_id, 
+      r.periodicity,
+      r.acceptance_criteria,
+      s.id   AS subject_id,
+      s.subject_name AS subject_name,
+      a.id   AS aspect_id,
       a.aspect_name AS aspect_name
     FROM requirements r
     JOIN subjects s ON r.subject_id = s.id
@@ -1415,11 +1457,10 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       const [rows] = await pool.query(query, [condition])
       if (rows.length === 0) return null
 
-      const requirementsMap = new Map()
-
-      rows.forEach((row) => {
-        if (!requirementsMap.has(row.id)) {
-          requirementsMap.set(row.id, {
+      const map = new Map()
+      for (const row of rows) {
+        if (!map.has(row.id)) {
+          map.set(row.id, {
             id: row.id,
             requirement_number: row.requirement_number,
             requirement_name: row.requirement_name,
@@ -1433,6 +1474,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             evidence: row.evidence,
             specify_evidence: row.specify_evidence,
             periodicity: row.periodicity,
+            acceptance_criteria: row.acceptance_criteria,
             subject: {
               subject_id: row.subject_id,
               subject_name: row.subject_name
@@ -1440,16 +1482,15 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             aspects: []
           })
         }
-
         if (row.aspect_id !== null) {
-          requirementsMap.get(row.id).aspects.push({
+          map.get(row.id).aspects.push({
             aspect_id: row.aspect_id,
             aspect_name: row.aspect_name
           })
         }
-      })
+      }
 
-      return Array.from(requirementsMap.values()).map(req =>
+      return Array.from(map.values()).map(req =>
         new Requirement(
           req.id,
           req.subject,
@@ -1465,7 +1506,8 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           req.requirement_condition,
           req.evidence,
           req.specify_evidence,
-          req.periodicity
+          req.periodicity,
+          req.acceptance_criteria
         )
       )
     } catch (error) {
@@ -1482,23 +1524,24 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
  */
   static async findByEvidence (evidence) {
     const query = `
-    SELECT 
-      r.id, 
-      r.requirement_number, 
-      r.requirement_name, 
-      r.mandatory_description, 
-      r.complementary_description, 
-      r.mandatory_sentences, 
-      r.complementary_sentences, 
-      r.mandatory_keywords, 
-      r.complementary_keywords, 
-      r.requirement_condition, 
-      r.evidence, 
+    SELECT
+      r.id,
+      r.requirement_number,
+      r.requirement_name,
+      r.mandatory_description,
+      r.complementary_description,
+      r.mandatory_sentences,
+      r.complementary_sentences,
+      r.mandatory_keywords,
+      r.complementary_keywords,
+      r.requirement_condition,
+      r.evidence,
       r.specify_evidence,
-      r.periodicity, 
-      s.id AS subject_id, 
-      s.subject_name AS subject_name, 
-      a.id AS aspect_id, 
+      r.periodicity,
+      r.acceptance_criteria,
+      s.id   AS subject_id,
+      s.subject_name AS subject_name,
+      a.id   AS aspect_id,
       a.aspect_name AS aspect_name
     FROM requirements r
     JOIN subjects s ON r.subject_id = s.id
@@ -1512,11 +1555,10 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       const [rows] = await pool.query(query, [evidence])
       if (rows.length === 0) return null
 
-      const requirementsMap = new Map()
-
-      rows.forEach((row) => {
-        if (!requirementsMap.has(row.id)) {
-          requirementsMap.set(row.id, {
+      const map = new Map()
+      for (const row of rows) {
+        if (!map.has(row.id)) {
+          map.set(row.id, {
             id: row.id,
             requirement_number: row.requirement_number,
             requirement_name: row.requirement_name,
@@ -1530,6 +1572,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             evidence: row.evidence,
             specify_evidence: row.specify_evidence,
             periodicity: row.periodicity,
+            acceptance_criteria: row.acceptance_criteria,
             subject: {
               subject_id: row.subject_id,
               subject_name: row.subject_name
@@ -1537,16 +1580,15 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             aspects: []
           })
         }
-
         if (row.aspect_id !== null) {
-          requirementsMap.get(row.id).aspects.push({
+          map.get(row.id).aspects.push({
             aspect_id: row.aspect_id,
             aspect_name: row.aspect_name
           })
         }
-      })
+      }
 
-      return Array.from(requirementsMap.values()).map(req =>
+      return Array.from(map.values()).map(req =>
         new Requirement(
           req.id,
           req.subject,
@@ -1562,7 +1604,8 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           req.requirement_condition,
           req.evidence,
           req.specify_evidence,
-          req.periodicity
+          req.periodicity,
+          req.acceptance_criteria
         )
       )
     } catch (error) {
@@ -1579,23 +1622,24 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
  */
   static async findByPeriodicity (periodicity) {
     const query = `
-    SELECT 
-      r.id, 
-      r.requirement_number, 
-      r.requirement_name, 
-      r.mandatory_description, 
-      r.complementary_description, 
-      r.mandatory_sentences, 
-      r.complementary_sentences, 
-      r.mandatory_keywords, 
-      r.complementary_keywords, 
-      r.requirement_condition, 
-      r.evidence, 
+    SELECT
+      r.id,
+      r.requirement_number,
+      r.requirement_name,
+      r.mandatory_description,
+      r.complementary_description,
+      r.mandatory_sentences,
+      r.complementary_sentences,
+      r.mandatory_keywords,
+      r.complementary_keywords,
+      r.requirement_condition,
+      r.evidence,
       r.specify_evidence,
-      r.periodicity, 
-      s.id AS subject_id, 
-      s.subject_name AS subject_name, 
-      a.id AS aspect_id, 
+      r.periodicity,
+      r.acceptance_criteria,
+      s.id   AS subject_id,
+      s.subject_name AS subject_name,
+      a.id   AS aspect_id,
       a.aspect_name AS aspect_name
     FROM requirements r
     JOIN subjects s ON r.subject_id = s.id
@@ -1609,11 +1653,10 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       const [rows] = await pool.query(query, [periodicity])
       if (rows.length === 0) return null
 
-      const requirementsMap = new Map()
-
-      rows.forEach((row) => {
-        if (!requirementsMap.has(row.id)) {
-          requirementsMap.set(row.id, {
+      const map = new Map()
+      for (const row of rows) {
+        if (!map.has(row.id)) {
+          map.set(row.id, {
             id: row.id,
             requirement_number: row.requirement_number,
             requirement_name: row.requirement_name,
@@ -1627,6 +1670,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             evidence: row.evidence,
             specify_evidence: row.specify_evidence,
             periodicity: row.periodicity,
+            acceptance_criteria: row.acceptance_criteria,
             subject: {
               subject_id: row.subject_id,
               subject_name: row.subject_name
@@ -1634,16 +1678,15 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             aspects: []
           })
         }
-
         if (row.aspect_id !== null) {
-          requirementsMap.get(row.id).aspects.push({
+          map.get(row.id).aspects.push({
             aspect_id: row.aspect_id,
             aspect_name: row.aspect_name
           })
         }
-      })
+      }
 
-      return Array.from(requirementsMap.values()).map(req =>
+      return Array.from(map.values()).map(req =>
         new Requirement(
           req.id,
           req.subject,
@@ -1659,7 +1702,8 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           req.requirement_condition,
           req.evidence,
           req.specify_evidence,
-          req.periodicity
+          req.periodicity,
+          req.acceptance_criteria
         )
       )
     } catch (error) {
@@ -1669,19 +1713,117 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   }
 
   /**
+   * Retrieves requirements filtered by acceptance criteria.
+   * @param {string} acceptanceCriteria - The acceptance criteria text to filter by.
+   * @returns {Promise<Array<Requirement>|null>} - A list of Requirement instances matching the acceptance criteria.
+   * @throws {HttpException} - If an error occurs during retrieval.
+   */
+  static async findByAcceptanceCriteria (acceptanceCriteria) {
+    const query = `
+        SELECT
+          r.id,
+          r.requirement_number,
+          r.requirement_name,
+          r.mandatory_description,
+          r.complementary_description,
+          r.mandatory_sentences,
+          r.complementary_sentences,
+          r.mandatory_keywords,
+          r.complementary_keywords,
+          r.requirement_condition,
+          r.evidence,
+          r.specify_evidence,
+          r.periodicity,
+          r.acceptance_criteria,
+          s.id   AS subject_id,
+          s.subject_name AS subject_name,
+          a.id   AS aspect_id,
+          a.aspect_name AS aspect_name
+        FROM requirements r
+        JOIN subjects s ON r.subject_id = s.id
+        LEFT JOIN requirement_subject_aspect rsa ON r.id = rsa.requirement_id
+        LEFT JOIN aspects a ON rsa.aspect_id = a.id
+        WHERE r.acceptance_criteria = ?
+        ORDER BY r.id DESC;
+      `
+
+    try {
+      const [rows] = await pool.query(query, [acceptanceCriteria])
+      if (rows.length === 0) return null
+
+      const map = new Map()
+      for (const row of rows) {
+        if (!map.has(row.id)) {
+          map.set(row.id, {
+            id: row.id,
+            requirement_number: row.requirement_number,
+            requirement_name: row.requirement_name,
+            mandatory_description: row.mandatory_description,
+            complementary_description: row.complementary_description,
+            mandatory_sentences: row.mandatory_sentences,
+            complementary_sentences: row.complementary_sentences,
+            mandatory_keywords: row.mandatory_keywords,
+            complementary_keywords: row.complementary_keywords,
+            requirement_condition: row.requirement_condition,
+            evidence: row.evidence,
+            specify_evidence: row.specify_evidence,
+            periodicity: row.periodicity,
+            acceptance_criteria: row.acceptance_criteria,
+            subject: {
+              subject_id: row.subject_id,
+              subject_name: row.subject_name
+            },
+            aspects: []
+          })
+        }
+        if (row.aspect_id !== null) {
+          map.get(row.id).aspects.push({
+            aspect_id: row.aspect_id,
+            aspect_name: row.aspect_name
+          })
+        }
+      }
+
+      return Array.from(map.values()).map(req =>
+        new Requirement(
+          req.id,
+          req.subject,
+          req.aspects,
+          req.requirement_number,
+          req.requirement_name,
+          req.mandatory_description,
+          req.complementary_description,
+          req.mandatory_sentences,
+          req.complementary_sentences,
+          req.mandatory_keywords,
+          req.complementary_keywords,
+          req.requirement_condition,
+          req.evidence,
+          req.specify_evidence,
+          req.periodicity,
+          req.acceptance_criteria
+        )
+      )
+    } catch (error) {
+      console.error('Error retrieving requirements by acceptance criteria:', error.message)
+      throw new HttpException(500, 'Error retrieving requirements by acceptance criteria')
+    }
+  }
+
+  /**
  * Checks if a requirement with the given number exists, excluding the specified requirement ID.
- * @param {string} requirementNumber - The requirement number to check for uniqueness.
+ * @param {number} requirementNumber - The requirement number to check for uniqueness.
  * @param {number} requirementId - The requirement ID to exclude from the check.
  * @returns {Promise<boolean>} - True if a requirement with the same number exists (excluding the given ID), false otherwise.
  * @throws {HttpException} - If an error occurs during the check.
  */
   static async existsByNumberExcludingId (requirementNumber, requirementId) {
     const query = `
-      SELECT 1 
-      FROM requirements 
-      WHERE requirement_number = ? AND id != ?
-      LIMIT 1
-    `
+    SELECT 1
+    FROM requirements
+    WHERE requirement_number = ? AND id != ?
+    LIMIT 1
+  `
     try {
       const [rows] = await pool.query(query, [requirementNumber, requirementId])
       return rows.length > 0
@@ -1721,7 +1863,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
  * @param {Object} requirement - The updated data for the requirement.
  * @param {number} [requirement.subjectId] - The updated subject ID (optional).
  * @param {Array<number>} [requirement.aspectsIds] - The updated aspect IDs to associate (optional).
- * @param {string} [requirement.requirementNumber]
+ * @param {number} [requirement.requirementNumber] - The requirement number (integer).
  * @param {string} [requirement.requirementName]
  * @param {string} [requirement.mandatoryDescription]
  * @param {string} [requirement.complementaryDescription]
@@ -1730,9 +1872,10 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
  * @param {string} [requirement.mandatoryKeywords]
  * @param {string} [requirement.complementaryKeywords]
  * @param {string} [requirement.condition]
- * @param {string} requirement.evidence
- * @param {string} requirement.specifyEvidence
- * @param {string} requirement.periodicity
+ * @param {string} [requirement.evidence]
+ * @param {string} [requirement.specifyEvidence]
+ * @param {string} [requirement.periodicity]
+ * @param {string} [requirement.acceptanceCriteria] - The acceptance criteria (TEXT, required).
  * @returns {Promise<Requirement|null>} - The updated Requirement instance or null.
  * @throws {HttpException} - If an error occurs during update.
  */
@@ -1751,23 +1894,26 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       condition,
       evidence,
       specifyEvidence,
-      periodicity
+      periodicity,
+      acceptanceCriteria
     } = requirement
+
     const updateRequirementQuery = `
     UPDATE requirements SET
-      subject_id = IFNULL(?, subject_id),
-      requirement_number = IFNULL(?, requirement_number),
-      requirement_name = IFNULL(?, requirement_name),
-      mandatory_description = IFNULL(?, mandatory_description),
+      subject_id               = IFNULL(?, subject_id),
+      requirement_number       = IFNULL(?, requirement_number),
+      requirement_name         = IFNULL(?, requirement_name),
+      mandatory_description    = IFNULL(?, mandatory_description),
       complementary_description = IFNULL(?, complementary_description),
-      mandatory_sentences = IFNULL(?, mandatory_sentences),
-      complementary_sentences = IFNULL(?, complementary_sentences),
-      mandatory_keywords = IFNULL(?, mandatory_keywords),
-      complementary_keywords = IFNULL(?, complementary_keywords),
-      requirement_condition = IFNULL(?, requirement_condition),
-      evidence = IFNULL(?, evidence),
-      specify_evidence = IFNULL(?, specify_evidence),
-      periodicity = IFNULL(?, periodicity)
+      mandatory_sentences      = IFNULL(?, mandatory_sentences),
+      complementary_sentences  = IFNULL(?, complementary_sentences),
+      mandatory_keywords       = IFNULL(?, mandatory_keywords),
+      complementary_keywords   = IFNULL(?, complementary_keywords),
+      requirement_condition    = IFNULL(?, requirement_condition),
+      evidence                 = IFNULL(?, evidence),
+      specify_evidence         = IFNULL(?, specify_evidence),
+      periodicity              = IFNULL(?, periodicity),
+      acceptance_criteria      = IFNULL(?, acceptance_criteria)
     WHERE id = ?
   `
 
@@ -1782,7 +1928,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     WHERE requirement_id = ?
   `
 
-    const insertAspectsQuery = (aspectIds) => `
+    const insertAspectsQuery = aspectIds => `
     INSERT INTO requirement_subject_aspect (requirement_id, subject_id, aspect_id)
     VALUES ${aspectIds.map(() => '(?, ?, ?)').join(', ')}
   `
@@ -1790,6 +1936,8 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     const connection = await pool.getConnection()
     try {
       await connection.beginTransaction()
+
+      // 1) Actualizar la fila principal
       const [updateResult] = await connection.query(updateRequirementQuery, [
         subjectId,
         requirementNumber,
@@ -1804,6 +1952,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         evidence,
         specifyEvidence,
         periodicity,
+        acceptanceCriteria,
         requirementId
       ])
 
@@ -1812,6 +1961,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         return null
       }
 
+      // 2) Actualizar los aspectos si se proporcionan
       if (aspectsIds && aspectsIds.length > 0) {
         const [checkResult] = await connection.query(checkAspectsQuery, [requirementId])
         const { aspectCount } = checkResult[0]
@@ -1820,7 +1970,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           await connection.query(deleteAspectsQuery, [requirementId])
         }
 
-        const values = aspectsIds.flatMap((aspectId) => [
+        const values = aspectsIds.flatMap(aspectId => [
           requirementId,
           subjectId || null,
           aspectId
