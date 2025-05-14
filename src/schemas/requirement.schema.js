@@ -22,7 +22,8 @@ const requirementSchema = z
      * IDs of the associated aspects.
      * Must be a stringified JSON array of numbers.
      */
-    aspectsIds: z.string()
+    aspectsIds: z
+      .string()
       .refine((val) => {
         try {
           const parsedArray = JSON.parse(val)
@@ -42,12 +43,11 @@ const requirementSchema = z
 
     /**
      * Unique requirement number (clave).
-     * Must be a non-empty string with a maximum of 255 characters.
+     * Must be an integer.
      */
     requirementNumber: z
-      .string()
-      .min(1, 'The requirement number is required')
-      .max(255, 'The requirement number cannot exceed 255 characters'),
+      .coerce.number({ invalid_type_error: 'The requirementNumber must be a number' })
+      .int('The requirementNumber must be an integer'),
 
     /**
      * Name or title of the requirement.
@@ -108,20 +108,20 @@ const requirementSchema = z
 
     /**
      * Condition or criticality level of the requirement.
-     * Must be one of the following: Crítica, Operativa, Recomendación, Pendiente.
+     * Must be one of: Crítica, Operativa, Recomendación, Pendiente.
      */
     condition: z.enum(['Crítica', 'Operativa', 'Recomendación', 'Pendiente'], {
       message:
-        'The condition must be one of the following: Crítica, Operativa, Recomendación, Pendiente.'
+        'The condition must be one of: Crítica, Operativa, Recomendación, Pendiente.'
     }),
 
     /**
      * Type of evidence required for the requirement.
-     * Must be one of the following: Trámite, Registro, Específica, Documento.
+     * Must be one of: Trámite, Registro, Específica, Documento.
      */
     evidence: z.enum(['Trámite', 'Registro', 'Específica', 'Documento'], {
       message:
-        'The evidence type must be one of the following: Trámite, Registro, Específica, Documento.'
+        'The evidence type must be one of: Trámite, Registro, Específica, Documento.'
     }),
 
     /**
@@ -136,12 +136,20 @@ const requirementSchema = z
 
     /**
      * Periodicity of the requirement.
-     * Must be one of the following: Anual, 2 años, Por evento, Única vez, Específica.
+     * Must be one of: Anual, 2 años, Por evento, Única vez, Específica.
      */
     periodicity: z.enum(['Anual', '2 años', 'Por evento', 'Única vez', 'Específica'], {
       message:
-        'The periodicity must be one of the following: Anual, 2 años, Por evento, Única vez.'
-    })
+        'The periodicity must be one of: Anual, 2 años, Por evento, Única vez, Específica.'
+    }),
+
+    /**
+     * Acceptance criteria for the requirement.
+     * Must be a non-empty string.
+     */
+    acceptanceCriteria: z
+      .string()
+      .min(1, 'The acceptance criteria is required.')
   })
   .superRefine((data, context) => {
     /**

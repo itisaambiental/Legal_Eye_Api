@@ -160,14 +160,13 @@ CREATE TABLE IF NOT EXISTS legal_basis_subject_aspect (
     FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE RESTRICT,
     FOREIGN KEY (aspect_id) REFERENCES aspects(id) ON DELETE RESTRICT
 );
-
 -- Table: requirements
 -- Description: This table stores the requirements associated with a subject and an aspect,
--- along with detailed descriptions, conditions, evidence types, periodicity, and jurisdiction.
+-- along with detailed descriptions, conditions, evidence types, periodicity, acceptance criteria, and jurisdiction.
 CREATE TABLE IF NOT EXISTS requirements (
     id INT AUTO_INCREMENT PRIMARY KEY,
     subject_id INT NOT NULL,
-    requirement_number VARCHAR(255) NOT NULL,
+    requirement_number INT NOT NULL,
     requirement_name VARCHAR(255) NOT NULL,
     mandatory_description LONGTEXT NOT NULL,
     complementary_description LONGTEXT NOT NULL,
@@ -181,7 +180,12 @@ CREATE TABLE IF NOT EXISTS requirements (
         'Recomendación',
         'Pendiente'
     ) NOT NULL,
-    evidence ENUM('Trámite', 'Registro', 'Específica', 'Documento') NOT NULL,
+    evidence ENUM(
+        'Trámite',
+        'Registro',
+        'Específica',
+        'Documento'
+    ) NOT NULL,
     specify_evidence VARCHAR(255),
     periodicity ENUM(
         'Anual',
@@ -190,6 +194,7 @@ CREATE TABLE IF NOT EXISTS requirements (
         'Única vez',
         'Específica'
     ) NOT NULL,
+    acceptance_criteria TEXT NOT NULL,
     FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE RESTRICT,
     FULLTEXT(mandatory_description),
     FULLTEXT(complementary_description),
@@ -214,7 +219,6 @@ CREATE TABLE IF NOT EXISTS requirement_subject_aspect (
     FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE RESTRICT,
     FOREIGN KEY (aspect_id) REFERENCES aspects(id) ON DELETE RESTRICT
 );
-
 
 -- Table: requirement_types
 -- Description: This table stores the types of requirements that can be associated with identificacion requirements.
