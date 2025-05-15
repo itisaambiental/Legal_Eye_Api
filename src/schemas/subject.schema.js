@@ -25,11 +25,11 @@ const subjectSchema = z.object({
     .optional(),
 
   /**
-   * Display order index.
-   * Must be a positive number (can be sent as a string).
+   * The order index.
    */
   orderIndex: z.coerce
     .number({ invalid_type_error: 'The order index must be a number' })
+    .int('The order index must be an integer')
     .positive('The order index must be greater than 0')
 })
 

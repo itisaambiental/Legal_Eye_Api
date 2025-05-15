@@ -409,7 +409,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   /**
    * Retrieves all requirements that match the given requirement number,
    * including their subjects and associated aspects.
-   * @param {number|string} requirementNumber - The number (or part of the number) of the requirement to retrieve.
+   * @param {number} requirementNumber - The number of the requirement to retrieve.
    * @returns {Promise<Array<Requirement>|null>} - A list of matching requirements or null if none.
    * @throws {HttpException} - If an error occurs during retrieval.
    */
@@ -430,20 +430,20 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       r.specify_evidence,
       r.periodicity,
       r.acceptance_criteria,
-      s.id   AS subject_id,
+      s.id AS subject_id,
       s.subject_name AS subject_name,
-      a.id   AS aspect_id,
+      a.id AS aspect_id,
       a.aspect_name AS aspect_name
     FROM requirements r
     JOIN subjects s ON r.subject_id = s.id
     LEFT JOIN requirement_subject_aspect rsa ON r.id = rsa.requirement_id
     LEFT JOIN aspects a ON rsa.aspect_id = a.id
-    WHERE r.requirement_number LIKE ?
+    WHERE r.requirement_number = ?
     ORDER BY r.requirement_number
   `
 
     try {
-      const [rows] = await pool.query(query, [`%${requirementNumber}%`])
+      const [rows] = await pool.query(query, [requirementNumber])
       if (rows.length === 0) return null
 
       const map = new Map()

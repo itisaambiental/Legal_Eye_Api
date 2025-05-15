@@ -18,7 +18,7 @@ class RequirementService {
    * @property {Array<Object>} aspects - The aspects associated with the requirement.
    * @property {number} aspects[].aspect_id - The ID of the aspect.
    * @property {string} aspects[].aspect_name - The name of the aspect.
-   * @property {string} requirement_number - The unique number identifying the requirement.
+   * @property {number} requirement_number - The unique number identifying the requirement.
    * @property {string} requirement_name - The name of the requirement.
    * @property {string} mandatory_description - The mandatory description of the requirement.
    * @property {string} complementary_description - The complementary description of the requirement.
@@ -72,7 +72,7 @@ class RequirementService {
    * @param {Object} requirement - Parameters for creating a requirement.
    * @param {number} requirement.subjectId - The subject ID.
    * @param {number[]} requirement.aspectsIds - The aspects IDs.
-   * @param {string} requirement.requirementNumber - The requirement number.
+   * @param {number} requirement.requirementNumber - The requirement number.
    * @param {string} requirement.requirementName - The requirement name.
    * @param {string} requirement.mandatoryDescription - The mandatory description.
    * @param {string} requirement.complementaryDescription - The complementary description.
@@ -184,8 +184,8 @@ class RequirementService {
   }
 
   /**
-   * Retrieves requirements by their requirement number or part of it.
-   * @param {string} requirementNumber - The requirement number or partial match.
+   * Retrieves requirements by their requirement number.
+   * @param {number} requirementNumber - The requirement number.
    * @returns {Promise<Array<Requirement>>} - A list of matching requirements.
    * @throws {HttpException} - If an error occurs during retrieval.
    */
@@ -559,7 +559,7 @@ class RequirementService {
    * @param {Object} requirement - Parameters for updating a requirement.
    * @param {number} [requirement.subjectId] - The updated subject ID (optional).
    * @param {number[]} [requirement.aspectsIds] - The updated aspects IDs (optional).
-   * @param {string} [requirement.requirementNumber] - The updated requirement number (optional).
+   * @param {number} [requirement.requirementNumber] - The updated requirement number (optional).
    * @param {string} [requirement.requirementName] - The updated requirement name (optional).
    * @param {string} [requirement.mandatoryDescription] - The updated mandatory description (optional).
    * @param {string} [requirement.complementaryDescription] - The updated complementary description (optional).

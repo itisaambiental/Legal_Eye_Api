@@ -20,7 +20,8 @@ const requirementSchema = z
     aspectsIds: z
       .union([
         z.array(z.coerce.number().int()),
-        z.string()
+        z
+          .string()
           .refine(
             (val) => {
               try {
@@ -46,12 +47,12 @@ const requirementSchema = z
       }),
 
     /**
-     * Unique requirement number (clave).
-     * Must be an integer. Coerces from string to number if necessary.
+     * Requirement number.
      */
     requirementNumber: z.coerce
       .number({ invalid_type_error: 'The requirementNumber must be a number' })
-      .int('The requirementNumber must be an integer'),
+      .int('The requirementNumber must be an integer')
+      .positive('The requirementNumber must be greater than 0'),
 
     /**
      * Name or title of the requirement.

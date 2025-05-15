@@ -117,7 +117,7 @@ export const getRequirementById = async (req, res) => {
 }
 
 /**
- * Retrieves requirements by their requirement number or part of it.
+ * Retrieves requirements by their requirement number.
  * @function getRequirementsByNumber
  * @param {import('express').Request} req - Request object, expects { number } in query.
  * @param {import('express').Response} res - Response object.

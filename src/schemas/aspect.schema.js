@@ -25,11 +25,11 @@ const aspectSchema = z.object({
     .optional(),
 
   /**
-   * The order index for display purposes.
-   * Must be a number greater than 0. Can be passed as a string.
+   * The order index.
    */
   orderIndex: z.coerce
     .number({ invalid_type_error: 'The order index must be a number' })
+    .int('The order index must be an integer')
     .positive('The order index must be greater than 0')
 })
 

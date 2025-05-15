@@ -25,10 +25,10 @@ const singleArticleSchema = z.object({
 
   /**
    * The order of the article.
-   * Must be a number greater than 0. Can be passed as a string.
    */
   order: z.coerce
     .number({ invalid_type_error: 'The order must be a number' })
+    .int('The order must be an integer')
     .positive('The order must be greater than 0')
 })
 
