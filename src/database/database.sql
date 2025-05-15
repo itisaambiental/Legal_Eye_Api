@@ -184,8 +184,8 @@ CREATE TABLE IF NOT EXISTS legal_verbs (
   FULLTEXT (translation)
 );
 
--- Table: requirement_identifications
--- Description: Stores metadata of a legal requirements identification analysis.
+-- Table: req_identifications
+-- Description: Metadata of a legal requirements identification analysis.
 CREATE TABLE IF NOT EXISTS req_identifications (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(255) NOT NULL,          
@@ -196,73 +196,69 @@ CREATE TABLE IF NOT EXISTS req_identifications (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
 );
 
--- Table: requirement_identification_requirements
--- Description: Stores all requirements included in a given requirement identification.
-CREATE TABLE IF NOT EXISTS req_id_requirements (
-    req_ident_id INT NOT NULL,  
+-- Table: req_identifications_requirements
+-- Description: All requirements included in a given identification.
+CREATE TABLE IF NOT EXISTS req_identifications_requirements (
+    req_identification_id INT NOT NULL,  
     requirement_id INT NOT NULL,                 
-    PRIMARY KEY (req_ident_id, requirement_id),
-    FOREIGN KEY (req_ident_id) REFERENCES req_identifications(id) ON DELETE CASCADE,
+    PRIMARY KEY (req_identification_id, requirement_id),
+    FOREIGN KEY (req_identification_id) REFERENCES req_identifications(id) ON DELETE CASCADE,
     FOREIGN KEY (requirement_id) REFERENCES requirements(id) ON DELETE RESTRICT
 );
 
--- Table: requirement_identification_requirement_metadata
--- Description: Stores dynamic metadata for each requirement within a requirement identification,
--- such as the generated requirement number and its classification type.
-CREATE TABLE IF NOT EXISTS req_id_metadata (
-    req_ident_id INT NOT NULL,     
+-- Table: req_identifications_metadata
+-- Description: Metadata for each requirement within an identification.
+CREATE TABLE IF NOT EXISTS req_identifications_metadata (
+    req_identification_id INT NOT NULL,     
     requirement_id INT NOT NULL,                    
     requirement_number VARCHAR(255) NOT NULL,       
     requirement_type_id INT,                        
-    PRIMARY KEY (req_ident_id, requirement_id),
-    FOREIGN KEY (req_ident_id, requirement_id)
-        REFERENCES req_id_reqs(req_ident_id, requirement_id)
+    PRIMARY KEY (req_identification_id, requirement_id),
+    FOREIGN KEY (req_identification_id, requirement_id)
+        REFERENCES req_identifications_requirements(req_identification_id, requirement_id)
         ON DELETE CASCADE,
     FOREIGN KEY (requirement_type_id) REFERENCES requirement_types(id) ON DELETE SET NULL
 );
 
--- Table: requirement_identification_requirement_legal_basis
--- Description: Stores the legal basis that justifies each requirement in an identification.
-CREATE TABLE IF NOT EXISTS req_id_legal_basis (
-    req_ident_id INT NOT NULL,  
+-- Table: req_identifications_legal_basis
+-- Description: Legal basis that justifies each requirement.
+CREATE TABLE IF NOT EXISTS req_identifications_legal_basis (
+    req_identification_id INT NOT NULL,  
     requirement_id INT NOT NULL,                 
     legal_basis_id INT NOT NULL,                 
-    PRIMARY KEY (req_ident_id, requirement_id, legal_basis_id),
-    FOREIGN KEY (req_ident_id, requirement_id)
-        REFERENCES req_id_reqs(req_ident_id, requirement_id)
+    PRIMARY KEY (req_identification_id, requirement_id, legal_basis_id),
+    FOREIGN KEY (req_identification_id, requirement_id)
+        REFERENCES req_identifications_requirements(req_identification_id, requirement_id)
         ON DELETE CASCADE,
     FOREIGN KEY (legal_basis_id) REFERENCES legal_basis(id) ON DELETE RESTRICT
 );
 
-
--- Table: requirement_identification_requirement_legal_base_articles
--- Description: Stores the articles related to a requirement under a specific legal basis in an identification,
--- classified as mandatory, complementary, or general.
-CREATE TABLE IF NOT EXISTS req_id_articles (
-    req_ident_id INT NOT NULL,  
+-- Table: req_identifications_articles
+-- Description: Articles related to a requirement under a legal basis.
+CREATE TABLE IF NOT EXISTS req_identifications_articles (
+    req_identification_id INT NOT NULL,  
     requirement_id INT NOT NULL,                 
     legal_basis_id INT NOT NULL,                 
     article_id INT NOT NULL,                     
     article_type ENUM('mandatory', 'complementary', 'general') NOT NULL DEFAULT 'general',
-    PRIMARY KEY (req_ident_id, requirement_id, legal_basis_id, article_id),
-    FOREIGN KEY (req_ident_id, requirement_id)
-        REFERENCES req_id_reqs(req_ident_id, requirement_id)
+    PRIMARY KEY (req_identification_id, requirement_id, legal_basis_id, article_id),
+    FOREIGN KEY (req_identification_id, requirement_id)
+        REFERENCES req_identifications_requirements(req_identification_id, requirement_id)
         ON DELETE CASCADE,
     FOREIGN KEY (legal_basis_id) REFERENCES legal_basis(id) ON DELETE RESTRICT,
     FOREIGN KEY (article_id) REFERENCES article(id) ON DELETE CASCADE
 );
 
-
--- Table: requirement_identification_requirement_legal_verbs
--- Description: Stores translated output generated per legal verb for each requirement in an identification.
-CREATE TABLE IF NOT EXISTS req_id_legal_verbs (
-    req_ident_id INT NOT NULL,
+-- Table: req_identifications_legal_verbs
+-- Description: Translated legal verb outputs for each requirement in an identification.
+CREATE TABLE IF NOT EXISTS req_identifications_legal_verbs (
+    req_identification_id INT NOT NULL,
     requirement_id INT NOT NULL,
     legal_verb_id INT NOT NULL,
     translation LONGTEXT NOT NULL,  
-    PRIMARY KEY (req_ident_id, requirement_id, legal_verb_id),
-    FOREIGN KEY (req_ident_id, requirement_id)
-        REFERENCES req_id_reqs(req_ident_id, requirement_id)
+    PRIMARY KEY (req_identification_id, requirement_id, legal_verb_id),
+    FOREIGN KEY (req_identification_id, requirement_id)
+        REFERENCES req_identifications_requirements(req_identification_id, requirement_id)
         ON DELETE CASCADE,
     FOREIGN KEY (legal_verb_id) REFERENCES legal_verbs(id) ON DELETE CASCADE
 );
