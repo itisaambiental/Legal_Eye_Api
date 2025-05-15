@@ -8,45 +8,49 @@ const requirementSchema = z
   .object({
     /**
      * ID of the associated subject.
-     * Must be a string convertible to a number.
+     * Must be a number (can be passed as string and coerced).
      */
-    subjectId: z
-      .string()
-      .refine(
-        (val) => !isNaN(Number(val)),
-        'The subjectId must be a valid number'
-      )
-      .transform((val) => Number(val)),
+    subjectId: z.coerce
+      .number({ invalid_type_error: 'The subjectId must be a number' })
+      .int('The subjectId must be an integer'),
 
     /**
      * IDs of the associated aspects.
-     * Must be a stringified JSON array of numbers.
      */
     aspectsIds: z
-      .string()
-      .refine((val) => {
-        try {
-          const parsedArray = JSON.parse(val)
-          return (
-            Array.isArray(parsedArray) &&
-            parsedArray.every((item) => typeof item === 'number')
+      .union([
+        z.array(z.coerce.number().int()),
+        z.string()
+          .refine(
+            (val) => {
+              try {
+                const parsed = JSON.parse(val)
+                return (
+                  Array.isArray(parsed) &&
+                  parsed.every(
+                    (n) => typeof n === 'number' && Number.isInteger(n)
+                  )
+                )
+              } catch {
+                return false
+              }
+            },
+            {
+              message: 'aspectsIds must be a JSON array of integers'
+            }
           )
-        } catch {
-          return false
-        }
-      }, 'Each aspectId must be a valid array of numbers')
-      .transform((val) => z.array(z.number()).parse(JSON.parse(val)))
-      .refine(
-        (val) => val.length > 0,
-        'aspectsIds must contain at least one number'
-      ),
+          .transform((val) => JSON.parse(val))
+      ])
+      .refine((val) => val.length > 0, {
+        message: 'aspectsIds must contain at least one value'
+      }),
 
     /**
      * Unique requirement number (clave).
-     * Must be an integer.
+     * Must be an integer. Coerces from string to number if necessary.
      */
-    requirementNumber: z
-      .coerce.number({ invalid_type_error: 'The requirementNumber must be a number' })
+    requirementNumber: z.coerce
+      .number({ invalid_type_error: 'The requirementNumber must be a number' })
       .int('The requirementNumber must be an integer'),
 
     /**
@@ -126,7 +130,6 @@ const requirementSchema = z
 
     /**
      * If evidence is "Específica", this field must contain a description.
-     * Must be a string with a max of 255 characters.
      * Optional otherwise.
      */
     specifyEvidence: z
@@ -138,10 +141,13 @@ const requirementSchema = z
      * Periodicity of the requirement.
      * Must be one of: Anual, 2 años, Por evento, Única vez, Específica.
      */
-    periodicity: z.enum(['Anual', '2 años', 'Por evento', 'Única vez', 'Específica'], {
-      message:
-        'The periodicity must be one of: Anual, 2 años, Por evento, Única vez, Específica.'
-    }),
+    periodicity: z.enum(
+      ['Anual', '2 años', 'Por evento', 'Única vez', 'Específica'],
+      {
+        message:
+          'The periodicity must be one of: Anual, 2 años, Por evento, Única vez, Específica.'
+      }
+    ),
 
     /**
      * Acceptance criteria for the requirement.
@@ -153,9 +159,9 @@ const requirementSchema = z
   })
   .superRefine((data, context) => {
     /**
-     * Custom validations:
-     * - If evidence is "Específica", then specifyEvidence is required.
-     * - If evidence is not "Específica", then specifyEvidence must be empty or undefined.
+     * Custom validation rules:
+     * - If evidence is "Específica", specifyEvidence must be provided.
+     * - If evidence is not "Específica", specifyEvidence must be empty or undefined.
      */
     if (data.evidence === 'Específica') {
       if (!data.specifyEvidence || data.specifyEvidence.trim() === '') {

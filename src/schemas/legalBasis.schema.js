@@ -29,35 +29,40 @@ const legalBasisSchema = z
      * Subject ID associated with the legal basis.
      * Must be a string that can be converted to a valid number.
      */
-    subjectId: z
-      .string()
-      .refine(
-        (val) => !isNaN(Number(val)),
-        'The subjectId must be a valid number'
-      )
-      .transform((val) => Number(val)),
+    subjectId: z.coerce
+      .number({ invalid_type_error: 'The subjectId must be a number' })
+      .int('The subjectId must be an integer'),
 
     /**
-     * Aspects IDs associated with the legal basis.
-     * Must be a stringified JSON array of valid numbers.
+     * IDs of the associated aspects.
      */
-    aspectsIds: z.string()
-      .refine((val) => {
-        try {
-          const parsedArray = JSON.parse(val)
-          return (
-            Array.isArray(parsedArray) &&
-        parsedArray.every((item) => typeof item === 'number')
+    aspectsIds: z
+      .union([
+        z.array(z.coerce.number().int()),
+        z.string()
+          .refine(
+            (val) => {
+              try {
+                const parsed = JSON.parse(val)
+                return (
+                  Array.isArray(parsed) &&
+                  parsed.every(
+                    (n) => typeof n === 'number' && Number.isInteger(n)
+                  )
+                )
+              } catch {
+                return false
+              }
+            },
+            {
+              message: 'aspectsIds must be a JSON array of integers'
+            }
           )
-        } catch {
-          return false
-        }
-      }, 'Each aspectId must be a valid array of numbers')
-      .transform((val) => z.array(z.number()).parse(JSON.parse(val)))
-      .refine(
-        (val) => val.length > 0,
-        'aspectsIds must contain at least one number'
-      ),
+          .transform((val) => JSON.parse(val))
+      ])
+      .refine((val) => val.length > 0, {
+        message: 'aspectsIds must contain at least one value'
+      }),
 
     /**
      * Classification of the legal basis.

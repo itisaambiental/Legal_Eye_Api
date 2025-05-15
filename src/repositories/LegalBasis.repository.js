@@ -71,7 +71,10 @@ class LegalBasisRepository {
       return legalBasis
     } catch (error) {
       console.error('Error creating legal basis:', error.message)
-      throw new HttpException(500, 'Error creating legal basis in the database')
+      throw new HttpException(
+        500,
+        'Error creating legal basis in the database'
+      )
     }
   }
 
@@ -509,7 +512,10 @@ class LegalBasisRepository {
         'Error retrieving legal basis by abbreviation:',
         error.message
       )
-      throw new HttpException(500, 'Error retrieving legal basis by abbreviation')
+      throw new HttpException(
+        500,
+        'Error retrieving legal basis by abbreviation'
+      )
     }
   }
 
@@ -685,7 +691,10 @@ class LegalBasisRepository {
         'Error retrieving legal basis by jurisdiction:',
         error.message
       )
-      throw new HttpException(500, 'Error retrieving legal basis by jurisdiction')
+      throw new HttpException(
+        500,
+        'Error retrieving legal basis by jurisdiction'
+      )
     }
   }
 
@@ -1458,27 +1467,28 @@ VALUES ${aspectsIds.map(() => '(?, ?, ?)').join(', ')}
         }
         const values = aspectsIds.flatMap((aspectId) => [
           legalBasisId,
-          subjectId || null,
+          subjectId,
           aspectId
         ])
         const [insertedResult] = await connection.query(
           insertAspectsQuery(aspectsIds),
           values
         )
-
         if (insertedResult.affectedRows !== aspectsIds.length) {
           await connection.rollback()
           throw new HttpException(500, 'Failed to insert aspects.')
         }
       }
-
       await connection.commit()
       const updatedLegalBasis = await this.findById(legalBasisId)
       return updatedLegalBasis
     } catch (error) {
       await connection.rollback()
       console.error('Error updating legal basis:', error.message)
-      throw new HttpException(500, 'Error updating legal basis in the database')
+      throw new HttpException(
+        500,
+        'Error updating legal basis in the database'
+      )
     } finally {
       connection.release()
     }
@@ -1529,7 +1539,10 @@ VALUES ${aspectsIds.map(() => '(?, ?, ?)').join(', ')}
     } catch (error) {
       await connection.rollback()
       console.error('Error deleting legal basis:', error.message)
-      throw new HttpException(500, 'Error deleting legal basis from the database')
+      throw new HttpException(
+        500,
+        'Error deleting legal basis from the database'
+      )
     } finally {
       connection.release()
     }
@@ -1591,7 +1604,10 @@ VALUES ${aspectsIds.map(() => '(?, ?, ?)').join(', ')}
     } catch (error) {
       await connection.rollback()
       console.error('Error deleting legal bases:', error.message)
-      throw new HttpException(500, 'Error deleting legal basis records in batch')
+      throw new HttpException(
+        500,
+        'Error deleting legal basis records in batch'
+      )
     } finally {
       connection.release()
     }

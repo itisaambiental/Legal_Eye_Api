@@ -28,15 +28,9 @@ const userSchema = z.object({
 
   /**
    * User's role ID.
-   * Must be either 1 (Admin) or 2 (Analyst).
-   * Transforms the input to an integer and ensures it's a valid number.
    */
-  roleId: z
-    .string()
-    .transform((value) => parseInt(value, 10))
-    .refine((value) => !isNaN(value), {
-      message: 'The roleId must be a valid number'
-    })
+  roleId: z.coerce
+    .number({ invalid_type_error: 'The roleId must be a number' })
     .refine((value) => value === 1 || value === 2, {
       message: 'The roleId must be either 1 (Admin) or 2 (Analyst)'
     }),
