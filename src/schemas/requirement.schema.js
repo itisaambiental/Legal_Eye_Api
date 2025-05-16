@@ -136,6 +136,7 @@ const requirementSchema = z
     specifyEvidence: z
       .string()
       .max(255, 'The specifyEvidence field cannot exceed 255 characters')
+      .nullable()
       .optional(),
 
     /**
