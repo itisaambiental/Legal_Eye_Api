@@ -542,7 +542,7 @@ describe('Subjects API tests', () => {
         createdLegalBases.push(legalBasisResponse.body.legalBasis)
 
         const requirementData = generateRequirementData({
-          requirementNumber: `REQ-${i + 1}`,
+          requirementNumber: i + 1,
           requirementName: `Requirement Test ${i + 1}`,
           subjectId: String(subject.id),
           aspectsIds: JSON.stringify(aspectIdsForSubject)

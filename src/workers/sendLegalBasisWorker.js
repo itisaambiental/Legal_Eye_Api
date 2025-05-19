@@ -49,6 +49,7 @@ sendLegalBasisQueue.process(CONCURRENCY, async (job, done) => {
       )
       totalTasks += 1 + (articles ? articles.length : 0)
     }
+
     for (const legalBasisId of legalBasisIds) {
       let legalBase
       try {
@@ -117,7 +118,9 @@ sendLegalBasisQueue.process(CONCURRENCY, async (job, done) => {
               }
             }
             completedTasks++
-            await currentJob.progress(Math.floor((completedTasks / totalTasks) * 100))
+            await currentJob.progress(
+              Math.floor((completedTasks / totalTasks) * 100)
+            )
             await sleep(3000)
           }
         }
