@@ -132,10 +132,7 @@ class RequirementService {
         }))
         throw new HttpException(400, 'Validation failed', validationErrors)
       }
-      throw new HttpException(
-        500,
-        'Unexpected error during requirement creation'
-      )
+      throw new HttpException(500, 'Unexpected error during requirement creation')
     }
   }
 
@@ -176,10 +173,7 @@ class RequirementService {
       if (error instanceof HttpException) {
         throw error
       }
-      throw new HttpException(
-        500,
-        'Failed to retrieve requirement record by ID'
-      )
+      throw new HttpException(500, 'Failed to retrieve requirement record by ID')
     }
   }
 

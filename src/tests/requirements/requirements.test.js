@@ -76,7 +76,8 @@ describe('Create a requirement', () => {
   test('Should successfully create a requirement', async () => {
     const requirementData = generateRequirementData({
       subjectId: String(createdSubjectId),
-      aspectsIds: JSON.stringify([createdAspectIds[0]])
+      aspectsIds: JSON.stringify([createdAspectIds[0]]),
+      requirementNumber: 1
     })
 
     const response = await api
@@ -102,6 +103,7 @@ describe('Create a requirement', () => {
         ? requirementData.specifyEvidence
         : null,
       periodicity: requirementData.periodicity,
+      acceptance_criteria: requirementData.acceptanceCriteria,
       subject: {
         subject_id: createdSubjectId,
         subject_name: subjectName
@@ -117,8 +119,9 @@ describe('Create a requirement', () => {
 
   test('Should return 404 if Subject ID is invalid', async () => {
     const requirementData = generateRequirementData({
-      subjectId: '-1',
-      aspectsIds: JSON.stringify([createdAspectIds[0]])
+      subjectId: '-1', // string convertible a número
+      aspectsIds: JSON.stringify([createdAspectIds[0]]),
+      requirementNumber: 1 // entero válido
     })
 
     const response = await api
@@ -133,7 +136,8 @@ describe('Create a requirement', () => {
   test('Should return 404 if Aspect ID is invalid', async () => {
     const requirementData = generateRequirementData({
       subjectId: String(createdSubjectId),
-      aspectsIds: JSON.stringify([-1])
+      aspectsIds: JSON.stringify([-1]), // aspecto inválido
+      requirementNumber: 1
     })
 
     const response = await api
@@ -145,51 +149,31 @@ describe('Create a requirement', () => {
     expect(response.body.message).toMatch(/Aspects not found for IDs/i)
   })
 
-  test('Should return 409 if requirement number already exists', async () => {
-    const requirementData = generateRequirementData({
-      subjectId: String(createdSubjectId),
-      aspectsIds: JSON.stringify([createdAspectIds[0]]),
-      requirementNumber: 'REQ-001'
-    })
-
-    await api
-      .post('/api/requirements')
-      .set('Authorization', `Bearer ${tokenAdmin}`)
-      .send(requirementData)
-      .expect(201)
-
-    const response = await api
-      .post('/api/requirements')
-      .set('Authorization', `Bearer ${tokenAdmin}`)
-      .send(requirementData)
-      .expect(409)
-
-    expect(response.body.message).toMatch(/Requirement number already exists/i)
-  })
-
   test('Should return 409 if requirement name already exists', async () => {
-    const requirementData = generateRequirementData({
+    // Primero creamos con nombre X y número 1
+    const baseReq = generateRequirementData({
       subjectId: String(createdSubjectId),
       aspectsIds: JSON.stringify([createdAspectIds[0]]),
       requirementName: 'Test Requirement Name',
-      requirementNumber: 'REQ-001'
+      requirementNumber: 1
     })
-
     await api
       .post('/api/requirements')
       .set('Authorization', `Bearer ${tokenAdmin}`)
-      .send(requirementData)
+      .send(baseReq)
       .expect(201)
 
-    const duplicateRequirementData = {
-      ...requirementData,
-      requirementNumber: 'REQ-002'
-    }
-
+    // Ahora intentamos crear otro con el mismo nombre, pero número distinto
+    const duplicateReq = generateRequirementData({
+      subjectId: String(createdSubjectId),
+      aspectsIds: JSON.stringify([createdAspectIds[0]]),
+      requirementName: 'Test Requirement Name', // mismo nombre
+      requirementNumber: 2 // entero válido distinto
+    })
     const response = await api
       .post('/api/requirements')
       .set('Authorization', `Bearer ${tokenAdmin}`)
-      .send(duplicateRequirementData)
+      .send(duplicateReq)
       .expect(409)
 
     expect(response.body.message).toMatch(/Requirement name already exists/i)
@@ -198,12 +182,13 @@ describe('Create a requirement', () => {
   test('Should return 401 if the user is unauthorized', async () => {
     const requirementData = generateRequirementData({
       subjectId: String(createdSubjectId),
-      aspectsIds: JSON.stringify([createdAspectIds[0]])
+      aspectsIds: JSON.stringify([createdAspectIds[0]]),
+      requirementNumber: 1
     })
 
     const response = await api
       .post('/api/requirements')
-      .send(requirementData)
+      .send(requirementData) // sin Authorization header
       .expect(401)
       .expect('Content-Type', /application\/json/)
 
@@ -211,24 +196,25 @@ describe('Create a requirement', () => {
   })
 
   describe('Validation Tests', () => {
-    test('Should return 400 if requirementNumber exceeds max length', async () => {
-      const longRequirementNumber = 'A'.repeat(256)
+    test('Should return 400 if requirementNumber is not a number', async () => {
       const requirementData = generateRequirementData({
         subjectId: String(createdSubjectId),
         aspectsIds: JSON.stringify([createdAspectIds[0]]),
-        requirementNumber: longRequirementNumber
+        requirementNumber: 'foo' // no convertible a número
       })
 
-      const response = await api
+      const res = await api
         .post('/api/requirements')
         .set('Authorization', `Bearer ${tokenAdmin}`)
         .send(requirementData)
         .expect(400)
 
-      expect(response.body.message).toBe('Validation failed')
-      expect(response.body.errors).toEqual(
+      expect(res.body.errors).toEqual(
         expect.arrayContaining([
-          { field: 'requirementNumber', message: expect.stringMatching(/exceed.*255 characters/i) }
+          {
+            field: 'requirementNumber',
+            message: expect.stringMatching(/must be a number/i)
+          }
         ])
       )
     })
@@ -517,6 +503,30 @@ describe('Create a requirement', () => {
         ])
       )
     })
+
+    test('Should return 400 if acceptanceCriteria is missing', async () => {
+      const requirementData = generateRequirementData({
+        subjectId: String(createdSubjectId),
+        aspectsIds: JSON.stringify([createdAspectIds[0]]),
+        acceptanceCriteria: '' // anular el default
+      })
+
+      const res = await api
+        .post('/api/requirements')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send(requirementData)
+        .expect(400)
+
+      expect(res.body.errors).toEqual(
+        expect.arrayContaining([
+          {
+            field: 'acceptanceCriteria',
+            message: expect.stringMatching(/acceptance criteria is required/i)
+          }
+        ])
+      )
+    })
+
     test('Should create requirement with specify_evidence when evidence is "Específica"', async () => {
       const requirementData = generateRequirementData({
         subjectId: String(createdSubjectId),
@@ -616,6 +626,7 @@ describe('Get All Requirements', () => {
         ? createdRequirement.specify_evidence
         : null,
       periodicity: createdRequirement.periodicity,
+      acceptance_criteria: createdRequirement.acceptance_criteria,
       subject: expect.objectContaining({
         subject_id: createdSubjectId,
         subject_name: subjectName
@@ -683,6 +694,7 @@ describe('Get Requirement By ID', () => {
         ? createdRequirement.specify_evidence
         : null,
       periodicity: createdRequirement.periodicity,
+      acceptance_criteria: createdRequirement.acceptance_criteria,
       subject: expect.objectContaining({
         subject_id: createdSubjectId,
         subject_name: subjectName
@@ -719,7 +731,7 @@ describe('Get Requirement By ID', () => {
 
 describe('Get Requirements By Number', () => {
   let createdRequirement
-  const testRequirementNumber = 'REQ-SEARCH-001'
+  const testRequirementNumber = 1
 
   beforeEach(async () => {
     await RequirementRepository.deleteAll()
@@ -780,6 +792,7 @@ describe('Get Requirements By Number', () => {
         ? createdRequirement.specify_evidence
         : null,
       periodicity: createdRequirement.periodicity,
+      acceptance_criteria: createdRequirement.acceptance_criteria,
       subject: expect.objectContaining({
         subject_id: createdSubjectId,
         subject_name: subjectName
@@ -867,6 +880,7 @@ describe('Get Requirements By Name', () => {
         ? createdRequirement.specify_evidence
         : null,
       periodicity: createdRequirement.periodicity,
+      acceptance_criteria: createdRequirement.acceptance_criteria,
       subject: expect.objectContaining({
         subject_id: createdSubjectId,
         subject_name: subjectName
@@ -1025,6 +1039,7 @@ describe('Get Requirements By Subject And Aspects', () => {
         ? createdRequirement.specify_evidence
         : null,
       periodicity: createdRequirement.periodicity,
+      acceptance_criteria: createdRequirement.acceptance_criteria,
       subject: expect.objectContaining({
         subject_id: createdSubjectId,
         subject_name: subjectName
@@ -1140,6 +1155,7 @@ describe('Get Requirements By Mandatory Description', () => {
         ? createdRequirement.specify_evidence
         : null,
       periodicity: createdRequirement.periodicity,
+      acceptance_criteria: createdRequirement.acceptance_criteria,
       subject: expect.objectContaining({
         subject_id: createdSubjectId,
         subject_name: subjectName
@@ -1223,6 +1239,7 @@ describe('Get Requirements By Complementary Description', () => {
         ? createdRequirement.specify_evidence
         : null,
       periodicity: createdRequirement.periodicity,
+      acceptance_criteria: createdRequirement.acceptance_criteria,
       subject: expect.objectContaining({
         subject_id: createdSubjectId,
         subject_name: subjectName
@@ -1307,6 +1324,7 @@ describe('Get Requirements By Mandatory Sentences', () => {
         ? createdRequirement.specify_evidence
         : null,
       periodicity: createdRequirement.periodicity,
+      acceptance_criteria: createdRequirement.acceptance_criteria,
       subject: expect.objectContaining({
         subject_id: createdSubjectId,
         subject_name: subjectName
@@ -1392,6 +1410,7 @@ describe('Get Requirements By Complementary Sentences', () => {
         ? createdRequirement.specify_evidence
         : null,
       periodicity: createdRequirement.periodicity,
+      acceptance_criteria: createdRequirement.acceptance_criteria,
       subject: expect.objectContaining({
         subject_id: createdSubjectId,
         subject_name: subjectName
@@ -1479,6 +1498,7 @@ describe('Get Requirements By Mandatory Keywords', () => {
         ? createdRequirement.specify_evidence
         : null,
       periodicity: createdRequirement.periodicity,
+      acceptance_criteria: createdRequirement.acceptance_criteria,
       subject: expect.objectContaining({
         subject_id: createdSubjectId,
         subject_name: subjectName
@@ -1567,6 +1587,7 @@ describe('Get Requirements By Complementary Keywords', () => {
         ? createdRequirement.specify_evidence
         : null,
       periodicity: createdRequirement.periodicity,
+      acceptance_criteria: createdRequirement.acceptance_criteria,
       subject: expect.objectContaining({
         subject_id: createdSubjectId,
         subject_name: subjectName
@@ -1654,6 +1675,7 @@ describe('Get Requirements By Condition', () => {
         ? createdRequirement.specify_evidence
         : null,
       periodicity: createdRequirement.periodicity,
+      acceptance_criteria: createdRequirement.acceptance_criteria,
       subject: expect.objectContaining({
         subject_id: createdSubjectId,
         subject_name: subjectName
@@ -1741,6 +1763,7 @@ describe('Get Requirements By Evidence', () => {
         ? createdRequirement.specify_evidence
         : null,
       periodicity: createdRequirement.periodicity,
+      acceptance_criteria: createdRequirement.acceptance_criteria,
       subject: expect.objectContaining({
         subject_id: createdSubjectId,
         subject_name: subjectName
@@ -1828,6 +1851,7 @@ describe('Get Requirements By Periodicity', () => {
         ? createdRequirement.specify_evidence
         : null,
       periodicity: testPeriodicity,
+      acceptance_criteria: createdRequirement.acceptance_criteria,
       subject: expect.objectContaining({
         subject_id: createdSubjectId,
         subject_name: subjectName
@@ -1849,6 +1873,68 @@ describe('Get Requirements By Periodicity', () => {
       .expect('Content-Type', /application\/json/)
 
     expect(response.body.error).toMatch(/token missing or invalid/i)
+  })
+})
+
+describe('Get Requirements By Acceptance Criteria', () => {
+  let createdRequirement
+  const testAcceptanceCriteria = 'Informe validado por auditor'
+
+  beforeEach(async () => {
+    await RequirementRepository.deleteAll()
+  })
+
+  test('Should return an empty array when no requirements match the given acceptance criteria', async () => {
+    const response = await api
+      .get('/api/requirements/search/acceptance-criteria')
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .query({ acceptanceCriteria: testAcceptanceCriteria })
+      .expect(200)
+      .expect('Content-Type', /application\/json/)
+
+    expect(response.body.requirements).toBeInstanceOf(Array)
+    expect(response.body.requirements).toHaveLength(0)
+  })
+
+  test('Should return the requirement after creating one with the given acceptance criteria', async () => {
+    // Creamos uno con ese criterio de aceptación
+    const requirementData = generateRequirementData({
+      subjectId: String(createdSubjectId),
+      aspectsIds: JSON.stringify([createdAspectIds[0]]),
+      acceptanceCriteria: testAcceptanceCriteria
+    })
+
+    const createRes = await api
+      .post('/api/requirements')
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .send(requirementData)
+      .expect(201)
+
+    createdRequirement = createRes.body.requirement
+
+    // Ahora probamos el filtro
+    const response = await api
+      .get('/api/requirements/search/acceptance-criteria')
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .query({ acceptanceCriteria: testAcceptanceCriteria })
+      .expect(200)
+      .expect('Content-Type', /application\/json/)
+
+    const { requirements } = response.body
+    expect(requirements).toBeInstanceOf(Array)
+    expect(requirements).toHaveLength(1)
+    expect(requirements[0]).toMatchObject({
+      id: createdRequirement.id,
+      acceptance_criteria: testAcceptanceCriteria
+      // puedes añadir aquí el resto de campos que quieras verificar...
+    })
+  })
+
+  test('Should return 401 if user is unauthorized', async () => {
+    await api
+      .get('/api/requirements/search/acceptance-criteria')
+      .query({ acceptanceCriteria: testAcceptanceCriteria })
+      .expect(401)
   })
 })
 
@@ -1875,7 +1961,7 @@ describe('Update a requirement', () => {
   test('Should successfully update a requirement', async () => {
     const updatedData = generateRequirementData({
       requirementName: 'Updated Requirement Name',
-      requirementNumber: 'UPDATED-001',
+      requirementNumber: 2,
       subjectId: String(createdSubjectId),
       aspectsIds: JSON.stringify([createdAspectIds[0]])
     })
@@ -1910,6 +1996,7 @@ describe('Update a requirement', () => {
         ? updatedData.specify_evidence
         : null,
       periodicity: updatedData.periodicity,
+      acceptance_criteria: updatedData.acceptanceCriteria,
       subject: expect.objectContaining({
         subject_id: createdSubjectId,
         subject_name: subjectName
@@ -1926,7 +2013,7 @@ describe('Update a requirement', () => {
   test('Should return 404 if requirement does not exist', async () => {
     const updatedData = generateRequirementData({
       requirementName: 'Updated Requirement Name',
-      requirementNumber: 'UPDATED-001',
+      requirementNumber: 9999,
       subjectId: String(createdSubjectId),
       aspectsIds: JSON.stringify([createdAspectIds[0]])
     })
@@ -1942,7 +2029,7 @@ describe('Update a requirement', () => {
   test('Should return 404 if subject ID does not exist', async () => {
     const updatedData = generateRequirementData({
       requirementName: 'Updated Requirement Name',
-      requirementNumber: 'UPDATED-001',
+      requirementNumber: 1,
       subjectId: '-1',
       aspectsIds: JSON.stringify([createdAspectIds[0]])
     })
@@ -1958,7 +2045,7 @@ describe('Update a requirement', () => {
   test('Should return 404 if aspect IDs do not exist', async () => {
     const updatedData = generateRequirementData({
       requirementName: 'Updated Requirement Name',
-      requirementNumber: 'UPDATED-001',
+      requirementNumber: 1,
       subjectId: String(createdSubjectId),
       aspectsIds: JSON.stringify([-1])
     })
@@ -1976,7 +2063,7 @@ describe('Update a requirement', () => {
       subjectId: String(createdSubjectId),
       aspectsIds: JSON.stringify([createdAspectIds[0]]),
       requirementName: 'Existing Requirement',
-      requirementNumber: 'UNIQUE-001'
+      requirementNumber: 1
     })
 
     await api
@@ -1989,7 +2076,7 @@ describe('Update a requirement', () => {
       subjectId: String(createdSubjectId),
       aspectsIds: JSON.stringify([createdAspectIds[0]]),
       requirementName: 'Existing Requirement',
-      requirementNumber: 'NEW-NUMBER-002'
+      requirementNumber: 2
     })
 
     const response = await api
@@ -1999,36 +2086,6 @@ describe('Update a requirement', () => {
       .expect(409)
 
     expect(response.body.message).toMatch(/Requirement name already exists/i)
-  })
-
-  test('Should return 409 if requirement number already exists', async () => {
-    const existingData = generateRequirementData({
-      subjectId: String(createdSubjectId),
-      aspectsIds: JSON.stringify([createdAspectIds[0]]),
-      requirementName: 'Unique Name',
-      requirementNumber: 'DUPLICATE-NUMBER-001'
-    })
-
-    await api
-      .post('/api/requirements')
-      .set('Authorization', `Bearer ${tokenAdmin}`)
-      .send(existingData)
-      .expect(201)
-
-    const duplicateData = generateRequirementData({
-      subjectId: String(createdSubjectId),
-      aspectsIds: JSON.stringify([createdAspectIds[0]]),
-      requirementName: 'Another Unique Name',
-      requirementNumber: 'DUPLICATE-NUMBER-001'
-    })
-
-    const response = await api
-      .patch(`/api/requirement/${createdRequirement.id}`)
-      .set('Authorization', `Bearer ${tokenAdmin}`)
-      .send(duplicateData)
-      .expect(409)
-
-    expect(response.body.message).toMatch(/Requirement number already exists/i)
   })
 
   test('Should return 401 if the user is unauthorized', async () => {
@@ -2104,7 +2161,7 @@ describe('Delete multiple requirements', () => {
 
     for (let i = 0; i < numberOfRequirements; i++) {
       const requirementData = generateRequirementData({
-        requirementNumber: `REQ-${i}`,
+        requirementNumber: i + 1,
         requirementName: `Requirement Name ${i}`,
         subjectId: String(createdSubjectId),
         aspectsIds: JSON.stringify([createdAspectIds[0]])

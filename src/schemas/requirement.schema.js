@@ -10,9 +10,13 @@ const requirementSchema = z
      * ID of the associated subject.
      * Must be a number (can be passed as string and coerced).
      */
-    subjectId: z.coerce
-      .number({ invalid_type_error: 'The subjectId must be a number' })
-      .int('The subjectId must be an integer'),
+    subjectId: z
+      .coerce
+      .number({ invalid_type_error: 'The subjectId must be a valid number' })
+    // Si coerciona a NaN, forzamos un error con este mensaje:
+      .refine((val) => !Number.isNaN(val), {
+        message: 'The subjectId must be a valid number'
+      }),
 
     /**
      * IDs of the associated aspects.
@@ -37,7 +41,7 @@ const requirementSchema = z
               }
             },
             {
-              message: 'aspectsIds must be a JSON array of integers'
+              message: 'aspectsIds must be a valid array of numbers'
             }
           )
           .transform((val) => JSON.parse(val))
@@ -117,7 +121,7 @@ const requirementSchema = z
      */
     condition: z.enum(['Crítica', 'Operativa', 'Recomendación', 'Pendiente'], {
       message:
-        'The condition must be one of: Crítica, Operativa, Recomendación, Pendiente.'
+        'The condition must be one of the following: Crítica, Operativa, Recomendación, Pendiente.'
     }),
 
     /**
@@ -126,7 +130,7 @@ const requirementSchema = z
      */
     evidence: z.enum(['Trámite', 'Registro', 'Específica', 'Documento'], {
       message:
-        'The evidence type must be one of: Trámite, Registro, Específica, Documento.'
+        'The evidence type must be one of the following: Trámite, Registro, Específica, Documento.'
     }),
 
     /**
@@ -144,10 +148,10 @@ const requirementSchema = z
      * Must be one of: Anual, 2 años, Por evento, Única vez, Específica.
      */
     periodicity: z.enum(
-      ['Anual', '2 años', 'Por evento', 'Única vez', 'Específica'],
+      ['Anual', '2 años', 'Por evento', 'Única vez'],
       {
         message:
-          'The periodicity must be one of: Anual, 2 años, Por evento, Única vez, Específica.'
+          'The periodicity must be one of the following: Anual, 2 años, Por evento, Única vez'
       }
     ),
 
