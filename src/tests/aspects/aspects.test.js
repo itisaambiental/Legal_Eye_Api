@@ -590,7 +590,7 @@ describe('DELETE /aspects/batch - Delete multiple aspects with dependencies', ()
       createdLegalBases.push(legalBasisResponse.body.legalBasis)
 
       const requirementData = generateRequirementData({
-        requirementNumber: `REQ-${i + 1}`,
+        requirementNumber: i + 1,
         requirementName: `Requirement Test ${i + 1}`,
         subjectId: String(createdSubjectId),
         aspectsIds: JSON.stringify([aspectId])

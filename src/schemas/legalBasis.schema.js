@@ -29,39 +29,38 @@ const legalBasisSchema = z
      * Subject ID associated with the legal basis.
      * Must be a string that can be converted to a valid number.
      */
-    subjectId: z.coerce
-      .number({ invalid_type_error: 'The subjectId must be a number' })
-      .int('The subjectId must be an integer'),
+    subjectId: z
+      .coerce
+      .number({ invalid_type_error: 'The subjectId must be a valid number' })
+      .refine((val) => Number.isInteger(val), {
+        message: 'The subjectId must be a valid number'
+      }),
 
-    /**
-     * IDs of the associated aspects.
-     */
     aspectsIds: z
       .union([
         z.array(z.coerce.number().int()),
-        z.string()
+        z
+          .string()
           .refine(
             (val) => {
               try {
                 const parsed = JSON.parse(val)
                 return (
                   Array.isArray(parsed) &&
-                  parsed.every(
-                    (n) => typeof n === 'number' && Number.isInteger(n)
-                  )
+                parsed.every(
+                  (n) => typeof n === 'number' && Number.isInteger(n)
+                )
                 )
               } catch {
                 return false
               }
             },
-            {
-              message: 'aspectsIds must be a JSON array of integers'
-            }
+            { message: 'aspectsIds must be a valid array of numbers' }
           )
           .transform((val) => JSON.parse(val))
       ])
       .refine((val) => val.length > 0, {
-        message: 'aspectsIds must contain at least one value'
+        message: 'aspectsIds must contain at least one number'
       }),
 
     /**
