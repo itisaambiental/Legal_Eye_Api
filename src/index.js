@@ -30,7 +30,7 @@ if (process.env.NODE_ENV !== 'test') {
    * Start the server and listen on the specified port.
    */
   server = app.listen(serverPort, () => {
-    console.log('Server running on port', serverPort)
+    console.log('Server running on port:', serverPort)
   })
 }
 
