@@ -6,14 +6,14 @@
 import { Router } from 'express'
 import UserExtractor from '../middlewares/user_extractor.js'
 import {
-  createIdentification,
-  getAllIdentifications,
-  getIdentificationById,
-  updateIdentification,
-  deleteIdentification,
-  deleteAllIdentifications,
-  markAsCompleted,
-  markAsFailed,
+  createReqIdentification,
+  getAllReqIdentifications,
+  getReqIdentificationById,
+  updateReqIdentificationById,
+  deleteReqIdentificationById,
+  deleteAllReqIdentifications,
+  markReqIdentificationCompleted,
+  markReqIdentificationFailed,
   linkRequirement,
   unlinkRequirement,
   getLinkedRequirements,
@@ -43,7 +43,7 @@ const router = Router()
  * @path /reqIdentification
  * @middleware UserExtractor
  */
-router.post('/reqIdentification', UserExtractor, createIdentification)
+router.post('/reqIdentification', UserExtractor, createReqIdentification)
 
 /**
  * Retrieves all req_identifications.
@@ -51,34 +51,31 @@ router.post('/reqIdentification', UserExtractor, createIdentification)
  * @path /reqIdentification
  * @middleware UserExtractor
  */
-router.get('/reqIdentification', UserExtractor, getAllIdentifications)
+router.get('/reqIdentification', UserExtractor, getAllReqIdentifications)
 
 /**
  * Retrieves a single req_identification by ID.
  * @method GET
  * @path /reqIdentification/:id
- * @param {string} id - The identification ID.
  * @middleware UserExtractor
  */
-router.get('/reqIdentification/:id', UserExtractor, getIdentificationById)
+router.get('/reqIdentification/:id', UserExtractor, getReqIdentificationById)
 
 /**
- * Updates name/description of a req_identification.
+ * Updates name and description of a req_identification.
  * @method PATCH
  * @path /reqIdentification/:id
- * @param {string} id - The identification ID.
  * @middleware UserExtractor
  */
-router.patch('/reqIdentification/:id', UserExtractor, updateIdentification)
+router.patch('/reqIdentification/:id', UserExtractor, updateReqIdentificationById)
 
 /**
  * Deletes a req_identification by ID.
  * @method DELETE
  * @path /reqIdentification/:id
- * @param {string} id - The identification ID.
  * @middleware UserExtractor
  */
-router.delete('/reqIdentification/:id', UserExtractor, deleteIdentification)
+router.delete('/reqIdentification/:id', UserExtractor, deleteReqIdentificationById)
 
 /**
  * Deletes all req_identifications.
@@ -86,224 +83,142 @@ router.delete('/reqIdentification/:id', UserExtractor, deleteIdentification)
  * @path /reqIdentification
  * @middleware UserExtractor
  */
-router.delete('/reqIdentification', UserExtractor, deleteAllIdentifications)
+router.delete('/reqIdentification', UserExtractor, deleteAllReqIdentifications)
 
 /**
- * Marks a req_identification as Completed.
+ * Marks a req_identification as 'Completed'.
+ * @method PATCH
+ * @path /reqIdentification/:id/completed
+ * @middleware UserExtractor
+ */
+router.patch('/reqIdentification/:id/completed', UserExtractor, markReqIdentificationCompleted)
+
+/**
+ * Marks a req_identification as 'Failed'.
+ * @method PATCH
+ * @path /reqIdentification/:id/failed
+ * @middleware UserExtractor
+ */
+router.patch('/reqIdentification/:id/failed', UserExtractor, markReqIdentificationFailed)
+
+/**
+ * Links a requirement to a req_identification.
  * @method POST
- * @path /reqIdentification/:id/complete
- * @param {string} id - The identification ID.
+ * @path /reqIdentification/linkRequirement
  * @middleware UserExtractor
  */
-router.post('/reqIdentification/:id/complete', UserExtractor, markAsCompleted)
+router.post('/reqIdentification/linkRequirement', UserExtractor, linkRequirement)
 
 /**
- * Marks a req_identification as Failed.
+ * Unlinks a requirement from a req_identification.
  * @method POST
- * @path /reqIdentification/:id/fail
- * @param {string} id - The identification ID.
+ * @path /reqIdentification/unlinkRequirement
  * @middleware UserExtractor
  */
-router.post('/reqIdentification/:id/fail', UserExtractor, markAsFailed)
+router.post('/reqIdentification/unlinkRequirement', UserExtractor, unlinkRequirement)
 
 /**
- * Links a requirement to an identification.
- * @method POST
- * @path /reqIdentification/:identificationId/requirements
- * @param {string} identificationId
- * @body {number} requirementId
- * @middleware UserExtractor
- */
-router.post(
-  '/reqIdentification/:identificationId/requirements',
-  UserExtractor,
-  linkRequirement
-)
-
-/**
- * Unlinks a requirement from an identification.
- * @method DELETE
- * @path /reqIdentification/:identificationId/requirements/:requirementId
- * @params {string} identificationId, requirementId
- * @middleware UserExtractor
- */
-router.delete(
-  '/reqIdentification/:identificationId/requirements/:requirementId',
-  UserExtractor,
-  unlinkRequirement
-)
-
-/**
- * Retrieves all requirements linked to an identification.
+ * Retrieves all requirements linked to a req_identification.
  * @method GET
  * @path /reqIdentification/:identificationId/requirements
- * @param {string} identificationId
  * @middleware UserExtractor
  */
-router.get(
-  '/reqIdentification/:identificationId/requirements',
-  UserExtractor,
-  getLinkedRequirements
-)
+router.get('/reqIdentification/:identificationId/requirements', UserExtractor, getLinkedRequirements)
 
 /**
  * Links metadata for a requirement.
  * @method POST
- * @path /reqIdentification/:identificationId/requirements/:requirementId/metadata
- * @params {string} identificationId, requirementId
- * @body {string} requirementNumber, {number|null} requirementTypeId
+ * @path /reqIdentification/linkMetadata
  * @middleware UserExtractor
  */
-router.post(
-  '/reqIdentification/:identificationId/requirements/:requirementId/metadata',
-  UserExtractor,
-  linkMetadata
-)
+router.post('/reqIdentification/linkMetadata', UserExtractor, linkMetadata)
 
 /**
  * Unlinks metadata for a requirement.
- * @method DELETE
- * @path /reqIdentification/:identificationId/requirements/:requirementId/metadata
- * @params {string} identificationId, requirementId
+ * @method POST
+ * @path /reqIdentification/unlinkMetadata
  * @middleware UserExtractor
  */
-router.delete(
-  '/reqIdentification/:identificationId/requirements/:requirementId/metadata',
-  UserExtractor,
-  unlinkMetadata
-)
+router.post('/reqIdentification/unlinkMetadata', UserExtractor, unlinkMetadata)
 
 /**
  * Retrieves metadata linked to a requirement.
  * @method GET
- * @path /reqIdentification/:identificationId/requirements/:requirementId/metadata
- * @params {string} identificationId, requirementId
+ * @path /reqIdentification/metadata
  * @middleware UserExtractor
  */
-router.get(
-  '/reqIdentification/:identificationId/requirements/:requirementId/metadata',
-  UserExtractor,
-  getLinkedMetadata
-)
+router.get('/reqIdentification/metadata', UserExtractor, getLinkedMetadata)
 
 /**
  * Links a legal basis to a requirement.
  * @method POST
- * @path /reqIdentification/:identificationId/requirements/:requirementId/legalBasis
- * @params {string} identificationId, requirementId
- * @body {number} legalBasisId
+ * @path /reqIdentification/linkLegalBasis
  * @middleware UserExtractor
  */
-router.post(
-  '/reqIdentification/:identificationId/requirements/:requirementId/legalBasis',
-  UserExtractor,
-  linkLegalBasis
-)
+router.post('/reqIdentification/linkLegalBasis', UserExtractor, linkLegalBasis)
 
 /**
  * Unlinks a legal basis from a requirement.
- * @method DELETE
- * @path /reqIdentification/:identificationId/requirements/:requirementId/legalBasis/:legalBasisId
- * @params {string} identificationId, requirementId, legalBasisId
+ * @method POST
+ * @path /reqIdentification/unlinkLegalBasis
  * @middleware UserExtractor
  */
-router.delete(
-  '/reqIdentification/:identificationId/requirements/:requirementId/legalBasis/:legalBasisId',
-  UserExtractor,
-  unlinkLegalBasis
-)
+router.post('/reqIdentification/unlinkLegalBasis', UserExtractor, unlinkLegalBasis)
 
 /**
  * Retrieves legal bases linked to a requirement.
  * @method GET
- * @path /reqIdentification/:identificationId/requirements/:requirementId/legalBasis
- * @params {string} identificationId, requirementId
+ * @path /reqIdentification/legalBases
  * @middleware UserExtractor
  */
-router.get(
-  '/reqIdentification/:identificationId/requirements/:requirementId/legalBasis',
-  UserExtractor,
-  getLinkedLegalBases
-)
+router.get('/reqIdentification/legalBases', UserExtractor, getLinkedLegalBases)
 
 /**
- * Links an article under a legal basis.
+ * Links an article to a requirement under a legal basis.
  * @method POST
- * @path /reqIdentification/:identificationId/requirements/:requirementId/articles
- * @params {string} identificationId, requirementId
- * @body {number} legalBasisId, {number} articleId, {string} articleType
+ * @path /reqIdentification/linkArticle
  * @middleware UserExtractor
  */
-router.post(
-  '/reqIdentification/:identificationId/requirements/:requirementId/articles',
-  UserExtractor,
-  linkArticle
-)
+router.post('/reqIdentification/linkArticle', UserExtractor, linkArticle)
 
 /**
- * Unlinks an article under a legal basis.
- * @method DELETE
- * @path /reqIdentification/:identificationId/requirements/:requirementId/articles/:legalBasisId/:articleId
- * @params {string} identificationId, requirementId, legalBasisId, articleId
- * @middleware UserExtractor
- */
-router.delete(
-  '/reqIdentification/:identificationId/requirements/:requirementId/articles/:legalBasisId/:articleId',
-  UserExtractor,
-  unlinkArticle
-)
-
-/**
- * Retrieves articles linked to a requirement.
- * @method GET
- * @path /reqIdentification/:identificationId/requirements/:requirementId/articles
- * @params {string} identificationId, requirementId
- * @middleware UserExtractor
- */
-router.get(
-  '/reqIdentification/:identificationId/requirements/:requirementId/articles',
-  UserExtractor,
-  getLinkedArticles
-)
-
-/**
- * Links a legal verb translation.
+ * Unlinks an article from a requirement under a legal basis.
  * @method POST
- * @path /reqIdentification/:identificationId/requirements/:requirementId/legalVerbs
- * @params {string} identificationId, requirementId
- * @body {number} legalVerbId, {string} translation
+ * @path /reqIdentification/unlinkArticle
  * @middleware UserExtractor
  */
-router.post(
-  '/reqIdentification/:identificationId/requirements/:requirementId/legalVerbs',
-  UserExtractor,
-  linkLegalVerb
-)
+router.post('/reqIdentification/unlinkArticle', UserExtractor, unlinkArticle)
 
 /**
- * Unlinks a legal verb translation.
- * @method DELETE
- * @path /reqIdentification/:identificationId/requirements/:requirementId/legalVerbs/:legalVerbId
- * @params {string} identificationId, requirementId, legalVerbId
- * @middleware UserExtractor
- */
-router.delete(
-  '/reqIdentification/:identificationId/requirements/:requirementId/legalVerbs/:legalVerbId',
-  UserExtractor,
-  unlinkLegalVerb
-)
-
-/**
- * Retrieves legal verbs linked to a requirement.
+ * Retrieves articles linked to a requirement under a legal basis.
  * @method GET
- * @path /reqIdentification/:identificationId/requirements/:requirementId/legalVerbs
- * @params {string} identificationId, requirementId
+ * @path /reqIdentification/articles
  * @middleware UserExtractor
  */
-router.get(
-  '/reqIdentification/:identificationId/requirements/:requirementId/legalVerbs',
-  UserExtractor,
-  getLinkedLegalVerbs
-)
+router.get('/reqIdentification/articles', UserExtractor, getLinkedArticles)
+
+/**
+ * Links a legal verb translation to a requirement.
+ * @method POST
+ * @path /reqIdentification/linkLegalVerb
+ * @middleware UserExtractor
+ */
+router.post('/reqIdentification/linkLegalVerb', UserExtractor, linkLegalVerb)
+
+/**
+ * Unlinks a legal verb translation from a requirement.
+ * @method POST
+ * @path /reqIdentification/unlinkLegalVerb
+ * @middleware UserExtractor
+ */
+router.post('/reqIdentification/unlinkLegalVerb', UserExtractor, unlinkLegalVerb)
+
+/**
+ * Retrieves legal verb translations linked to a requirement.
+ * @method GET
+ * @path /reqIdentification/legalVerbs
+ * @middleware UserExtractor
+ */
+router.get('/reqIdentification/legalVerbs', UserExtractor, getLinkedLegalVerbs)
 
 export default router

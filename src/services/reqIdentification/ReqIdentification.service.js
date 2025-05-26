@@ -1,11 +1,13 @@
 // src/services/ReqIdentification.service.js
 import { z } from 'zod'
-import ReqIdentificationRepository from '../repositories/ReqIdentification.repository.js'
+import ReqIdentificationRepository from '../../repositories/ReqIdentification.repository.js'
 import {
-  reqIdentificationSchema,
+  reqIdentificationCreateSchema,
+  reqIdentificationLinkSchema,
   reqIdentificationUpdateSchema
-} from '../schemas/reqIdentification.schema.js'
-import HttpException from '../services/errors/HttpException.js'
+} from '../../schemas/reqIdentification.schema.js'
+
+import HttpException from '../../services/errors/HttpException.js'
 
 /**
  * Service class for handling business logic around req_identifications
@@ -24,7 +26,7 @@ class ReqIdentificationService {
    */
   static async create (ReqIdentification) {
     try {
-      const payload = reqIdentificationSchema.parse(ReqIdentification)
+      const payload = reqIdentificationCreateSchema.parse(ReqIdentification)
       if (await ReqIdentificationRepository.existsByName(payload.identificationName)) {
         throw new HttpException(409, 'Identification name already exists')
       }
@@ -260,20 +262,25 @@ class ReqIdentificationService {
     }
   }
 
-  // ——— Métodos de enlace/desenlace ———
-
   /**
-   * Links a requirement to an identification.
-   *
-   * @param {Object} ReqIdentification
-   * @param {number} ReqIdentification.identificationId - The identification ID.
-   * @param {number} ReqIdentification.requirementId - The requirement ID.
-   * @returns {Promise<{ success: boolean }>}
-   * @throws {HttpException}
-   */
+ * Links a requirement to an identification.
+ *
+ * @param {Object} ReqIdentification
+ * @param {number} ReqIdentification.identificationId - The identification ID.
+ * @param {number} ReqIdentification.requirementId - The requirement ID.
+ * @returns {Promise<{ success: boolean }>}
+ * @throws {HttpException}
+ */
   static async linkRequirement (ReqIdentification) {
+  // Validación y parsing con el schema de enlace
+    const payload = reqIdentificationLinkSchema.parse(ReqIdentification)
+
     try {
-      const ok = await ReqIdentificationRepository.linkRequirement(ReqIdentification)
+    // Usamos los valores ya parseados en lugar de reenviar el objeto sin validar
+      const ok = await ReqIdentificationRepository.linkRequirement({
+        identificationId: payload.identificationId,
+        requirementId: payload.requirementId
+      })
       return { success: ok }
     } catch (err) {
       if (err instanceof HttpException) throw err

@@ -2,10 +2,10 @@ import { pool } from '../config/db.config.js'
 import HttpException from '../services/errors/HttpException.js'
 import ReqIdentification from '../models/ReqIdentification.model.js'
 import Requirement from '../models/Requirement.model.js'
-import RequirementType from '../models/RequirementType.model.js'
+import RequirementType from '../schemas/requirementTypes.schema.js'
 import LegalBasis from '../models/LegalBasis.model.js'
 import Article from '../models/Article.model.js'
-import LegalVerb from '../models/LegalVerb.model.js'
+import LegalVerb from '../models/LegalVerbs.model.js'
 
 /**
  * Repository for req_identifications and related tables.

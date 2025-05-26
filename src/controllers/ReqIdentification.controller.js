@@ -1,5 +1,5 @@
 // src/controllers/ReqIdentification.controller.js
-import ReqIdentificationService from '../services/ReqIdentification.service.js'
+import ReqIdentificationService from '../services/reqIdentification/ReqIdentification.service.js'
 import HttpException from '../services/errors/HttpException.js'
 import UserService from '../services/users/User.service.js'
 
