@@ -29,7 +29,12 @@ export const createReqIdentification = async (req, res) => {
     return res.status(201).json({ reqIdentification: created })
   } catch (err) {
     if (err instanceof HttpException) {
-      return res.status(err.status).json({ message: err.message, ...(err.errors && { errors: err.errors }) })
+      return res
+        .status(err.status)
+        .json({
+          message: err.message,
+          ...(err.errors && { errors: err.errors })
+        })
     }
     return res.status(500).json({ message: 'Internal Server Error' })
   }
@@ -102,7 +107,12 @@ export const updateReqIdentificationById = async (req, res) => {
     return res.status(200).json({ reqIdentification: updated })
   } catch (err) {
     if (err instanceof HttpException) {
-      return res.status(err.status).json({ message: err.message, ...(err.errors && { errors: err.errors }) })
+      return res
+        .status(err.status)
+        .json({
+          message: err.message,
+          ...(err.errors && { errors: err.errors })
+        })
     }
     return res.status(500).json({ message: 'Internal Server Error' })
   }
@@ -122,7 +132,9 @@ export const deleteReqIdentificationById = async (req, res) => {
       return res.status(403).json({ message: 'Unauthorized' })
     }
     const { success } = await ReqIdentificationService.deleteById(Number(id))
-    return success ? res.sendStatus(204) : res.status(404).json({ message: 'Not found' })
+    return success
+      ? res.sendStatus(204)
+      : res.status(404).json({ message: 'Not found' })
   } catch (err) {
     if (err instanceof HttpException) {
       return res.status(err.status).json({ message: err.message })
@@ -166,7 +178,9 @@ export const markReqIdentificationCompleted = async (req, res) => {
     if (!(await UserService.userExists(userId))) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-    const { success } = await ReqIdentificationService.markAsCompleted(Number(id))
+    const { success } = await ReqIdentificationService.markAsCompleted(
+      Number(id)
+    )
     return res.status(200).json({ success })
   } catch (err) {
     if (err instanceof HttpException) {
@@ -214,7 +228,10 @@ export const linkRequirement = async (req, res) => {
     if (!(await UserService.userExists(userId))) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-    const { success } = await ReqIdentificationService.linkRequirement({ identificationId, requirementId })
+    const { success } = await ReqIdentificationService.linkRequirement({
+      identificationId,
+      requirementId
+    })
     return res.status(200).json({ success })
   } catch (err) {
     if (err instanceof HttpException) {
@@ -237,7 +254,10 @@ export const unlinkRequirement = async (req, res) => {
     if (!(await UserService.userExists(userId))) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-    const { success } = await ReqIdentificationService.unlinkRequirement({ identificationId, requirementId })
+    const { success } = await ReqIdentificationService.unlinkRequirement({
+      identificationId,
+      requirementId
+    })
     return res.status(200).json({ success })
   } catch (err) {
     if (err instanceof HttpException) {
@@ -260,7 +280,9 @@ export const getLinkedRequirements = async (req, res) => {
     if (!(await UserService.userExists(userId))) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-    const list = await ReqIdentificationService.getLinkedRequirements(Number(identificationId))
+    const list = await ReqIdentificationService.getLinkedRequirements(
+      Number(identificationId)
+    )
     return res.status(200).json({ requirements: list })
   } catch (err) {
     if (err instanceof HttpException) {
@@ -278,7 +300,12 @@ export const getLinkedRequirements = async (req, res) => {
  */
 export const linkMetadata = async (req, res) => {
   const { userId } = req
-  const { identificationId, requirementId, requirementNumber, requirementTypeId } = req.body
+  const {
+    identificationId,
+    requirementId,
+    requirementNumber,
+    requirementTypeId
+  } = req.body
   try {
     if (!(await UserService.userExists(userId))) {
       return res.status(403).json({ message: 'Unauthorized' })
@@ -378,11 +405,11 @@ export const linkLegalBasis = async (req, res) => {
 }
 
 /**
-   * Unlinks a legal basis from a requirement.
-   * @function unlinkLegalBasis
-   * @param {import('express').Request} req – Expects { identificationId, requirementId, legalBasisId } in body.
-   * @param {import('express').Response} res
-   */
+ * Unlinks a legal basis from a requirement.
+ * @function unlinkLegalBasis
+ * @param {import('express').Request} req – Expects { identificationId, requirementId, legalBasisId } in body.
+ * @param {import('express').Response} res
+ */
 export const unlinkLegalBasis = async (req, res) => {
   const { userId } = req
   const { identificationId, requirementId, legalBasisId } = req.body
@@ -405,11 +432,11 @@ export const unlinkLegalBasis = async (req, res) => {
 }
 
 /**
-   * Retrieves all legal bases linked to a requirement.
-   * @function getLinkedLegalBases
-   * @param {import('express').Request} req – Expects { identificationId, requirementId } in query.
-   * @param {import('express').Response} res
-   */
+ * Retrieves all legal bases linked to a requirement.
+ * @function getLinkedLegalBases
+ * @param {import('express').Request} req – Expects { identificationId, requirementId } in query.
+ * @param {import('express').Response} res
+ */
 export const getLinkedLegalBases = async (req, res) => {
   const { userId } = req
   const identificationId = Number(req.query.identificationId)
@@ -439,7 +466,13 @@ export const getLinkedLegalBases = async (req, res) => {
  */
 export const linkArticle = async (req, res) => {
   const { userId } = req
-  const { identificationId, requirementId, legalBasisId, articleId, articleType } = req.body
+  const {
+    identificationId,
+    requirementId,
+    legalBasisId,
+    articleId,
+    articleType
+  } = req.body
   try {
     if (!(await UserService.userExists(userId))) {
       return res.status(403).json({ message: 'Unauthorized' })
@@ -461,11 +494,11 @@ export const linkArticle = async (req, res) => {
 }
 
 /**
-   * Unlinks an article from a requirement under a legal basis.
-   * @function unlinkArticle
-   * @param {import('express').Request} req – Expects { identificationId, requirementId, legalBasisId, articleId } in body.
-   * @param {import('express').Response} res
-   */
+ * Unlinks an article from a requirement under a legal basis.
+ * @function unlinkArticle
+ * @param {import('express').Request} req – Expects { identificationId, requirementId, legalBasisId, articleId } in body.
+ * @param {import('express').Response} res
+ */
 export const unlinkArticle = async (req, res) => {
   const { userId } = req
   const { identificationId, requirementId, legalBasisId, articleId } = req.body
@@ -489,11 +522,11 @@ export const unlinkArticle = async (req, res) => {
 }
 
 /**
-   * Retrieves all articles linked to a requirement under a legal basis.
-   * @function getLinkedArticles
-   * @param {import('express').Request} req – Expects identificationId and requirementId in query.
-   * @param {import('express').Response} res
-   */
+ * Retrieves all articles linked to a requirement under a legal basis.
+ * @function getLinkedArticles
+ * @param {import('express').Request} req – Expects identificationId and requirementId in query.
+ * @param {import('express').Response} res
+ */
 export const getLinkedArticles = async (req, res) => {
   const { userId } = req
   const identificationId = Number(req.query.identificationId)
@@ -523,7 +556,8 @@ export const getLinkedArticles = async (req, res) => {
  */
 export const linkLegalVerb = async (req, res) => {
   const { userId } = req
-  const { identificationId, requirementId, legalVerbId, translation } = req.body
+  const { identificationId, requirementId, legalVerbId, translation } =
+    req.body
   try {
     if (!(await UserService.userExists(userId))) {
       return res.status(403).json({ message: 'Unauthorized' })
@@ -544,11 +578,11 @@ export const linkLegalVerb = async (req, res) => {
 }
 
 /**
-   * Unlinks a legal verb translation from a requirement in an identification.
-   * @function unlinkLegalVerb
-   * @param {import('express').Request} req – Expects { identificationId, requirementId, legalVerbId } in body.
-   * @param {import('express').Response} res
-   */
+ * Unlinks a legal verb translation from a requirement in an identification.
+ * @function unlinkLegalVerb
+ * @param {import('express').Request} req – Expects { identificationId, requirementId, legalVerbId } in body.
+ * @param {import('express').Response} res
+ */
 export const unlinkLegalVerb = async (req, res) => {
   const { userId } = req
   const { identificationId, requirementId, legalVerbId } = req.body
@@ -571,11 +605,11 @@ export const unlinkLegalVerb = async (req, res) => {
 }
 
 /**
-   * Retrieves all legal verb translations linked to a requirement in an identification.
-   * @function getLinkedLegalVerbs
-   * @param {import('express').Request} req – Expects identificationId and requirementId in query.
-   * @param {import('express').Response} res
-   */
+ * Retrieves all legal verb translations linked to a requirement in an identification.
+ * @function getLinkedLegalVerbs
+ * @param {import('express').Request} req – Expects identificationId and requirementId in query.
+ * @param {import('express').Response} res
+ */
 export const getLinkedLegalVerbs = async (req, res) => {
   const { userId } = req
   const identificationId = Number(req.query.identificationId)
