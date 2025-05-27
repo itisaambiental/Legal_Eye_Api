@@ -9,10 +9,7 @@ import UserService from '../services/users/User.service.js'
  */
 
 /**
- * Creates a new requirements identification.
- * @function createReqIdentification
- * @param {import('express').Request} req - Expects { identificationName, identificationDescription, userId } in body.
- * @param {import('express').Response} res
+ * Crea sólo la cabecera en req_identifications y devuelve el ID.
  */
 export const createReqIdentification = async (req, res) => {
   const { userId: authUserId } = req
@@ -21,12 +18,12 @@ export const createReqIdentification = async (req, res) => {
     if (!(await UserService.userExists(authUserId))) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-    const created = await ReqIdentificationService.create({
+    const { id } = await ReqIdentificationService.createHeader({
       identificationName,
       identificationDescription,
       userId
     })
-    return res.status(201).json({ reqIdentification: created })
+    return res.status(201).json({ id })
   } catch (err) {
     if (err instanceof HttpException) {
       return res
@@ -65,7 +62,7 @@ export const getAllReqIdentifications = async (req, res) => {
 /**
  * Retrieves a single requirements identification by ID.
  * @function getReqIdentificationById
- * @param {import('express').Request} req - Expects { id } in params.
+ * @param {import('express').Request} req
  * @param {import('express').Response} res
  */
 export const getReqIdentificationById = async (req, res) => {
@@ -86,9 +83,37 @@ export const getReqIdentificationById = async (req, res) => {
 }
 
 /**
+ * Detects and links requirements for an identification.
+ * @function detectRequirements
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ */
+export const detectRequirements = async (req, res) => {
+  const { userId } = req
+  const { identificationId, subjectId, aspectIds } = req.body
+  try {
+    if (!(await UserService.userExists(userId))) {
+      return res.status(403).json({ message: 'Unauthorized' })
+    }
+    const { linkedCount } =
+        await ReqIdentificationService.detectAndLinkRequirements({
+          identificationId: Number(identificationId),
+          subjectId: Number(subjectId),
+          aspectIds: aspectIds.map(Number)
+        })
+    return res.status(200).json({ linkedCount })
+  } catch (err) {
+    if (err instanceof HttpException) {
+      return res.status(err.status).json({ message: err.message })
+    }
+    return res.status(500).json({ message: 'Internal Server Error' })
+  }
+}
+
+/**
  * Updates name and description of a requirements identification.
  * @function updateReqIdentificationById
- * @param {import('express').Request} req - Expects { id } in params and { identificationName, identificationDescription } in body.
+ * @param {import('express').Request} req
  * @param {import('express').Response} res
  */
 export const updateReqIdentificationById = async (req, res) => {
@@ -121,8 +146,7 @@ export const updateReqIdentificationById = async (req, res) => {
 /**
  * Deletes a requirements identification by ID.
  * @function deleteReqIdentificationById
- * @param {import('express').Request} req - Expects { id } in params.
- * @param {import('express').Response} res
+ * @param {import('express').Request} req
  */
 export const deleteReqIdentificationById = async (req, res) => {
   const { userId } = req
@@ -193,7 +217,7 @@ export const markReqIdentificationCompleted = async (req, res) => {
 /**
  * Marks a requirements identification as 'Failed'.
  * @function markReqIdentificationFailed
- * @param {import('express').Request} req - Expects { id } in params.
+ * @param {import('express').Request} req
  * @param {import('express').Response} res
  */
 export const markReqIdentificationFailed = async (req, res) => {
@@ -218,7 +242,7 @@ export const markReqIdentificationFailed = async (req, res) => {
 /**
  * Links a requirement to an identification.
  * @function linkRequirement
- * @param {import('express').Request} req - Expects { identificationId, requirementId } in body.
+ * @param {import('express').Request} req
  * @param {import('express').Response} res
  */
 export const linkRequirement = async (req, res) => {
@@ -244,7 +268,7 @@ export const linkRequirement = async (req, res) => {
 /**
  * Unlinks a requirement from an identification.
  * @function unlinkRequirement
- * @param {import('express').Request} req - Expects { identificationId, requirementId } in body.
+ * @param {import('express').Request} req
  * @param {import('express').Response} res
  */
 export const unlinkRequirement = async (req, res) => {
@@ -270,7 +294,7 @@ export const unlinkRequirement = async (req, res) => {
 /**
  * Retrieves all requirements linked to an identification.
  * @function getLinkedRequirements
- * @param {import('express').Request} req - Expects { identificationId } in params.
+ * @param {import('express').Request} req
  * @param {import('express').Response} res
  */
 export const getLinkedRequirements = async (req, res) => {
@@ -295,7 +319,7 @@ export const getLinkedRequirements = async (req, res) => {
 /**
  * Links metadata for a requirement.
  * @function linkMetadata
- * @param {import('express').Request} req – Expects { identificationId, requirementId, requirementNumber, requirementTypeId } in body.
+ * @param {import('express').Request} req
  * @param {import('express').Response} res
  */
 export const linkMetadata = async (req, res) => {
@@ -328,7 +352,7 @@ export const linkMetadata = async (req, res) => {
 /**
  * Unlinks metadata for a requirement.
  * @function unlinkMetadata
- * @param {import('express').Request} req – Expects { identificationId, requirementId } in body.
+ * @param {import('express').Request} req
  * @param {import('express').Response} res
  */
 export const unlinkMetadata = async (req, res) => {
@@ -354,7 +378,7 @@ export const unlinkMetadata = async (req, res) => {
 /**
  * Retrieves metadata linked to a requirement.
  * @function getLinkedMetadata
- * @param {import('express').Request} req – Expects { identificationId, requirementId } in body.
+ * @param {import('express').Request} req
  * @param {import('express').Response} res
  */
 export const getLinkedMetadata = async (req, res) => {
@@ -380,7 +404,7 @@ export const getLinkedMetadata = async (req, res) => {
 /**
  * Links a legal basis to a requirement.
  * @function linkLegalBasis
- * @param {import('express').Request} req – Expects { identificationId, requirementId, legalBasisId } in body.
+ * @param {import('express').Request} req
  * @param {import('express').Response} res
  */
 export const linkLegalBasis = async (req, res) => {
@@ -405,11 +429,11 @@ export const linkLegalBasis = async (req, res) => {
 }
 
 /**
- * Unlinks a legal basis from a requirement.
- * @function unlinkLegalBasis
- * @param {import('express').Request} req – Expects { identificationId, requirementId, legalBasisId } in body.
- * @param {import('express').Response} res
- */
+   * Unlinks a legal basis from a requirement.
+   * @function unlinkLegalBasis
+   * @param {import('express').Request} req – Expects { identificationId, requirementId, legalBasisId } in body.
+   * @param {import('express').Response} res
+   */
 export const unlinkLegalBasis = async (req, res) => {
   const { userId } = req
   const { identificationId, requirementId, legalBasisId } = req.body
@@ -432,11 +456,11 @@ export const unlinkLegalBasis = async (req, res) => {
 }
 
 /**
- * Retrieves all legal bases linked to a requirement.
- * @function getLinkedLegalBases
- * @param {import('express').Request} req – Expects { identificationId, requirementId } in query.
- * @param {import('express').Response} res
- */
+   * Retrieves all legal bases linked to a requirement.
+   * @function getLinkedLegalBases
+   * @param {import('express').Request} req – Expects { identificationId, requirementId } in query.
+   * @param {import('express').Response} res
+   */
 export const getLinkedLegalBases = async (req, res) => {
   const { userId } = req
   const identificationId = Number(req.query.identificationId)
@@ -461,7 +485,7 @@ export const getLinkedLegalBases = async (req, res) => {
 /**
  * Links an article under a legal basis to a requirement.
  * @function linkArticle
- * @param {import('express').Request} req – Expects { identificationId, requirementId, legalBasisId, articleId, articleType } in body.
+ * @param {import('express').Request} req
  * @param {import('express').Response} res
  */
 export const linkArticle = async (req, res) => {
@@ -494,11 +518,11 @@ export const linkArticle = async (req, res) => {
 }
 
 /**
- * Unlinks an article from a requirement under a legal basis.
- * @function unlinkArticle
- * @param {import('express').Request} req – Expects { identificationId, requirementId, legalBasisId, articleId } in body.
- * @param {import('express').Response} res
- */
+   * Unlinks an article from a requirement under a legal basis.
+   * @function unlinkArticle
+   * @param {import('express').Request} req – Expects { identificationId, requirementId, legalBasisId, articleId } in body.
+   * @param {import('express').Response} res
+   */
 export const unlinkArticle = async (req, res) => {
   const { userId } = req
   const { identificationId, requirementId, legalBasisId, articleId } = req.body
@@ -522,11 +546,11 @@ export const unlinkArticle = async (req, res) => {
 }
 
 /**
- * Retrieves all articles linked to a requirement under a legal basis.
- * @function getLinkedArticles
- * @param {import('express').Request} req – Expects identificationId and requirementId in query.
- * @param {import('express').Response} res
- */
+   * Retrieves all articles linked to a requirement under a legal basis.
+   * @function getLinkedArticles
+   * @param {import('express').Request} req – Expects identificationId and requirementId in query.
+   * @param {import('express').Response} res
+   */
 export const getLinkedArticles = async (req, res) => {
   const { userId } = req
   const identificationId = Number(req.query.identificationId)
@@ -551,7 +575,7 @@ export const getLinkedArticles = async (req, res) => {
 /**
  * Links a legal verb translation to a requirement in an identification.
  * @function linkLegalVerb
- * @param {import('express').Request} req – Expects { identificationId, requirementId, legalVerbId, translation } in body.
+ * @param {import('express').Request} req
  * @param {import('express').Response} res
  */
 export const linkLegalVerb = async (req, res) => {
@@ -578,11 +602,11 @@ export const linkLegalVerb = async (req, res) => {
 }
 
 /**
- * Unlinks a legal verb translation from a requirement in an identification.
- * @function unlinkLegalVerb
- * @param {import('express').Request} req – Expects { identificationId, requirementId, legalVerbId } in body.
- * @param {import('express').Response} res
- */
+   * Unlinks a legal verb translation from a requirement in an identification.
+   * @function unlinkLegalVerb
+   * @param {import('express').Request} req – Expects { identificationId, requirementId, legalVerbId } in body.
+   * @param {import('express').Response} res
+   */
 export const unlinkLegalVerb = async (req, res) => {
   const { userId } = req
   const { identificationId, requirementId, legalVerbId } = req.body
@@ -605,11 +629,11 @@ export const unlinkLegalVerb = async (req, res) => {
 }
 
 /**
- * Retrieves all legal verb translations linked to a requirement in an identification.
- * @function getLinkedLegalVerbs
- * @param {import('express').Request} req – Expects identificationId and requirementId in query.
- * @param {import('express').Response} res
- */
+   * Retrieves all legal verb translations linked to a requirement in an identification.
+   * @function getLinkedLegalVerbs
+   * @param {import('express').Request} req – Expects identificationId and requirementId in query.
+   * @param {import('express').Response} res
+   */
 export const getLinkedLegalVerbs = async (req, res) => {
   const { userId } = req
   const identificationId = Number(req.query.identificationId)

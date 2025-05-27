@@ -9,6 +9,7 @@ import {
   createReqIdentification,
   getAllReqIdentifications,
   getReqIdentificationById,
+  detectRequirements,
   updateReqIdentificationById,
   deleteReqIdentificationById,
   deleteAllReqIdentifications,
@@ -60,6 +61,15 @@ router.get('/reqIdentification', UserExtractor, getAllReqIdentifications)
  * @middleware UserExtractor
  */
 router.get('/reqIdentification/:id', UserExtractor, getReqIdentificationById)
+
+/**
+ * Detects applicable requirements for a given identification based on subject and aspects,
+ * then links them into req_identifications_requirements.
+ * @method POST
+ * @path /reqIdentification/detectRequirements
+ * @middleware UserExtractor
+ */
+router.post('/reqIdentification/detectRequirements', UserExtractor, detectRequirements)
 
 /**
  * Updates name and description of a req_identification.
