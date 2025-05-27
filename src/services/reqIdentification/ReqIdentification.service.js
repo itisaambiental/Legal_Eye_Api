@@ -1,5 +1,7 @@
 // src/services/ReqIdentification.service.js
 import { z } from 'zod'
+import LegalBasisRepository from '../../repositories/LegalBasis.repository.js'
+import RequirementRepository from '../../repositories/Requirements.repository.js'
 import ReqIdentificationRepository from '../../repositories/ReqIdentification.repository.js'
 import {
   reqIdentificationCreateSchema,
@@ -14,6 +16,158 @@ import HttpException from '../../services/errors/HttpException.js'
  * and all their linked entities.
  */
 class ReqIdentificationService {
+  /**
+   * Validates that the selected legal basis IDs:
+   *  1) Exist
+   *  2) All belong to the same subject
+   *  3) All share the same jurisdiction
+   *  4) If “State” jurisdiction, all share the same state
+   *  5) If “Local” jurisdiction, all share the same state and municipality
+   *
+   * @param {number[]} legalBasisIds
+   * @returns {Promise<import('../../models/LegalBasis.model.js').default[]>} – Loaded legal basis records
+   * @throws {HttpException} – With English error messages
+   */
+  static async validateLegalBasisSelection (legalBasisIds) {
+    // 1) Load all
+    const bases = await LegalBasisRepository.findByIds(legalBasisIds)
+    if (bases.length !== legalBasisIds.length) {
+      const notFoundIds = legalBasisIds.filter(
+        (id) => !bases.some((b) => b.id === id)
+      )
+      throw new HttpException(
+        404,
+        'Some legal basis were not found',
+        { notFoundIds }
+      )
+    }
+    const subjectSet = new Set(bases.map((b) => b.subject_id))
+    if (subjectSet.size > 1) {
+      throw new HttpException(
+        400,
+        'All selected legal basis must belong to the same subject'
+      )
+    }
+    const jurisSet = new Set(bases.map((b) => b.jurisdiction))
+    if (jurisSet.size > 1) {
+      throw new HttpException(
+        400,
+        'All selected legal basis must have the same jurisdiction'
+      )
+    }
+    const jurisdiction = bases[0].jurisdiction
+
+    if (jurisdiction === 'Estatal') {
+      const stateSet = new Set(bases.map((b) => b.state))
+      if (stateSet.size > 1) {
+        throw new HttpException(
+          400,
+          'For State jurisdiction, all legal basis must belong to the same state'
+        )
+      }
+    }
+    if (jurisdiction === 'Local') {
+      const stateSet = new Set(bases.map((b) => b.state))
+      const muniSet = new Set(bases.map((b) => b.municipality))
+      if (stateSet.size > 1) {
+        throw new HttpException(
+          400,
+          'For Local jurisdiction, all legal basis must belong to the same state'
+        )
+      }
+      if (muniSet.size > 1) {
+        throw new HttpException(
+          400,
+          'For Local jurisdiction, all legal basis must belong to the same municipality'
+        )
+      }
+    }
+
+    return bases
+  }
+
+  /**
+   * Detects all applicable requirements for a given identification
+   * based on subject and shared aspects, and los almacena en
+   * `req_identifications_requirements`.
+   *
+   * @param {Object} data
+   * @param {number} data.identificationId - ID de la identificación.
+   * @param {number} data.subjectId        - ID de la materia.
+   * @param {number[]} data.aspectIds      - Array de IDs de aspectos.
+   * @returns {Promise<{ linkedCount: number }>}
+   * @throws {HttpException}
+   */
+  static async detectAndLinkRequirements ({ identificationId, subjectId, aspectIds }) {
+    // 1) Validar que la identificación exista
+    const identification = await ReqIdentificationRepository.findById({ id: identificationId })
+    if (!identification) {
+      throw new HttpException(404, 'Identification not found')
+    }
+
+    // 2) Recuperar requisitos que coincidan:
+    //    mismo subject y al menos un aspecto compartido
+    const requirements = await RequirementRepository.findBySubjectAndAspects(
+      subjectId,
+      aspectIds
+    )
+
+    // 3) Si no hay ninguno, devolvemos 0
+    if (!requirements.length) {
+      return { linkedCount: 0 }
+    }
+
+    // 4) Enlazar en batch todos los requirements encontrados
+    const linkPromises = requirements.map((req) =>
+      ReqIdentificationRepository.linkRequirement({
+        identificationId,
+        requirementId: req.id
+      })
+    )
+
+    const results = await Promise.all(linkPromises)
+    const linkedCount = results.filter((ok) => ok).length
+
+    return { linkedCount }
+  }
+
+  /**
+   * Graba únicamente la cabecera en `req_identifications`
+   * y devuelve { id }.
+   *
+   * @param {Object} data
+   * @param {string} data.identificationName
+   * @param {string|null} data.identificationDescription
+   * @param {number|null} data.userId
+   * @returns {Promise<{ id: number }>}
+   * @throws {HttpException}
+   */
+  static async createHeader (data) {
+    try {
+      // valida sólo nombre, descripción y userId
+      const payload = reqIdentificationCreateSchema.parse(data)
+      // posible validación de unicidad
+      if (await ReqIdentificationRepository.existsByName(payload.identificationName)) {
+        throw new HttpException(409, 'Identification name already exists')
+      }
+      // inserta y recibe el modelo completo
+      const created = await ReqIdentificationRepository.create({
+        identificationName: payload.identificationName,
+        identificationDescription: payload.identificationDescription,
+        userId: payload.userId
+      })
+      // devuelve sólo el id
+      return { id: created.id }
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        const errors = err.errors.map(e => ({ field: e.path.join('.'), message: e.message }))
+        throw new HttpException(400, 'Validation failed', errors)
+      }
+      if (err instanceof HttpException) throw err
+      throw new HttpException(500, 'Unexpected error during header creation')
+    }
+  }
+
   /**
    * Creates a new identification.
    *
@@ -382,17 +536,22 @@ class ReqIdentificationService {
   }
 
   /**
-   * Links a legal basis to a requirement.
-   *
-   * @param {Object} ReqIdentification
-   * @param {number} ReqIdentification.identificationId
-   * @param {number} ReqIdentification.requirementId
-   * @param {number} ReqIdentification.legalBasisId
-   * @returns {Promise<{ success: boolean }>}
-   * @throws {HttpException}
-   */
+ * Links one or more legal basis to a requirement under an identification,
+ * aplicando antes las reglas de negocio.
+ *
+ * @param {Object} ReqIdentification
+ * @param {number} ReqIdentification.identificationId - El ID de la identificación.
+ * @param {number} ReqIdentification.requirementId    - El ID del requerimiento.
+ * @param {number[]} ReqIdentification.legalBasisIds  - Array de IDs de legal basis a enlazar.
+ * @returns {Promise<{ success: boolean }>}
+ * @throws {HttpException}
+ */
   static async linkLegalBasis (ReqIdentification) {
     try {
+      // Validaciones de negocio previas
+      await this.validateLegalBasisSelection(ReqIdentification.legalBasisIds)
+
+      // Grabo el enlace
       const ok = await ReqIdentificationRepository.linkLegalBasis(ReqIdentification)
       return { success: ok }
     } catch (err) {

@@ -211,7 +211,7 @@ CREATE TABLE IF NOT EXISTS req_identifications_requirements (
 CREATE TABLE IF NOT EXISTS req_identifications_metadata (
     req_identification_id INT NOT NULL,     
     requirement_id INT NOT NULL,                    
-    requirement_number VARCHAR(255) NOT NULL,       
+    requirement_name VARCHAR(255) NOT NULL,       
     requirement_type_id INT,                        
     PRIMARY KEY (req_identification_id, requirement_id),
     FOREIGN KEY (req_identification_id, requirement_id)
