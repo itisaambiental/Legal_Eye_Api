@@ -3,7 +3,6 @@ import LegalBasisRepository from '../../repositories/LegalBasis.repository.js'
 import RequirementRepository from '../../repositories/Requirements.repository.js'
 import ReqIdentificationRepository from '../../repositories/ReqIdentification.repository.js'
 import { reqIdentificationSchema } from '../../schemas/reqIdentification.schema.js'
-import UserRepository from '../../repositories/User.repository.js'
 import HttpException from '../../services/errors/HttpException.js'
 
 /**
@@ -24,81 +23,56 @@ class ReqIdentificationService {
    */
   static async create (userId, reqIdentification) {
     try {
-      if (!(await UserRepository.userExists(userId))) {
-        throw new HttpException(404, 'User not found')
-      }
       const parsedReqIdentification = reqIdentificationSchema.parse(reqIdentification)
-      const legalBases = await LegalBasisRepository.findByIds(parsedReqIdentification.legalBasisIds)
+      const legalBases = await LegalBasisRepository.findByIds(
+        parsedReqIdentification.legalBasisIds
+      )
       if (legalBases.length !== parsedReqIdentification.legalBasisIds.length) {
         const notFoundIds = parsedReqIdentification.legalBasisIds.filter(
-          id => !legalBases.some(legalBase => legalBase.id === id)
+          (id) => !legalBases.some((lb) => lb.id === id)
         )
-        throw new HttpException(404, 'LegalBasis not found for IDs', { notFoundIds })
+        throw new HttpException(400, 'LegalBasis not found for IDs', { notFoundIds })
       }
-      const reqIdentificationExistsByName =
-        await ReqIdentificationRepository.existsByReqIdentificationName(
-          parsedReqIdentification.reqIdentificationName
-        )
+      const reqIdentificationExistsByName = await ReqIdentificationRepository.existsByReqIdentificationName(
+        parsedReqIdentification.reqIdentificationName
+      )
       if (reqIdentificationExistsByName) {
         throw new HttpException(409, 'Requirement Identification name already exists')
       }
-      const subjects = new Set(legalBases.map(lb => lb.subjectId))
-      if (subjects.size > 1) {
-        throw new HttpException(
-          400,
-          'All selected legal bases must belong to the same subject'
-        )
+      const subjectIds = new Set(legalBases.map((lb) => lb.subject.subject_id))
+      if (subjectIds.size !== 1) {
+        throw new HttpException(400, 'All selected legal bases must have the same subject')
       }
+      const [subjectId] = subjectIds
       const jurisdictions = new Set(legalBases.map(lb => lb.jurisdiction))
-      if (jurisdictions.size > 1) {
-        throw new HttpException(
-          400,
-          'All selected legal bases must have the same jurisdiction'
+      if (jurisdictions.size !== 1) {
+        throw new HttpException(400, 'All selected legal bases must have the same jurisdiction')
+      }
+      const [jurisdiction] = jurisdictions
+      if (jurisdiction === 'Estatal' || jurisdiction === 'Local') {
+        const states = new Set(legalBases.map((lb) => lb.state))
+        if (states.size !== 1) {
+          throw new HttpException(400, 'All selected legal bases must have the same state')
+        }
+        if (jurisdiction === 'Local') {
+          const municipalities = new Set(legalBases.map((lb) => lb.municipality))
+          if (municipalities.size !== 1) {
+            throw new HttpException(400, 'All selected legal bases must have the same municipality')
+          }
+        }
+      }
+      const aspectIds = [
+        ...new Set(
+          legalBases.flatMap((lb) => (lb.aspects || []).map((a) => Number(a.id)))
         )
-      }
-      const jurisdiction = legalBases[0].jurisdiction
-      if (jurisdiction === 'Estatal') {
-        const states = new Set(legalBases.map(lb => lb.state))
-        if (states.size > 1) {
-          throw new HttpException(
-            400,
-            'All selected legal bases with State jurisdiction must have the same state'
-          )
-        }
-      } else if (jurisdiction === 'Local') {
-        const states = new Set(legalBases.map(lb => lb.state))
-        const municipalities = new Set(legalBases.map(lb => lb.municipality))
-        if (states.size > 1) {
-          throw new HttpException(
-            400,
-            'All selected legal bases with Local jurisdiction must have the same state'
-          )
-        }
-        if (municipalities.size > 1) {
-          throw new HttpException(
-            400,
-            'All selected legal bases with Local jurisdiction must have the same municipality'
-          )
-        }
-      }
-      const uniqueAspectIds = Array.from(
-        legalBases.reduce((set, lb) => {
-          (lb.aspects || []).forEach(a => set.add(a.id))
-          return set
-        }, new Set())
-      )
-      parsedReqIdentification.aspectIds = uniqueAspectIds
+      ]
       const requirements = await RequirementRepository.findBySubjectAndAspects(
-        parsedReqIdentification.subjectId,
-        uniqueAspectIds
+        subjectId,
+        aspectIds
       )
-      if (!requirements || requirements.length === 0) {
-        throw new HttpException(
-          400,
-          'No requirements found for the selected aspects'
-        )
+      if (!requirements) {
+        throw new HttpException(400, 'Requirements not found')
       }
-      parsedReqIdentification.requirementIds = requirements.map(r => r.id)
       const { id } = await ReqIdentificationRepository.create({
         identificationName: parsedReqIdentification.reqIdentificationName,
         identificationDescription: parsedReqIdentification.reqIdentificationDescription,
@@ -113,9 +87,7 @@ class ReqIdentificationService {
         }))
         throw new HttpException(400, 'Validation failed', validationErrors)
       }
-      if (error instanceof HttpException) {
-        throw error
-      }
+      if (error instanceof HttpException) throw error
       throw new HttpException(500, 'Unexpected error during requirement identification creation')
     }
   }
@@ -635,29 +607,29 @@ class ReqIdentificationService {
   //     }
   //   }
 
-//   /**
-//    * Unlinks a legal verb translation from a requirement in an identification.
-//    *
-//    * @param {Object} ReqIdentification - The unlink data.
-//    * @param {number} ReqIdentification.identificationId - The ID of the identification.
-//    * @param {number} ReqIdentification.requirementId - The ID of the requirement.
-//    * @param {number} ReqIdentification.legalVerbId - The ID of the legal verb.
-//    * @returns {Promise<{ success: boolean }>} - True if the link was deleted, false otherwise.
-//    * @throws {HttpException}
-//    */
-//   static async unlinkLegalVerb (ReqIdentification) {
-//     try {
-//       const ok = await ReqIdentificationRepository.unlinkLegalVerb({
-//         identificationId: ReqIdentification.identificationId,
-//         requirementId: ReqIdentification.requirementId,
-//         legalVerbId: ReqIdentification.legalVerbId
-//       })
-//       return { success: ok }
-//     } catch (err) {
-//       if (err instanceof HttpException) throw err
-//       throw new HttpException(500, 'Failed to unlink legal verb')
-//     }
-//   }
+  //   /**
+  //    * Unlinks a legal verb translation from a requirement in an identification.
+  //    *
+  //    * @param {Object} ReqIdentification - The unlink data.
+  //    * @param {number} ReqIdentification.identificationId - The ID of the identification.
+  //    * @param {number} ReqIdentification.requirementId - The ID of the requirement.
+  //    * @param {number} ReqIdentification.legalVerbId - The ID of the legal verb.
+  //    * @returns {Promise<{ success: boolean }>} - True if the link was deleted, false otherwise.
+  //    * @throws {HttpException}
+  //    */
+  //   static async unlinkLegalVerb (ReqIdentification) {
+  //     try {
+  //       const ok = await ReqIdentificationRepository.unlinkLegalVerb({
+  //         identificationId: ReqIdentification.identificationId,
+  //         requirementId: ReqIdentification.requirementId,
+  //         legalVerbId: ReqIdentification.legalVerbId
+  //       })
+  //       return { success: ok }
+  //     } catch (err) {
+  //       if (err instanceof HttpException) throw err
+  //       throw new HttpException(500, 'Failed to unlink legal verb')
+  //     }
+  //   }
 }
 
 export default ReqIdentificationService
