@@ -1,7 +1,9 @@
 import { z } from 'zod'
 import LegalBasisRepository from '../../repositories/LegalBasis.repository.js'
+import RequirementRepository from '../../repositories/Requirements.repository.js'
 import ReqIdentificationRepository from '../../repositories/ReqIdentification.repository.js'
 import { reqIdentificationSchema } from '../../schemas/reqIdentification.schema.js'
+import UserRepository from '../../repositories/User.repository.js'
 import HttpException from '../../services/errors/HttpException.js'
 
 /**
@@ -22,6 +24,9 @@ class ReqIdentificationService {
    */
   static async create (userId, reqIdentification) {
     try {
+      if (!(await UserRepository.userExists(userId))) {
+        throw new HttpException(404, 'User not found')
+      }
       const parsedReqIdentification = reqIdentificationSchema.parse(reqIdentification)
       const legalBases = await LegalBasisRepository.findByIds(parsedReqIdentification.legalBasisIds)
       if (legalBases.length !== parsedReqIdentification.legalBasisIds.length) {
@@ -37,12 +42,63 @@ class ReqIdentificationService {
       if (reqIdentificationExistsByName) {
         throw new HttpException(409, 'Requirement Identification name already exists')
       }
-      // VALIDAR QUE EL USUARIO EXISTA(USERID) USANDO EL REPOSITORIO DE USUARIOS
-      // VALIDAR QUE TODOS LOS FUNDAMENTOS TENGAN LA MISMA JURIDICTION, ESTADO Y MUNICIPIO SI APLICAN //Cada validacion debe tener un mensaje claro en ingles
-      // VALIDAR QUE TODOS LOS FUNDAMENTOS SEAN DE LA MISMA MATERIA.
-      // OBTENER LOS ASPECTOS UNICOS DE TODOS LOS FUNDAMENTOS(AGRUPAR)
-      // VALIDAR QUE EXISTEN AUNQUE SEA UN REQUERIMIENTO PARA LOS ASPECTOS UNICOS ASOCIADOS A LOS FUNDAMENTOS SELECCIONADOS.
-      // CONSSULTAR Y VERIFICAR EL ORDEN DE VALIDACIONES. VER CUALES SON MAS PRIORITARIAS Y DEBEN SALIR PRIMERO. (ORDENAR LAS VALIDACIONES EXISTENTES SI ES NECESARIO)
+      const subjects = new Set(legalBases.map(lb => lb.subjectId))
+      if (subjects.size > 1) {
+        throw new HttpException(
+          400,
+          'All selected legal bases must belong to the same subject'
+        )
+      }
+      const jurisdictions = new Set(legalBases.map(lb => lb.jurisdiction))
+      if (jurisdictions.size > 1) {
+        throw new HttpException(
+          400,
+          'All selected legal bases must have the same jurisdiction'
+        )
+      }
+      const jurisdiction = legalBases[0].jurisdiction
+      if (jurisdiction === 'Estatal') {
+        const states = new Set(legalBases.map(lb => lb.state))
+        if (states.size > 1) {
+          throw new HttpException(
+            400,
+            'All selected legal bases with State jurisdiction must have the same state'
+          )
+        }
+      } else if (jurisdiction === 'Local') {
+        const states = new Set(legalBases.map(lb => lb.state))
+        const municipalities = new Set(legalBases.map(lb => lb.municipality))
+        if (states.size > 1) {
+          throw new HttpException(
+            400,
+            'All selected legal bases with Local jurisdiction must have the same state'
+          )
+        }
+        if (municipalities.size > 1) {
+          throw new HttpException(
+            400,
+            'All selected legal bases with Local jurisdiction must have the same municipality'
+          )
+        }
+      }
+      const uniqueAspectIds = Array.from(
+        legalBases.reduce((set, lb) => {
+          (lb.aspects || []).forEach(a => set.add(a.id))
+          return set
+        }, new Set())
+      )
+      parsedReqIdentification.aspectIds = uniqueAspectIds
+      const requirements = await RequirementRepository.findBySubjectAndAspects(
+        parsedReqIdentification.subjectId,
+        uniqueAspectIds
+      )
+      if (!requirements || requirements.length === 0) {
+        throw new HttpException(
+          400,
+          'No requirements found for the selected aspects'
+        )
+      }
+      parsedReqIdentification.requirementIds = requirements.map(r => r.id)
       const { id } = await ReqIdentificationRepository.create({
         identificationName: parsedReqIdentification.reqIdentificationName,
         identificationDescription: parsedReqIdentification.reqIdentificationDescription,
