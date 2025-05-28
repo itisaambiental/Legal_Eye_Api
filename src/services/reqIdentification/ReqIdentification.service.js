@@ -17,6 +17,7 @@ class ReqIdentificationService {
    * @param {string} reqIdentification.reqIdentificationName - Name of the requirement identification.
    * @param {string|null} [reqIdentification.reqIdentificationDescription] - Optional description of the requirement identification.
    * @param {number[]} reqIdentification.legalBasisIds - Array of Legal Basis IDs to associate with the requirement identification.
+   * @param {string} reqIdentification.intelligenceLevel - Level of intelligence to identify requirements.
    * @returns {Promise<{ reqIdentificationId: number }>} - The ID of the created requirement identification.
    * @throws {HttpException} - If an error occurs during validation or creation.
    */
@@ -45,8 +46,8 @@ class ReqIdentificationService {
       // VALIDAR QUE EL USUARIO EXISTA(USERID) USANDO EL REPOSITORIO DE USUARIOS
       // VALIDAR QUE TODOS LOS FUNDAMENTOS TENGAN LA MISMA JURIDICTION, ESTADO Y MUNICIPIO SI APLICAN //Cada validacion debe tener un mensaje claro en ingles
       // VALIDAR QUE TODOS LOS FUNDAMENTOS SEAN DE LA MISMA MATERIA.
-      // OBTENER LOS ASPECTOS UNICOS DE TODOS LOS FUNDAMENTOS
-      // VALIDAR QUE EXISTEN AUNQUE SEA UN REQUERIMIENTO PARA LOS ASPECTOS UNICOS ASOCIADOS A LOS FUNDAMENTOS SELECCIONADOS
+      // OBTENER LOS ASPECTOS UNICOS DE TODOS LOS FUNDAMENTOS(AGRUPAR)
+      // VALIDAR QUE EXISTEN AUNQUE SEA UN REQUERIMIENTO PARA LOS ASPECTOS UNICOS ASOCIADOS A LOS FUNDAMENTOS SELECCIONADOS.
       return { reqIdentificationId: id }
     } catch (error) {
       if (error instanceof z.ZodError) {

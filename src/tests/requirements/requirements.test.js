@@ -99,9 +99,10 @@ describe('Create a requirement', () => {
       complementary_keywords: requirementData.complementaryKeywords,
       condition: requirementData.condition,
       evidence: requirementData.evidence,
-      specify_evidence: requirementData.evidence === 'Específica'
-        ? requirementData.specifyEvidence
-        : null,
+      specify_evidence:
+        requirementData.evidence === 'Específica'
+          ? requirementData.specifyEvidence
+          : null,
       periodicity: requirementData.periodicity,
       acceptance_criteria: requirementData.acceptanceCriteria,
       subject: {
@@ -236,7 +237,10 @@ describe('Create a requirement', () => {
       expect(response.body.message).toMatch(/Validation failed/i)
       expect(response.body.errors).toEqual(
         expect.arrayContaining([
-          { field: 'requirementName', message: expect.stringMatching(/exceed.*255 characters/i) }
+          {
+            field: 'requirementName',
+            message: expect.stringMatching(/exceed.*255 characters/i)
+          }
         ])
       )
     })
@@ -256,7 +260,10 @@ describe('Create a requirement', () => {
       expect(response.body.message).toMatch(/Validation failed/i)
       expect(response.body.errors).toEqual(
         expect.arrayContaining([
-          { field: 'subjectId', message: expect.stringMatching(/must be a valid number/i) }
+          {
+            field: 'subjectId',
+            message: expect.stringMatching(/must be a valid number/i)
+          }
         ])
       )
     })
@@ -276,7 +283,35 @@ describe('Create a requirement', () => {
       expect(response.body.message).toMatch(/Validation failed/i)
       expect(response.body.errors).toEqual(
         expect.arrayContaining([
-          { field: 'aspectsIds', message: expect.stringMatching(/must be a valid array of numbers/i) }
+          {
+            field: 'aspectsIds',
+            message: expect.stringMatching(/each aspect id must be a number/i)
+          }
+        ])
+      )
+    })
+
+    test('Should return 400 if any aspectId is not an integer', async () => {
+      const requirementData = generateRequirementData({
+        subjectId: String(createdSubjectId),
+        aspectsIds: JSON.stringify([1.5, 2.7])
+      })
+
+      const response = await api
+        .post('/api/requirements')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send(requirementData)
+        .expect(400)
+
+      expect(response.body.message).toMatch(/Validation failed/i)
+      expect(response.body.errors).toEqual(
+        expect.arrayContaining([
+          {
+            field: 'aspectsIds',
+            message: expect.stringMatching(
+              /each aspect id must be an integer/i
+            )
+          }
         ])
       )
     })
@@ -296,7 +331,12 @@ describe('Create a requirement', () => {
 
       expect(response.body.errors).toEqual(
         expect.arrayContaining([
-          { field: 'mandatoryDescription', message: expect.stringMatching(/The mandatory description is required/i) }
+          {
+            field: 'mandatoryDescription',
+            message: expect.stringMatching(
+              /The mandatory description is required/i
+            )
+          }
         ])
       )
     })
@@ -316,7 +356,12 @@ describe('Create a requirement', () => {
 
       expect(response.body.errors).toEqual(
         expect.arrayContaining([
-          { field: 'complementaryDescription', message: expect.stringMatching(/The complementary description is required/i) }
+          {
+            field: 'complementaryDescription',
+            message: expect.stringMatching(
+              /The complementary description is required/i
+            )
+          }
         ])
       )
     })
@@ -336,7 +381,12 @@ describe('Create a requirement', () => {
 
       expect(response.body.errors).toEqual(
         expect.arrayContaining([
-          { field: 'mandatorySentences', message: expect.stringMatching(/The mandatory sentences are required/i) }
+          {
+            field: 'mandatorySentences',
+            message: expect.stringMatching(
+              /The mandatory sentences are required/i
+            )
+          }
         ])
       )
     })
@@ -356,7 +406,12 @@ describe('Create a requirement', () => {
 
       expect(response.body.errors).toEqual(
         expect.arrayContaining([
-          { field: 'complementarySentences', message: expect.stringMatching(/The complementary sentences are required/i) }
+          {
+            field: 'complementarySentences',
+            message: expect.stringMatching(
+              /The complementary sentences are required/i
+            )
+          }
         ])
       )
     })
@@ -376,7 +431,12 @@ describe('Create a requirement', () => {
 
       expect(response.body.errors).toEqual(
         expect.arrayContaining([
-          { field: 'mandatoryKeywords', message: expect.stringMatching(/The mandatory keywords are required/i) }
+          {
+            field: 'mandatoryKeywords',
+            message: expect.stringMatching(
+              /The mandatory keywords are required/i
+            )
+          }
         ])
       )
     })
@@ -396,7 +456,12 @@ describe('Create a requirement', () => {
 
       expect(response.body.errors).toEqual(
         expect.arrayContaining([
-          { field: 'complementaryKeywords', message: expect.stringMatching(/The complementary keywords are required/i) }
+          {
+            field: 'complementaryKeywords',
+            message: expect.stringMatching(
+              /The complementary keywords are required/i
+            )
+          }
         ])
       )
     })
@@ -416,7 +481,12 @@ describe('Create a requirement', () => {
 
       expect(response.body.errors).toEqual(
         expect.arrayContaining([
-          { field: 'condition', message: expect.stringMatching(/must be one of the following: Crítica, Operativa, Recomendación, Pendiente/i) }
+          {
+            field: 'condition',
+            message: expect.stringMatching(
+              /must be one of the following: Crítica, Operativa, Recomendación, Pendiente/i
+            )
+          }
         ])
       )
     })
@@ -436,7 +506,12 @@ describe('Create a requirement', () => {
 
       expect(response.body.errors).toEqual(
         expect.arrayContaining([
-          { field: 'evidence', message: expect.stringMatching(/must be one of the following: Trámite, Registro, Específica, Documento/i) }
+          {
+            field: 'evidence',
+            message: expect.stringMatching(
+              /must be one of the following: Trámite, Registro, Específica, Documento/i
+            )
+          }
         ])
       )
     })
@@ -480,7 +555,9 @@ describe('Create a requirement', () => {
         expect.arrayContaining([
           {
             field: 'specifyEvidence',
-            message: expect.stringMatching(/must be empty.*evidence is "Específica"/i)
+            message: expect.stringMatching(
+              /must be empty.*evidence is "Específica"/i
+            )
           }
         ])
       )
@@ -499,7 +576,12 @@ describe('Create a requirement', () => {
 
       expect(response.body.errors).toEqual(
         expect.arrayContaining([
-          { field: 'periodicity', message: expect.stringMatching(/must be one of the following: Anual, 2 años, Por evento, Única vez/i) }
+          {
+            field: 'periodicity',
+            message: expect.stringMatching(
+              /must be one of the following: Anual, 2 años, Por evento, Única vez/i
+            )
+          }
         ])
       )
     })
@@ -561,7 +643,9 @@ describe('Create a requirement', () => {
         expect.arrayContaining([
           {
             field: 'specifyEvidence',
-            message: expect.stringMatching(/must specify evidence.*específica/i)
+            message: expect.stringMatching(
+              /must specify evidence.*específica/i
+            )
           }
         ])
       )
@@ -622,9 +706,10 @@ describe('Get All Requirements', () => {
       complementary_keywords: createdRequirement.complementary_keywords,
       condition: createdRequirement.condition,
       evidence: createdRequirement.evidence,
-      specify_evidence: createdRequirement.evidence === 'Específica'
-        ? createdRequirement.specify_evidence
-        : null,
+      specify_evidence:
+        createdRequirement.evidence === 'Específica'
+          ? createdRequirement.specify_evidence
+          : null,
       periodicity: createdRequirement.periodicity,
       acceptance_criteria: createdRequirement.acceptance_criteria,
       subject: expect.objectContaining({
@@ -690,9 +775,10 @@ describe('Get Requirement By ID', () => {
       complementary_keywords: createdRequirement.complementary_keywords,
       condition: createdRequirement.condition,
       evidence: createdRequirement.evidence,
-      specify_evidence: createdRequirement.evidence === 'Específica'
-        ? createdRequirement.specify_evidence
-        : null,
+      specify_evidence:
+        createdRequirement.evidence === 'Específica'
+          ? createdRequirement.specify_evidence
+          : null,
       periodicity: createdRequirement.periodicity,
       acceptance_criteria: createdRequirement.acceptance_criteria,
       subject: expect.objectContaining({
@@ -788,9 +874,10 @@ describe('Get Requirements By Number', () => {
       complementary_keywords: createdRequirement.complementary_keywords,
       condition: createdRequirement.condition,
       evidence: createdRequirement.evidence,
-      specify_evidence: createdRequirement.evidence === 'Específica'
-        ? createdRequirement.specify_evidence
-        : null,
+      specify_evidence:
+        createdRequirement.evidence === 'Específica'
+          ? createdRequirement.specify_evidence
+          : null,
       periodicity: createdRequirement.periodicity,
       acceptance_criteria: createdRequirement.acceptance_criteria,
       subject: expect.objectContaining({
@@ -876,9 +963,10 @@ describe('Get Requirements By Name', () => {
       complementary_keywords: createdRequirement.complementary_keywords,
       condition: createdRequirement.condition,
       evidence: createdRequirement.evidence,
-      specify_evidence: createdRequirement.evidence === 'Específica'
-        ? createdRequirement.specify_evidence
-        : null,
+      specify_evidence:
+        createdRequirement.evidence === 'Específica'
+          ? createdRequirement.specify_evidence
+          : null,
       periodicity: createdRequirement.periodicity,
       acceptance_criteria: createdRequirement.acceptance_criteria,
       subject: expect.objectContaining({
@@ -1035,9 +1123,10 @@ describe('Get Requirements By Subject And Aspects', () => {
       complementary_keywords: createdRequirement.complementary_keywords,
       condition: createdRequirement.condition,
       evidence: createdRequirement.evidence,
-      specify_evidence: createdRequirement.evidence === 'Específica'
-        ? createdRequirement.specify_evidence
-        : null,
+      specify_evidence:
+        createdRequirement.evidence === 'Específica'
+          ? createdRequirement.specify_evidence
+          : null,
       periodicity: createdRequirement.periodicity,
       acceptance_criteria: createdRequirement.acceptance_criteria,
       subject: expect.objectContaining({
@@ -1096,7 +1185,8 @@ describe('Get Requirements By Subject And Aspects', () => {
 
 describe('Get Requirements By Mandatory Description', () => {
   let createdRequirement
-  const testMandatoryDescription = 'This is a mandatory description for testing.'
+  const testMandatoryDescription =
+    'This is a mandatory description for testing.'
 
   beforeEach(async () => {
     await RequirementRepository.deleteAll()
@@ -1151,9 +1241,10 @@ describe('Get Requirements By Mandatory Description', () => {
       complementary_keywords: createdRequirement.complementary_keywords,
       condition: createdRequirement.condition,
       evidence: createdRequirement.evidence,
-      specify_evidence: createdRequirement.evidence === 'Específica'
-        ? createdRequirement.specify_evidence
-        : null,
+      specify_evidence:
+        createdRequirement.evidence === 'Específica'
+          ? createdRequirement.specify_evidence
+          : null,
       periodicity: createdRequirement.periodicity,
       acceptance_criteria: createdRequirement.acceptance_criteria,
       subject: expect.objectContaining({
@@ -1181,7 +1272,8 @@ describe('Get Requirements By Mandatory Description', () => {
 
 describe('Get Requirements By Complementary Description', () => {
   let createdRequirement
-  const testComplementaryDescription = 'This is a complementary description for testing.'
+  const testComplementaryDescription =
+    'This is a complementary description for testing.'
 
   beforeEach(async () => {
     await RequirementRepository.deleteAll()
@@ -1235,9 +1327,10 @@ describe('Get Requirements By Complementary Description', () => {
       complementary_keywords: createdRequirement.complementary_keywords,
       condition: createdRequirement.condition,
       evidence: createdRequirement.evidence,
-      specify_evidence: createdRequirement.evidence === 'Específica'
-        ? createdRequirement.specify_evidence
-        : null,
+      specify_evidence:
+        createdRequirement.evidence === 'Específica'
+          ? createdRequirement.specify_evidence
+          : null,
       periodicity: createdRequirement.periodicity,
       acceptance_criteria: createdRequirement.acceptance_criteria,
       subject: expect.objectContaining({
@@ -1320,9 +1413,10 @@ describe('Get Requirements By Mandatory Sentences', () => {
       complementary_keywords: createdRequirement.complementary_keywords,
       condition: createdRequirement.condition,
       evidence: createdRequirement.evidence,
-      specify_evidence: createdRequirement.evidence === 'Específica'
-        ? createdRequirement.specify_evidence
-        : null,
+      specify_evidence:
+        createdRequirement.evidence === 'Específica'
+          ? createdRequirement.specify_evidence
+          : null,
       periodicity: createdRequirement.periodicity,
       acceptance_criteria: createdRequirement.acceptance_criteria,
       subject: expect.objectContaining({
@@ -1351,7 +1445,8 @@ describe('Get Requirements By Mandatory Sentences', () => {
 
 describe('Get Requirements By Complementary Sentences', () => {
   let createdRequirement
-  const testComplementarySentence = 'This is a complementary sentence for testing.'
+  const testComplementarySentence =
+    'This is a complementary sentence for testing.'
 
   beforeEach(async () => {
     await RequirementRepository.deleteAll()
@@ -1406,9 +1501,10 @@ describe('Get Requirements By Complementary Sentences', () => {
       complementary_keywords: createdRequirement.complementary_keywords,
       condition: createdRequirement.condition,
       evidence: createdRequirement.evidence,
-      specify_evidence: createdRequirement.evidence === 'Específica'
-        ? createdRequirement.specify_evidence
-        : null,
+      specify_evidence:
+        createdRequirement.evidence === 'Específica'
+          ? createdRequirement.specify_evidence
+          : null,
       periodicity: createdRequirement.periodicity,
       acceptance_criteria: createdRequirement.acceptance_criteria,
       subject: expect.objectContaining({
@@ -1494,9 +1590,10 @@ describe('Get Requirements By Mandatory Keywords', () => {
       complementary_keywords: createdRequirement.complementary_keywords,
       condition: createdRequirement.condition,
       evidence: createdRequirement.evidence,
-      specify_evidence: createdRequirement.evidence === 'Específica'
-        ? createdRequirement.specify_evidence
-        : null,
+      specify_evidence:
+        createdRequirement.evidence === 'Específica'
+          ? createdRequirement.specify_evidence
+          : null,
       periodicity: createdRequirement.periodicity,
       acceptance_criteria: createdRequirement.acceptance_criteria,
       subject: expect.objectContaining({
@@ -1525,7 +1622,8 @@ describe('Get Requirements By Mandatory Keywords', () => {
 
 describe('Get Requirements By Complementary Keywords', () => {
   let createdRequirement
-  const fullComplementaryKeywords = 'safety procedures control measures checklist'
+  const fullComplementaryKeywords =
+    'safety procedures control measures checklist'
   const searchableKeyword = 'measures'
 
   beforeEach(async () => {
@@ -1583,9 +1681,10 @@ describe('Get Requirements By Complementary Keywords', () => {
       complementary_keywords: fullComplementaryKeywords,
       condition: createdRequirement.condition,
       evidence: createdRequirement.evidence,
-      specify_evidence: createdRequirement.evidence === 'Específica'
-        ? createdRequirement.specify_evidence
-        : null,
+      specify_evidence:
+        createdRequirement.evidence === 'Específica'
+          ? createdRequirement.specify_evidence
+          : null,
       periodicity: createdRequirement.periodicity,
       acceptance_criteria: createdRequirement.acceptance_criteria,
       subject: expect.objectContaining({
@@ -1671,9 +1770,10 @@ describe('Get Requirements By Condition', () => {
       complementary_keywords: createdRequirement.complementary_keywords,
       condition: testCondition,
       evidence: createdRequirement.evidence,
-      specify_evidence: createdRequirement.evidence === 'Específica'
-        ? createdRequirement.specify_evidence
-        : null,
+      specify_evidence:
+        createdRequirement.evidence === 'Específica'
+          ? createdRequirement.specify_evidence
+          : null,
       periodicity: createdRequirement.periodicity,
       acceptance_criteria: createdRequirement.acceptance_criteria,
       subject: expect.objectContaining({
@@ -1759,9 +1859,10 @@ describe('Get Requirements By Evidence', () => {
       complementary_keywords: createdRequirement.complementary_keywords,
       condition: createdRequirement.condition,
       evidence: testEvidence,
-      specify_evidence: createdRequirement.evidence === 'Específica'
-        ? createdRequirement.specify_evidence
-        : null,
+      specify_evidence:
+        createdRequirement.evidence === 'Específica'
+          ? createdRequirement.specify_evidence
+          : null,
       periodicity: createdRequirement.periodicity,
       acceptance_criteria: createdRequirement.acceptance_criteria,
       subject: expect.objectContaining({
@@ -1847,9 +1948,10 @@ describe('Get Requirements By Periodicity', () => {
       complementary_keywords: createdRequirement.complementary_keywords,
       condition: createdRequirement.condition,
       evidence: createdRequirement.evidence,
-      specify_evidence: createdRequirement.evidence === 'Específica'
-        ? createdRequirement.specify_evidence
-        : null,
+      specify_evidence:
+        createdRequirement.evidence === 'Específica'
+          ? createdRequirement.specify_evidence
+          : null,
       periodicity: testPeriodicity,
       acceptance_criteria: createdRequirement.acceptance_criteria,
       subject: expect.objectContaining({
@@ -1992,9 +2094,10 @@ describe('Update a requirement', () => {
       complementary_keywords: updatedData.complementaryKeywords,
       condition: updatedData.condition,
       evidence: updatedData.evidence,
-      specify_evidence: updatedData.evidence === 'Específica'
-        ? updatedData.specify_evidence
-        : null,
+      specify_evidence:
+        updatedData.evidence === 'Específica'
+          ? updatedData.specify_evidence
+          : null,
       periodicity: updatedData.periodicity,
       acceptance_criteria: updatedData.acceptanceCriteria,
       subject: expect.objectContaining({
@@ -2213,7 +2316,9 @@ describe('Delete multiple requirements', () => {
       .send({})
       .expect(400)
 
-    expect(response.body.message).toMatch(/Missing required fields: requirementIds/i)
+    expect(response.body.message).toMatch(
+      /Missing required fields: requirementIds/i
+    )
   })
 
   test('Should return 401 if user is unauthorized', async () => {

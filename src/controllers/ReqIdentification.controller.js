@@ -10,13 +10,13 @@ import UserService from '../services/users/User.service.js'
 /**
  * Creates a new requirement identification.
  * @function createReqIdentification
- * @param {import('express').Request} req - Request object, expects { reqIdentificationName, reqIdentificationDescription, legalBasisIds } in body and userId in request.
+ * @param {import('express').Request} req - Request object, expects { reqIdentificationName, reqIdentificationDescription, legalBasisIds, intelligenceLevel } in body and userId in request.
  * @param {import('express').Response} res - Response object.
  * @returns {Object} - The created requirement identification data.
  */
 export const createReqIdentification = async (req, res) => {
   const { userId } = req
-  const { reqIdentificationName, reqIdentificationDescription, legalBasisIds } = req.body
+  const { reqIdentificationName, reqIdentificationDescription, legalBasisIds, intelligenceLevel } = req.body
   try {
     const isAuthorized = await UserService.userExists(userId)
     if (!isAuthorized) {
@@ -25,7 +25,8 @@ export const createReqIdentification = async (req, res) => {
     const { reqIdentificationId } = await ReqIdentificationService.create(userId, {
       reqIdentificationName,
       reqIdentificationDescription,
-      legalBasisIds
+      legalBasisIds,
+      intelligenceLevel
     })
     return res.status(201).json({ reqIdentificationId })
   } catch (error) {

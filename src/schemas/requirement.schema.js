@@ -31,9 +31,17 @@ const requirementSchema = z
         }
         return val
       },
-      z.array(z.coerce.number().int()).min(1, {
-        message: 'aspectsIds must contain at least one number'
-      })
+      z
+        .array(
+          z
+            .number({
+              invalid_type_error: 'Each aspect ID must be a number'
+            })
+            .int('Each aspect ID must be an integer')
+        )
+        .min(1, {
+          message: 'aspectsIds must contain at least one number'
+        })
     ),
 
     /**
