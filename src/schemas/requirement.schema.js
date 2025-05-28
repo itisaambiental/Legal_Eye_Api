@@ -10,10 +10,9 @@ const requirementSchema = z
      * ID of the associated subject.
      * Must be a number (can be passed as string and coerced).
      */
-    subjectId: z
-      .coerce
+    subjectId: z.coerce
       .number({ invalid_type_error: 'The subjectId must be a valid number' })
-    // Si coerciona a NaN, forzamos un error con este mensaje:
+      // Si coerciona a NaN, forzamos un error con este mensaje:
       .refine((val) => !Number.isNaN(val), {
         message: 'The subjectId must be a valid number'
       }),
@@ -21,34 +20,21 @@ const requirementSchema = z
     /**
      * IDs of the associated aspects.
      */
-    aspectsIds: z
-      .union([
-        z.array(z.coerce.number().int()),
-        z
-          .string()
-          .refine(
-            (val) => {
-              try {
-                const parsed = JSON.parse(val)
-                return (
-                  Array.isArray(parsed) &&
-                  parsed.every(
-                    (n) => typeof n === 'number' && Number.isInteger(n)
-                  )
-                )
-              } catch {
-                return false
-              }
-            },
-            {
-              message: 'aspectsIds must be a valid array of numbers'
-            }
-          )
-          .transform((val) => JSON.parse(val))
-      ])
-      .refine((val) => val.length > 0, {
-        message: 'aspectsIds must contain at least one value'
-      }),
+    aspectsIds: z.preprocess(
+      (val) => {
+        if (typeof val === 'string') {
+          try {
+            return JSON.parse(val)
+          } catch {
+            return val
+          }
+        }
+        return val
+      },
+      z.array(z.coerce.number().int()).min(1, {
+        message: 'aspectsIds must contain at least one number'
+      })
+    ),
 
     /**
      * Requirement number.
@@ -147,13 +133,10 @@ const requirementSchema = z
      * Periodicity of the requirement.
      * Must be one of: Anual, 2 años, Por evento, Única vez, Específica.
      */
-    periodicity: z.enum(
-      ['Anual', '2 años', 'Por evento', 'Única vez'],
-      {
-        message:
-          'The periodicity must be one of the following: Anual, 2 años, Por evento, Única vez'
-      }
-    ),
+    periodicity: z.enum(['Anual', '2 años', 'Por evento', 'Única vez'], {
+      message:
+        'The periodicity must be one of the following: Anual, 2 años, Por evento, Única vez'
+    }),
 
     /**
      * Acceptance criteria for the requirement.

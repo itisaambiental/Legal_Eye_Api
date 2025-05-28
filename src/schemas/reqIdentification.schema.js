@@ -1,85 +1,40 @@
-// src/schemas/reqIdentification.schema.js
 import { z } from 'zod'
 
 /**
- * Preprocesa un valor que puede ser:
- *  - un array de números
- *  - o una cadena JSON que lo encodea
- * y lo convierte en un Array<number> non-empty.
+ * Zod validation schema for a ReqIdentification record.
  */
-const parseNumberArray = z.preprocess((val) => {
-  if (typeof val === 'string') {
-    try {
-      return JSON.parse(val)
-    } catch {
-      return val
-    }
-  }
-  return val
-}, z.array(z.number().int()).min(1, 'El array debe contener al menos un número'))
+export const reqIdentificationSchema = z.object({
+  /**
+   * Name of the requirement identification.
+   * Required. Must be a non-empty string with a maximum length of 255 characters.
+   */
+  reqIdentificationName: z
+    .string({ required_error: 'The requirement identification name is required' })
+    .min(1, { message: 'The requirement identification name cannot be empty' })
+    .max(255, { message: 'The requirement identification name cannot exceed 255 characters' }),
 
-/**
- * Preprocesa un valor que puede ser:
- *  - un número
- *  - o una cadena numérica
- * y lo convierte en number.
- */
-const parseNumber = z.preprocess((val) => {
-  if (typeof val === 'string' && val.trim() !== '') {
-    const n = Number(val)
-    return Number.isNaN(n) ? val : n
-  }
-  return val
-}, z.number().int().positive('El valor debe ser un entero positivo'))
-
-/**
- * Schema para la **creación** de la cabecera en `req_identifications`.
- * Sólo valida name, description y userId.
- */
-export const reqIdentificationCreateSchema = z.object({
-  identificationName: z
-    .string({ required_error: 'La identificación es obligatoria' })
-    .min(1, 'La identificación no puede estar vacía')
-    .max(255, 'La identificación no puede exceder 255 caracteres'),
-  identificationDescription: z.string().optional().nullable(),
-  userId: z.preprocess(
-    (v) => (v == null ? v : Number(v)),
-    z.number().int().optional().nullable()
-  )
-})
-
-/**
- * Schema **completo** para enlazar recursos a una identificación:
- * subjectId, aspectIds, requirementIds, legalBasisIds, articleIds, legalVerbIds, requirementTypeIds.
- */
-export const reqIdentificationLinkSchema = z.object({
-  // estos tres vienen de la creación previa
-  identificationId: parseNumber,
-  // ahora todo lo que venga para el proceso de enlace:
-  subjectId: parseNumber.optional(),
-  aspectIds: parseNumberArray.optional(),
-  requirementIds: parseNumberArray.optional(),
-  legalBasisIds: parseNumberArray.optional(),
-  articleIds: parseNumberArray.optional(),
-  legalVerbIds: parseNumberArray.optional(),
-  requirementTypeIds: parseNumberArray.optional(),
-  intelligenceLevel: z
-    .enum(['High', 'Low'], {
-      required_error: 'El nivel de inteligencia debe ser "High" o "Low"'
-    })
+  /**
+   * Optional description of the requirement identification.
+   * Can be a string, null, or undefined.
+   */
+  reqIdentificationDescription: z
+    .string()
     .optional()
-    .nullable()
-})
+    .nullable(),
 
-/**
- * Schema para **update** de solo nombre y descripción.
- */
-export const reqIdentificationUpdateSchema = z
-  .object({
-    identificationName: z
-      .string({ required_error: 'La identificación es obligatoria' })
-      .min(1, 'La identificación no puede estar vacía')
-      .max(255, 'La identificación no puede exceder 255 caracteres'),
-    identificationDescription: z.string().optional().nullable()
-  })
-  .strict()
+  /**
+   * IDs of the associated legal bases.
+   */
+  legalBasisIds: z.preprocess((val) => {
+    if (typeof val === 'string') {
+      try {
+        return JSON.parse(val)
+      } catch {
+        return val
+      }
+    }
+    return val
+  }, z.array(z.coerce.number().int()).min(1, {
+    message: 'legalBasisIds must contain at least one value'
+  }))
+})
