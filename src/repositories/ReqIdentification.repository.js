@@ -30,8 +30,8 @@ class ReqIdentificationRepository {
       const reqIdentificationId = result.insertId
       const reqIdentification = await this.findById(reqIdentificationId)
       return reqIdentification
-    } catch (err) {
-      console.error('Error creating requirement identification:', err.message)
+    } catch (error) {
+      console.error('Error creating requirement identification:', error.message)
       throw new HttpException(
         500,
         'Error creating requirement identification in the database'
@@ -64,8 +64,8 @@ class ReqIdentificationRepository {
         row.created_at,
         row.status
       )
-    } catch (err) {
-      console.error('Error fetching requirement identification:', err.message)
+    } catch (error) {
+      console.error('Error fetching requirement identification:', error.message)
       throw new HttpException(500, 'Error fetching requirement identification from the database')
     }
   }
