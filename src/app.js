@@ -58,8 +58,8 @@ app.use('/api', ArticlesRoutes)
 app.use('/api', ExtractArticlesRoutes)
 app.use('/api', RequirementsRoutes)
 app.use('/api', RequirementTypesRoutes)
-app.use('/api', ReqIdentification)
 app.use('/api', LegalVerbsRoutes)
+app.use('/api', ReqIdentification)
 
 /**
  * Handle 404 Not Found errors.
