@@ -1,6 +1,6 @@
 /**
- * Routes module for req_identifications operations.
- * Defines the API endpoints for req_identifications and all their linked entities.
+ * Routes module for requirement identifications operations.
+ * Defines the API endpoints for managing requirement identifications
  */
 
 import { Router } from 'express'

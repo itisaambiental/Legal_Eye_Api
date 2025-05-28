@@ -5,8 +5,7 @@ import { reqIdentificationSchema } from '../../schemas/reqIdentification.schema.
 import HttpException from '../../services/errors/HttpException.js'
 
 /**
- * Service class for handling business logic around req_identifications
- * and all their linked entities.
+ * Service class for handling requirement identifications operations.
  */
 class ReqIdentificationService {
   /**
@@ -38,16 +37,17 @@ class ReqIdentificationService {
       if (reqIdentificationExistsByName) {
         throw new HttpException(409, 'Requirement Identification name already exists')
       }
-      const { id } = await ReqIdentificationRepository.create({
-        identificationName: parsedReqIdentification.reqIdentificationName,
-        identificationDescription: parsedReqIdentification.reqIdentificationDescription,
-        userId
-      })
       // VALIDAR QUE EL USUARIO EXISTA(USERID) USANDO EL REPOSITORIO DE USUARIOS
       // VALIDAR QUE TODOS LOS FUNDAMENTOS TENGAN LA MISMA JURIDICTION, ESTADO Y MUNICIPIO SI APLICAN //Cada validacion debe tener un mensaje claro en ingles
       // VALIDAR QUE TODOS LOS FUNDAMENTOS SEAN DE LA MISMA MATERIA.
       // OBTENER LOS ASPECTOS UNICOS DE TODOS LOS FUNDAMENTOS(AGRUPAR)
       // VALIDAR QUE EXISTEN AUNQUE SEA UN REQUERIMIENTO PARA LOS ASPECTOS UNICOS ASOCIADOS A LOS FUNDAMENTOS SELECCIONADOS.
+      // CONSSULTAR Y VERIFICAR EL ORDEN DE VALIDACIONES. VER CUALES SON MAS PRIORITARIAS Y DEBEN SALIR PRIMERO. (ORDENAR LAS VALIDACIONES EXISTENTES SI ES NECESARIO)
+      const { id } = await ReqIdentificationRepository.create({
+        identificationName: parsedReqIdentification.reqIdentificationName,
+        identificationDescription: parsedReqIdentification.reqIdentificationDescription,
+        userId
+      })
       return { reqIdentificationId: id }
     } catch (error) {
       if (error instanceof z.ZodError) {

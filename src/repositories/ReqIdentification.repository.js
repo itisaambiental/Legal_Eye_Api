@@ -3,7 +3,7 @@ import HttpException from '../services/errors/HttpException.js'
 import ReqIdentification from '../models/ReqIdentification.model.js'
 
 /**
- * Repository for req_identifications and related operations.
+ * Repository for requirement identifications and related operations.
  */
 class ReqIdentificationRepository {
   /**
