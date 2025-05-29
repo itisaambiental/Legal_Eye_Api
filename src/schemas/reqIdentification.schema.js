@@ -57,6 +57,6 @@ export const reqIdentificationSchema = z.object({
    */
   intelligenceLevel: z.enum(['High', 'Low'], {
     required_error: 'The intelligenceLevel field is required',
-    invalid_type_error: 'The intelligenceLevel field must be either "High" or "Low"'
+    message: 'The intelligenceLevel field must be either "High" or "Low"'
   })
 })
