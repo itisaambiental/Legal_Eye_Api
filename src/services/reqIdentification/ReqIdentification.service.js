@@ -62,9 +62,7 @@ class ReqIdentificationService {
         }
       }
       const aspectIds = [
-        ...new Set(
-          legalBases.flatMap((lb) => (lb.aspects || []).map((a) => Number(a.id)))
-        )
+        ...new Set(legalBases.flatMap(lb => (lb.aspects).map(a => a.aspect_id)))
       ]
       const requirements = await RequirementRepository.findBySubjectAndAspects(
         subjectId,

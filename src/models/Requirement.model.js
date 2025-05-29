@@ -1,4 +1,16 @@
 /**
+ * @typedef {Object} Aspect
+ * @property {number} aspect_id - The ID of the aspect.
+ * @property {string} aspect_name - The name of the aspect.
+ */
+
+/**
+ * @typedef {Object} Subject
+ * @property {number} subject_id - The ID of the subject.
+ * @property {string} subject_name - The name of the subject.
+ */
+
+/**
  * Class representing a Legal Requirement.
  * Contains details about a specific requirement linked to a subject and multiple aspects.
  */
@@ -6,12 +18,8 @@ class Requirement {
   /**
    * Constructs a Requirement instance.
    * @param {number} id - The ID of the requirement.
-   * @param {Object} subject - The subject associated with the requirement.
-   * @param {number} subject.subject_id - The ID of the subject.
-   * @param {string} subject.subject_name - The name of the subject.
-   * @param {Array<Object>} aspects - The aspects associated with the requirement.
-   * @param {number} aspects[].aspect_id - The ID of the aspect.
-   * @param {string} aspects[].aspect_name - The name of the aspect.
+   * @param {Subject} subject - The subject associated with the requirement.
+   * @param {Aspect[]} aspects - The aspects associated with the requirement.
    * @param {number} requirementNumber - The requirement number (integer).
    * @param {string} requirementName - The name of the requirement.
    * @param {string} mandatoryDescription - The mandatory description of the requirement.
