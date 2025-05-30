@@ -3,6 +3,7 @@ import LegalBasisRepository from '../../repositories/LegalBasis.repository.js'
 import RequirementRepository from '../../repositories/Requirements.repository.js'
 import ReqIdentificationRepository from '../../repositories/ReqIdentification.repository.js'
 import { reqIdentificationSchema } from '../../schemas/reqIdentification.schema.js'
+import reqIdentificationQueue from '../../queues/reqIdentificationQueue.js'
 import HttpException from '../../services/errors/HttpException.js'
 
 /**
@@ -76,31 +77,17 @@ class ReqIdentificationService {
         identificationDescription: parsedReqIdentification.reqIdentificationDescription,
         userId
       })
-      // ───────────────────────────────────────────────────────────────────────────────
-      // CREAR QUEUE:
-      // - Nombre de la cola: `reqIdentificationQueue`
-      // - Ubicación: `/Legal_Eye_Api/src/queues/reqIdentificationQueue.js`
-      // - Guíate de las otras colas existentes (por ejemplo: `extractArticlesQueue.js`)
-      //
-      // CREAR WORKER:
-      // - Nombre del archivo: `reqIdentificationWorker.js`
-      // - Ubicación: `/Legal_Eye_Api/src/workers/reqIdentificationWorker.js`
-      // - Por ahora, que solo haga un `console.log(job.data)` con los datos del trabajo recibido.
-      //
-      // INTEGRAR EL WORKER EN ESTE SERVICIO:
-      // - Importar `reqIdentificationQueue` arriba en este archivo(SE PUEDE GUIAR DE Legal_Eye_Api\src\services\legalBasis\LegalBasis.service.js).
-      // - Agregar un trabajo encolado justo después de crear el registro con:
-      //     await reqIdentificationQueue.add('processReqIdentification', {
-      //       reqIdentificationId: id,
-      //       legalBases,
-      //       requirements,
-      //       intelligenceLevel: parsedReqIdentification.intelligenceLevel
-      //     })
-      //
-      // OBLIGATORIO:
-      // - Devolver el `job.id` como parte del response de la API.
-      // ───────────────────────────────────────────────────────────────────────────────
-      return { reqIdentificationId: id }
+      const job = await reqIdentificationQueue.add(
+        'processReqIdentification',
+        {
+          reqIdentificationId: id,
+          legalBases,
+          requirements,
+          intelligenceLevel: parsedReqIdentification.intelligenceLevel
+        }
+      )
+      const jobId = job.id
+      return { reqIdentificationId: id, jobId }
     } catch (error) {
       if (error instanceof z.ZodError) {
         const validationErrors = error.errors.map((e) => ({
