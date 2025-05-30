@@ -3,7 +3,7 @@ import LegalBasisRepository from '../../repositories/LegalBasis.repository.js'
 import RequirementRepository from '../../repositories/Requirements.repository.js'
 import ReqIdentificationRepository from '../../repositories/ReqIdentification.repository.js'
 import { reqIdentificationSchema } from '../../schemas/reqIdentification.schema.js'
-import reqIdentificationQueue from '../../queues/reqIdentificationQueue.js'
+import reqIdentificationQueue from '../../workers/reqIdentificationWorker.js'
 import HttpException from '../../services/errors/HttpException.js'
 
 /**
@@ -19,7 +19,7 @@ class ReqIdentificationService {
    * @param {string|null} [reqIdentification.reqIdentificationDescription] - Optional description of the requirement identification.
    * @param {number[]} reqIdentification.legalBasisIds - Array of Legal Basis IDs to associate with the requirement identification.
    * @param {string} reqIdentification.intelligenceLevel - Level of intelligence to identify requirements.
-   * @returns {Promise<{ reqIdentificationId: number }>} - The ID of the created requirement identification.
+ * @returns {Promise<{ reqIdentificationId: number, jobId: number|string }>} - The ID of the created requirement identification and the associated job ID.
    * @throws {HttpException} - If an error occurs during validation or creation.
    */
   static async create (userId, reqIdentification) {
@@ -77,17 +77,14 @@ class ReqIdentificationService {
         identificationDescription: parsedReqIdentification.reqIdentificationDescription,
         userId
       })
-      const job = await reqIdentificationQueue.add(
-        'processReqIdentification',
-        {
-          reqIdentificationId: id,
-          legalBases,
-          requirements,
-          intelligenceLevel: parsedReqIdentification.intelligenceLevel
-        }
+      const job = await reqIdentificationQueue.add({
+        reqIdentificationId: id,
+        legalBases,
+        requirements,
+        intelligenceLevel: parsedReqIdentification.intelligenceLevel
+      }
       )
-      const jobId = job.id
-      return { reqIdentificationId: id, jobId }
+      return { reqIdentificationId: id, jobId: job.id }
     } catch (error) {
       if (error instanceof z.ZodError) {
         const validationErrors = error.errors.map((e) => ({

@@ -1,8 +1,7 @@
-// src/workers/reqIdentificationWorker.js
 import reqIdentificationQueue from '../queues/reqIdentificationQueue.js'
 
-reqIdentificationQueue.process('processReqIdentification', async (job) => {
-  console.log('Processing reqIdentification job:', job.data)
-  // aquí colocaremso la lógica de tu worker
-  return Promise.resolve()
+reqIdentificationQueue.process(async (job, done) => {
+  console.log(job.data)
 })
+
+export default reqIdentificationQueue

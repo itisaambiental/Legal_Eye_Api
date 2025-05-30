@@ -22,13 +22,13 @@ export const createReqIdentification = async (req, res) => {
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-    const { reqIdentificationId } = await ReqIdentificationService.create(userId, {
+    const { reqIdentificationId, jobId } = await ReqIdentificationService.create(userId, {
       reqIdentificationName,
       reqIdentificationDescription,
       legalBasisIds,
       intelligenceLevel
     })
-    return res.status(201).json({ reqIdentificationId })
+    return res.status(201).json({ reqIdentificationId, jobId })
   } catch (error) {
     if (error instanceof HttpException) {
       return res.status(error.status).json({

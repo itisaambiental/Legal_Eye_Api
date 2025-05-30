@@ -1,4 +1,3 @@
-// src/queues/reqIdentificationQueue.js
 import Queue from 'bull'
 import { redisConfig } from '../config/redis.config.js'
 import { LIMIT_REQ_IDENTIFICATIONS } from '../config/variables.config.js'
