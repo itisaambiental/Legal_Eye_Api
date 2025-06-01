@@ -209,7 +209,7 @@ CREATE TABLE IF NOT EXISTS req_identifications_requirements (
     FOREIGN KEY (requirement_type_id) REFERENCES requirement_types(id) ON DELETE RESTRICT
 );
 
--- Table: req_identifications_legal_verbs
+-- Table: req_identifications_requirement_legal_verbs
 -- Description: Translated legal verb outputs for each requirement in an identification.
 CREATE TABLE IF NOT EXISTS req_identifications_requirement_legal_verbs (
     req_identification_id INT NOT NULL,
@@ -224,11 +224,7 @@ CREATE TABLE IF NOT EXISTS req_identifications_requirement_legal_verbs (
 );
 
 
-
-
-
-
--- Table: req_identifications_legal_basis
+-- Table: req_identifications_requirement_legal_basis
 -- Description: Legal basis that justifies each requirement.
 CREATE TABLE IF NOT EXISTS req_identifications_requirement_legal_basis (
     req_identification_id INT NOT NULL,  
@@ -241,7 +237,7 @@ CREATE TABLE IF NOT EXISTS req_identifications_requirement_legal_basis (
     FOREIGN KEY (legal_basis_id) REFERENCES legal_basis(id) ON DELETE RESTRICT
 );
 
--- Table: req_identifications_articles
+-- Table: req_identifications_requirement_legal_basis_articles
 -- Description: Articles related to a requirement under a legal basis.
 CREATE TABLE IF NOT EXISTS req_identifications_requirement_legal_basis_articles (
     req_identification_id INT NOT NULL,  

@@ -13,6 +13,86 @@
 /** @typedef {import('./Requirement.model.js').default} Requirement */
 /** @typedef {import('./RequirementTypes.model.js').default} RequirementType */
 /** @typedef {import('./LegalVerbs.model.js').default} LegalVerb */
+/** @typedef {import('./LegalBasis.model.js').default} LegalBasis */
+/** @typedef {import('./Article.model.js').default} Article */
+
+/**
+ * Class representing an Article associated with a Legal Basis.
+ */
+export class ReqIdentificationRequirementLegalBasisArticle {
+  /**
+   * Constructs a ReqIdentificationRequirementLegalBasisArticle instance.
+   *
+   * @param {Article} article - The article object.
+   * @param {string} articleType - Type of article ('mandatory', 'complementary', 'general').
+   */
+  constructor (article, articleType) {
+    this.article = article
+    this.articleType = articleType
+  }
+}
+
+/**
+ * Class representing a Legal Basis associated with a Requirement.
+ */
+export class ReqIdentificationRequirementLegalBasis {
+  /**
+   * Constructs a ReqIdentificationRequirementLegalBasis instance.
+   *
+   * @param {LegalBasis} legalBasis - The legal basis object.
+   * @param {ReqIdentificationRequirementLegalBasisArticle[]} articles - List of associated articles.
+   */
+  constructor (legalBasis, articles) {
+    this.legalBasis = legalBasis
+    this.articles = articles
+  }
+}
+
+/**
+ * Class representing a Legal Verb translation for a requirement inside a requirement identification.
+ */
+export class ReqIdentificationRequirementLegalVerb {
+  /**
+   * Constructs a ReqIdentificationRequirementLegalVerb instance.
+   *
+   * @param {LegalVerb} legalVerb - The legal verb object.
+   * @param {string} translation - The translated verb.
+   */
+  constructor (legalVerb, translation) {
+    this.legalVerb = legalVerb
+    this.translation = translation
+  }
+}
+/**
+ * Class representing a Requirement inside a specific Requirement Identification.
+ */
+export class ReqIdentificationRequirement {
+  /**
+   * Constructs a ReqIdentificationRequirement instance.
+   *
+   * @param {number} reqIdentificationId - The ID of the parent requirement identification.
+   * @param {Requirement} requirement - The requirement object.
+   * @param {string} requirementName - The name of the requirement.
+   * @param {RequirementType} requirementType - The type of the requirement.
+   * @param {ReqIdentificationRequirementLegalVerb[]} legalVerbs - Translated legal verbs.
+   * @param {ReqIdentificationRequirementLegalBasis[]} legalBases - Associated legal bases.
+   */
+  constructor (
+    reqIdentificationId,
+    requirement,
+    requirementName,
+    requirementType,
+    legalVerbs,
+    legalBases
+  ) {
+    this.reqIdentificationId = reqIdentificationId
+    this.requirement = requirement
+    this.requirementName = requirementName
+    this.requirementType = requirementType
+    this.legalVerbs = legalVerbs
+    this.legalBases = legalBases
+  }
+}
 
 /**
  * Class representing a Requirement Identification.
@@ -21,17 +101,18 @@ export class ReqIdentification {
   /**
    * Constructs a ReqIdentification instance.
    *
-   * @param {number} id
-   * @param {string} name
-   * @param {string} description
-   * @param {number} userId
-   * @param {Date} createdAt
-   * @param {string} status
-   * @param {Subject} subject
-   * @param {Aspect[]} aspects
-   * @param {string} jurisdiction
-   * @param {string} state
-   * @param {string} municipality
+   * @param {number} id - The ID of the identification.
+   * @param {string} name - The name of the identification.
+   * @param {string} description - The description of the identification.
+   * @param {number} userId - The user ID who created it.
+   * @param {Date} createdAt - Creation date.
+   * @param {string} status - Current status.
+   * @param {Subject} subject - The subject.
+   * @param {Aspect[]} aspects - List of aspects.
+   * @param {string} jurisdiction - Jurisdiction level.
+   * @param {string} state - State name if applicable.
+   * @param {string} municipality - Municipality name if applicable.
+   * @param {ReqIdentificationRequirement[]} requirements - List of associated requirements.
    */
   constructor (
     id,
@@ -44,7 +125,8 @@ export class ReqIdentification {
     aspects,
     jurisdiction,
     state,
-    municipality
+    municipality,
+    requirements = []
   ) {
     this.id = id
     this.name = name
@@ -57,49 +139,6 @@ export class ReqIdentification {
     this.jurisdiction = jurisdiction
     this.state = state
     this.municipality = municipality
-  }
-}
-
-/**
- * Class representing a Legal Verb translation for a requirement inside a requirement identification.
- */
-export class ReqIdentificationRequirementLegalVerb {
-  /**
-   * Constructs a ReqIdentificationRequirementLegalVerb instance.
-   *
-   * @param {LegalVerb} legalVerb
-   * @param {string} translation
-   */
-  constructor (legalVerb, translation) {
-    this.legalVerb = legalVerb
-    this.translation = translation
-  }
-}
-
-/**
- * Class representing a Requirement inside a specific Requirement Identification.
- */
-export class ReqIdentificationRequirement {
-  /**
-   * Constructs a ReqIdentificationRequirement instance.
-   *
-   * @param {number} reqIdentificationId
-   * @param {Requirement} requirement
-   * @param {string} requirementName
-   * @param {RequirementType} requirementType
-   * @param {ReqIdentificationRequirementLegalVerb[]} legalVerbs
-   */
-  constructor (
-    reqIdentificationId,
-    requirement,
-    requirementName,
-    requirementType,
-    legalVerbs
-  ) {
-    this.reqIdentificationId = reqIdentificationId
-    this.requirement = requirement
-    this.requirementName = requirementName
-    this.requirementType = requirementType
-    this.legalVerbs = legalVerbs
+    this.requirements = requirements
   }
 }
