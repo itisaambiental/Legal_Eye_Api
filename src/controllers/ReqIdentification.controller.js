@@ -40,27 +40,28 @@ export const createReqIdentification = async (req, res) => {
   }
 }
 
-// /**
-//  * Retrieves all requirements identifications.
-//  * @function getAllReqIdentifications
-//  * @param {import('express').Request} req
-//  * @param {import('express').Response} res
-//  */
-// export const getAllReqIdentifications = async (req, res) => {
-//   const { userId } = req
-//   try {
-//     if (!(await UserService.userExists(userId))) {
-//       return res.status(403).json({ message: 'Unauthorized' })
-//     }
-//     const list = await ReqIdentificationService.getAll()
-//     return res.status(200).json({ reqIdentifications: list })
-//   } catch (err) {
-//     if (err instanceof HttpException) {
-//       return res.status(err.status).json({ message: err.message })
-//     }
-//     return res.status(500).json({ message: 'Internal Server Error' })
-//   }
-// }
+/**
+ * Retrieves all requirement identifications.
+ * @function getAllReqIdentifications
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ */
+export const getAllReqIdentifications = async (req, res) => {
+  const { userId } = req
+  try {
+    const isAuthorized = await UserService.userExists(userId)
+    if (!isAuthorized) {
+      return res.status(403).json({ message: 'Unauthorized' })
+    }
+    const reqIdentifications = await ReqIdentificationService.getAll()
+    return res.status(200).json({ reqIdentifications })
+  } catch (err) {
+    if (err instanceof HttpException) {
+      return res.status(err.status).json({ message: err.message })
+    }
+    return res.status(500).json({ message: 'Internal Server Error' })
+  }
+}
 
 // /**
 //  * Retrieves a single requirements identification by ID.

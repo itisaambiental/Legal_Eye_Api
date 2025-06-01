@@ -1,7 +1,5 @@
 /**
  * Class representing a Requirement Type.
- * Stores information about the different types of requirements,
- * including their name, description, and classification.
  */
 class RequirementType {
   /**

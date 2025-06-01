@@ -12,7 +12,6 @@
 
 /**
  * Class representing a Legal Requirement.
- * Contains details about a specific requirement linked to a subject and multiple aspects.
  */
 class Requirement {
   /**

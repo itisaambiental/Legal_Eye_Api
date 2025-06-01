@@ -1,6 +1,5 @@
 /**
  * Class representing a Role.
- * Defines the role of a user within the system.
  */
 class Role {
   /**

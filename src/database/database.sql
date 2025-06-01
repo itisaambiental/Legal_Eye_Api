@@ -200,29 +200,37 @@ CREATE TABLE IF NOT EXISTS req_identifications (
 -- Description: All requirements included in a given identification.
 CREATE TABLE IF NOT EXISTS req_identifications_requirements (
     req_identification_id INT NOT NULL,  
-    requirement_id INT NOT NULL,                 
+    requirement_id INT NOT NULL,
+    requirement_name VARCHAR(255) NOT NULL,
+    requirement_type_id INT,
     PRIMARY KEY (req_identification_id, requirement_id),
     FOREIGN KEY (req_identification_id) REFERENCES req_identifications(id) ON DELETE CASCADE,
-    FOREIGN KEY (requirement_id) REFERENCES requirements(id) ON DELETE RESTRICT
+    FOREIGN KEY (requirement_id) REFERENCES requirements(id) ON DELETE RESTRICT,
+    FOREIGN KEY (requirement_type_id) REFERENCES requirement_types(id) ON DELETE RESTRICT
 );
 
--- Table: req_identifications_metadata
--- Description: Metadata for each requirement within an identification.
-CREATE TABLE IF NOT EXISTS req_identifications_metadata (
-    req_identification_id INT NOT NULL,     
-    requirement_id INT NOT NULL,                    
-    requirement_name VARCHAR(255) NOT NULL,       
-    requirement_type_id INT,                        
-    PRIMARY KEY (req_identification_id, requirement_id),
+-- Table: req_identifications_legal_verbs
+-- Description: Translated legal verb outputs for each requirement in an identification.
+CREATE TABLE IF NOT EXISTS req_identifications_requirement_legal_verbs (
+    req_identification_id INT NOT NULL,
+    requirement_id INT NOT NULL,
+    legal_verb_id INT NOT NULL,
+    translation LONGTEXT NOT NULL,  
+    PRIMARY KEY (req_identification_id, requirement_id, legal_verb_id),
     FOREIGN KEY (req_identification_id, requirement_id)
         REFERENCES req_identifications_requirements(req_identification_id, requirement_id)
         ON DELETE CASCADE,
-    FOREIGN KEY (requirement_type_id) REFERENCES requirement_types(id) ON DELETE SET NULL
+    FOREIGN KEY (legal_verb_id) REFERENCES legal_verbs(id) ON DELETE CASCADE
 );
+
+
+
+
+
 
 -- Table: req_identifications_legal_basis
 -- Description: Legal basis that justifies each requirement.
-CREATE TABLE IF NOT EXISTS req_identifications_legal_basis (
+CREATE TABLE IF NOT EXISTS req_identifications_requirement_legal_basis (
     req_identification_id INT NOT NULL,  
     requirement_id INT NOT NULL,                 
     legal_basis_id INT NOT NULL,                 
@@ -235,7 +243,7 @@ CREATE TABLE IF NOT EXISTS req_identifications_legal_basis (
 
 -- Table: req_identifications_articles
 -- Description: Articles related to a requirement under a legal basis.
-CREATE TABLE IF NOT EXISTS req_identifications_articles (
+CREATE TABLE IF NOT EXISTS req_identifications_requirement_legal_basis_articles (
     req_identification_id INT NOT NULL,  
     requirement_id INT NOT NULL,                 
     legal_basis_id INT NOT NULL,                 
@@ -247,18 +255,4 @@ CREATE TABLE IF NOT EXISTS req_identifications_articles (
         ON DELETE CASCADE,
     FOREIGN KEY (legal_basis_id) REFERENCES legal_basis(id) ON DELETE RESTRICT,
     FOREIGN KEY (article_id) REFERENCES article(id) ON DELETE CASCADE
-);
-
--- Table: req_identifications_legal_verbs
--- Description: Translated legal verb outputs for each requirement in an identification.
-CREATE TABLE IF NOT EXISTS req_identifications_legal_verbs (
-    req_identification_id INT NOT NULL,
-    requirement_id INT NOT NULL,
-    legal_verb_id INT NOT NULL,
-    translation LONGTEXT NOT NULL,  
-    PRIMARY KEY (req_identification_id, requirement_id, legal_verb_id),
-    FOREIGN KEY (req_identification_id, requirement_id)
-        REFERENCES req_identifications_requirements(req_identification_id, requirement_id)
-        ON DELETE CASCADE,
-    FOREIGN KEY (legal_verb_id) REFERENCES legal_verbs(id) ON DELETE CASCADE
 );

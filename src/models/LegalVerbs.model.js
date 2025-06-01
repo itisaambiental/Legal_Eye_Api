@@ -1,7 +1,5 @@
 /**
  * Class representing a Legal Verb.
- * Stores information about legal verbs,
- * including their name, description, and translation.
  */
 class LegalVerb {
   /**

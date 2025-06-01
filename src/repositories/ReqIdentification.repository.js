@@ -1,6 +1,6 @@
 import { pool } from '../config/db.config.js'
 import HttpException from '../services/errors/HttpException.js'
-import ReqIdentification from '../models/ReqIdentification.model.js'
+import { ReqIdentification } from '../models/ReqIdentification.model.js'
 
 /**
  * Repository for requirement identifications and related operations.
@@ -27,8 +27,7 @@ class ReqIdentificationRepository {
     ]
     try {
       const [result] = await pool.query(query, values)
-      const reqIdentificationId = result.insertId
-      const reqIdentification = await this.findById(reqIdentificationId)
+      const reqIdentification = await this.findById(result.insertId)
       return reqIdentification
     } catch (error) {
       console.error('Error creating requirement identification:', error.message)
@@ -36,6 +35,35 @@ class ReqIdentificationRepository {
         500,
         'Error creating requirement identification in the database'
       )
+    }
+  }
+
+  /**
+ * Retrieves all requirement identifications.
+ *
+ * @returns {Promise<ReqIdentification[]>} - An array of all requirement identifications.
+ * @throws {HttpException} - If an error occurs during the query.
+ */
+  static async findAll () {
+    const query = `
+    SELECT id, name, description, user_id, created_at, status
+    FROM req_identifications
+  `
+
+    try {
+      const [rows] = await pool.query(query)
+
+      return rows.map(row => new ReqIdentification(
+        row.id,
+        row.name,
+        row.description,
+        row.user_id,
+        row.created_at,
+        row.status
+      ))
+    } catch (error) {
+      console.error('Error fetching requirement identifications:', error.message)
+      throw new HttpException(500, 'Error fetching requirement identifications from the database')
     }
   }
 
@@ -148,26 +176,6 @@ class ReqIdentificationRepository {
   // static async markAsFailed (id) {
   //   return await this.updateStatus({ id, status: 'Failed' })
   // }
-
-  //   /**
-  //    * Retrieves all identifications.
-  //    * @returns {Promise<ReqIdentification[]>} - Array of all identifications.
-  //    * @throws {HttpException}
-  //    */
-  //   static async findAll () {
-  //     const query = `
-  //       SELECT id, name, description, user_id AS user_id, created_at, status
-  //       FROM req_identifications
-  //     `
-
-  //     try {
-  //       const [rows] = await pool.query(query)
-  //       return rows.map(r => ReqIdentification.fromRow(r))
-  //     } catch (err) {
-  //       console.error('Error fetching requirements identifications:', err.message)
-  //       throw new HttpException(500, 'Error fetching requirements identifications')
-  //     }
-  //   }
 
   //   /**
   //    * Finds multiple identifications by their IDs.

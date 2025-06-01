@@ -1,6 +1,5 @@
 /**
  * Class representing an Article.
- * Associates an article with a legal basis.
  */
 class Article {
   /**

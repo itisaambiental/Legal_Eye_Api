@@ -12,7 +12,6 @@
 
 /**
  * Class representing a Legal Basis.
- * Contains details about a legal document, its classification, jurisdiction, and related information.
  */
 class LegalBasis {
   /**

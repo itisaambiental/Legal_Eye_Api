@@ -98,20 +98,24 @@ class ReqIdentificationService {
     }
   }
 
-  //   /**
-  //    * Retrieves all identifications.
-  //    *
-  //    * @returns {Promise<import('../models/ReqIdentification.model.js').default[]>}
-  //    * @throws {HttpException}
-  //    */
-  //   static async getAll () {
-  //     try {
-  //       return await ReqIdentificationRepository.findAll()
-  //     } catch (err) {
-  //       if (err instanceof HttpException) throw err
-  //       throw new HttpException(500, 'Failed to retrieve identifications')
-  //     }
-  //   }
+  /**
+     * Retrieves all identifications.
+     *
+     * @returns {Promise<ReqIdentification[]>} - List of all requirement identifications.
+     * @throws {HttpException}
+     */
+  static async getAll () {
+    try {
+      const reqIdentifications = await ReqIdentificationRepository.findAll()
+      if (!reqIdentifications) {
+        return []
+      }
+      return reqIdentifications
+    } catch (error) {
+      if (error instanceof HttpException) throw error
+      throw new HttpException(500, 'Failed to retrieve identifications')
+    }
+  }
 
   //   /**
   //    * Retrieves a single identification by ID.

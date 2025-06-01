@@ -1,6 +1,5 @@
 /**
  * Class representing a Subject.
- * Stores information about subjects such as 'Environmental', 'Security', etc.
  */
 class Subject {
   /**

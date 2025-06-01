@@ -1,6 +1,5 @@
 /**
  * Class representing a User.
- * Stores user details including credentials, role, and profile information.
  */
 class User {
   /**

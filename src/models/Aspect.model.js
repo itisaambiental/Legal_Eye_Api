@@ -1,6 +1,5 @@
 /**
  * Class representing an Aspect.
- * Stores information about aspects linked to specific subjects.
  */
 class Aspect {
   /**

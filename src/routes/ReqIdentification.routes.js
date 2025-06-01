@@ -6,8 +6,8 @@
 import { Router } from 'express'
 import UserExtractor from '../middlewares/user_extractor.js'
 import {
-  createReqIdentification
-  // getAllReqIdentifications,
+  createReqIdentification,
+  getAllReqIdentifications
   // getReqIdentificationById,
   // detectRequirements,
   // updateReqIdentificationById,
@@ -46,13 +46,13 @@ const router = Router()
  */
 router.post('/req-identification', UserExtractor, createReqIdentification)
 
-// /**
-//  * Retrieves all req_identifications.
-//  * @method GET
-//  * @path /reqIdentification
-//  * @middleware UserExtractor
-//  */
-// router.get('/reqIdentification', UserExtractor, getAllReqIdentifications)
+/**
+ * Retrieves all requirement identifications.
+ * @method GET
+ * @path /req-identification
+ * @middleware UserExtractor
+ */
+router.get('/req-identification', UserExtractor, getAllReqIdentifications)
 
 // /**
 //  * Retrieves a single req_identification by ID.
