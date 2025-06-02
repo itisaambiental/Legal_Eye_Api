@@ -269,10 +269,1307 @@ class ReqIdentificationRepository {
     }
   }
 
-  // SIGUIENDO EL MISMO ESQUEMA QUE EN LA FUNCION findAll IMPLEMENTAR FUNCIONES INDEPENDIENTES SIGUIENDO EL MISMO ESTANDAR DE NOMBRES
-  // PARA PODER FILTRAR POR nombre, descripcion, nombre de usuario, fecha de creacion, status, materia, aspectos(varios), juridiction, estado y municipios(varios)
+  /**
+   * Retrieves requirement identifications filtered by name.
+   *
+   * @param {string} name - The name (or partial name) to filter by.
+   * @returns {Promise<ReqIdentification[]|null>} - An array of matching requirement identifications, or null if none found.
+   * @throws {HttpException} - If an error occurs during the query.
+   */
+  static async findByName (name) {
+    const query = `
+      SELECT 
+        ri.id AS req_identification_id,
+        ri.name,
+        ri.description,
+        ri.user_id,
+        ri.created_at,
+        ri.status,
 
-  // COMENZAR DESDE AQUI
+        u.id AS user_id,
+        u.name AS user_name,
+        u.gmail AS user_gmail,
+        u.role_id AS user_role_id,
+        u.profile_picture AS user_profile_picture,
+
+        s.id AS subject_id,
+        s.subject_name,
+
+        a.id AS aspect_id,
+        a.aspect_name,
+
+        lb.jurisdiction,
+        lb.state,
+        lb.municipality
+
+      FROM req_identifications ri
+      LEFT JOIN users u ON ri.user_id = u.id
+      LEFT JOIN req_identifications_requirements rir ON ri.id = rir.req_identification_id
+      LEFT JOIN req_identifications_requirement_legal_basis rirlb 
+        ON rir.req_identification_id = rirlb.req_identification_id 
+        AND rir.requirement_id = rirlb.requirement_id
+      LEFT JOIN legal_basis lb ON rirlb.legal_basis_id = lb.id
+      LEFT JOIN subjects s ON lb.subject_id = s.id
+      LEFT JOIN legal_basis_subject_aspect lbsa ON lb.id = lbsa.legal_basis_id
+      LEFT JOIN aspects a ON lbsa.aspect_id = a.id
+      WHERE ri.name LIKE ?
+      ORDER BY ri.id DESC
+    `
+
+    try {
+      const filterValue = `%${name}%`
+      const [rows] = await pool.query(query, [filterValue])
+      if (rows.length === 0) return null
+
+      const reqIdentificationMap = new Map()
+
+      for (const row of rows) {
+        if (!reqIdentificationMap.has(row.req_identification_id)) {
+          const user = row.user_id
+            ? new User(
+              row.user_id,
+              row.user_name,
+              null,
+              row.user_gmail,
+              row.user_role_id,
+              row.user_profile_picture
+            )
+            : null
+
+          reqIdentificationMap.set(row.req_identification_id, {
+            id: row.req_identification_id,
+            name: row.name,
+            description: row.description,
+            createdAt: row.created_at,
+            status: row.status,
+            user,
+            subject: row.subject_id
+              ? {
+                  subject_id: row.subject_id,
+                  subject_name: row.subject_name
+                }
+              : null,
+            aspects: new Map(),
+            jurisdiction: row.jurisdiction,
+            state: row.state,
+            municipality: row.municipality
+          })
+        }
+
+        const reqIdentification = reqIdentificationMap.get(
+          row.req_identification_id
+        )
+
+        if (row.aspect_id && !reqIdentification.aspects.has(row.aspect_id)) {
+          reqIdentification.aspects.set(row.aspect_id, {
+            aspect_id: row.aspect_id,
+            aspect_name: row.aspect_name
+          })
+        }
+      }
+
+      return Array.from(reqIdentificationMap.values()).map(
+        (item) =>
+          new ReqIdentification(
+            item.id,
+            item.name,
+            item.description,
+            item.user,
+            item.createdAt,
+            item.status,
+            item.subject,
+            Array.from(item.aspects.values()),
+            item.jurisdiction,
+            item.state,
+            item.municipality
+          )
+      )
+    } catch (error) {
+      console.error(
+        'Error fetching requirement identifications by name:',
+        error.message
+      )
+      throw new HttpException(
+        500,
+        'Error fetching requirement identifications by name'
+      )
+    }
+  }
+
+  /**
+   * Retrieves requirement identifications whose description matches the given term(s) using full-text search.
+   *
+   * @param {string} description - A partial or full-text search term to match against ri.description.
+   * @returns {Promise<ReqIdentification[]|null>} - An array of matching requirement identifications, or null if none found.
+   * @throws {HttpException} - If an error occurs during the query.
+   */
+  static async findByDescription (description) {
+    const query = `
+        SELECT 
+          ri.id AS req_identification_id,
+          ri.name,
+          ri.description,
+          ri.user_id,
+          ri.created_at,
+          ri.status,
+  
+          u.id AS user_id,
+          u.name AS user_name,
+          u.gmail AS user_gmail,
+          u.role_id AS user_role_id,
+          u.profile_picture AS user_profile_picture,
+  
+          s.id AS subject_id,
+          s.subject_name,
+  
+          a.id AS aspect_id,
+          a.aspect_name,
+  
+          lb.jurisdiction,
+          lb.state,
+          lb.municipality
+  
+        FROM req_identifications ri
+        LEFT JOIN users u ON ri.user_id = u.id
+        LEFT JOIN req_identifications_requirements rir ON ri.id = rir.req_identification_id
+        LEFT JOIN req_identifications_requirement_legal_basis rirlb 
+          ON rir.req_identification_id = rirlb.req_identification_id 
+          AND rir.requirement_id = rirlb.requirement_id
+        LEFT JOIN legal_basis lb ON rirlb.legal_basis_id = lb.id
+        LEFT JOIN subjects s ON lb.subject_id = s.id
+        LEFT JOIN legal_basis_subject_aspect lbsa ON lb.id = lbsa.legal_basis_id
+        LEFT JOIN aspects a ON lbsa.aspect_id = a.id
+        WHERE MATCH(ri.description) AGAINST(? IN BOOLEAN MODE)
+        ORDER BY ri.id DESC
+      `
+
+    try {
+      const [rows] = await pool.query(query, [description])
+      if (rows.length === 0) return null
+
+      const reqIdentificationMap = new Map()
+
+      for (const row of rows) {
+        if (!reqIdentificationMap.has(row.req_identification_id)) {
+          const user = row.user_id
+            ? new User(
+              row.user_id,
+              row.user_name,
+              null,
+              row.user_gmail,
+              row.user_role_id,
+              row.user_profile_picture
+            )
+            : null
+
+          reqIdentificationMap.set(row.req_identification_id, {
+            id: row.req_identification_id,
+            name: row.name,
+            description: row.description,
+            createdAt: row.created_at,
+            status: row.status,
+            user,
+            subject: row.subject_id
+              ? {
+                  subject_id: row.subject_id,
+                  subject_name: row.subject_name
+                }
+              : null,
+            aspects: new Map(),
+            jurisdiction: row.jurisdiction,
+            state: row.state,
+            municipality: row.municipality
+          })
+        }
+
+        const reqIdentification = reqIdentificationMap.get(
+          row.req_identification_id
+        )
+
+        if (row.aspect_id && !reqIdentification.aspects.has(row.aspect_id)) {
+          reqIdentification.aspects.set(row.aspect_id, {
+            aspect_id: row.aspect_id,
+            aspect_name: row.aspect_name
+          })
+        }
+      }
+
+      return Array.from(reqIdentificationMap.values()).map(
+        (item) =>
+          new ReqIdentification(
+            item.id,
+            item.name,
+            item.description,
+            item.user,
+            item.createdAt,
+            item.status,
+            item.subject,
+            Array.from(item.aspects.values()),
+            item.jurisdiction,
+            item.state,
+            item.municipality
+          )
+      )
+    } catch (error) {
+      console.error(
+        'Error fetching requirement identifications by description:',
+        error.message
+      )
+      throw new HttpException(
+        500,
+        'Error fetching requirement identifications by description'
+      )
+    }
+  }
+
+  /**
+   * Retrieves requirement identifications filtered by the associated user’s name.
+   *
+   * @param {string} userName - The (partial) user name to filter by.
+   * @returns {Promise<ReqIdentification[]|null>} - An array of matching requirement identifications, or null if none found.
+   * @throws {HttpException} - If an error occurs during the query.
+   */
+  static async findByUserName (userName) {
+    const query = `
+      SELECT 
+        ri.id AS req_identification_id,
+        ri.name,
+        ri.description,
+        ri.user_id,
+        ri.created_at,
+        ri.status,
+
+        u.id AS user_id,
+        u.name AS user_name,
+        u.gmail AS user_gmail,
+        u.role_id AS user_role_id,
+        u.profile_picture AS user_profile_picture,
+
+        s.id AS subject_id,
+        s.subject_name,
+
+        a.id AS aspect_id,
+        a.aspect_name,
+
+        lb.jurisdiction,
+        lb.state,
+        lb.municipality
+
+      FROM req_identifications ri
+      LEFT JOIN users u ON ri.user_id = u.id
+      LEFT JOIN req_identifications_requirements rir ON ri.id = rir.req_identification_id
+      LEFT JOIN req_identifications_requirement_legal_basis rirlb 
+        ON rir.req_identification_id = rirlb.req_identification_id 
+        AND rir.requirement_id = rirlb.requirement_id
+      LEFT JOIN legal_basis lb ON rirlb.legal_basis_id = lb.id
+      LEFT JOIN subjects s ON lb.subject_id = s.id
+      LEFT JOIN legal_basis_subject_aspect lbsa ON lb.id = lbsa.legal_basis_id
+      LEFT JOIN aspects a ON lbsa.aspect_id = a.id
+      WHERE u.name LIKE ?
+      ORDER BY ri.id DESC
+    `
+
+    try {
+      const filterValue = `%${userName}%`
+      const [rows] = await pool.query(query, [filterValue])
+      if (rows.length === 0) return null
+
+      const reqIdentificationMap = new Map()
+
+      for (const row of rows) {
+        if (!reqIdentificationMap.has(row.req_identification_id)) {
+          const user = row.user_id
+            ? new User(
+              row.user_id,
+              row.user_name,
+              null,
+              row.user_gmail,
+              row.user_role_id,
+              row.user_profile_picture
+            )
+            : null
+
+          reqIdentificationMap.set(row.req_identification_id, {
+            id: row.req_identification_id,
+            name: row.name,
+            description: row.description,
+            createdAt: row.created_at,
+            status: row.status,
+            user,
+            subject: row.subject_id
+              ? {
+                  subject_id: row.subject_id,
+                  subject_name: row.subject_name
+                }
+              : null,
+            aspects: new Map(),
+            jurisdiction: row.jurisdiction,
+            state: row.state,
+            municipality: row.municipality
+          })
+        }
+
+        const reqIdentification = reqIdentificationMap.get(
+          row.req_identification_id
+        )
+
+        if (row.aspect_id && !reqIdentification.aspects.has(row.aspect_id)) {
+          reqIdentification.aspects.set(row.aspect_id, {
+            aspect_id: row.aspect_id,
+            aspect_name: row.aspect_name
+          })
+        }
+      }
+
+      return Array.from(reqIdentificationMap.values()).map(
+        (item) =>
+          new ReqIdentification(
+            item.id,
+            item.name,
+            item.description,
+            item.user,
+            item.createdAt,
+            item.status,
+            item.subject,
+            Array.from(item.aspects.values()),
+            item.jurisdiction,
+            item.state,
+            item.municipality
+          )
+      )
+    } catch (error) {
+      console.error(
+        'Error fetching requirement identifications by user name:',
+        error.message
+      )
+      throw new HttpException(
+        500,
+        'Error fetching requirement identifications by user name'
+      )
+    }
+  }
+
+  /**
+   * Retrieves requirement identifications filtered by creation date.
+   *
+   * @param {string} date - The creation date to filter by (format: 'YYYY-MM-DD').
+   * @returns {Promise<ReqIdentification[]|null>} - An array of matching requirement identifications, or null if none found.
+   * @throws {HttpException} - If an error occurs during the query.
+   */
+  static async findByCreatedAt (date) {
+    const query = `
+      SELECT 
+        ri.id AS req_identification_id,
+        ri.name,
+        ri.description,
+        ri.user_id,
+        ri.created_at,
+        ri.status,
+
+        u.id AS user_id,
+        u.name AS user_name,
+        u.gmail AS user_gmail,
+        u.role_id AS user_role_id,
+        u.profile_picture AS user_profile_picture,
+
+        s.id AS subject_id,
+        s.subject_name,
+
+        a.id AS aspect_id,
+        a.aspect_name,
+
+        lb.jurisdiction,
+        lb.state,
+        lb.municipality
+
+      FROM req_identifications ri
+      LEFT JOIN users u ON ri.user_id = u.id
+      LEFT JOIN req_identifications_requirements rir ON ri.id = rir.req_identification_id
+      LEFT JOIN req_identifications_requirement_legal_basis rirlb 
+        ON rir.req_identification_id = rirlb.req_identification_id 
+        AND rir.requirement_id = rirlb.requirement_id
+      LEFT JOIN legal_basis lb ON rirlb.legal_basis_id = lb.id
+      LEFT JOIN subjects s ON lb.subject_id = s.id
+      LEFT JOIN legal_basis_subject_aspect lbsa ON lb.id = lbsa.legal_basis_id
+      LEFT JOIN aspects a ON lbsa.aspect_id = a.id
+      WHERE DATE(ri.created_at) = ?
+      ORDER BY ri.id DESC
+    `
+
+    try {
+      const [rows] = await pool.query(query, [date])
+      if (rows.length === 0) return null
+
+      const reqIdentificationMap = new Map()
+
+      for (const row of rows) {
+        if (!reqIdentificationMap.has(row.req_identification_id)) {
+          const user = row.user_id
+            ? new User(
+              row.user_id,
+              row.user_name,
+              null,
+              row.user_gmail,
+              row.user_role_id,
+              row.user_profile_picture
+            )
+            : null
+
+          reqIdentificationMap.set(row.req_identification_id, {
+            id: row.req_identification_id,
+            name: row.name,
+            description: row.description,
+            createdAt: row.created_at,
+            status: row.status,
+            user,
+            subject: row.subject_id
+              ? {
+                  subject_id: row.subject_id,
+                  subject_name: row.subject_name
+                }
+              : null,
+            aspects: new Map(),
+            jurisdiction: row.jurisdiction,
+            state: row.state,
+            municipality: row.municipality
+          })
+        }
+
+        const reqIdentification = reqIdentificationMap.get(
+          row.req_identification_id
+        )
+
+        if (row.aspect_id && !reqIdentification.aspects.has(row.aspect_id)) {
+          reqIdentification.aspects.set(row.aspect_id, {
+            aspect_id: row.aspect_id,
+            aspect_name: row.aspect_name
+          })
+        }
+      }
+
+      return Array.from(reqIdentificationMap.values()).map(
+        (item) =>
+          new ReqIdentification(
+            item.id,
+            item.name,
+            item.description,
+            item.user,
+            item.createdAt,
+            item.status,
+            item.subject,
+            Array.from(item.aspects.values()),
+            item.jurisdiction,
+            item.state,
+            item.municipality
+          )
+      )
+    } catch (error) {
+      console.error(
+        'Error fetching requirement identifications by creation date:',
+        error.message
+      )
+      throw new HttpException(
+        500,
+        'Error fetching requirement identifications by creation date'
+      )
+    }
+  }
+
+  /**
+   * Retrieves requirement identifications filtered by status.
+   *
+   * @param {string} status - The status to filter by ('Active', 'Failed', or 'Completed').
+   * @returns {Promise<ReqIdentification[]|null>} - An array of matching requirement identifications, or null if none found.
+   * @throws {HttpException} - If an error occurs during the query.
+   */
+  static async findByStatus (status) {
+    const query = `
+        SELECT 
+          ri.id AS req_identification_id,
+          ri.name,
+          ri.description,
+          ri.user_id,
+          ri.created_at,
+          ri.status,
+  
+          u.id AS user_id,
+          u.name AS user_name,
+          u.gmail AS user_gmail,
+          u.role_id AS user_role_id,
+          u.profile_picture AS user_profile_picture,
+  
+          s.id AS subject_id,
+          s.subject_name,
+  
+          a.id AS aspect_id,
+          a.aspect_name,
+  
+          lb.jurisdiction,
+          lb.state,
+          lb.municipality
+  
+        FROM req_identifications ri
+        LEFT JOIN users u ON ri.user_id = u.id
+        LEFT JOIN req_identifications_requirements rir ON ri.id = rir.req_identification_id
+        LEFT JOIN req_identifications_requirement_legal_basis rirlb 
+          ON rir.req_identification_id = rirlb.req_identification_id 
+          AND rir.requirement_id = rirlb.requirement_id
+        LEFT JOIN legal_basis lb ON rirlb.legal_basis_id = lb.id
+        LEFT JOIN subjects s ON lb.subject_id = s.id
+        LEFT JOIN legal_basis_subject_aspect lbsa ON lb.id = lbsa.legal_basis_id
+        LEFT JOIN aspects a ON lbsa.aspect_id = a.id
+        WHERE ri.status = ?
+        ORDER BY ri.id DESC
+      `
+
+    try {
+      const [rows] = await pool.query(query, [status])
+      if (rows.length === 0) return null
+
+      const reqIdentificationMap = new Map()
+
+      for (const row of rows) {
+        if (!reqIdentificationMap.has(row.req_identification_id)) {
+          const user = row.user_id
+            ? new User(
+              row.user_id,
+              row.user_name,
+              null,
+              row.user_gmail,
+              row.user_role_id,
+              row.user_profile_picture
+            )
+            : null
+
+          reqIdentificationMap.set(row.req_identification_id, {
+            id: row.req_identification_id,
+            name: row.name,
+            description: row.description,
+            createdAt: row.created_at,
+            status: row.status,
+            user,
+            subject: row.subject_id
+              ? {
+                  subject_id: row.subject_id,
+                  subject_name: row.subject_name
+                }
+              : null,
+            aspects: new Map(),
+            jurisdiction: row.jurisdiction,
+            state: row.state,
+            municipality: row.municipality
+          })
+        }
+
+        const reqIdentification = reqIdentificationMap.get(
+          row.req_identification_id
+        )
+
+        if (row.aspect_id && !reqIdentification.aspects.has(row.aspect_id)) {
+          reqIdentification.aspects.set(row.aspect_id, {
+            aspect_id: row.aspect_id,
+            aspect_name: row.aspect_name
+          })
+        }
+      }
+
+      return Array.from(reqIdentificationMap.values()).map(
+        (item) =>
+          new ReqIdentification(
+            item.id,
+            item.name,
+            item.description,
+            item.user,
+            item.createdAt,
+            item.status,
+            item.subject,
+            Array.from(item.aspects.values()),
+            item.jurisdiction,
+            item.state,
+            item.municipality
+          )
+      )
+    } catch (error) {
+      console.error(
+        'Error fetching requirement identifications by status:',
+        error.message
+      )
+      throw new HttpException(
+        500,
+        'Error fetching requirement identifications by status'
+      )
+    }
+  }
+
+  /**
+   * Retrieves requirement identifications filtered by subject name.
+   *
+   * @param {string} subjectName - The (partial) subject name to filter by.
+   * @returns {Promise<ReqIdentification[]|null>} - An array of matching requirement identifications, or null if none found.
+   * @throws {HttpException} - If an error occurs during the query.
+   */
+  static async findBySubjectName (subjectName) {
+    const query = `
+      SELECT 
+        ri.id AS req_identification_id,
+        ri.name,
+        ri.description,
+        ri.user_id,
+        ri.created_at,
+        ri.status,
+
+        u.id AS user_id,
+        u.name AS user_name,
+        u.gmail AS user_gmail,
+        u.role_id AS user_role_id,
+        u.profile_picture AS user_profile_picture,
+
+        s.id AS subject_id,
+        s.subject_name,
+
+        a.id AS aspect_id,
+        a.aspect_name,
+
+        lb.jurisdiction,
+        lb.state,
+        lb.municipality
+
+      FROM req_identifications ri
+      LEFT JOIN users u ON ri.user_id = u.id
+      LEFT JOIN req_identifications_requirements rir ON ri.id = rir.req_identification_id
+      LEFT JOIN req_identifications_requirement_legal_basis rirlb 
+        ON rir.req_identification_id = rirlb.req_identification_id 
+        AND rir.requirement_id = rirlb.requirement_id
+      LEFT JOIN legal_basis lb ON rirlb.legal_basis_id = lb.id
+      LEFT JOIN subjects s ON lb.subject_id = s.id
+      LEFT JOIN legal_basis_subject_aspect lbsa ON lb.id = lbsa.legal_basis_id
+      LEFT JOIN aspects a ON lbsa.aspect_id = a.id
+      WHERE s.subject_name LIKE ?
+      ORDER BY ri.id DESC
+    `
+
+    try {
+      const filterValue = `%${subjectName}%`
+      const [rows] = await pool.query(query, [filterValue])
+      if (rows.length === 0) return null
+
+      const reqIdentificationMap = new Map()
+
+      for (const row of rows) {
+        if (!reqIdentificationMap.has(row.req_identification_id)) {
+          const user = row.user_id
+            ? new User(
+              row.user_id,
+              row.user_name,
+              null,
+              row.user_gmail,
+              row.user_role_id,
+              row.user_profile_picture
+            )
+            : null
+
+          reqIdentificationMap.set(row.req_identification_id, {
+            id: row.req_identification_id,
+            name: row.name,
+            description: row.description,
+            createdAt: row.created_at,
+            status: row.status,
+            user,
+            subject: row.subject_id
+              ? {
+                  subject_id: row.subject_id,
+                  subject_name: row.subject_name
+                }
+              : null,
+            aspects: new Map(),
+            jurisdiction: row.jurisdiction,
+            state: row.state,
+            municipality: row.municipality
+          })
+        }
+
+        const reqIdentification = reqIdentificationMap.get(
+          row.req_identification_id
+        )
+
+        if (row.aspect_id && !reqIdentification.aspects.has(row.aspect_id)) {
+          reqIdentification.aspects.set(row.aspect_id, {
+            aspect_id: row.aspect_id,
+            aspect_name: row.aspect_name
+          })
+        }
+      }
+
+      return Array.from(reqIdentificationMap.values()).map(
+        (item) =>
+          new ReqIdentification(
+            item.id,
+            item.name,
+            item.description,
+            item.user,
+            item.createdAt,
+            item.status,
+            item.subject,
+            Array.from(item.aspects.values()),
+            item.jurisdiction,
+            item.state,
+            item.municipality
+          )
+      )
+    } catch (error) {
+      console.error(
+        'Error fetching requirement identifications by subject name:',
+        error.message
+      )
+      throw new HttpException(
+        500,
+        'Error fetching requirement identifications by subject name'
+      )
+    }
+  }
+
+  /**
+   * Retrieves requirement identifications filtered by subject (materia) and optionally by one or more aspect IDs.
+   * Includes associated user, subject, all matching aspects, jurisdiction, state, and municipality.
+   *
+   * @param {number} subjectId   - The subject ID to filter by.
+   * @param {Array<number>} [aspectIds] - Optional array of aspect IDs to further filter by.
+   * @returns {Promise<ReqIdentification[]|null>} - A list of matching requirement identifications.
+   * @throws {HttpException} - If an error occurs during retrieval.
+   */
+  static async findBySubjectAndAspects (subjectId, aspectIds = []) {
+    try {
+      const values = [subjectId]
+      let reqIds = []
+      if (aspectIds.length > 0) {
+        const placeholders = aspectIds.map(() => '?').join(', ')
+        const filterQuery = `
+          SELECT DISTINCT ri.id AS req_identification_id
+          FROM req_identifications ri
+          JOIN req_identifications_requirements rir
+            ON ri.id = rir.req_identification_id
+          JOIN req_identifications_requirement_legal_basis rirlb
+            ON rir.req_identification_id = rirlb.req_identification_id
+            AND rir.requirement_id = rirlb.requirement_id
+          JOIN legal_basis lb
+            ON rirlb.legal_basis_id = lb.id
+          JOIN legal_basis_subject_aspect lbsa
+            ON lb.id = lbsa.legal_basis_id
+          WHERE lb.subject_id = ?
+            AND lbsa.aspect_id IN (${placeholders})
+        `
+        const [filterRows] = await pool.query(filterQuery, [
+          subjectId,
+          ...aspectIds
+        ])
+        if (filterRows.length === 0) return null
+
+        reqIds = filterRows.map((row) => row.req_identification_id)
+      }
+      let query = `
+        SELECT 
+          ri.id AS req_identification_id,
+          ri.name,
+          ri.description,
+          ri.user_id,
+          ri.created_at,
+          ri.status,
+
+          u.id AS user_id,
+          u.name AS user_name,
+          u.gmail AS user_gmail,
+          u.role_id AS user_role_id,
+          u.profile_picture AS user_profile_picture,
+
+          s.id AS subject_id,
+          s.subject_name,
+
+          a.id AS aspect_id,
+          a.aspect_name,
+
+          lb.jurisdiction,
+          lb.state,
+          lb.municipality
+        FROM req_identifications ri      // The `date` parameter should be in 'YYYY-MM-DD' format.
+        LEFT JOIN users u
+          ON ri.user_id = u.id
+        LEFT JOIN req_identifications_requirements rir
+          ON ri.id = rir.req_identification_id
+        LEFT JOIN req_identifications_requirement_legal_basis rirlb
+          ON rir.req_identification_id = rirlb.req_identification_id
+          AND rir.requirement_id = rirlb.requirement_id
+        LEFT JOIN legal_basis lb
+          ON rirlb.legal_basis_id = lb.id
+        LEFT JOIN subjects s
+          ON lb.subject_id = s.id
+        LEFT JOIN legal_basis_subject_aspect lbsa
+          ON lb.id = lbsa.legal_basis_id
+        LEFT JOIN aspects a
+          ON lbsa.aspect_id = a.id
+        WHERE lb.subject_id = ?
+      `
+
+      if (reqIds.length > 0) {
+        const idPlaceholders = reqIds.map(() => '?').join(', ')
+        query += ` AND ri.id IN (${idPlaceholders})`
+        values.push(...reqIds)
+      }
+      query += ' ORDER BY ri.id DESC'
+      const [rows] = await pool.query(query, values)
+      if (rows.length === 0) return null
+      const reqMap = new Map()
+      for (const row of rows) {
+        if (!reqMap.has(row.req_identification_id)) {
+          const user = row.user_id
+            ? new User(
+              row.user_id,
+              row.user_name,
+              null,
+              row.user_gmail,
+              row.user_role_id,
+              row.user_profile_picture
+            )
+            : null
+          reqMap.set(row.req_identification_id, {
+            id: row.req_identification_id,
+            name: row.name,
+            description: row.description,
+            createdAt: row.created_at,
+            status: row.status,
+            user,
+            subject: {
+              subject_id: row.subject_id,
+              subject_name: row.subject_name
+            },
+            aspects: new Map(),
+            jurisdiction: row.jurisdiction,
+            state: row.state,
+            municipality: row.municipality
+          })
+        }
+        const reqEntry = reqMap.get(row.req_identification_id)
+        if (row.aspect_id && !reqEntry.aspects.has(row.aspect_id)) {
+          reqEntry.aspects.set(row.aspect_id, {
+            aspect_id: row.aspect_id,
+            aspect_name: row.aspect_name
+          })
+        }
+      }
+      return Array.from(reqMap.values()).map(
+        (item) =>
+          new ReqIdentification(
+            item.id,
+            item.name,
+            item.description,
+            item.user,
+            item.createdAt,
+            item.status,
+            item.subject,
+            Array.from(item.aspects.values()),
+            item.jurisdiction,
+            item.state,
+            item.municipality
+          )
+      )
+    } catch (error) {
+      console.error(
+        'Error retrieving requirement identifications by subject and aspects:',
+        error.message
+      )
+      throw new HttpException(
+        500,
+        'Error retrieving requirement identifications by subject and aspects'
+      )
+    }
+  }
+
+  /**
+   * Retrieves requirement identifications filtered by jurisdiction.
+   *
+   * @param {string} jurisdiction - The jurisdiction to filter by ('Federal', 'Estatal', or 'Local').
+   * @returns {Promise<ReqIdentification[]|null>} - An array of matching requirement identifications, or null if none found.
+   * @throws {HttpException} - If an error occurs during the query.
+   */
+  static async findByJurisdiction (jurisdiction) {
+    const query = `
+      SELECT 
+        ri.id AS req_identification_id,
+        ri.name,
+        ri.description,
+        ri.user_id,
+        ri.created_at,
+        ri.status,
+
+        u.id AS user_id,
+        u.name AS user_name,
+        u.gmail AS user_gmail,
+        u.role_id AS user_role_id,
+        u.profile_picture AS user_profile_picture,
+
+        s.id AS subject_id,
+        s.subject_name,
+
+        a.id AS aspect_id,
+        a.aspect_name,
+
+        lb.jurisdiction,
+        lb.state,
+        lb.municipality
+
+      FROM req_identifications ri
+      LEFT JOIN users u ON ri.user_id = u.id
+      LEFT JOIN req_identifications_requirements rir ON ri.id = rir.req_identification_id
+      LEFT JOIN req_identifications_requirement_legal_basis rirlb 
+        ON rir.req_identification_id = rirlb.req_identification_id 
+        AND rir.requirement_id = rirlb.requirement_id
+      LEFT JOIN legal_basis lb ON rirlb.legal_basis_id = lb.id
+      LEFT JOIN subjects s ON lb.subject_id = s.id
+      LEFT JOIN legal_basis_subject_aspect lbsa ON lb.id = lbsa.legal_basis_id
+      LEFT JOIN aspects a ON lbsa.aspect_id = a.id
+      WHERE lb.jurisdiction = ?
+      ORDER BY ri.id DESC
+    `
+
+    try {
+      const [rows] = await pool.query(query, [jurisdiction])
+      if (rows.length === 0) return null
+
+      const reqIdentificationMap = new Map()
+
+      for (const row of rows) {
+        if (!reqIdentificationMap.has(row.req_identification_id)) {
+          const user = row.user_id
+            ? new User(
+              row.user_id,
+              row.user_name,
+              null,
+              row.user_gmail,
+              row.user_role_id,
+              row.user_profile_picture
+            )
+            : null
+
+          reqIdentificationMap.set(row.req_identification_id, {
+            id: row.req_identification_id,
+            name: row.name,
+            description: row.description,
+            createdAt: row.created_at,
+            status: row.status,
+            user,
+            subject: row.subject_id
+              ? {
+                  subject_id: row.subject_id,
+                  subject_name: row.subject_name
+                }
+              : null,
+            aspects: new Map(),
+            jurisdiction: row.jurisdiction,
+            state: row.state,
+            municipality: row.municipality
+          })
+        }
+
+        const reqIdentification = reqIdentificationMap.get(
+          row.req_identification_id
+        )
+
+        if (row.aspect_id && !reqIdentification.aspects.has(row.aspect_id)) {
+          reqIdentification.aspects.set(row.aspect_id, {
+            aspect_id: row.aspect_id,
+            aspect_name: row.aspect_name
+          })
+        }
+      }
+
+      return Array.from(reqIdentificationMap.values()).map(
+        (item) =>
+          new ReqIdentification(
+            item.id,
+            item.name,
+            item.description,
+            item.user,
+            item.createdAt,
+            item.status,
+            item.subject,
+            Array.from(item.aspects.values()),
+            item.jurisdiction,
+            item.state,
+            item.municipality
+          )
+      )
+    } catch (error) {
+      console.error(
+        'Error fetching requirement identifications by jurisdiction:',
+        error.message
+      )
+      throw new HttpException(
+        500,
+        'Error fetching requirement identifications by jurisdiction'
+      )
+    }
+  }
+
+  /**
+   * Retrieves requirement identifications filtered by state.
+   *
+   * @param {string} state - The (partial) state name to filter by.
+   * @returns {Promise<ReqIdentification[]|null>} - An array of matching requirement identifications, or null if none found.
+   * @throws {HttpException} - If an error occurs during the query.
+   */
+  static async findByState (state) {
+    const query = `
+      SELECT 
+        ri.id AS req_identification_id,
+        ri.name,
+        ri.description,
+        ri.user_id,
+        ri.created_at,
+        ri.status,
+
+        u.id AS user_id,
+        u.name AS user_name,
+        u.gmail AS user_gmail,
+        u.role_id AS user_role_id,
+        u.profile_picture AS user_profile_picture,
+
+        s.id AS subject_id,
+        s.subject_name,
+
+        a.id AS aspect_id,
+        a.aspect_name,
+
+        lb.jurisdiction,
+        lb.state,
+        lb.municipality
+
+      FROM req_identifications ri
+      LEFT JOIN users u ON ri.user_id = u.id
+      LEFT JOIN req_identifications_requirements rir ON ri.id = rir.req_identification_id
+      LEFT JOIN req_identifications_requirement_legal_basis rirlb 
+        ON rir.req_identification_id = rirlb.req_identification_id 
+        AND rir.requirement_id = rirlb.requirement_id
+      LEFT JOIN legal_basis lb ON rirlb.legal_basis_id = lb.id
+      LEFT JOIN subjects s ON lb.subject_id = s.id
+      LEFT JOIN legal_basis_subject_aspect lbsa ON lb.id = lbsa.legal_basis_id
+      LEFT JOIN aspects a ON lbsa.aspect_id = a.id
+      WHERE lb.state LIKE ?
+      ORDER BY ri.id DESC
+    `
+
+    try {
+      const filterValue = `%${state}%`
+      const [rows] = await pool.query(query, [filterValue])
+      if (rows.length === 0) return null
+
+      const reqIdentificationMap = new Map()
+
+      for (const row of rows) {
+        if (!reqIdentificationMap.has(row.req_identification_id)) {
+          const user = row.user_id
+            ? new User(
+              row.user_id,
+              row.user_name,
+              null,
+              row.user_gmail,
+              row.user_role_id,
+              row.user_profile_picture
+            )
+            : null
+
+          reqIdentificationMap.set(row.req_identification_id, {
+            id: row.req_identification_id,
+            name: row.name,
+            description: row.description,
+            createdAt: row.created_at,
+            status: row.status,
+            user,
+            subject: row.subject_id
+              ? {
+                  subject_id: row.subject_id,
+                  subject_name: row.subject_name
+                }
+              : null,
+            aspects: new Map(),
+            jurisdiction: row.jurisdiction,
+            state: row.state,
+            municipality: row.municipality
+          })
+        }
+
+        const reqIdentification = reqIdentificationMap.get(
+          row.req_identification_id
+        )
+
+        if (row.aspect_id && !reqIdentification.aspects.has(row.aspect_id)) {
+          reqIdentification.aspects.set(row.aspect_id, {
+            aspect_id: row.aspect_id,
+            aspect_name: row.aspect_name
+          })
+        }
+      }
+
+      return Array.from(reqIdentificationMap.values()).map(
+        (item) =>
+          new ReqIdentification(
+            item.id,
+            item.name,
+            item.description,
+            item.user,
+            item.createdAt,
+            item.status,
+            item.subject,
+            Array.from(item.aspects.values()),
+            item.jurisdiction,
+            item.state,
+            item.municipality
+          )
+      )
+    } catch (error) {
+      console.error(
+        'Error fetching requirement identifications by state:',
+        error.message
+      )
+      throw new HttpException(
+        500,
+        'Error fetching requirement identifications by state'
+      )
+    }
+  }
+
+  /**
+   * Retrieves requirement identifications filtered by state and optionally by municipalities.
+   *
+   * @param {string} state - The state to filter by.
+   * @param {Array<string>} [municipalities] - An array of municipality names to filter by (optional).
+   * @returns {Promise<ReqIdentification[]|null>} - A list of matching requirement identifications, or null if none found.
+   * @throws {HttpException} - If an error occurs during retrieval.
+   */
+  static async findByStateAndMunicipalities (state, municipalities = []) {
+    let query = `
+        SELECT 
+          ri.id AS req_identification_id,
+          ri.name,
+          ri.description,
+          ri.user_id,
+          ri.created_at,
+          ri.status,
+  
+          u.id AS user_id,
+          u.name AS user_name,
+          u.gmail AS user_gmail,
+          u.role_id AS user_role_id,
+          u.profile_picture AS user_profile_picture,
+  
+          s.id AS subject_id,
+          s.subject_name,
+  
+          a.id AS aspect_id,
+          a.aspect_name,
+  
+          lb.jurisdiction,
+          lb.state,
+          lb.municipality
+        FROM req_identifications ri
+        LEFT JOIN users u 
+          ON ri.user_id = u.id
+        LEFT JOIN req_identifications_requirements rir 
+          ON ri.id = rir.req_identification_id
+        LEFT JOIN req_identifications_requirement_legal_basis rirlb 
+          ON rir.req_identification_id = rirlb.req_identification_id
+          AND rir.requirement_id = rirlb.requirement_id
+        LEFT JOIN legal_basis lb 
+          ON rirlb.legal_basis_id = lb.id
+        LEFT JOIN subjects s 
+          ON lb.subject_id = s.id
+        LEFT JOIN legal_basis_subject_aspect lbsa 
+          ON lb.id = lbsa.legal_basis_id
+        LEFT JOIN aspects a 
+          ON lbsa.aspect_id = a.id
+        WHERE lb.state = ?
+      `
+    const values = [state]
+
+    if (municipalities.length > 0) {
+      const placeholders = municipalities.map(() => '?').join(', ')
+      query += ` AND lb.municipality IN (${placeholders})`
+      values.push(...municipalities)
+    }
+
+    query += ' ORDER BY ri.id DESC'
+
+    try {
+      const [rows] = await pool.query(query, values)
+      if (rows.length === 0) return null
+
+      const reqMap = new Map()
+
+      for (const row of rows) {
+        if (!reqMap.has(row.req_identification_id)) {
+          const user = row.user_id
+            ? new User(
+              row.user_id,
+              row.user_name,
+              null,
+              row.user_gmail,
+              row.user_role_id,
+              row.user_profile_picture
+            )
+            : null
+          reqMap.set(row.req_identification_id, {
+            id: row.req_identification_id,
+            name: row.name,
+            description: row.description,
+            createdAt: row.created_at,
+            status: row.status,
+            user,
+            subject: row.subject_id
+              ? {
+                  subject_id: row.subject_id,
+                  subject_name: row.subject_name
+                }
+              : null,
+            aspects: new Map(),
+            jurisdiction: row.jurisdiction,
+            state: row.state,
+            municipality: row.municipality
+          })
+        }
+
+        const reqEntry = reqMap.get(row.req_identification_id)
+        if (row.aspect_id && !reqEntry.aspects.has(row.aspect_id)) {
+          reqEntry.aspects.set(row.aspect_id, {
+            aspect_id: row.aspect_id,
+            aspect_name: row.aspect_name
+          })
+        }
+      }
+      return Array.from(reqMap.values()).map(
+        (item) =>
+          new ReqIdentification(
+            item.id,
+            item.name,
+            item.description,
+            item.user,
+            item.createdAt,
+            item.status,
+            item.subject,
+            Array.from(item.aspects.values()),
+            item.jurisdiction,
+            item.state,
+            item.municipality
+          )
+      )
+    } catch (error) {
+      console.error(
+        'Error retrieving requirement identifications by state and municipalities:',
+        error.message
+      )
+      throw new HttpException(
+        500,
+        'Error retrieving requirement identifications by state and municipalities'
+      )
+    }
+  }
 
   /**
    * Checks if a requirement identification exists with the given name.
