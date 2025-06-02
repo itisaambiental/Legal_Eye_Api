@@ -1039,9 +1039,11 @@ class ReqIdentificationRepository {
     try {
       const values = [subjectId]
       let reqIds = []
+
       if (aspectIds.length > 0) {
         const placeholders = aspectIds.map(() => '?').join(', ')
         const filterQuery = `
+<<<<<<< HEAD
           SELECT DISTINCT ri.id AS req_identification_id
           FROM req_identifications ri
           JOIN req_identifications_requirements rir
@@ -1092,30 +1094,77 @@ class ReqIdentificationRepository {
         LEFT JOIN users u
           ON ri.user_id = u.id
         LEFT JOIN req_identifications_requirements rir
+=======
+        SELECT DISTINCT ri.id AS req_identification_id
+        FROM req_identifications ri
+        JOIN req_identifications_requirements rir
+>>>>>>> 4247a6b45471ab2572877c1b5a1997132fbea602
           ON ri.id = rir.req_identification_id
-        LEFT JOIN req_identifications_requirement_legal_basis rirlb
+        JOIN req_identifications_requirement_legal_basis rirlb
           ON rir.req_identification_id = rirlb.req_identification_id
           AND rir.requirement_id = rirlb.requirement_id
-        LEFT JOIN legal_basis lb
+        JOIN legal_basis lb
           ON rirlb.legal_basis_id = lb.id
-        LEFT JOIN subjects s
-          ON lb.subject_id = s.id
-        LEFT JOIN legal_basis_subject_aspect lbsa
+        JOIN legal_basis_subject_aspect lbsa
           ON lb.id = lbsa.legal_basis_id
-        LEFT JOIN aspects a
-          ON lbsa.aspect_id = a.id
         WHERE lb.subject_id = ?
+          AND lbsa.aspect_id IN (${placeholders})
       `
+        const [filterRows] = await pool.query(filterQuery, [subjectId, ...aspectIds])
+        if (filterRows.length === 0) return null
+        reqIds = filterRows.map(row => row.req_identification_id)
+      }
+
+      let query = `
+      SELECT 
+        ri.id AS req_identification_id,
+        ri.name,
+        ri.description,
+        ri.user_id,
+        ri.created_at,
+        ri.status,
+
+        u.id AS user_id,
+        u.name AS user_name,
+        u.gmail AS user_gmail,
+        u.role_id AS user_role_id,
+        u.profile_picture AS user_profile_picture,
+
+        s.id AS subject_id,
+        s.subject_name,
+
+        a.id AS aspect_id,
+        a.aspect_name,
+
+        lb.jurisdiction,
+        lb.state,
+        lb.municipality
+      FROM req_identifications ri
+      LEFT JOIN users u ON ri.user_id = u.id
+      LEFT JOIN req_identifications_requirements rir ON ri.id = rir.req_identification_id
+      LEFT JOIN req_identifications_requirement_legal_basis rirlb
+        ON rir.req_identification_id = rirlb.req_identification_id
+        AND rir.requirement_id = rirlb.requirement_id
+      LEFT JOIN legal_basis lb ON rirlb.legal_basis_id = lb.id
+      LEFT JOIN subjects s ON lb.subject_id = s.id
+      LEFT JOIN legal_basis_subject_aspect lbsa ON lb.id = lbsa.legal_basis_id
+      LEFT JOIN aspects a ON lbsa.aspect_id = a.id
+      WHERE lb.subject_id = ?
+    `
 
       if (reqIds.length > 0) {
         const idPlaceholders = reqIds.map(() => '?').join(', ')
         query += ` AND ri.id IN (${idPlaceholders})`
         values.push(...reqIds)
       }
+
       query += ' ORDER BY ri.id DESC'
+
       const [rows] = await pool.query(query, values)
       if (rows.length === 0) return null
+
       const reqMap = new Map()
+
       for (const row of rows) {
         if (!reqMap.has(row.req_identification_id)) {
           const user = row.user_id
@@ -1128,6 +1177,7 @@ class ReqIdentificationRepository {
               row.user_profile_picture
             )
             : null
+
           reqMap.set(row.req_identification_id, {
             id: row.req_identification_id,
             name: row.name,
@@ -1145,6 +1195,7 @@ class ReqIdentificationRepository {
             municipality: row.municipality
           })
         }
+
         const reqEntry = reqMap.get(row.req_identification_id)
         if (row.aspect_id && !reqEntry.aspects.has(row.aspect_id)) {
           reqEntry.aspects.set(row.aspect_id, {
@@ -1153,21 +1204,21 @@ class ReqIdentificationRepository {
           })
         }
       }
-      return Array.from(reqMap.values()).map(
-        (item) =>
-          new ReqIdentification(
-            item.id,
-            item.name,
-            item.description,
-            item.user,
-            item.createdAt,
-            item.status,
-            item.subject,
-            Array.from(item.aspects.values()),
-            item.jurisdiction,
-            item.state,
-            item.municipality
-          )
+
+      return Array.from(reqMap.values()).map(item =>
+        new ReqIdentification(
+          item.id,
+          item.name,
+          item.description,
+          item.user,
+          item.createdAt,
+          item.status,
+          item.subject,
+          Array.from(item.aspects.values()),
+          item.jurisdiction,
+          item.state,
+          item.municipality
+        )
       )
     } catch (error) {
       console.error(
