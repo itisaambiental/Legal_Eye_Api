@@ -7,7 +7,18 @@ import { Router } from 'express'
 import UserExtractor from '../middlewares/user_extractor.js'
 import {
   createReqIdentification,
-  getAllReqIdentifications
+  getAllReqIdentifications,
+  getReqIdentificationById,
+  getReqIdentificationsByName,
+  getReqIdentificationsByDescription,
+  getReqIdentificationsByUserName,
+  getReqIdentificationsByCreatedAt,
+  getReqIdentificationsByStatus,
+  getReqIdentificationsBySubjectId,
+  getReqIdentificationsBySubjectAndAspects,
+  getReqIdentificationsByJurisdiction,
+  getReqIdentificationsByState,
+  getReqIdentificationsByStateAndMunicipalities
   // getReqIdentificationById,
   // detectRequirements,
   // updateReqIdentificationById,
@@ -53,6 +64,102 @@ router.post('/req-identification', UserExtractor, createReqIdentification)
  * @middleware UserExtractor
  */
 router.get('/req-identification', UserExtractor, getAllReqIdentifications)
+
+/**
+ * Retrieves a single requirement identification by its ID.
+ * @method GET
+ * @path /req-identification/:id
+ * @middleware UserExtractor
+ */
+router.get('/req-identification/:id', UserExtractor, getReqIdentificationById)
+
+/**
+ * Retrieves requirement identifications by name (partial match).
+ * @method GET
+ * @path /req-identification/name
+ * @middleware UserExtractor
+ */
+router.get('/req-identification/name', UserExtractor, getReqIdentificationsByName)
+
+/**
+ * Retrieves requirement identifications by description (full-text search).
+ * @method GET
+ * @path /req-identification/description
+ * @middleware UserExtractor
+ */
+router.get('/req-identification/description', UserExtractor, getReqIdentificationsByDescription)
+
+/**
+ * Retrieves requirement identifications by user name (partial match).
+ * @method GET
+ * @path /req-identification/user-name
+ * @middleware UserExtractor
+ */
+router.get('/req-identification/user-name', UserExtractor, getReqIdentificationsByUserName)
+
+/**
+ * Retrieves requirement identifications by creation date.
+ * @method GET
+ * @path /req-identification/created-at
+ * @middleware UserExtractor
+ */
+router.get('/req-identification/created-at', UserExtractor, getReqIdentificationsByCreatedAt)
+
+/**
+ * Retrieves requirement identifications by status.
+ * @method GET
+ * @path /req-identification/status
+ * @middleware UserExtractor
+ */
+router.get('/req-identification/status', UserExtractor, getReqIdentificationsByStatus)
+
+/**
+ * Retrieves requirement identifications by subject ID.
+ * @method GET
+ * @path /req-identification/subject
+ * @middleware UserExtractor
+ */
+router.get('/req-identification/subject', UserExtractor, getReqIdentificationsBySubjectId)
+
+/**
+ * Retrieves requirement identifications by subject ID and aspect IDs.
+ * @method GET
+ * @path /req-identification/subject-aspects
+ * @middleware UserExtractor
+ */
+router.get(
+  '/req-identification/subject-aspects',
+  UserExtractor,
+  getReqIdentificationsBySubjectAndAspects
+)
+
+/**
+ * Retrieves requirement identifications by jurisdiction.
+ * @method GET
+ * @path /req-identification/jurisdiction
+ * @middleware UserExtractor
+ */
+router.get('/req-identification/jurisdiction', UserExtractor, getReqIdentificationsByJurisdiction)
+
+/**
+ * Retrieves requirement identifications by state (partial match).
+ * @method GET
+ * @path /req-identification/state
+ * @middleware UserExtractor
+ */
+router.get('/req-identification/state', UserExtractor, getReqIdentificationsByState)
+
+/**
+ * Retrieves requirement identifications by state and municipalities.
+ * @method GET
+ * @path /req-identification/state-municipalities
+ * @middleware UserExtractor
+ */
+router.get(
+  '/req-identification/state-municipalities',
+  UserExtractor,
+  getReqIdentificationsByStateAndMunicipalities
+)
 
 // PARA CADA CONTROLLER EN LOS CONTROLLERS DE FILTRADO SE DEBE IMPLEMENTAR UNA CONTROLADOR SIGUIENDO EL ESTANDAR Y GUIANDOSE DE LA RUTA  router.get('/req-identification', UserExtractor, getAllReqIdentifications).
 

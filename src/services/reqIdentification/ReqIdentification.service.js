@@ -212,6 +212,600 @@ class ReqIdentificationService {
     }
   }
 
+  /**
+   * Retrieves a single identification by its ID.
+   *
+   * @param {number} id - The ID of the requirement identification to fetch.
+   * @returns {Promise<Object|null>} - The formatted requirement identification object or null if not found.
+   * @throws {HttpException}
+   */
+  static async getById (id) {
+    try {
+      const reqIdentification = await ReqIdentificationRepository.findById(id)
+      if (!reqIdentification) {
+        return null
+      }
+
+      let user = null
+      if (reqIdentification.user) {
+        const profilePictureUrl = reqIdentification.user.profile_picture
+          ? await FileService.getFile(reqIdentification.user.profile_picture)
+          : null
+        user = {
+          ...reqIdentification.user,
+          profile_picture: profilePictureUrl
+        }
+      }
+      let formattedCreatedAt = null
+      if (reqIdentification.createdAt) {
+        formattedCreatedAt = format(
+          new Date(reqIdentification.createdAt),
+          'dd-MM-yyyy',
+          { locale: es }
+        )
+      }
+      return {
+        ...reqIdentification,
+        user,
+        createdAt: formattedCreatedAt
+      }
+    } catch (error) {
+      if (error instanceof HttpException) throw error
+      throw new HttpException(
+        500,
+        'Failed to retrieve requirement identification by ID'
+      )
+    }
+  }
+
+  /**
+   * Retrieves identifications by matching name (partial match).
+   *
+   * @param {string} name - The (partial) name to search for.
+   * @returns {Promise<Array<Object>>} - List of matching requirement identifications, or empty array if none found.
+   * @throws {HttpException}
+   */
+  static async getByName (name) {
+    try {
+      const reqIdentifications = await ReqIdentificationRepository.findByName(name)
+      if (!reqIdentifications) {
+        return []
+      }
+
+      const reqIdentificationsList = await Promise.all(
+        reqIdentifications.map(async (reqIdentification) => {
+          let user = null
+          if (reqIdentification.user) {
+            const profilePictureUrl = reqIdentification.user.profile_picture
+              ? await FileService.getFile(reqIdentification.user.profile_picture)
+              : null
+            user = {
+              ...reqIdentification.user,
+              profile_picture: profilePictureUrl
+            }
+          }
+
+          let formattedCreatedAt = null
+          if (reqIdentification.createdAt) {
+            formattedCreatedAt = format(
+              new Date(reqIdentification.createdAt),
+              'dd-MM-yyyy',
+              { locale: es }
+            )
+          }
+
+          return {
+            ...reqIdentification,
+            user,
+            createdAt: formattedCreatedAt
+          }
+        })
+      )
+
+      return reqIdentificationsList
+    } catch (error) {
+      if (error instanceof HttpException) throw error
+      throw new HttpException(
+        500,
+        'Failed to retrieve requirement identifications by name'
+      )
+    }
+  }
+
+  /**
+   * Retrieves identifications by matching description (full-text search).
+   *
+   * @param {string} description - The description terms to search for.
+   * @returns {Promise<Array<Object>>} - List of matching requirement identifications, or empty array if none found.
+   * @throws {HttpException}
+   */
+  static async getByDescription (description) {
+    try {
+      const reqIdentifications = await ReqIdentificationRepository.findByDescription(description)
+      if (!reqIdentifications) {
+        return []
+      }
+
+      const reqIdentificationsList = await Promise.all(
+        reqIdentifications.map(async (reqIdentification) => {
+          let user = null
+          if (reqIdentification.user) {
+            const profilePictureUrl = reqIdentification.user.profile_picture
+              ? await FileService.getFile(reqIdentification.user.profile_picture)
+              : null
+            user = {
+              ...reqIdentification.user,
+              profile_picture: profilePictureUrl
+            }
+          }
+
+          let formattedCreatedAt = null
+          if (reqIdentification.createdAt) {
+            formattedCreatedAt = format(
+              new Date(reqIdentification.createdAt),
+              'dd-MM-yyyy',
+              { locale: es }
+            )
+          }
+
+          return {
+            ...reqIdentification,
+            user,
+            createdAt: formattedCreatedAt
+          }
+        })
+      )
+
+      return reqIdentificationsList
+    } catch (error) {
+      if (error instanceof HttpException) throw error
+      throw new HttpException(
+        500,
+        'Failed to retrieve requirement identifications by description'
+      )
+    }
+  }
+
+  /**
+   * Retrieves identifications by matching user name (partial match).
+   *
+   * @param {string} userName - The (partial) user name to search for.
+   * @returns {Promise<Array<Object>>} - List of matching requirement identifications, or empty array if none found.
+   * @throws {HttpException}
+   */
+  static async getByUserName (userName) {
+    try {
+      const reqIdentifications = await ReqIdentificationRepository.findByUserName(userName)
+      if (!reqIdentifications) {
+        return []
+      }
+
+      const reqIdentificationsList = await Promise.all(
+        reqIdentifications.map(async (reqIdentification) => {
+          let user = null
+          if (reqIdentification.user) {
+            const profilePictureUrl = reqIdentification.user.profile_picture
+              ? await FileService.getFile(reqIdentification.user.profile_picture)
+              : null
+            user = {
+              ...reqIdentification.user,
+              profile_picture: profilePictureUrl
+            }
+          }
+
+          let formattedCreatedAt = null
+          if (reqIdentification.createdAt) {
+            formattedCreatedAt = format(
+              new Date(reqIdentification.createdAt),
+              'dd-MM-yyyy',
+              { locale: es }
+            )
+          }
+
+          return {
+            ...reqIdentification,
+            user,
+            createdAt: formattedCreatedAt
+          }
+        })
+      )
+
+      return reqIdentificationsList
+    } catch (error) {
+      if (error instanceof HttpException) throw error
+      throw new HttpException(
+        500,
+        'Failed to retrieve requirement identifications by user name'
+      )
+    }
+  }
+
+  /**
+   * Retrieves identifications by creation date.
+   *
+   * @param {string} date - The creation date to search for (format: 'YYYY-MM-DD').
+   * @returns {Promise<Array<Object>>} - List of matching requirement identifications, or empty array if none found.
+   * @throws {HttpException}
+   */
+  static async getByCreatedAt (date) {
+    try {
+      const reqIdentifications = await ReqIdentificationRepository.findByCreatedAt(date)
+      if (!reqIdentifications) {
+        return []
+      }
+
+      const reqIdentificationsList = await Promise.all(
+        reqIdentifications.map(async (reqIdentification) => {
+          let user = null
+          if (reqIdentification.user) {
+            const profilePictureUrl = reqIdentification.user.profile_picture
+              ? await FileService.getFile(reqIdentification.user.profile_picture)
+              : null
+            user = {
+              ...reqIdentification.user,
+              profile_picture: profilePictureUrl
+            }
+          }
+
+          let formattedCreatedAt = null
+          if (reqIdentification.createdAt) {
+            formattedCreatedAt = format(
+              new Date(reqIdentification.createdAt),
+              'dd-MM-yyyy',
+              { locale: es }
+            )
+          }
+
+          return {
+            ...reqIdentification,
+            user,
+            createdAt: formattedCreatedAt
+          }
+        })
+      )
+
+      return reqIdentificationsList
+    } catch (error) {
+      if (error instanceof HttpException) throw error
+      throw new HttpException(
+        500,
+        'Failed to retrieve requirement identifications by creation date'
+      )
+    }
+  }
+
+  /**
+   * Retrieves identifications by status.
+   *
+   * @param {string} status - The status to filter by ('Active', 'Failed', or 'Completed').
+   * @returns {Promise<Array<Object>>} - List of matching requirement identifications, or empty array if none found.
+   * @throws {HttpException}
+   */
+  static async getByStatus (status) {
+    try {
+      const reqIdentifications = await ReqIdentificationRepository.findByStatus(status)
+      if (!reqIdentifications) {
+        return []
+      }
+
+      const reqIdentificationsList = await Promise.all(
+        reqIdentifications.map(async (reqIdentification) => {
+          let user = null
+          if (reqIdentification.user) {
+            const profilePictureUrl = reqIdentification.user.profile_picture
+              ? await FileService.getFile(reqIdentification.user.profile_picture)
+              : null
+            user = {
+              ...reqIdentification.user,
+              profile_picture: profilePictureUrl
+            }
+          }
+
+          let formattedCreatedAt = null
+          if (reqIdentification.createdAt) {
+            formattedCreatedAt = format(
+              new Date(reqIdentification.createdAt),
+              'dd-MM-yyyy',
+              { locale: es }
+            )
+          }
+
+          return {
+            ...reqIdentification,
+            user,
+            createdAt: formattedCreatedAt
+          }
+        })
+      )
+
+      return reqIdentificationsList
+    } catch (error) {
+      if (error instanceof HttpException) throw error
+      throw new HttpException(
+        500,
+        'Failed to retrieve requirement identifications by status'
+      )
+    }
+  }
+
+  /**
+   * Retrieves identifications by subject ID.
+   *
+   * @param {number} subjectId - The subject ID to filter by.
+   * @returns {Promise<Array<Object>>} - List of matching requirement identifications, or empty array if none found.
+   * @throws {HttpException}
+   */
+  static async getBySubjectId (subjectId) {
+    try {
+      const reqIdentifications = await ReqIdentificationRepository.findBySubjectId(subjectId)
+      if (!reqIdentifications) {
+        return []
+      }
+
+      const reqIdentificationsList = await Promise.all(
+        reqIdentifications.map(async (reqIdentification) => {
+          let user = null
+          if (reqIdentification.user) {
+            const profilePictureUrl = reqIdentification.user.profile_picture
+              ? await FileService.getFile(reqIdentification.user.profile_picture)
+              : null
+            user = {
+              ...reqIdentification.user,
+              profile_picture: profilePictureUrl
+            }
+          }
+
+          let formattedCreatedAt = null
+          if (reqIdentification.createdAt) {
+            formattedCreatedAt = format(
+              new Date(reqIdentification.createdAt),
+              'dd-MM-yyyy',
+              { locale: es }
+            )
+          }
+
+          return {
+            ...reqIdentification,
+            user,
+            createdAt: formattedCreatedAt
+          }
+        })
+      )
+
+      return reqIdentificationsList
+    } catch (error) {
+      if (error instanceof HttpException) throw error
+      throw new HttpException(
+        500,
+        'Failed to retrieve requirement identifications by subject ID'
+      )
+    }
+  }
+
+  /**
+   * Retrieves identifications by subject ID and one or more aspect IDs.
+   *
+   * @param {number} subjectId - The subject ID to filter by.
+   * @param {number[]} aspectIds - Array of aspect IDs to filter by.
+   * @returns {Promise<Array<Object>>} - List of matching requirement identifications, or empty array if none found.
+   * @throws {HttpException}
+   */
+  static async getBySubjectAndAspects (subjectId, aspectIds) {
+    try {
+      const reqIdentifications = await ReqIdentificationRepository.findBySubjectAndAspects(
+        subjectId,
+        aspectIds
+      )
+      if (!reqIdentifications) {
+        return []
+      }
+
+      const reqIdentificationsList = await Promise.all(
+        reqIdentifications.map(async (reqIdentification) => {
+          let user = null
+          if (reqIdentification.user) {
+            const profilePictureUrl = reqIdentification.user.profile_picture
+              ? await FileService.getFile(reqIdentification.user.profile_picture)
+              : null
+            user = {
+              ...reqIdentification.user,
+              profile_picture: profilePictureUrl
+            }
+          }
+
+          let formattedCreatedAt = null
+          if (reqIdentification.createdAt) {
+            formattedCreatedAt = format(
+              new Date(reqIdentification.createdAt),
+              'dd-MM-yyyy',
+              { locale: es }
+            )
+          }
+
+          return {
+            ...reqIdentification,
+            user,
+            createdAt: formattedCreatedAt
+          }
+        })
+      )
+
+      return reqIdentificationsList
+    } catch (error) {
+      if (error instanceof HttpException) throw error
+      throw new HttpException(
+        500,
+        'Failed to retrieve requirement identifications by subject and aspects'
+      )
+    }
+  }
+
+  /**
+   * Retrieves identifications by jurisdiction.
+   *
+   * @param {string} jurisdiction - The jurisdiction to filter by ('Federal', 'Estatal', or 'Local').
+   * @returns {Promise<Array<Object>>} - List of matching requirement identifications, or empty array if none found.
+   * @throws {HttpException}
+   */
+  static async getByJurisdiction (jurisdiction) {
+    try {
+      const reqIdentifications = await ReqIdentificationRepository.findByJurisdiction(jurisdiction)
+      if (!reqIdentifications) {
+        return []
+      }
+
+      const reqIdentificationsList = await Promise.all(
+        reqIdentifications.map(async (reqIdentification) => {
+          let user = null
+          if (reqIdentification.user) {
+            const profilePictureUrl = reqIdentification.user.profile_picture
+              ? await FileService.getFile(reqIdentification.user.profile_picture)
+              : null
+            user = {
+              ...reqIdentification.user,
+              profile_picture: profilePictureUrl
+            }
+          }
+
+          let formattedCreatedAt = null
+          if (reqIdentification.createdAt) {
+            formattedCreatedAt = format(
+              new Date(reqIdentification.createdAt),
+              'dd-MM-yyyy',
+              { locale: es }
+            )
+          }
+
+          return {
+            ...reqIdentification,
+            user,
+            createdAt: formattedCreatedAt
+          }
+        })
+      )
+
+      return reqIdentificationsList
+    } catch (error) {
+      if (error instanceof HttpException) throw error
+      throw new HttpException(
+        500,
+        'Failed to retrieve requirement identifications by jurisdiction'
+      )
+    }
+  }
+
+  /**
+   * Retrieves identifications by state.
+   *
+   * @param {string} state - The (partial) state name to filter by.
+   * @returns {Promise<Array<Object>>} - List of matching requirement identifications, or empty array if none found.
+   * @throws {HttpException}
+   */
+  static async getByState (state) {
+    try {
+      const reqIdentifications = await ReqIdentificationRepository.findByState(state)
+      if (!reqIdentifications) {
+        return []
+      }
+
+      const reqIdentificationsList = await Promise.all(
+        reqIdentifications.map(async (reqIdentification) => {
+          let user = null
+          if (reqIdentification.user) {
+            const profilePictureUrl = reqIdentification.user.profile_picture
+              ? await FileService.getFile(reqIdentification.user.profile_picture)
+              : null
+            user = {
+              ...reqIdentification.user,
+              profile_picture: profilePictureUrl
+            }
+          }
+
+          let formattedCreatedAt = null
+          if (reqIdentification.createdAt) {
+            formattedCreatedAt = format(
+              new Date(reqIdentification.createdAt),
+              'dd-MM-yyyy',
+              { locale: es }
+            )
+          }
+
+          return {
+            ...reqIdentification,
+            user,
+            createdAt: formattedCreatedAt
+          }
+        })
+      )
+
+      return reqIdentificationsList
+    } catch (error) {
+      if (error instanceof HttpException) throw error
+      throw new HttpException(
+        500,
+        'Failed to retrieve requirement identifications by state'
+      )
+    }
+  }
+
+  /**
+   * Retrieves identifications by state and optionally by municipalities.
+   *
+   * @param {string} state - The state to filter by.
+   * @param {Array<string>} [municipalities] - An array of municipality names to filter by (optional).
+   * @returns {Promise<Array<Object>>} - List of matching requirement identifications, or empty array if none found.
+   * @throws {HttpException}
+   */
+  static async getByStateAndMunicipalities (state, municipalities = []) {
+    try {
+      const reqIdentifications = await ReqIdentificationRepository.findByStateAndMunicipalities(
+        state,
+        municipalities
+      )
+      if (!reqIdentifications) {
+        return []
+      }
+
+      const reqIdentificationsList = await Promise.all(
+        reqIdentifications.map(async (reqIdentification) => {
+          let user = null
+          if (reqIdentification.user) {
+            const profilePictureUrl = reqIdentification.user.profile_picture
+              ? await FileService.getFile(reqIdentification.user.profile_picture)
+              : null
+            user = {
+              ...reqIdentification.user,
+              profile_picture: profilePictureUrl
+            }
+          }
+
+          let formattedCreatedAt = null
+          if (reqIdentification.createdAt) {
+            formattedCreatedAt = format(
+              new Date(reqIdentification.createdAt),
+              'dd-MM-yyyy',
+              { locale: es }
+            )
+          }
+
+          return {
+            ...reqIdentification,
+            user,
+            createdAt: formattedCreatedAt
+          }
+        })
+      )
+
+      return reqIdentificationsList
+    } catch (error) {
+      if (error instanceof HttpException) throw error
+      throw new HttpException(
+        500,
+        'Failed to retrieve requirement identifications by state and municipalities'
+      )
+    }
+  }
+
   // PARA CADA FUNCION EN EL REPOSITORIO DE FILTRADO SE DEBE IMPLEMENTAR UNA FUNCION EN ESTE SERVICIO SIGUIENDO EL ESTANDAR Y GUIANDOSE DE LA FUNCION getAll.
   // COMENZAR DESDE AQUI
 

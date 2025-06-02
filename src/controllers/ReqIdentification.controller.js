@@ -63,6 +63,393 @@ export const getAllReqIdentifications = async (req, res) => {
   }
 }
 
+/**
+ * Retrieves a single requirement identification by its ID.
+ * @function getReqIdentificationById
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ */
+export const getReqIdentificationById = async (req, res) => {
+  const { userId } = req
+  const { id } = req.params
+
+  try {
+    const isAuthorized = await UserService.userExists(userId)
+    if (!isAuthorized) {
+      return res.status(403).json({ message: 'Unauthorized' })
+    }
+
+    const reqIdentification = await ReqIdentificationService.getById(Number(id))
+    if (!reqIdentification) {
+      return res.status(404).json({ message: 'Requirement identification not found' })
+    }
+
+    return res.status(200).json({ reqIdentification })
+  } catch (err) {
+    if (err instanceof HttpException) {
+      return res.status(err.status).json({ message: err.message })
+    }
+    return res.status(500).json({ message: 'Internal Server Error' })
+  }
+}
+
+/**
+ * Retrieves requirement identifications by matching name (partial match).
+ * @function getReqIdentificationsByName
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ */
+export const getReqIdentificationsByName = async (req, res) => {
+  const { userId } = req
+  const { name } = req.query
+
+  try {
+    const isAuthorized = await UserService.userExists(userId)
+    if (!isAuthorized) {
+      return res.status(403).json({ message: 'Unauthorized' })
+    }
+
+    if (!name || typeof name !== 'string') {
+      return res.status(400).json({ message: 'Name query parameter is required' })
+    }
+
+    const reqIdentifications = await ReqIdentificationService.getByName(name)
+    return res.status(200).json({ reqIdentifications })
+  } catch (err) {
+    if (err instanceof HttpException) {
+      return res.status(err.status).json({ message: err.message })
+    }
+    return res.status(500).json({ message: 'Internal Server Error' })
+  }
+}
+
+/**
+ * Retrieves requirement identifications by matching description (full-text search).
+ * @function getReqIdentificationsByDescription
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ */
+export const getReqIdentificationsByDescription = async (req, res) => {
+  const { userId } = req
+  const { description } = req.query
+
+  try {
+    const isAuthorized = await UserService.userExists(userId)
+    if (!isAuthorized) {
+      return res.status(403).json({ message: 'Unauthorized' })
+    }
+
+    if (!description || typeof description !== 'string') {
+      return res.status(400).json({ message: 'Description query parameter is required' })
+    }
+
+    const reqIdentifications = await ReqIdentificationService.getByDescription(description)
+    return res.status(200).json({ reqIdentifications })
+  } catch (err) {
+    if (err instanceof HttpException) {
+      return res.status(err.status).json({ message: err.message })
+    }
+    return res.status(500).json({ message: 'Internal Server Error' })
+  }
+}
+
+/**
+ * Retrieves requirement identifications by matching user name (partial match).
+ * @function getReqIdentificationsByUserName
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ */
+export const getReqIdentificationsByUserName = async (req, res) => {
+  const { userId } = req
+  const { userName } = req.query
+
+  try {
+    const isAuthorized = await UserService.userExists(userId)
+    if (!isAuthorized) {
+      return res.status(403).json({ message: 'Unauthorized' })
+    }
+
+    if (!userName || typeof userName !== 'string') {
+      return res.status(400).json({ message: 'userName query parameter is required' })
+    }
+
+    const reqIdentifications = await ReqIdentificationService.getByUserName(userName)
+    return res.status(200).json({ reqIdentifications })
+  } catch (err) {
+    if (err instanceof HttpException) {
+      return res.status(err.status).json({ message: err.message })
+    }
+    return res.status(500).json({ message: 'Internal Server Error' })
+  }
+}
+
+/**
+ * Retrieves requirement identifications by creation date.
+ * @function getReqIdentificationsByCreatedAt
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ */
+export const getReqIdentificationsByCreatedAt = async (req, res) => {
+  const { userId } = req
+  const { date } = req.query
+
+  try {
+    const isAuthorized = await UserService.userExists(userId)
+    if (!isAuthorized) {
+      return res.status(403).json({ message: 'Unauthorized' })
+    }
+
+    if (!date || typeof date !== 'string') {
+      return res.status(400).json({ message: 'date query parameter is required' })
+    }
+
+    const reqIdentifications = await ReqIdentificationService.getByCreatedAt(date)
+    return res.status(200).json({ reqIdentifications })
+  } catch (err) {
+    if (err instanceof HttpException) {
+      return res.status(err.status).json({ message: err.message })
+    }
+    return res.status(500).json({ message: 'Internal Server Error' })
+  }
+}
+
+/**
+ * Retrieves requirement identifications by status.
+ * @function getReqIdentificationsByStatus
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ */
+export const getReqIdentificationsByStatus = async (req, res) => {
+  const { userId } = req
+  const { status } = req.query
+
+  try {
+    const isAuthorized = await UserService.userExists(userId)
+    if (!isAuthorized) {
+      return res.status(403).json({ message: 'Unauthorized' })
+    }
+
+    if (!status || typeof status !== 'string') {
+      return res.status(400).json({ message: 'status query parameter is required' })
+    }
+
+    const reqIdentifications = await ReqIdentificationService.getByStatus(status)
+    return res.status(200).json({ reqIdentifications })
+  } catch (err) {
+    if (err instanceof HttpException) {
+      return res.status(err.status).json({ message: err.message })
+    }
+    return res.status(500).json({ message: 'Internal Server Error' })
+  }
+}
+
+/**
+ * Retrieves requirement identifications by subject ID.
+ * @function getReqIdentificationsBySubjectId
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ */
+export const getReqIdentificationsBySubjectId = async (req, res) => {
+  const { userId } = req
+  const { subjectId } = req.query
+
+  try {
+    const isAuthorized = await UserService.userExists(userId)
+    if (!isAuthorized) {
+      return res.status(403).json({ message: 'Unauthorized' })
+    }
+
+    if (!subjectId || isNaN(Number(subjectId))) {
+      return res.status(400).json({ message: 'subjectId query parameter is required and must be a number' })
+    }
+
+    const reqIdentifications = await ReqIdentificationService.getBySubjectId(Number(subjectId))
+    return res.status(200).json({ reqIdentifications })
+  } catch (err) {
+    if (err instanceof HttpException) {
+      return res.status(err.status).json({ message: err.message })
+    }
+    return res.status(500).json({ message: 'Internal Server Error' })
+  }
+}
+
+/**
+ * Retrieves requirement identifications by subject ID and one or more aspect IDs.
+ * @function getReqIdentificationsBySubjectAndAspects
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ */
+export const getReqIdentificationsBySubjectAndAspects = async (req, res) => {
+  const { userId } = req
+  const { subjectId, aspectIds } = req.query
+
+  try {
+    const isAuthorized = await UserService.userExists(userId)
+    if (!isAuthorized) {
+      return res.status(403).json({ message: 'Unauthorized' })
+    }
+
+    // Validate subjectId
+    if (!subjectId || isNaN(Number(subjectId))) {
+      return res
+        .status(400)
+        .json({ message: 'subjectId query parameter is required and must be a number' })
+    }
+
+    // Parse aspectIds into an array of numbers
+    let aspectIdsArray = []
+    if (!aspectIds) {
+      return res
+        .status(400)
+        .json({ message: 'aspectIds query parameter is required' })
+    }
+
+    if (Array.isArray(aspectIds)) {
+      aspectIdsArray = aspectIds.map((id) => Number(id))
+    } else if (typeof aspectIds === 'string') {
+      // Accept comma-separated string like "1,2,3"
+      aspectIdsArray = aspectIds.split(',').map((id) => Number(id))
+    } else {
+      return res
+        .status(400)
+        .json({ message: 'aspectIds must be a string or an array of strings' })
+    }
+
+    // Ensure all parsed aspect IDs are valid numbers
+    if (aspectIdsArray.some((id) => isNaN(id))) {
+      return res
+        .status(400)
+        .json({ message: 'All aspectIds must be valid numbers' })
+    }
+
+    const reqIdentifications = await ReqIdentificationService.getBySubjectAndAspects(
+      Number(subjectId),
+      aspectIdsArray
+    )
+
+    return res.status(200).json({ reqIdentifications })
+  } catch (err) {
+    if (err instanceof HttpException) {
+      return res.status(err.status).json({ message: err.message })
+    }
+    return res.status(500).json({ message: 'Internal Server Error' })
+  }
+}
+
+/**
+ * Retrieves requirement identifications by jurisdiction.
+ * @function getReqIdentificationsByJurisdiction
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ */
+export const getReqIdentificationsByJurisdiction = async (req, res) => {
+  const { userId } = req
+  const { jurisdiction } = req.query
+
+  try {
+    const isAuthorized = await UserService.userExists(userId)
+    if (!isAuthorized) {
+      return res.status(403).json({ message: 'Unauthorized' })
+    }
+
+    if (!jurisdiction || typeof jurisdiction !== 'string') {
+      return res
+        .status(400)
+        .json({ message: 'jurisdiction query parameter is required' })
+    }
+
+    const reqIdentifications = await ReqIdentificationService.getByJurisdiction(jurisdiction)
+    return res.status(200).json({ reqIdentifications })
+  } catch (err) {
+    if (err instanceof HttpException) {
+      return res.status(err.status).json({ message: err.message })
+    }
+    return res.status(500).json({ message: 'Internal Server Error' })
+  }
+}
+
+/**
+ * Retrieves requirement identifications by state.
+ * @function getReqIdentificationsByState
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ */
+export const getReqIdentificationsByState = async (req, res) => {
+  const { userId } = req
+  const { state } = req.query
+
+  try {
+    const isAuthorized = await UserService.userExists(userId)
+    if (!isAuthorized) {
+      return res.status(403).json({ message: 'Unauthorized' })
+    }
+
+    if (!state || typeof state !== 'string') {
+      return res
+        .status(400)
+        .json({ message: 'state query parameter is required' })
+    }
+
+    const reqIdentifications = await ReqIdentificationService.getByState(state)
+    return res.status(200).json({ reqIdentifications })
+  } catch (err) {
+    if (err instanceof HttpException) {
+      return res.status(err.status).json({ message: err.message })
+    }
+    return res.status(500).json({ message: 'Internal Server Error' })
+  }
+}
+
+/**
+ * Retrieves requirement identifications by state and optionally by municipalities.
+ * @function getReqIdentificationsByStateAndMunicipalities
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ */
+export const getReqIdentificationsByStateAndMunicipalities = async (req, res) => {
+  const { userId } = req
+  const { state, municipalities } = req.query
+
+  try {
+    const isAuthorized = await UserService.userExists(userId)
+    if (!isAuthorized) {
+      return res.status(403).json({ message: 'Unauthorized' })
+    }
+
+    if (!state || typeof state !== 'string') {
+      return res
+        .status(400)
+        .json({ message: 'state query parameter is required' })
+    }
+
+    // Parse municipalities into an array of strings (if provided)
+    let municipalitiesArray = []
+    if (municipalities) {
+      if (Array.isArray(municipalities)) {
+        municipalitiesArray = municipalities.map((m) => String(m))
+      } else if (typeof municipalities === 'string') {
+        // Accept comma-separated string like "Muni1,Muni2"
+        municipalitiesArray = municipalities.split(',').map((m) => m.trim())
+      } else {
+        return res
+          .status(400)
+          .json({ message: 'municipalities must be a string or an array of strings' })
+      }
+    }
+
+    const reqIdentifications = await ReqIdentificationService.getByStateAndMunicipalities(
+      state,
+      municipalitiesArray
+    )
+    return res.status(200).json({ reqIdentifications })
+  } catch (err) {
+    if (err instanceof HttpException) {
+      return res.status(err.status).json({ message: err.message })
+    }
+    return res.status(500).json({ message: 'Internal Server Error' })
+  }
+}
+
 // PARA CADA FUNCION EN EL SERVICIO DE FILTRADO SE DEBE IMPLEMENTAR UNA CONTROLADOR SIGUIENDO EL ESTANDAR Y GUIANDOSE DE LA FUNCION getAllReqIdentifications.
 // COMENZAR DESDE AQUI
 

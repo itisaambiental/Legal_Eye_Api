@@ -902,13 +902,13 @@ class ReqIdentificationRepository {
   }
 
   /**
-   * Retrieves requirement identifications filtered by subject name.
+   * Retrieves requirement identifications filtered by subject ID.
    *
-   * @param {string} subjectName - The (partial) subject name to filter by.
+   * @param {number} subjectId - The subject ID to filter by.
    * @returns {Promise<ReqIdentification[]|null>} - An array of matching requirement identifications, or null if none found.
    * @throws {HttpException} - If an error occurs during the query.
    */
-  static async findBySubjectName (subjectName) {
+  static async findBySubjectId (subjectId) {
     const query = `
       SELECT 
         ri.id AS req_identification_id,
@@ -936,7 +936,8 @@ class ReqIdentificationRepository {
 
       FROM req_identifications ri
       LEFT JOIN users u ON ri.user_id = u.id
-      LEFT JOIN req_identifications_requirements rir ON ri.id = rir.req_identification_id
+      LEFT JOIN req_identifications_requirements rir 
+        ON ri.id = rir.req_identification_id
       LEFT JOIN req_identifications_requirement_legal_basis rirlb 
         ON rir.req_identification_id = rirlb.req_identification_id 
         AND rir.requirement_id = rirlb.requirement_id
@@ -944,13 +945,12 @@ class ReqIdentificationRepository {
       LEFT JOIN subjects s ON lb.subject_id = s.id
       LEFT JOIN legal_basis_subject_aspect lbsa ON lb.id = lbsa.legal_basis_id
       LEFT JOIN aspects a ON lbsa.aspect_id = a.id
-      WHERE s.subject_name LIKE ?
+      WHERE s.id = ?
       ORDER BY ri.id DESC
     `
 
     try {
-      const filterValue = `%${subjectName}%`
-      const [rows] = await pool.query(query, [filterValue])
+      const [rows] = await pool.query(query, [subjectId])
       if (rows.length === 0) return null
 
       const reqIdentificationMap = new Map()
@@ -975,12 +975,10 @@ class ReqIdentificationRepository {
             createdAt: row.created_at,
             status: row.status,
             user,
-            subject: row.subject_id
-              ? {
-                  subject_id: row.subject_id,
-                  subject_name: row.subject_name
-                }
-              : null,
+            subject: {
+              subject_id: row.subject_id,
+              subject_name: row.subject_name
+            },
             aspects: new Map(),
             jurisdiction: row.jurisdiction,
             state: row.state,
@@ -1018,12 +1016,12 @@ class ReqIdentificationRepository {
       )
     } catch (error) {
       console.error(
-        'Error fetching requirement identifications by subject name:',
+        'Error fetching requirement identifications by subject ID:',
         error.message
       )
       throw new HttpException(
         500,
-        'Error fetching requirement identifications by subject name'
+        'Error fetching requirement identifications by subject ID'
       )
     }
   }
@@ -1090,7 +1088,7 @@ class ReqIdentificationRepository {
           lb.jurisdiction,
           lb.state,
           lb.municipality
-        FROM req_identifications ri      // The `date` parameter should be in 'YYYY-MM-DD' format.
+        FROM req_identifications ri
         LEFT JOIN users u
           ON ri.user_id = u.id
         LEFT JOIN req_identifications_requirements rir
