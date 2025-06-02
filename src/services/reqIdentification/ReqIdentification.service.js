@@ -5,11 +5,43 @@ import ReqIdentificationRepository from '../../repositories/ReqIdentification.re
 import { reqIdentificationSchema } from '../../schemas/reqIdentification.schema.js'
 import reqIdentificationQueue from '../../workers/reqIdentificationWorker.js'
 import HttpException from '../../services/errors/HttpException.js'
+import FileService from '../files/File.service.js'
+import { format } from 'date-fns'
+import { es } from 'date-fns/locale'
 
 /**
  * Service class for handling requirement identifications operations.
  */
 class ReqIdentificationService {
+  /**
+ * @typedef {Object} Aspect
+ * @property {number} aspect_id - The ID of the aspect.
+ * @property {string} aspect_name - The name of the aspect.
+ */
+
+  /**
+ * @typedef {Object} Subject
+ * @property {number} subject_id - The ID of the subject.
+ * @property {string} subject_name - The name of the subject.
+ */
+
+  /** @typedef {import('./../../models/User.model.js').default} User */
+
+  /**
+   * @typedef {Object} ReqIdentification
+   * @property {number} id - The unique identifier of the requirement identification.
+   * @property {string} name - The name of the identification.
+   * @property {string|null} description - A description of the identification.
+   * @property {string} createdAt - Formatted creation date (dd-MM-yyyy).
+   * @property {'Active'|'Failed'|'Completed'} status - The current status of the identification.
+   * @property {User} user - The user who created the identification.
+   * @property {Subject} subject - The subject associated with the identification.
+   * @property {Aspect[]} aspects - List of associated aspects.
+   * @property {string} jurisdiction - The jurisdiction of the legal basis.
+   * @property {string} [state] - The state name, if applicable.
+   * @property {string} [municipality] - The municipality name, if applicable.
+   */
+
   /**
    * Creates a new requirements identification.
    *
@@ -19,12 +51,13 @@ class ReqIdentificationService {
    * @param {string|null} [reqIdentification.reqIdentificationDescription] - Optional description of the requirement identification.
    * @param {number[]} reqIdentification.legalBasisIds - Array of Legal Basis IDs to associate with the requirement identification.
    * @param {string} reqIdentification.intelligenceLevel - Level of intelligence to identify requirements.
- * @returns {Promise<{ reqIdentificationId: number, jobId: number|string }>} - The ID of the created requirement identification and the associated job ID.
+   * @returns {Promise<{ reqIdentificationId: number, jobId: number|string }>} - The ID of the created requirement identification and the associated job ID.
    * @throws {HttpException} - If an error occurs during validation or creation.
    */
   static async create (userId, reqIdentification) {
     try {
-      const parsedReqIdentification = reqIdentificationSchema.parse(reqIdentification)
+      const parsedReqIdentification =
+        reqIdentificationSchema.parse(reqIdentification)
       const legalBases = await LegalBasisRepository.findByIds(
         parsedReqIdentification.legalBasisIds
       )
@@ -32,38 +65,60 @@ class ReqIdentificationService {
         const notFoundIds = parsedReqIdentification.legalBasisIds.filter(
           (id) => !legalBases.some((lb) => lb.id === id)
         )
-        throw new HttpException(400, 'LegalBasis not found for IDs', { notFoundIds })
+        throw new HttpException(400, 'LegalBasis not found for IDs', {
+          notFoundIds
+        })
       }
-      const reqIdentificationExistsByName = await ReqIdentificationRepository.existsByReqIdentificationName(
-        parsedReqIdentification.reqIdentificationName
-      )
+      const reqIdentificationExistsByName =
+        await ReqIdentificationRepository.existsByReqIdentificationName(
+          parsedReqIdentification.reqIdentificationName
+        )
       if (reqIdentificationExistsByName) {
-        throw new HttpException(409, 'Requirement Identification name already exists')
+        throw new HttpException(
+          409,
+          'Requirement Identification name already exists'
+        )
       }
       const subjectIds = new Set(legalBases.map((lb) => lb.subject.subject_id))
       if (subjectIds.size !== 1) {
-        throw new HttpException(400, 'All selected legal bases must have the same subject')
+        throw new HttpException(
+          400,
+          'All selected legal bases must have the same subject'
+        )
       }
       const [subjectId] = subjectIds
-      const jurisdictions = new Set(legalBases.map(lb => lb.jurisdiction))
+      const jurisdictions = new Set(legalBases.map((lb) => lb.jurisdiction))
       if (jurisdictions.size !== 1) {
-        throw new HttpException(400, 'All selected legal bases must have the same jurisdiction')
+        throw new HttpException(
+          400,
+          'All selected legal bases must have the same jurisdiction'
+        )
       }
       const [jurisdiction] = jurisdictions
       if (jurisdiction === 'Estatal' || jurisdiction === 'Local') {
         const states = new Set(legalBases.map((lb) => lb.state))
         if (states.size !== 1) {
-          throw new HttpException(400, 'All selected legal bases must have the same state')
+          throw new HttpException(
+            400,
+            'All selected legal bases must have the same state'
+          )
         }
         if (jurisdiction === 'Local') {
-          const municipalities = new Set(legalBases.map((lb) => lb.municipality))
+          const municipalities = new Set(
+            legalBases.map((lb) => lb.municipality)
+          )
           if (municipalities.size !== 1) {
-            throw new HttpException(400, 'All selected legal bases must have the same municipality')
+            throw new HttpException(
+              400,
+              'All selected legal bases must have the same municipality'
+            )
           }
         }
       }
       const aspectIds = [
-        ...new Set(legalBases.flatMap(lb => (lb.aspects).map(a => a.aspect_id)))
+        ...new Set(
+          legalBases.flatMap((lb) => lb.aspects.map((a) => a.aspect_id))
+        )
       ]
       const requirements = await RequirementRepository.findBySubjectAndAspects(
         subjectId,
@@ -74,7 +129,8 @@ class ReqIdentificationService {
       }
       const { id } = await ReqIdentificationRepository.create({
         identificationName: parsedReqIdentification.reqIdentificationName,
-        identificationDescription: parsedReqIdentification.reqIdentificationDescription,
+        identificationDescription:
+          parsedReqIdentification.reqIdentificationDescription,
         userId
       })
       const job = await reqIdentificationQueue.add({
@@ -82,8 +138,7 @@ class ReqIdentificationService {
         legalBases,
         requirements,
         intelligenceLevel: parsedReqIdentification.intelligenceLevel
-      }
-      )
+      })
       return { reqIdentificationId: id, jobId: job.id }
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -94,28 +149,71 @@ class ReqIdentificationService {
         throw new HttpException(400, 'Validation failed', validationErrors)
       }
       if (error instanceof HttpException) throw error
-      throw new HttpException(500, 'Unexpected error during requirement identification creation')
+      throw new HttpException(
+        500,
+        'Unexpected error during requirement identification creation'
+      )
     }
   }
 
   /**
-     * Retrieves all identifications.
-     *
-     * @returns {Promise<ReqIdentification[]>} - List of all requirement identifications.
-     * @throws {HttpException}
-     */
+   * Retrieves all identifications.
+   *
+   * @returns {Promise<ReqIdentification[]>} - List of all requirement identifications.
+   * @throws {HttpException}
+   */
   static async getAll () {
     try {
       const reqIdentifications = await ReqIdentificationRepository.findAll()
       if (!reqIdentifications) {
         return []
       }
-      return reqIdentifications
+      const reqIdentificationsList = await Promise.all(
+        reqIdentifications.map(async (reqIdentification) => {
+          let user = null
+
+          if (reqIdentification.user) {
+            const profilePictureUrl = reqIdentification.user.profile_picture
+              ? await FileService.getFile(
+                reqIdentification.user.profile_picture
+              )
+              : null
+
+            user = {
+              ...reqIdentification.user,
+              profile_picture: profilePictureUrl
+            }
+          }
+
+          let formattedCreatedAt = null
+          if (reqIdentification.createdAt) {
+            formattedCreatedAt = format(
+              new Date(reqIdentification.createdAt),
+              'dd-MM-yyyy',
+              { locale: es }
+            )
+          }
+
+          return {
+            ...reqIdentification,
+            user,
+            createdAt: formattedCreatedAt
+          }
+        })
+      )
+
+      return reqIdentificationsList
     } catch (error) {
       if (error instanceof HttpException) throw error
-      throw new HttpException(500, 'Failed to retrieve identifications')
+      throw new HttpException(
+        500,
+        'Failed to retrieve requirement identifications'
+      )
     }
   }
+
+  // PARA CADA FUNCION EN EL REPOSITORIO DE FILTRADO SE DEBE IMPLEMENTAR UNA FUNCION EN ESTE SERVICIO SIGUIENDO EL ESTANDAR Y GUIANDOSE DE LA FUNCION getAll.
+  // COMENZAR DESDE AQUI
 
   //   /**
   //    * Retrieves a single identification by ID.

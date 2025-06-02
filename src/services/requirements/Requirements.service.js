@@ -10,14 +10,21 @@ import { z } from 'zod'
  */
 class RequirementService {
   /**
+ * @typedef {Object} Aspect
+ * @property {number} aspect_id - The ID of the aspect.
+ * @property {string} aspect_name - The name of the aspect.
+ */
+
+  /**
+ * @typedef {Object} Subject
+ * @property {number} subject_id - The ID of the subject.
+ * @property {string} subject_name - The name of the subject.
+ */
+  /**
    * @typedef {Object} Requirement
    * @property {number} id - The unique identifier of the requirement.
-   * @property {Object} subject - The subject associated with the requirement.
-   * @property {number} subject.subject_id - The ID of the subject.
-   * @property {string} subject.subject_name - The name of the subject.
-   * @property {Array<Object>} aspects - The aspects associated with the requirement.
-   * @property {number} aspects[].aspect_id - The ID of the aspect.
-   * @property {string} aspects[].aspect_name - The name of the aspect.
+   * @property {Subject} subject - The subject associated with the requirement.
+   * @property {Aspect[]} aspects - The aspects associated with the requirement.
    * @property {number} requirement_number - The unique number identifying the requirement.
    * @property {string} requirement_name - The name of the requirement.
    * @property {string} mandatory_description - The mandatory description of the requirement.

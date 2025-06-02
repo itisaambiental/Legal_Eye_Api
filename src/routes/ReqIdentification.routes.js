@@ -54,6 +54,10 @@ router.post('/req-identification', UserExtractor, createReqIdentification)
  */
 router.get('/req-identification', UserExtractor, getAllReqIdentifications)
 
+// PARA CADA CONTROLLER EN LOS CONTROLLERS DE FILTRADO SE DEBE IMPLEMENTAR UNA CONTROLADOR SIGUIENDO EL ESTANDAR Y GUIANDOSE DE LA RUTA  router.get('/req-identification', UserExtractor, getAllReqIdentifications).
+
+// COMENZAR DESDE AQUI
+
 // /**
 //  * Retrieves a single req_identification by ID.
 //  * @method GET

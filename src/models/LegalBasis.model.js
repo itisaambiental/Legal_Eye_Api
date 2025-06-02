@@ -29,7 +29,17 @@ class LegalBasis {
    * @param {string} url - The URL of the legal document.
    */
   constructor (
-    id, legalName, subject, aspects, abbreviation, classification, jurisdiction, state, municipality, lastReform, url
+    id,
+    legalName,
+    subject,
+    aspects,
+    abbreviation,
+    classification,
+    jurisdiction,
+    state,
+    municipality,
+    lastReform,
+    url
   ) {
     this.id = id
     this.legal_name = legalName

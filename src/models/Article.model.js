@@ -9,15 +9,13 @@ class Article {
    * @param {string} articleName - The title of the article.
    * @param {string} description - The content of the article.
    * @param {number} articleOrder - The order of the article.
-   * @param {string} articleType - The type of the article.
    */
-  constructor (id, legalBasisId, articleName, description, articleOrder, articleType) {
+  constructor (id, legalBasisId, articleName, description, articleOrder) {
     this.id = id
     this.legal_basis_id = legalBasisId
     this.article_name = articleName
     this.description = description
     this.article_order = articleOrder
-    this.articleType = articleType
   }
 }
 

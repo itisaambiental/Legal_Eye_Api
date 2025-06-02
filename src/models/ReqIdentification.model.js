@@ -10,6 +10,7 @@
  * @property {string} subject_name - The name of the subject.
  */
 
+/** @typedef {import('./User.model.js').default} User */
 /** @typedef {import('./Requirement.model.js').default} Requirement */
 /** @typedef {import('./RequirementTypes.model.js').default} RequirementType */
 /** @typedef {import('./LegalVerbs.model.js').default} LegalVerb */
@@ -24,7 +25,7 @@ export class ReqIdentificationRequirementLegalBasisArticle {
    * Constructs a ReqIdentificationRequirementLegalBasisArticle instance.
    *
    * @param {Article} article - The article object.
-   * @param {string} articleType - Type of article ('mandatory', 'complementary', 'general').
+   * @param {string} articleType - Type of article.
    */
   constructor (article, articleType) {
     this.article = article
@@ -104,7 +105,7 @@ export class ReqIdentification {
    * @param {number} id - The ID of the identification.
    * @param {string} name - The name of the identification.
    * @param {string} description - The description of the identification.
-   * @param {number} userId - The user ID who created it.
+   * @param {User} user - The user who created the identification
    * @param {Date} createdAt - Creation date.
    * @param {string} status - Current status.
    * @param {Subject} subject - The subject.
@@ -112,26 +113,24 @@ export class ReqIdentification {
    * @param {string} jurisdiction - Jurisdiction level.
    * @param {string} state - State name if applicable.
    * @param {string} municipality - Municipality name if applicable.
-   * @param {ReqIdentificationRequirement[]} requirements - List of associated requirements.
    */
   constructor (
     id,
     name,
     description,
-    userId,
+    user,
     createdAt,
     status,
     subject,
     aspects,
     jurisdiction,
     state,
-    municipality,
-    requirements = []
+    municipality
   ) {
     this.id = id
     this.name = name
     this.description = description
-    this.userId = userId
+    this.user = user
     this.createdAt = createdAt
     this.status = status
     this.subject = subject
@@ -139,6 +138,5 @@ export class ReqIdentification {
     this.jurisdiction = jurisdiction
     this.state = state
     this.municipality = municipality
-    this.requirements = requirements
   }
 }

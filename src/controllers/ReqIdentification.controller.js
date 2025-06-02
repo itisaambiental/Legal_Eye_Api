@@ -63,6 +63,9 @@ export const getAllReqIdentifications = async (req, res) => {
   }
 }
 
+// PARA CADA FUNCION EN EL SERVICIO DE FILTRADO SE DEBE IMPLEMENTAR UNA CONTROLADOR SIGUIENDO EL ESTANDAR Y GUIANDOSE DE LA FUNCION getAllReqIdentifications.
+// COMENZAR DESDE AQUI
+
 // /**
 //  * Retrieves a single requirements identification by ID.
 //  * @function getReqIdentificationById

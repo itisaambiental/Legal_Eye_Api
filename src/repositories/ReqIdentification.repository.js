@@ -1,5 +1,6 @@
 import { pool } from '../config/db.config.js'
 import HttpException from '../services/errors/HttpException.js'
+import User from '../models/User.model.js'
 import { ReqIdentification } from '../models/ReqIdentification.model.js'
 
 /**
@@ -30,7 +31,10 @@ class ReqIdentificationRepository {
       const reqIdentification = await this.findById(result.insertId)
       return reqIdentification
     } catch (error) {
-      console.error('Error creating requirement identification:', error.message)
+      console.error(
+        'Error creating requirement identification:',
+        error.message
+      )
       throw new HttpException(
         500,
         'Error creating requirement identification in the database'
@@ -39,64 +43,236 @@ class ReqIdentificationRepository {
   }
 
   /**
- * Retrieves all requirement identifications.
- *
- * @returns {Promise<ReqIdentification[]>} - An array of all requirement identifications.
- * @throws {HttpException} - If an error occurs during the query.
- */
+   * Retrieves all requirement identifications.
+   *
+   * @returns {Promise<ReqIdentification[]|null>} - An array of all requirement identifications.
+   * @throws {HttpException} - If an error occurs during the query.
+   */
   static async findAll () {
     const query = `
-    SELECT id, name, description, user_id, created_at, status
-    FROM req_identifications
+    SELECT 
+      ri.id AS req_identification_id,
+      ri.name,
+      ri.description,
+      ri.user_id,
+      ri.created_at,
+      ri.status,
+
+      u.id AS user_id,
+      u.name AS user_name,
+      u.gmail AS user_gmail,
+      u.role_id AS user_role_id,
+      u.profile_picture AS user_profile_picture,
+
+      s.id AS subject_id,
+      s.subject_name,
+
+      a.id AS aspect_id,
+      a.aspect_name,
+
+      lb.jurisdiction,
+      lb.state,
+      lb.municipality
+
+    FROM req_identifications ri
+    LEFT JOIN users u ON ri.user_id = u.id
+    LEFT JOIN req_identifications_requirements rir ON ri.id = rir.req_identification_id
+    LEFT JOIN req_identifications_requirement_legal_basis rirlb 
+      ON rir.req_identification_id = rirlb.req_identification_id 
+      AND rir.requirement_id = rirlb.requirement_id
+    LEFT JOIN legal_basis lb ON rirlb.legal_basis_id = lb.id
+    LEFT JOIN subjects s ON lb.subject_id = s.id
+    LEFT JOIN legal_basis_subject_aspect lbsa ON lb.id = lbsa.legal_basis_id
+    LEFT JOIN aspects a ON lbsa.aspect_id = a.id
+    ORDER BY ri.id DESC
   `
 
     try {
       const [rows] = await pool.query(query)
+      if (rows.length === 0) return null
 
-      return rows.map(row => new ReqIdentification(
-        row.id,
-        row.name,
-        row.description,
-        row.user_id,
-        row.created_at,
-        row.status
-      ))
+      const reqIdentificationMap = new Map()
+
+      for (const row of rows) {
+        if (!reqIdentificationMap.has(row.req_identification_id)) {
+          const user = row.user_id
+            ? new User(
+              row.user_id,
+              row.user_name,
+              null,
+              row.user_gmail,
+              row.user_role_id,
+              row.user_profile_picture
+            )
+            : null
+
+          reqIdentificationMap.set(row.req_identification_id, {
+            id: row.req_identification_id,
+            name: row.name,
+            description: row.description,
+            createdAt: row.created_at,
+            status: row.status,
+            user,
+            subject: row.subject_id
+              ? {
+                  subject_id: row.subject_id,
+                  subject_name: row.subject_name
+                }
+              : null,
+            aspects: new Map(),
+            jurisdiction: row.jurisdiction,
+            state: row.state,
+            municipality: row.municipality
+          })
+        }
+
+        const reqIdentification = reqIdentificationMap.get(
+          row.req_identification_id
+        )
+
+        if (row.aspect_id && !reqIdentification.aspects.has(row.aspect_id)) {
+          reqIdentification.aspects.set(row.aspect_id, {
+            aspect_id: row.aspect_id,
+            aspect_name: row.aspect_name
+          })
+        }
+      }
+
+      return Array.from(reqIdentificationMap.values()).map(
+        (item) =>
+          new ReqIdentification(
+            item.id,
+            item.name,
+            item.description,
+            item.user,
+            item.createdAt,
+            item.status,
+            item.subject,
+            Array.from(item.aspects.values()),
+            item.jurisdiction,
+            item.state,
+            item.municipality
+          )
+      )
     } catch (error) {
-      console.error('Error fetching requirement identifications:', error.message)
-      throw new HttpException(500, 'Error fetching requirement identifications from the database')
+      console.error(
+        'Error fetching requirement identifications:',
+        error.message
+      )
+      throw new HttpException(
+        500,
+        'Error fetching requirement identifications'
+      )
     }
   }
 
   /**
- * Retrieves a requirement identification by ID.
- * @param {number} reqIdentificationId - The ID of the requirement identification.
- * @returns {Promise<ReqIdentification|null>} - The found instance or null.
- * @throws {HttpException}
- */
+   * Retrieves a requirement identification by ID.
+   *
+   * @param {number} reqIdentificationId - The ID of the requirement identification.
+   * @returns {Promise<ReqIdentification|null>} - The found instance or null.
+   * @throws {HttpException}
+   */
   static async findById (reqIdentificationId) {
     const query = `
-    SELECT id, name, description, user_id, created_at, status
-    FROM req_identifications
-    WHERE id = ?
+    SELECT 
+      ri.id AS req_identification_id,
+      ri.name,
+      ri.description,
+      ri.user_id,
+      ri.created_at,
+      ri.status,
+
+      u.id AS user_id,
+      u.name AS user_name,
+      u.gmail AS user_gmail,
+      u.role_id AS user_role_id,
+      u.profile_picture AS user_profile_picture,
+
+      s.id AS subject_id,
+      s.subject_name,
+
+      a.id AS aspect_id,
+      a.aspect_name,
+
+      lb.jurisdiction,
+      lb.state,
+      lb.municipality
+
+    FROM req_identifications ri
+    LEFT JOIN users u ON ri.user_id = u.id
+    LEFT JOIN req_identifications_requirements rir ON ri.id = rir.req_identification_id
+    LEFT JOIN req_identifications_requirement_legal_basis rirlb 
+      ON rir.req_identification_id = rirlb.req_identification_id 
+      AND rir.requirement_id = rirlb.requirement_id
+    LEFT JOIN legal_basis lb ON rirlb.legal_basis_id = lb.id
+    LEFT JOIN subjects s ON lb.subject_id = s.id
+    LEFT JOIN legal_basis_subject_aspect lbsa ON lb.id = lbsa.legal_basis_id
+    LEFT JOIN aspects a ON lbsa.aspect_id = a.id
+    WHERE ri.id = ?
+    ORDER BY ri.id DESC
   `
+
     try {
       const [rows] = await pool.query(query, [reqIdentificationId])
       if (rows.length === 0) return null
 
       const row = rows[0]
+      const user = row.user_id
+        ? new User(
+          row.user_id,
+          row.user_name,
+          null,
+          row.user_gmail,
+          row.user_role_id,
+          row.user_profile_picture
+        )
+        : null
+
+      const aspectsMap = new Map()
+      for (const row of rows) {
+        if (row.aspect_id && !aspectsMap.has(row.aspect_id)) {
+          aspectsMap.set(row.aspect_id, {
+            aspect_id: row.aspect_id,
+            aspect_name: row.aspect_name
+          })
+        }
+      }
+
       return new ReqIdentification(
-        row.id,
+        row.req_identification_id,
         row.name,
         row.description,
-        row.user_id,
+        user,
         row.created_at,
-        row.status
+        row.status,
+        row.subject_id
+          ? {
+              subject_id: row.subject_id,
+              subject_name: row.subject_name
+            }
+          : null,
+        Array.from(aspectsMap.values()),
+        row.jurisdiction,
+        row.state,
+        row.municipality
       )
     } catch (error) {
-      console.error('Error fetching requirement identification:', error.message)
-      throw new HttpException(500, 'Error fetching requirement identification from the database')
+      console.error(
+        'Error fetching requirement identification:',
+        error.message
+      )
+      throw new HttpException(
+        500,
+        'Error fetching requirement identification from the database'
+      )
     }
   }
+
+  // SIGUIENDO EL MISMO ESQUEMA QUE EN LA FUNCION findAll IMPLEMENTAR FUNCIONES INDEPENDIENTES SIGUIENDO EL MISMO ESTANDAR DE NOMBRES
+  // PARA PODER FILTRAR POR nombre, descripcion, nombre de usuario, fecha de creacion, status, materia, aspectos(varios), juridiction, estado y municipios(varios)
+
+  // COMENZAR DESDE AQUI
 
   /**
    * Checks if a requirement identification exists with the given name.
@@ -123,6 +299,70 @@ class ReqIdentificationRepository {
       throw new HttpException(
         500,
         'Error checking if requirement identification exists'
+      )
+    }
+  }
+
+  /**
+   * Links a requirement to a requirement identification.
+   *
+   * @param {number} reqIdentificationId - The ID of the requirement identification.
+   * @param {number} requirementId - The ID of the requirement to be linked.
+   * @param {string} requirementName - The name of the requirement.
+   * @returns {Promise<void>} - Resolves when the operation completes successfully.
+   * @throws {HttpException} - If a database error occurs.
+   */
+  static async linkRequirement (
+    reqIdentificationId,
+    requirementId,
+    requirementName
+  ) {
+    const query = `
+    INSERT INTO req_identifications_requirements
+    (req_identification_id, requirement_id, requirement_name)
+    VALUES (?, ?, ?)
+  `
+    const values = [reqIdentificationId, requirementId, requirementName]
+
+    try {
+      await pool.query(query, values)
+    } catch (err) {
+      console.error('Error linking requirement:', err.message)
+      throw new HttpException(500, 'Error linking requirement')
+    }
+  }
+
+  /**
+   * Links a legal basis to a requirement within a requirement identification.
+   *
+   * @param {number} reqIdentificationId - The ID of the requirement identification.
+   * @param {number} requirementId - The ID of the requirement to be linked.
+   * @param {number} legalBasisId - The ID of the legal basis to be linked.
+   * @returns {Promise<void>} - Resolves when the operation completes successfully.
+   * @throws {HttpException} - If a database error occurs.
+   */
+  static async linkLegalBaseToRequirement (
+    reqIdentificationId,
+    requirementId,
+    legalBasisId
+  ) {
+    const query = `
+    INSERT INTO req_identifications_requirement_legal_basis
+    (req_identification_id, requirement_id, legal_basis_id)
+    VALUES (?, ?, ?)
+  `
+    const values = [reqIdentificationId, requirementId, legalBasisId]
+
+    try {
+      await pool.query(query, values)
+    } catch (err) {
+      console.error(
+        'Error linking legal basis to requirement identification:',
+        err.message
+      )
+      throw new HttpException(
+        500,
+        'Error linking legal basis to requirement identification'
       )
     }
   }
@@ -289,205 +529,6 @@ class ReqIdentificationRepository {
   //     } catch (err) {
   //       console.error('Error deleting all requirements identifications:', err.message)
   //       throw new HttpException(500, 'Error deleting all requirements identifications')
-  //     }
-  //   }
-
-  //   /**
-  //    * Links a requirement to an identification.
-  //    * @param {Object} data - The link data.
-  //    * @param {number} data.identificationId - The identification ID.
-  //    * @param {number} data.requirementId - The requirement ID.
-  //    * @returns {Promise<boolean>} - True if linked.
-  //    * @throws {HttpException}
-  //    */
-  //   static async linkRequirement (data) {
-  //     const query = `
-  //       INSERT INTO req_identifications_requirements
-  //       (req_identification_id, requirement_id)
-  //       VALUES (?, ?)
-  //     `
-  //     const values = [data.identificationId, data.requirementId]
-
-  //     try {
-  //       const [res] = await pool.query(query, values)
-  //       return res.affectedRows > 0
-  //     } catch (err) {
-  //       console.error('Error linking requirement:', err.message)
-  //       throw new HttpException(500, 'Error linking requirement')
-  //     }
-  //   }
-
-  //   /**
-  //    * Retrieves linked requirements.
-  //    * @param {Object} data - The query data.
-  //    * @param {number} data.identificationId - The identification ID.
-  //    * @returns {Promise<Requirement[]>} - Array of linked requirements.
-  //    * @throws {HttpException}
-  //    */
-  //   static async getLinkedRequirements (data) {
-  //     const query = `
-  //       SELECT r.*
-  //       FROM req_identifications_requirements rr
-  //       JOIN requirements r ON rr.requirement_id = r.id
-  //       WHERE rr.req_identification_id = ?
-  //     `
-  //     const values = [data.identificationId]
-
-  //     try {
-  //       const [rows] = await pool.query(query, values)
-  //       return rows.map(r => new Requirement(r))
-  //     } catch (err) {
-  //       console.error('Error fetching linked requirements:', err.message)
-  //       throw new HttpException(500, 'Error fetching linked requirements')
-  //     }
-  //   }
-
-  //   /**
-  //    * Deletes a specific requirement link from an identification.
-  //    *
-  //    * @param {Object} data - The unlink data.
-  //    * @param {number} data.identificationId - The ID of the identification.
-  //    * @param {number} data.requirementId - The ID of the requirement to unlink.
-  //    * @returns {Promise<boolean>} - True if the link was deleted, false otherwise.
-  //    * @throws {HttpException}
-  //    */
-  //   static async unlinkRequirement (data) {
-  //     const query = `
-  //           DELETE FROM req_identifications_requirements
-  //           WHERE req_identification_id = ? AND requirement_id = ?
-  //         `
-  //     const values = [data.identificationId, data.requirementId]
-
-  //     try {
-  //       const [res] = await pool.query(query, values)
-  //       return res.affectedRows > 0
-  //     } catch (err) {
-  //       console.error('Error unlinking requirement:', err.message)
-  //       throw new HttpException(500, 'Error unlinking requirement')
-  //     }
-  //   }
-
-  //   catch (err) {
-  //     console.error('Error linking requirement:', err.message)
-  //     throw new HttpException(500, 'Error linking requirement')
-  //   }
-
-  //   /**
-  //    * Links metadata for a requirement.
-  //    * @param {Object} data - The metadata link data.
-  //    * @param {number} data.identificationId - The identification ID.
-  //    * @param {number} data.requirementId - The requirement ID.
-  //    * @param {string} data.requirementNumber - The requirement number.
-  //    * @param {number|null} data.requirementTypeId - The requirement type ID.
-  //    * @returns {Promise<boolean>} - True if linked.
-  //    * @throws {HttpException}
-  //    */
-  //   static async linkMetadata (data) {
-  //     const query = `
-  //       INSERT INTO req_identifications_metadata
-  //       (req_identification_id, requirement_id, requirement_number, requirement_type_id)
-  //       VALUES (?, ?, ?, ?)
-  //     `
-  //     const values = [
-  //       data.identificationId,
-  //       data.requirementId,
-  //       data.requirementNumber,
-  //       data.requirementTypeId
-  //     ]
-
-  //     try {
-  //       const [res] = await pool.query(query, values)
-  //       return res.affectedRows > 0
-  //     } catch (err) {
-  //       console.error('Error linking metadata:', err.message)
-  //       throw new HttpException(500, 'Error linking metadata')
-  //     }
-  //   }
-
-  //   /**
-  //    * Retrieves linked metadata with type.
-  //    * @param {Object} data - The query data.
-  //    * @param {number} data.identificationId - The identification ID.
-  //    * @param {number} data.requirementId - The requirement ID.
-  //    * @returns {Promise<{ requirementNumber: string, requirementType: RequirementType }|null>} - The linked metadata or null.
-  //    * @throws {HttpException}
-  //    */
-  //   static async getLinkedMetadata (data) {
-  //     const query = `
-  //       SELECT m.requirement_number AS requirementNumber,
-  //              t.id, t.name, t.description, t.classification
-  //       FROM req_identifications_metadata m
-  //       LEFT JOIN requirement_types t ON m.requirement_type_id = t.id
-  //       WHERE m.req_identification_id = ?
-  //         AND m.requirement_id = ?
-  //     `
-  //     const values = [data.identificationId, data.requirementId]
-
-  //     try {
-  //       const [rows] = await pool.query(query, values)
-  //       if (!rows.length) return null
-  //       const row = rows[0]
-  //       return {
-  //         requirementNumber: row.requirementNumber,
-  //         requirementType: RequirementType.fromRow(row)
-  //       }
-  //     } catch (err) {
-  //       console.error('Error fetching metadata:', err.message)
-  //       throw new HttpException(500, 'Error fetching metadata')
-  //     }
-  //   }
-
-  //   /**
-  //    * Deletes a metadata link for a requirement from an identification.
-  //    * @param {Object} data - The unlink data.
-  //    * @param {number} data.identificationId - The identification ID.
-  //    * @param {number} data.requirementId - The requirement ID.
-  //    * @returns {Promise<boolean>} - True if the metadata link was deleted, false otherwise.
-  //    * @throws {HttpException}
-  //    */
-  //   static async unlinkMetadata (data) {
-  //     const query = `
-  //           DELETE FROM req_identifications_metadata
-  //           WHERE req_identification_id = ? AND requirement_id = ?
-  //         `
-  //     const values = [data.identificationId, data.requirementId]
-
-  //     try {
-  //       const [res] = await pool.query(query, values)
-  //       return res.affectedRows > 0
-  //     } catch (err) {
-  //       console.error('Error unlinking metadata:', err.message)
-  //       throw new HttpException(500, 'Error unlinking metadata')
-  //     }
-  //   }
-
-  //   /**
-  //    * Links a legal basis to a requirement.
-  //    * @param {Object} data - The link data.
-  //    * @param {number} data.identificationId - The identification ID.
-  //    * @param {number} data.requirementId - The requirement ID.
-  //    * @param {number} data.legalBasisId - The legal basis ID.
-  //    * @returns {Promise<boolean>} - True if linked.
-  //    * @throws {HttpException}
-  //    */
-  //   static async linkLegalBasis (data) {
-  //     const query = `
-  //       INSERT INTO req_identifications_legal_basis
-  //       (req_identification_id, requirement_id, legal_basis_id)
-  //       VALUES (?, ?, ?)
-  //     `
-  //     const values = [
-  //       data.identificationId,
-  //       data.requirementId,
-  //       data.legalBasisId
-  //     ]
-
-  //     try {
-  //       const [res] = await pool.query(query, values)
-  //       return res.affectedRows > 0
-  //     } catch (err) {
-  //       console.error('Error linking legal basis:', err.message)
-  //       throw new HttpException(500, 'Error linking legal basis')
   //     }
   //   }
 

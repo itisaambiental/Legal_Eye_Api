@@ -16,15 +16,23 @@ import { es } from 'date-fns/locale'
  */
 class LegalBasisService {
   /**
+ * @typedef {Object} Aspect
+ * @property {number} aspect_id - The ID of the aspect.
+ * @property {string} aspect_name - The name of the aspect.
+ */
+
+  /**
+ * @typedef {Object} Subject
+ * @property {number} subject_id - The ID of the subject.
+ * @property {string} subject_name - The name of the subject.
+ */
+
+  /**
    * @typedef {Object} LegalBasis
    * @property {number} id - The unique identifier of the legal basis.
    * @property {string} legal_name - The name of the legal document.
-   * @property {Object} subject - The subject associated with the legal basis.
-   * @property {number} subject.subject_id - The ID of the subject.
-   * @property {string} subject.subject_name - The name of the subject.
-   * @property {Array<Object>} aspects - The aspects associated with the legal basis.
-   * @property {number} aspects[].aspect_id - The ID of the aspect.
-   * @property {string} aspects[].aspect_name - The name of the aspect.
+   * @property {Subject} subject - The subject associated with the legal basis.
+   * @property {Aspect[]} aspects - The aspects associated with the legal basis.
    * @property {string} abbreviation - The abbreviation of the legal document.
    * @property {string} classification - The classification of the legal document.
    * @property {string} jurisdiction - The jurisdiction ('Estatal', 'Federal', etc.).
