@@ -1043,62 +1043,9 @@ class ReqIdentificationRepository {
       if (aspectIds.length > 0) {
         const placeholders = aspectIds.map(() => '?').join(', ')
         const filterQuery = `
-<<<<<<< HEAD
-          SELECT DISTINCT ri.id AS req_identification_id
-          FROM req_identifications ri
-          JOIN req_identifications_requirements rir
-            ON ri.id = rir.req_identification_id
-          JOIN req_identifications_requirement_legal_basis rirlb
-            ON rir.req_identification_id = rirlb.req_identification_id
-            AND rir.requirement_id = rirlb.requirement_id
-          JOIN legal_basis lb
-            ON rirlb.legal_basis_id = lb.id
-          JOIN legal_basis_subject_aspect lbsa
-            ON lb.id = lbsa.legal_basis_id
-          WHERE lb.subject_id = ?
-            AND lbsa.aspect_id IN (${placeholders})
-        `
-        const [filterRows] = await pool.query(filterQuery, [
-          subjectId,
-          ...aspectIds
-        ])
-        if (filterRows.length === 0) return null
-
-        reqIds = filterRows.map((row) => row.req_identification_id)
-      }
-      let query = `
-        SELECT 
-          ri.id AS req_identification_id,
-          ri.name,
-          ri.description,
-          ri.user_id,
-          ri.created_at,
-          ri.status,
-
-          u.id AS user_id,
-          u.name AS user_name,
-          u.gmail AS user_gmail,
-          u.role_id AS user_role_id,
-          u.profile_picture AS user_profile_picture,
-
-          s.id AS subject_id,
-          s.subject_name,
-
-          a.id AS aspect_id,
-          a.aspect_name,
-
-          lb.jurisdiction,
-          lb.state,
-          lb.municipality
-        FROM req_identifications ri
-        LEFT JOIN users u
-          ON ri.user_id = u.id
-        LEFT JOIN req_identifications_requirements rir
-=======
         SELECT DISTINCT ri.id AS req_identification_id
         FROM req_identifications ri
         JOIN req_identifications_requirements rir
->>>>>>> 4247a6b45471ab2572877c1b5a1997132fbea602
           ON ri.id = rir.req_identification_id
         JOIN req_identifications_requirement_legal_basis rirlb
           ON rir.req_identification_id = rirlb.req_identification_id
