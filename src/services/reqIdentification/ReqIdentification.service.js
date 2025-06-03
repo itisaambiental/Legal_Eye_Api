@@ -1,4 +1,7 @@
 import { z } from 'zod'
+import UserRepository from '../../repositories/User.repository.js'
+import SubjectsRepository from '../../repositories/Subject.repository.js'
+import AspectsRepository from '../../repositories/Aspects.repository.js'
 import LegalBasisRepository from '../../repositories/LegalBasis.repository.js'
 import RequirementRepository from '../../repositories/Requirements.repository.js'
 import ReqIdentificationRepository from '../../repositories/ReqIdentification.repository.js'
@@ -157,7 +160,7 @@ class ReqIdentificationService {
   }
 
   /**
-   * Retrieves all identifications.
+   * Retrieves all requirement identifications.
    *
    * @returns {Promise<ReqIdentification[]>} - List of all requirement identifications.
    * @throws {HttpException}
@@ -213,17 +216,17 @@ class ReqIdentificationService {
   }
 
   /**
-   * Retrieves a single identification by its ID.
+   * Retrieves a requirement identification by its ID.
    *
    * @param {number} id - The ID of the requirement identification to fetch.
-   * @returns {Promise<Object|null>} - The formatted requirement identification object or null if not found.
+   * @returns {Promise<ReqIdentification>} - The requirement identification
    * @throws {HttpException}
    */
   static async getById (id) {
     try {
       const reqIdentification = await ReqIdentificationRepository.findById(id)
       if (!reqIdentification) {
-        return null
+        return HttpException(404, 'ReqIdentification not found')
       }
 
       let user = null
@@ -259,10 +262,10 @@ class ReqIdentificationService {
   }
 
   /**
-   * Retrieves identifications by matching name (partial match).
+   * Retrieves requirement identifications by name.
    *
-   * @param {string} name - The (partial) name to search for.
-   * @returns {Promise<Array<Object>>} - List of matching requirement identifications, or empty array if none found.
+   * @param {string} name - The name to search for.
+   * @returns {Promise<ReqIdentification[]>} - List of requirement identifications.
    * @throws {HttpException}
    */
   static async getByName (name) {
@@ -313,10 +316,10 @@ class ReqIdentificationService {
   }
 
   /**
-   * Retrieves identifications by matching description (full-text search).
+   * Retrieves requirement identifications by description.
    *
-   * @param {string} description - The description terms to search for.
-   * @returns {Promise<Array<Object>>} - List of matching requirement identifications, or empty array if none found.
+   * @param {string} description - The description to search for.
+   * @returns {Promise<ReqIdentification[]>} - List of requirement identifications.
    * @throws {HttpException}
    */
   static async getByDescription (description) {
@@ -367,15 +370,19 @@ class ReqIdentificationService {
   }
 
   /**
-   * Retrieves identifications by matching user name (partial match).
+   * Retrieves requirement identifications by user ID.
    *
-   * @param {string} userName - The (partial) user name to search for.
-   * @returns {Promise<Array<Object>>} - List of matching requirement identifications, or empty array if none found.
+   * @param {number} userId - The ID of the user to search for.
+   * @returns {Promise<ReqIdentification[]>} - List of requirement identifications.
    * @throws {HttpException}
    */
-  static async getByUserName (userName) {
+  static async getByUserId (userId) {
     try {
-      const reqIdentifications = await ReqIdentificationRepository.findByUserName(userName)
+      const user = await UserRepository.findById(userId)
+      if (!user) {
+        throw new HttpException(404, 'User not found')
+      }
+      const reqIdentifications = await ReqIdentificationRepository.findByUserId(userId)
       if (!reqIdentifications) {
         return []
       }
@@ -421,15 +428,18 @@ class ReqIdentificationService {
   }
 
   /**
-   * Retrieves identifications by creation date.
-   *
-   * @param {string} date - The creation date to search for (format: 'YYYY-MM-DD').
-   * @returns {Promise<Array<Object>>} - List of matching requirement identifications, or empty array if none found.
-   * @throws {HttpException}
-   */
-  static async getByCreatedAt (date) {
+ * Retrieves requirement identifications filtered by a creation date range.
+ * Both 'from' and 'to' are optional. If provided, they should be in 'YYYY-MM-DD' or valid date format.
+ *
+ * @function getByCreatedAt
+ * @param {string} [from] - Start date.
+ * @param {string} [to] - End date.
+ * @returns {Promise<ReqIdentification[]>} - List of requirement identifications.
+ * @throws {HttpException}
+ */
+  static async getByCreatedAt (from, to) {
     try {
-      const reqIdentifications = await ReqIdentificationRepository.findByCreatedAt(date)
+      const reqIdentifications = await ReqIdentificationRepository.findByCreatedAt(from, to)
       if (!reqIdentifications) {
         return []
       }
@@ -469,16 +479,16 @@ class ReqIdentificationService {
       if (error instanceof HttpException) throw error
       throw new HttpException(
         500,
-        'Failed to retrieve requirement identifications by creation date'
+        'Failed to retrieve requirement identifications by creation date range'
       )
     }
   }
 
   /**
-   * Retrieves identifications by status.
+   * Retrieves requirement identifications by status.
    *
    * @param {string} status - The status to filter by ('Active', 'Failed', or 'Completed').
-   * @returns {Promise<Array<Object>>} - List of matching requirement identifications, or empty array if none found.
+   * @returns {Promise<ReqIdentification[]>} - List of requirement identifications.
    * @throws {HttpException}
    */
   static async getByStatus (status) {
@@ -529,14 +539,18 @@ class ReqIdentificationService {
   }
 
   /**
-   * Retrieves identifications by subject ID.
+   * Retrieves requirement identifications by subject ID.
    *
    * @param {number} subjectId - The subject ID to filter by.
-   * @returns {Promise<Array<Object>>} - List of matching requirement identifications, or empty array if none found.
+   * @returns {Promise<ReqIdentification[]>} - List of requirement identifications.
    * @throws {HttpException}
    */
   static async getBySubjectId (subjectId) {
     try {
+      const subject = await SubjectsRepository.findById(subjectId)
+      if (!subject) {
+        throw new HttpException(404, 'Subject not found')
+      }
       const reqIdentifications = await ReqIdentificationRepository.findBySubjectId(subjectId)
       if (!reqIdentifications) {
         return []
@@ -583,15 +597,28 @@ class ReqIdentificationService {
   }
 
   /**
-   * Retrieves identifications by subject ID and one or more aspect IDs.
+   * Retrieves requirement identifications by subject ID and aspect IDs.
    *
    * @param {number} subjectId - The subject ID to filter by.
    * @param {number[]} aspectIds - Array of aspect IDs to filter by.
-   * @returns {Promise<Array<Object>>} - List of matching requirement identifications, or empty array if none found.
+   * @returns {Promise<ReqIdentification[]>} - List of requirement identifications.
    * @throws {HttpException}
    */
   static async getBySubjectAndAspects (subjectId, aspectIds) {
     try {
+      const subject = await SubjectsRepository.findById(subjectId)
+      if (!subject) {
+        throw new HttpException(404, 'Subject not found')
+      }
+      const existingAspects = await AspectsRepository.findByIds(aspectIds)
+      if (existingAspects.length !== aspectIds.length) {
+        const notFoundIds = aspectIds.filter(
+          (id) => !existingAspects.some((aspect) => aspect.id === id)
+        )
+        throw new HttpException(404, 'Aspects not found for IDs', {
+          notFoundIds
+        })
+      }
       const reqIdentifications = await ReqIdentificationRepository.findBySubjectAndAspects(
         subjectId,
         aspectIds
@@ -641,10 +668,10 @@ class ReqIdentificationService {
   }
 
   /**
-   * Retrieves identifications by jurisdiction.
+   * Retrieves requirement identifications by jurisdiction.
    *
-   * @param {string} jurisdiction - The jurisdiction to filter by ('Federal', 'Estatal', or 'Local').
-   * @returns {Promise<Array<Object>>} - List of matching requirement identifications, or empty array if none found.
+   * @param {string} jurisdiction - The jurisdiction to filter by.
+   * @returns {Promise<ReqIdentification[]>} - List of requirement identifications.
    * @throws {HttpException}
    */
   static async getByJurisdiction (jurisdiction) {
@@ -695,10 +722,10 @@ class ReqIdentificationService {
   }
 
   /**
-   * Retrieves identifications by state.
+   * Retrieves requirement identifications by state.
    *
-   * @param {string} state - The (partial) state name to filter by.
-   * @returns {Promise<Array<Object>>} - List of matching requirement identifications, or empty array if none found.
+   * @param {string} state - The state to filter by.
+   * @returns {Promise<ReqIdentification[]>} - List of requirement identifications.
    * @throws {HttpException}
    */
   static async getByState (state) {
@@ -749,11 +776,11 @@ class ReqIdentificationService {
   }
 
   /**
-   * Retrieves identifications by state and optionally by municipalities.
+   * Retrieves requirement identifications by state and municipalities.
    *
    * @param {string} state - The state to filter by.
-   * @param {Array<string>} [municipalities] - An array of municipality names to filter by (optional).
-   * @returns {Promise<Array<Object>>} - List of matching requirement identifications, or empty array if none found.
+   * @param {string[]} [municipalities] - An array of municipality to filter by.
+   * @returns {Promise<ReqIdentification[]>} - List of requirement identifications.
    * @throws {HttpException}
    */
   static async getByStateAndMunicipalities (state, municipalities = []) {
@@ -806,8 +833,51 @@ class ReqIdentificationService {
     }
   }
 
-  // PARA CADA FUNCION EN EL REPOSITORIO DE FILTRADO SE DEBE IMPLEMENTAR UNA FUNCION EN ESTE SERVICIO SIGUIENDO EL ESTANDAR Y GUIANDOSE DE LA FUNCION getAll.
-  // COMENZAR DESDE AQUI
+  // TAREA: Implementar función `update` para actualizar identificaciones de requerimientos.
+  //
+  // OBJETIVO:
+  // Se debe permitir la actualización parcial de los siguientes campos de una identificación:
+  // - Nombre (`reqIdentificationName`)
+  // - Descripción (`reqIdentificationDescription`)
+  // - Usuario responsable (`userId`)
+  //
+  // VALIDACIONES NECESARIAS:
+  // - Verificar que la identificación con el ID recibido exista.
+  // - Si se proporciona un nuevo nombre, validar que no exista otra identificación con ese mismo nombre.
+  // - Si se proporciona un nuevo ID de usuario, validar que dicho usuario exista.
+  // - Si no se recibe ningún campo para actualizar, se debe dejar la identificación actual sin lanzar errores (mantener la identificación sin cambios).
+
+  //
+  // COMPONENTES A CREAR O MODIFICAR:
+  //
+  // 1. RUTA:
+  // - Agregar una nueva ruta PATCH en el archivo de rutas `reqIdentification.routes.js`.
+  // - Ejemplo: `PATCH /req-identification/:id`.
+  //
+  // 2. CONTROLADOR:
+  // - Crear un nuevo controlador llamado `updateReqIdentification`.
+  // - Este debe obtener el ID desde `req.params.id` y los campos a actualizar desde `req.body`.
+  // - Llamar al método del servicio `ReqIdentificationService.update(...)`.
+  //
+  // 3. SERVICIO:
+  // - Implementar el método `update` en la clase `ReqIdentificationService`.
+  // - Este método debe aplicar todas las validaciones y luego invocar el repositorio para guardar los cambios.
+  //
+  // 4. ESQUEMA DE VALIDACIÓN:
+  // - Crear un nuevo esquema Zod llamado `reqIdentificationUpdateSchema`.
+  // - Este esquema debe permitir solo los campos `reqIdentificationName`, `reqIdentificationDescription` y `userId`.
+  // - Validar que al menos uno de estos campos esté presente en la solicitud.
+  //
+  // 5. REPOSITORIO:
+  // - Agregar un método nuevo en `ReqIdentificationRepository` para hacer la actualización en la base de datos.
+  // - Este método debe construir dinámicamente el SQL solo con los campos recibidos.
+  //
+  // CONSIDERACIONES ADICIONALES:
+  // - Esta funcionalidad debe estar protegida por middleware `UserExtractor` para asegurar que solo usuarios autenticados puedan actualizar identificaciones.
+  // - En caso de éxito, se debe retornar un status HTTP 200 junto con la identificación actualizada en formato JSON.
+  //   Ejemplo de respuesta: `return res.status(200).json({ reqIdentification })`.
+  // - En caso de error (por ejemplo, usuario no encontrado, nombre duplicado), se debe lanzar `HttpException` con el código y mensaje correspondiente.
+  // - Si no se recibe ningún campo para actualizar, simplemente se debe retornar la identificación sin modificaciones, sin lanzar errores.
 
   //   /**
   //    * Retrieves a single identification by ID.

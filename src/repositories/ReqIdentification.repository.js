@@ -84,7 +84,7 @@ class ReqIdentificationRepository {
     LEFT JOIN subjects s ON lb.subject_id = s.id
     LEFT JOIN legal_basis_subject_aspect lbsa ON lb.id = lbsa.legal_basis_id
     LEFT JOIN aspects a ON lbsa.aspect_id = a.id
-    ORDER BY ri.id DESC
+    ORDER BY ri.created_at DESC, ri.id DESC
   `
 
     try {
@@ -210,7 +210,7 @@ class ReqIdentificationRepository {
     LEFT JOIN legal_basis_subject_aspect lbsa ON lb.id = lbsa.legal_basis_id
     LEFT JOIN aspects a ON lbsa.aspect_id = a.id
     WHERE ri.id = ?
-    ORDER BY ri.id DESC
+    ORDER BY ri.created_at DESC, ri.id DESC
   `
 
     try {
@@ -272,8 +272,8 @@ class ReqIdentificationRepository {
   /**
    * Retrieves requirement identifications filtered by name.
    *
-   * @param {string} name - The name (or partial name) to filter by.
-   * @returns {Promise<ReqIdentification[]|null>} - An array of matching requirement identifications, or null if none found.
+   * @param {string} name - The name to filter by.
+   * @returns {Promise<ReqIdentification[]|null>} - An array of requirement identifications, or null if none found.
    * @throws {HttpException} - If an error occurs during the query.
    */
   static async findByName (name) {
@@ -313,7 +313,7 @@ class ReqIdentificationRepository {
       LEFT JOIN legal_basis_subject_aspect lbsa ON lb.id = lbsa.legal_basis_id
       LEFT JOIN aspects a ON lbsa.aspect_id = a.id
       WHERE ri.name LIKE ?
-      ORDER BY ri.id DESC
+      ORDER BY ri.created_at DESC, ri.id DESC
     `
 
     try {
@@ -399,7 +399,7 @@ class ReqIdentificationRepository {
   /**
    * Retrieves requirement identifications whose description matches the given term(s) using full-text search.
    *
-   * @param {string} description - A partial or full-text search term to match against ri.description.
+   * @param {string} description - A partial or full-text search term.
    * @returns {Promise<ReqIdentification[]|null>} - An array of matching requirement identifications, or null if none found.
    * @throws {HttpException} - If an error occurs during the query.
    */
@@ -440,7 +440,7 @@ class ReqIdentificationRepository {
         LEFT JOIN legal_basis_subject_aspect lbsa ON lb.id = lbsa.legal_basis_id
         LEFT JOIN aspects a ON lbsa.aspect_id = a.id
         WHERE MATCH(ri.description) AGAINST(? IN BOOLEAN MODE)
-        ORDER BY ri.id DESC
+        ORDER BY ri.created_at DESC, ri.id DESC
       `
 
     try {
@@ -523,55 +523,54 @@ class ReqIdentificationRepository {
   }
 
   /**
-   * Retrieves requirement identifications filtered by the associated user’s name.
+   * Retrieves requirement identifications filtered by the associated user’s ID.
    *
-   * @param {string} userName - The (partial) user name to filter by.
+   * @param {number} userId - The user ID to filter by.
    * @returns {Promise<ReqIdentification[]|null>} - An array of matching requirement identifications, or null if none found.
    * @throws {HttpException} - If an error occurs during the query.
    */
-  static async findByUserName (userName) {
+  static async findByUserId (userId) {
     const query = `
-      SELECT 
-        ri.id AS req_identification_id,
-        ri.name,
-        ri.description,
-        ri.user_id,
-        ri.created_at,
-        ri.status,
+    SELECT 
+      ri.id AS req_identification_id,
+      ri.name,
+      ri.description,
+      ri.user_id,
+      ri.created_at,
+      ri.status,
 
-        u.id AS user_id,
-        u.name AS user_name,
-        u.gmail AS user_gmail,
-        u.role_id AS user_role_id,
-        u.profile_picture AS user_profile_picture,
+      u.id AS user_id,
+      u.name AS user_name,
+      u.gmail AS user_gmail,
+      u.role_id AS user_role_id,
+      u.profile_picture AS user_profile_picture,
 
-        s.id AS subject_id,
-        s.subject_name,
+      s.id AS subject_id,
+      s.subject_name,
 
-        a.id AS aspect_id,
-        a.aspect_name,
+      a.id AS aspect_id,
+      a.aspect_name,
 
-        lb.jurisdiction,
-        lb.state,
-        lb.municipality
+      lb.jurisdiction,
+      lb.state,
+      lb.municipality
 
-      FROM req_identifications ri
-      LEFT JOIN users u ON ri.user_id = u.id
-      LEFT JOIN req_identifications_requirements rir ON ri.id = rir.req_identification_id
-      LEFT JOIN req_identifications_requirement_legal_basis rirlb 
-        ON rir.req_identification_id = rirlb.req_identification_id 
-        AND rir.requirement_id = rirlb.requirement_id
-      LEFT JOIN legal_basis lb ON rirlb.legal_basis_id = lb.id
-      LEFT JOIN subjects s ON lb.subject_id = s.id
-      LEFT JOIN legal_basis_subject_aspect lbsa ON lb.id = lbsa.legal_basis_id
-      LEFT JOIN aspects a ON lbsa.aspect_id = a.id
-      WHERE u.name LIKE ?
-      ORDER BY ri.id DESC
-    `
+    FROM req_identifications ri
+    LEFT JOIN users u ON ri.user_id = u.id
+    LEFT JOIN req_identifications_requirements rir ON ri.id = rir.req_identification_id
+    LEFT JOIN req_identifications_requirement_legal_basis rirlb 
+      ON rir.req_identification_id = rirlb.req_identification_id 
+      AND rir.requirement_id = rirlb.requirement_id
+    LEFT JOIN legal_basis lb ON rirlb.legal_basis_id = lb.id
+    LEFT JOIN subjects s ON lb.subject_id = s.id
+    LEFT JOIN legal_basis_subject_aspect lbsa ON lb.id = lbsa.legal_basis_id
+    LEFT JOIN aspects a ON lbsa.aspect_id = a.id
+    WHERE u.id = ?
+    ORDER BY ri.created_at DESC, ri.id DESC
+  `
 
     try {
-      const filterValue = `%${userName}%`
-      const [rows] = await pool.query(query, [filterValue])
+      const [rows] = await pool.query(query, [userId])
       if (rows.length === 0) return null
 
       const reqIdentificationMap = new Map()
@@ -639,65 +638,84 @@ class ReqIdentificationRepository {
       )
     } catch (error) {
       console.error(
-        'Error fetching requirement identifications by user name:',
+        'Error fetching requirement identifications by user ID:',
         error.message
       )
       throw new HttpException(
         500,
-        'Error fetching requirement identifications by user name'
+        'Error fetching requirement identifications by user ID'
       )
     }
   }
 
   /**
-   * Retrieves requirement identifications filtered by creation date.
+   * Retrieves requirement identifications filtered by creation date range.
    *
-   * @param {string} date - The creation date to filter by (format: 'YYYY-MM-DD').
+   * @param {string} [from] - Start date, format: 'YYYY-MM-DD'.
+   * @param {string} [to] - End date, format: 'YYYY-MM-DD'.
    * @returns {Promise<ReqIdentification[]|null>} - An array of matching requirement identifications, or null if none found.
-   * @throws {HttpException} - If an error occurs during the query.
+   * @throws {HttpException}
    */
-  static async findByCreatedAt (date) {
-    const query = `
-      SELECT 
-        ri.id AS req_identification_id,
-        ri.name,
-        ri.description,
-        ri.user_id,
-        ri.created_at,
-        ri.status,
+  static async findByCreatedAt (from, to) {
+    let query = `
+    SELECT 
+      ri.id AS req_identification_id,
+      ri.name,
+      ri.description,
+      ri.user_id,
+      ri.created_at,
+      ri.status,
 
-        u.id AS user_id,
-        u.name AS user_name,
-        u.gmail AS user_gmail,
-        u.role_id AS user_role_id,
-        u.profile_picture AS user_profile_picture,
+      u.id AS user_id,
+      u.name AS user_name,
+      u.gmail AS user_gmail,
+      u.role_id AS user_role_id,
+      u.profile_picture AS user_profile_picture,
 
-        s.id AS subject_id,
-        s.subject_name,
+      s.id AS subject_id,
+      s.subject_name,
 
-        a.id AS aspect_id,
-        a.aspect_name,
+      a.id AS aspect_id,
+      a.aspect_name,
 
-        lb.jurisdiction,
-        lb.state,
-        lb.municipality
+      lb.jurisdiction,
+      lb.state,
+      lb.municipality
 
-      FROM req_identifications ri
-      LEFT JOIN users u ON ri.user_id = u.id
-      LEFT JOIN req_identifications_requirements rir ON ri.id = rir.req_identification_id
-      LEFT JOIN req_identifications_requirement_legal_basis rirlb 
-        ON rir.req_identification_id = rirlb.req_identification_id 
-        AND rir.requirement_id = rirlb.requirement_id
-      LEFT JOIN legal_basis lb ON rirlb.legal_basis_id = lb.id
-      LEFT JOIN subjects s ON lb.subject_id = s.id
-      LEFT JOIN legal_basis_subject_aspect lbsa ON lb.id = lbsa.legal_basis_id
-      LEFT JOIN aspects a ON lbsa.aspect_id = a.id
-      WHERE DATE(ri.created_at) = ?
-      ORDER BY ri.id DESC
-    `
+    FROM req_identifications ri
+    LEFT JOIN users u ON ri.user_id = u.id
+    LEFT JOIN req_identifications_requirements rir ON ri.id = rir.req_identification_id
+    LEFT JOIN req_identifications_requirement_legal_basis rirlb 
+      ON rir.req_identification_id = rirlb.req_identification_id 
+      AND rir.requirement_id = rirlb.requirement_id
+    LEFT JOIN legal_basis lb ON rirlb.legal_basis_id = lb.id
+    LEFT JOIN subjects s ON lb.subject_id = s.id
+    LEFT JOIN legal_basis_subject_aspect lbsa ON lb.id = lbsa.legal_basis_id
+    LEFT JOIN aspects a ON lbsa.aspect_id = a.id
+  `
+
+    const conditions = []
+    const values = []
+
+    if (from && to) {
+      conditions.push('DATE(ri.created_at) BETWEEN ? AND ?')
+      values.push(from, to)
+    } else if (from) {
+      conditions.push('DATE(ri.created_at) >= ?')
+      values.push(from)
+    } else if (to) {
+      conditions.push('DATE(ri.created_at) <= ?')
+      values.push(to)
+    }
+
+    if (conditions.length > 0) {
+      query += ' WHERE ' + conditions.join(' AND ')
+    }
+
+    query += ' ORDER BY ri.created_at DESC, ri.id DESC'
 
     try {
-      const [rows] = await pool.query(query, [date])
+      const [rows] = await pool.query(query, values)
       if (rows.length === 0) return null
 
       const reqIdentificationMap = new Map()
@@ -765,12 +783,12 @@ class ReqIdentificationRepository {
       )
     } catch (error) {
       console.error(
-        'Error fetching requirement identifications by creation date:',
+        'Error fetching requirement identifications by creation date range:',
         error.message
       )
       throw new HttpException(
         500,
-        'Error fetching requirement identifications by creation date'
+        'Error fetching requirement identifications by creation date range'
       )
     }
   }
@@ -819,7 +837,7 @@ class ReqIdentificationRepository {
         LEFT JOIN legal_basis_subject_aspect lbsa ON lb.id = lbsa.legal_basis_id
         LEFT JOIN aspects a ON lbsa.aspect_id = a.id
         WHERE ri.status = ?
-        ORDER BY ri.id DESC
+        ORDER BY ri.created_at DESC, ri.id DESC
       `
 
     try {
@@ -946,7 +964,7 @@ class ReqIdentificationRepository {
       LEFT JOIN legal_basis_subject_aspect lbsa ON lb.id = lbsa.legal_basis_id
       LEFT JOIN aspects a ON lbsa.aspect_id = a.id
       WHERE s.id = ?
-      ORDER BY ri.id DESC
+      ORDER BY ri.created_at DESC, ri.id DESC
     `
 
     try {
@@ -1027,13 +1045,12 @@ class ReqIdentificationRepository {
   }
 
   /**
-   * Retrieves requirement identifications filtered by subject (materia) and optionally by one or more aspect IDs.
-   * Includes associated user, subject, all matching aspects, jurisdiction, state, and municipality.
+   * Retrieves requirement identifications filtered by subject and aspect IDs.
    *
    * @param {number} subjectId   - The subject ID to filter by.
-   * @param {Array<number>} [aspectIds] - Optional array of aspect IDs to further filter by.
-   * @returns {Promise<ReqIdentification[]|null>} - A list of matching requirement identifications.
-   * @throws {HttpException} - If an error occurs during retrieval.
+   * @param {number[]} [aspectIds] - Array of aspect IDs to filter by.
+   * @returns {Promise<ReqIdentification[]|null>} - An array of matching requirement identifications, or null if none found.
+   * @throws {HttpException} - If an error occurs during the query.
    */
   static async findBySubjectAndAspects (subjectId, aspectIds = []) {
     try {
@@ -1057,9 +1074,12 @@ class ReqIdentificationRepository {
         WHERE lb.subject_id = ?
           AND lbsa.aspect_id IN (${placeholders})
       `
-        const [filterRows] = await pool.query(filterQuery, [subjectId, ...aspectIds])
+        const [filterRows] = await pool.query(filterQuery, [
+          subjectId,
+          ...aspectIds
+        ])
         if (filterRows.length === 0) return null
-        reqIds = filterRows.map(row => row.req_identification_id)
+        reqIds = filterRows.map((row) => row.req_identification_id)
       }
 
       let query = `
@@ -1105,15 +1125,15 @@ class ReqIdentificationRepository {
         values.push(...reqIds)
       }
 
-      query += ' ORDER BY ri.id DESC'
+      query += ' ORDER BY ri.created_at DESC, ri.id DESC'
 
       const [rows] = await pool.query(query, values)
       if (rows.length === 0) return null
 
-      const reqMap = new Map()
+      const reqIdentificationMap = new Map()
 
       for (const row of rows) {
-        if (!reqMap.has(row.req_identification_id)) {
+        if (!reqIdentificationMap.has(row.req_identification_id)) {
           const user = row.user_id
             ? new User(
               row.user_id,
@@ -1125,7 +1145,7 @@ class ReqIdentificationRepository {
             )
             : null
 
-          reqMap.set(row.req_identification_id, {
+          reqIdentificationMap.set(row.req_identification_id, {
             id: row.req_identification_id,
             name: row.name,
             description: row.description,
@@ -1143,29 +1163,32 @@ class ReqIdentificationRepository {
           })
         }
 
-        const reqEntry = reqMap.get(row.req_identification_id)
-        if (row.aspect_id && !reqEntry.aspects.has(row.aspect_id)) {
-          reqEntry.aspects.set(row.aspect_id, {
+        const reqIdentification = reqIdentificationMap.get(
+          row.req_identification_id
+        )
+        if (row.aspect_id && !reqIdentification.aspects.has(row.aspect_id)) {
+          reqIdentification.aspects.set(row.aspect_id, {
             aspect_id: row.aspect_id,
             aspect_name: row.aspect_name
           })
         }
       }
 
-      return Array.from(reqMap.values()).map(item =>
-        new ReqIdentification(
-          item.id,
-          item.name,
-          item.description,
-          item.user,
-          item.createdAt,
-          item.status,
-          item.subject,
-          Array.from(item.aspects.values()),
-          item.jurisdiction,
-          item.state,
-          item.municipality
-        )
+      return Array.from(reqIdentificationMap.values()).map(
+        (item) =>
+          new ReqIdentification(
+            item.id,
+            item.name,
+            item.description,
+            item.user,
+            item.createdAt,
+            item.status,
+            item.subject,
+            Array.from(item.aspects.values()),
+            item.jurisdiction,
+            item.state,
+            item.municipality
+          )
       )
     } catch (error) {
       console.error(
@@ -1182,7 +1205,7 @@ class ReqIdentificationRepository {
   /**
    * Retrieves requirement identifications filtered by jurisdiction.
    *
-   * @param {string} jurisdiction - The jurisdiction to filter by ('Federal', 'Estatal', or 'Local').
+   * @param {string} jurisdiction - The jurisdiction to filter by.
    * @returns {Promise<ReqIdentification[]|null>} - An array of matching requirement identifications, or null if none found.
    * @throws {HttpException} - If an error occurs during the query.
    */
@@ -1223,7 +1246,7 @@ class ReqIdentificationRepository {
       LEFT JOIN legal_basis_subject_aspect lbsa ON lb.id = lbsa.legal_basis_id
       LEFT JOIN aspects a ON lbsa.aspect_id = a.id
       WHERE lb.jurisdiction = ?
-      ORDER BY ri.id DESC
+      ORDER BY ri.created_at DESC, ri.id DESC
     `
 
     try {
@@ -1308,7 +1331,7 @@ class ReqIdentificationRepository {
   /**
    * Retrieves requirement identifications filtered by state.
    *
-   * @param {string} state - The (partial) state name to filter by.
+   * @param {string} state - The state name to filter by.
    * @returns {Promise<ReqIdentification[]|null>} - An array of matching requirement identifications, or null if none found.
    * @throws {HttpException} - If an error occurs during the query.
    */
@@ -1348,13 +1371,12 @@ class ReqIdentificationRepository {
       LEFT JOIN subjects s ON lb.subject_id = s.id
       LEFT JOIN legal_basis_subject_aspect lbsa ON lb.id = lbsa.legal_basis_id
       LEFT JOIN aspects a ON lbsa.aspect_id = a.id
-      WHERE lb.state LIKE ?
-      ORDER BY ri.id DESC
+      WHERE lb.state = ?
+      ORDER BY ri.created_at DESC, ri.id DESC
     `
 
     try {
-      const filterValue = `%${state}%`
-      const [rows] = await pool.query(query, [filterValue])
+      const [rows] = await pool.query(query, [state])
       if (rows.length === 0) return null
 
       const reqIdentificationMap = new Map()
@@ -1433,12 +1455,12 @@ class ReqIdentificationRepository {
   }
 
   /**
-   * Retrieves requirement identifications filtered by state and optionally by municipalities.
+   * Retrieves requirement identifications filtered by state and municipalities.
    *
    * @param {string} state - The state to filter by.
-   * @param {Array<string>} [municipalities] - An array of municipality names to filter by (optional).
+   * @param {string[]} [municipalities] - An array of municipality filter by.
    * @returns {Promise<ReqIdentification[]|null>} - A list of matching requirement identifications, or null if none found.
-   * @throws {HttpException} - If an error occurs during retrieval.
+   * @throws {HttpException} - If an error occurs during the query.
    */
   static async findByStateAndMunicipalities (state, municipalities = []) {
     let query = `
@@ -1491,16 +1513,16 @@ class ReqIdentificationRepository {
       values.push(...municipalities)
     }
 
-    query += ' ORDER BY ri.id DESC'
+    query += ' ORDER BY ri.created_at DESC, ri.id DESC'
 
     try {
       const [rows] = await pool.query(query, values)
       if (rows.length === 0) return null
 
-      const reqMap = new Map()
+      const reqIdentificationMap = new Map()
 
       for (const row of rows) {
-        if (!reqMap.has(row.req_identification_id)) {
+        if (!reqIdentificationMap.has(row.req_identification_id)) {
           const user = row.user_id
             ? new User(
               row.user_id,
@@ -1511,7 +1533,7 @@ class ReqIdentificationRepository {
               row.user_profile_picture
             )
             : null
-          reqMap.set(row.req_identification_id, {
+          reqIdentificationMap.set(row.req_identification_id, {
             id: row.req_identification_id,
             name: row.name,
             description: row.description,
@@ -1531,15 +1553,17 @@ class ReqIdentificationRepository {
           })
         }
 
-        const reqEntry = reqMap.get(row.req_identification_id)
-        if (row.aspect_id && !reqEntry.aspects.has(row.aspect_id)) {
-          reqEntry.aspects.set(row.aspect_id, {
+        const reqIdentification = reqIdentificationMap.get(
+          row.req_identification_id
+        )
+        if (row.aspect_id && !reqIdentification.aspects.has(row.aspect_id)) {
+          reqIdentification.aspects.set(row.aspect_id, {
             aspect_id: row.aspect_id,
             aspect_name: row.aspect_name
           })
         }
       }
-      return Array.from(reqMap.values()).map(
+      return Array.from(reqIdentificationMap.values()).map(
         (item) =>
           new ReqIdentification(
             item.id,

@@ -143,7 +143,7 @@ const requirementSchema = z
      */
     periodicity: z.enum(['Anual', '2 años', 'Por evento', 'Única vez', 'Específica'], {
       message:
-        'The periodicity must be one of the following: Anual, 2 años, Por evento, Única vez'
+        'The periodicity must be one of the following: Anual, 2 años, Por evento, Única vez, Específica'
     }),
 
     /**

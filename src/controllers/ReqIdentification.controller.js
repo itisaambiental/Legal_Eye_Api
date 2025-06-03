@@ -1,6 +1,7 @@
 import ReqIdentificationService from '../services/reqIdentification/ReqIdentification.service.js'
 import HttpException from '../services/errors/HttpException.js'
 import UserService from '../services/users/User.service.js'
+import parseDate from '../utils/parseDate.js'
 
 /**
  * Controller for requirement identifications operations.
@@ -78,12 +79,7 @@ export const getReqIdentificationById = async (req, res) => {
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-
     const reqIdentification = await ReqIdentificationService.getById(Number(id))
-    if (!reqIdentification) {
-      return res.status(404).json({ message: 'Requirement identification not found' })
-    }
-
     return res.status(200).json({ reqIdentification })
   } catch (err) {
     if (err instanceof HttpException) {
@@ -108,11 +104,6 @@ export const getReqIdentificationsByName = async (req, res) => {
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-
-    if (!name || typeof name !== 'string') {
-      return res.status(400).json({ message: 'Name query parameter is required' })
-    }
-
     const reqIdentifications = await ReqIdentificationService.getByName(name)
     return res.status(200).json({ reqIdentifications })
   } catch (err) {
@@ -138,11 +129,6 @@ export const getReqIdentificationsByDescription = async (req, res) => {
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-
-    if (!description || typeof description !== 'string') {
-      return res.status(400).json({ message: 'Description query parameter is required' })
-    }
-
     const reqIdentifications = await ReqIdentificationService.getByDescription(description)
     return res.status(200).json({ reqIdentifications })
   } catch (err) {
@@ -154,26 +140,21 @@ export const getReqIdentificationsByDescription = async (req, res) => {
 }
 
 /**
- * Retrieves requirement identifications by matching user name (partial match).
- * @function getReqIdentificationsByUserName
+ * Retrieves requirement identifications by user ID.
+ * @function getReqIdentificationsByUserId
  * @param {import('express').Request} req
  * @param {import('express').Response} res
  */
-export const getReqIdentificationsByUserName = async (req, res) => {
+export const getReqIdentificationsByUserId = async (req, res) => {
   const { userId } = req
-  const { userName } = req.query
+  const { id } = req.params
 
   try {
     const isAuthorized = await UserService.userExists(userId)
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-
-    if (!userName || typeof userName !== 'string') {
-      return res.status(400).json({ message: 'userName query parameter is required' })
-    }
-
-    const reqIdentifications = await ReqIdentificationService.getByUserName(userName)
+    const reqIdentifications = await ReqIdentificationService.getByUserId(Number(id))
     return res.status(200).json({ reqIdentifications })
   } catch (err) {
     if (err instanceof HttpException) {
@@ -184,14 +165,29 @@ export const getReqIdentificationsByUserName = async (req, res) => {
 }
 
 /**
- * Retrieves requirement identifications by creation date.
+ * Retrieves requirement identifications filtered by a creation date range.
  * @function getReqIdentificationsByCreatedAt
- * @param {import('express').Request} req
- * @param {import('express').Response} res
+ * @param {import('express').Request} req - Request object, expects { from, to } in query parameters.
+ * @param {import('express').Response} res - Response object.
  */
 export const getReqIdentificationsByCreatedAt = async (req, res) => {
   const { userId } = req
-  const { date } = req.query
+  const { from, to } = req.query
+
+  const { date: parsedFrom, error: fromError } = from
+    ? parseDate(from, 'from')
+    : { date: null, error: null }
+
+  const { date: parsedTo, error: toError } = to
+    ? parseDate(to, 'to')
+    : { date: null, error: null }
+
+  if (fromError || toError) {
+    return res.status(400).json({
+      message: 'Invalid date format',
+      errors: [fromError, toError].filter(Boolean)
+    })
+  }
 
   try {
     const isAuthorized = await UserService.userExists(userId)
@@ -199,11 +195,7 @@ export const getReqIdentificationsByCreatedAt = async (req, res) => {
       return res.status(403).json({ message: 'Unauthorized' })
     }
 
-    if (!date || typeof date !== 'string') {
-      return res.status(400).json({ message: 'date query parameter is required' })
-    }
-
-    const reqIdentifications = await ReqIdentificationService.getByCreatedAt(date)
+    const reqIdentifications = await ReqIdentificationService.getByCreatedAt(parsedFrom, parsedTo)
     return res.status(200).json({ reqIdentifications })
   } catch (err) {
     if (err instanceof HttpException) {
@@ -228,11 +220,6 @@ export const getReqIdentificationsByStatus = async (req, res) => {
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-
-    if (!status || typeof status !== 'string') {
-      return res.status(400).json({ message: 'status query parameter is required' })
-    }
-
     const reqIdentifications = await ReqIdentificationService.getByStatus(status)
     return res.status(200).json({ reqIdentifications })
   } catch (err) {
@@ -251,18 +238,12 @@ export const getReqIdentificationsByStatus = async (req, res) => {
  */
 export const getReqIdentificationsBySubjectId = async (req, res) => {
   const { userId } = req
-  const { subjectId } = req.query
-
+  const { subjectId } = req.params
   try {
     const isAuthorized = await UserService.userExists(userId)
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-
-    if (!subjectId || isNaN(Number(subjectId))) {
-      return res.status(400).json({ message: 'subjectId query parameter is required and must be a number' })
-    }
-
     const reqIdentifications = await ReqIdentificationService.getBySubjectId(Number(subjectId))
     return res.status(200).json({ reqIdentifications })
   } catch (err) {
@@ -274,57 +255,30 @@ export const getReqIdentificationsBySubjectId = async (req, res) => {
 }
 
 /**
- * Retrieves requirement identifications by subject ID and one or more aspect IDs.
+ * Retrieves requirement identifications by subject ID and aspect IDs.
  * @function getReqIdentificationsBySubjectAndAspects
  * @param {import('express').Request} req
  * @param {import('express').Response} res
  */
 export const getReqIdentificationsBySubjectAndAspects = async (req, res) => {
   const { userId } = req
-  const { subjectId, aspectIds } = req.query
+  const { subjectId } = req.params
+  const { aspectIds } = req.query
 
   try {
     const isAuthorized = await UserService.userExists(userId)
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-
-    // Validate subjectId
-    if (!subjectId || isNaN(Number(subjectId))) {
-      return res
-        .status(400)
-        .json({ message: 'subjectId query parameter is required and must be a number' })
-    }
-
-    // Parse aspectIds into an array of numbers
-    let aspectIdsArray = []
-    if (!aspectIds) {
-      return res
-        .status(400)
-        .json({ message: 'aspectIds query parameter is required' })
-    }
-
-    if (Array.isArray(aspectIds)) {
-      aspectIdsArray = aspectIds.map((id) => Number(id))
-    } else if (typeof aspectIds === 'string') {
-      // Accept comma-separated string like "1,2,3"
-      aspectIdsArray = aspectIds.split(',').map((id) => Number(id))
-    } else {
-      return res
-        .status(400)
-        .json({ message: 'aspectIds must be a string or an array of strings' })
-    }
-
-    // Ensure all parsed aspect IDs are valid numbers
-    if (aspectIdsArray.some((id) => isNaN(id))) {
-      return res
-        .status(400)
-        .json({ message: 'All aspectIds must be valid numbers' })
-    }
+    const aspects = Array.isArray(aspectIds)
+      ? aspectIds.map(Number).filter(Number.isInteger)
+      : typeof aspectIds === 'string'
+        ? aspectIds.split(',').map(Number).filter(Number.isInteger)
+        : []
 
     const reqIdentifications = await ReqIdentificationService.getBySubjectAndAspects(
       Number(subjectId),
-      aspectIdsArray
+      aspects
     )
 
     return res.status(200).json({ reqIdentifications })
@@ -345,19 +299,11 @@ export const getReqIdentificationsBySubjectAndAspects = async (req, res) => {
 export const getReqIdentificationsByJurisdiction = async (req, res) => {
   const { userId } = req
   const { jurisdiction } = req.query
-
   try {
     const isAuthorized = await UserService.userExists(userId)
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-
-    if (!jurisdiction || typeof jurisdiction !== 'string') {
-      return res
-        .status(400)
-        .json({ message: 'jurisdiction query parameter is required' })
-    }
-
     const reqIdentifications = await ReqIdentificationService.getByJurisdiction(jurisdiction)
     return res.status(200).json({ reqIdentifications })
   } catch (err) {
@@ -383,13 +329,6 @@ export const getReqIdentificationsByState = async (req, res) => {
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-
-    if (!state || typeof state !== 'string') {
-      return res
-        .status(400)
-        .json({ message: 'state query parameter is required' })
-    }
-
     const reqIdentifications = await ReqIdentificationService.getByState(state)
     return res.status(200).json({ reqIdentifications })
   } catch (err) {
@@ -401,7 +340,7 @@ export const getReqIdentificationsByState = async (req, res) => {
 }
 
 /**
- * Retrieves requirement identifications by state and optionally by municipalities.
+ * Retrieves requirement identifications by state and municipalities.
  * @function getReqIdentificationsByStateAndMunicipalities
  * @param {import('express').Request} req
  * @param {import('express').Response} res
@@ -409,37 +348,29 @@ export const getReqIdentificationsByState = async (req, res) => {
 export const getReqIdentificationsByStateAndMunicipalities = async (req, res) => {
   const { userId } = req
   const { state, municipalities } = req.query
-
+  if (municipalities && municipalities.length > 0 && !state) {
+    return res.status(400).json({
+      message: 'State is required if municipalities are provided'
+    })
+  }
   try {
     const isAuthorized = await UserService.userExists(userId)
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-
-    if (!state || typeof state !== 'string') {
-      return res
-        .status(400)
-        .json({ message: 'state query parameter is required' })
-    }
-
-    // Parse municipalities into an array of strings (if provided)
-    let municipalitiesArray = []
-    if (municipalities) {
-      if (Array.isArray(municipalities)) {
-        municipalitiesArray = municipalities.map((m) => String(m))
-      } else if (typeof municipalities === 'string') {
-        // Accept comma-separated string like "Muni1,Muni2"
-        municipalitiesArray = municipalities.split(',').map((m) => m.trim())
-      } else {
-        return res
-          .status(400)
-          .json({ message: 'municipalities must be a string or an array of strings' })
-      }
-    }
-
+    const municipalitiesList = Array.isArray(municipalities)
+      ? municipalities
+        .map((municipality) => String(municipality).trim())
+        .filter((municipality) => municipality.length > 0)
+      : typeof municipalities === 'string'
+        ? municipalities
+          .split(',')
+          .map((municipality) => String(municipality).trim())
+          .filter((municipality) => municipality.length > 0)
+        : []
     const reqIdentifications = await ReqIdentificationService.getByStateAndMunicipalities(
       state,
-      municipalitiesArray
+      municipalitiesList
     )
     return res.status(200).json({ reqIdentifications })
   } catch (err) {
