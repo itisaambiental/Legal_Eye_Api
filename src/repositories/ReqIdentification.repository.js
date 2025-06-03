@@ -1684,6 +1684,49 @@ class ReqIdentificationRepository {
     }
   }
 
+  /**
+   * Updates a requirement identification record in the database.
+   *
+   * @param {number} id - The ID of the requirement identification to update.
+   * @param {Object} fields - The data to update.
+   * @param {string|null} [fields.reqIdentificationName] - New name (or null to keep current).
+   * @param {string|null} [fields.reqIdentificationDescription] - New description (or null to keep current).
+   * @param {number|null} [fields.userId] - New user ID (or null to keep current).
+   * @returns {Promise<ReqIdentification|null>} - The updated ReqIdentification, or null if not found.
+   * @throws {HttpException} - If an error occurs during update.
+   */
+  static async update (id, { reqIdentificationName, reqIdentificationDescription, userId }) {
+    try {
+      // Verify existence
+      const existing = await this.findById(id)
+      if (!existing) {
+        return null
+      }
+
+      const updateQuery = `
+        UPDATE req_identifications
+        SET
+          name        = IFNULL(?, name),
+          description = IFNULL(?, description),
+          user_id     = IFNULL(?, user_id)
+        WHERE id = ?
+      `
+      const values = [
+        reqIdentificationName ?? null,
+        reqIdentificationDescription ?? null,
+        userId ?? null,
+        id
+      ]
+
+      await pool.query(updateQuery, values)
+
+      return await this.findById(id)
+    } catch (error) {
+      console.error('Error updating requirement identification:', error.message)
+      throw new HttpException(500, 'Error updating requirement identification')
+    }
+  }
+
   //   /**
   //  * Updates the status of an identification.
   //  * @param {Object} identification - The identification data.

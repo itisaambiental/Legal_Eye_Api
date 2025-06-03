@@ -18,7 +18,8 @@ import {
   getReqIdentificationsBySubjectAndAspects,
   getReqIdentificationsByJurisdiction,
   getReqIdentificationsByState,
-  getReqIdentificationsByStateAndMunicipalities
+  getReqIdentificationsByStateAndMunicipalities,
+  updateReqIdentification
   // getReqIdentificationById,
   // detectRequirements,
   // updateReqIdentificationById,
@@ -152,6 +153,14 @@ router.get('/req-identification/search/subject/:subjectId', UserExtractor, getRe
  * @middleware UserExtractor
  */
 router.get('/req-identification/search/subject/:subjectId/aspects', UserExtractor, getReqIdentificationsBySubjectAndAspects)
+
+/**
+ * Partially updates a requirement identification by its ID.
+ * @method PATCH
+ * @path /req-identification/:id
+ * @middleware UserExtractor
+ */
+router.patch('/req-identification/:id', UserExtractor, updateReqIdentification)
 
 // /**
 //  * Retrieves a single req_identification by ID.

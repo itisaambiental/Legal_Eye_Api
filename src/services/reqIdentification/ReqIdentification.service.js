@@ -5,7 +5,7 @@ import AspectsRepository from '../../repositories/Aspects.repository.js'
 import LegalBasisRepository from '../../repositories/LegalBasis.repository.js'
 import RequirementRepository from '../../repositories/Requirements.repository.js'
 import ReqIdentificationRepository from '../../repositories/ReqIdentification.repository.js'
-import { reqIdentificationSchema } from '../../schemas/reqIdentification.schema.js'
+import { reqIdentificationSchema, reqIdentificationUpdateSchema } from '../../schemas/reqIdentification.schema.js'
 import reqIdentificationQueue from '../../workers/reqIdentificationWorker.js'
 import HttpException from '../../services/errors/HttpException.js'
 import FileService from '../files/File.service.js'
@@ -830,6 +830,60 @@ class ReqIdentificationService {
         500,
         'Failed to retrieve requirement identifications by state and municipalities'
       )
+    }
+  }
+
+  /**
+   * Partially updates a requirement identification.
+   *
+   * @param {number} id - The ID of the requirement identification to update.
+   * @param {Object} updateData - The fields to update.
+   * @param {string} [updateData.reqIdentificationName] - New name.
+   * @param {string} [updateData.reqIdentificationDescription] - New description.
+   * @param {number} [updateData.userId] - New user ID.
+   * @returns {Promise<ReqIdentification>} - The updated requirement identification.
+   * @throws {HttpException} - On validation failure or repository errors.
+   */
+  static async update (id, updateData) {
+    try {
+      const { reqIdentificationName, reqIdentificationDescription, userId } =
+        reqIdentificationUpdateSchema.parse(updateData)
+
+      // 2. Verify the identification exists
+      const existing = await ReqIdentificationRepository.findById(id)
+      if (!existing) {
+        throw new HttpException(404, 'Requirement identification not found')
+      }
+      if (reqIdentificationName !== undefined) {
+        const duplicates = await ReqIdentificationRepository.findByName(reqIdentificationName)
+        if (duplicates) {
+          const collision = duplicates.find((ri) => ri.id !== id)
+          if (collision) {
+            throw new HttpException(409, 'Another requirement identification with this name already exists')
+          }
+        }
+      }
+      const updatedReqIdentification = await ReqIdentificationRepository.update(id, {
+        reqIdentificationName: reqIdentificationName ?? null,
+        reqIdentificationDescription: reqIdentificationDescription ?? null,
+        userId: userId ?? null
+      })
+      if (!updatedReqIdentification) {
+        throw new HttpException(500, 'Failed to update requirement identification')
+      }
+      return updatedReqIdentification
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        const validationErrors = error.errors.map((e) => ({
+          field: e.path.join('.'),
+          message: e.message
+        }))
+        throw new HttpException(400, 'Validation failed', validationErrors)
+      }
+      if (error instanceof HttpException) {
+        throw error
+      }
+      throw new HttpException(500, 'Failed to update requirement identification')
     }
   }
 
