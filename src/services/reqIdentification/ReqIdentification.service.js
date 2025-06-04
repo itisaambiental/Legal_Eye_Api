@@ -991,23 +991,6 @@ class ReqIdentificationService {
     }
   }
 
-  /**
-   * Deletes all requirement identifications.
-   * @returns {Promise<{ success: boolean }>} - An object indicating the deletion was successful.
-   * @throws {HttpException} - If an error occurs during deletion.
-   */
-  static async deleteAll () {
-    try {
-      await ReqIdentificationRepository.deleteAll()
-      return { success: true }
-    } catch (error) {
-      throw new HttpException(
-        500,
-        'Failed to delete all requirement identifications'
-      )
-    }
-  }
-
   //   /**
   //    * Retrieves a single identification by ID.
   //    *

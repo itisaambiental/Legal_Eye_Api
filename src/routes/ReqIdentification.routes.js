@@ -184,15 +184,6 @@ router.delete('/req-identification/:id', UserExtractor, deleteReqIdentification)
  */
 router.delete('/req-identification/delete/batch', UserExtractor, deleteReqIdentificationsBatch)
 
-/**
- * Route to delete all requirement identifications.
- * @method DELETE
- * @path /req-identification/delete/all
- * @description Deletes all requirement identifications from the system.
- * @middleware UserExtractor
- */
-router.delete('/req-identification/delete/all', UserExtractor, deleteAllReqIdentifications)
-
 // /**
 //  * Detects applicable requirements for a given identification based on subject and aspects,
 //  * then links them into req_identifications_requirements.

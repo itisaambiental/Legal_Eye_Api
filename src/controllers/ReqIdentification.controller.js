@@ -487,37 +487,6 @@ export const deleteReqIdentificationsBatch = async (req, res) => {
   }
 }
 
-/**
- * Deletes all requirement identifications.
- * @function deleteAllReqIdentifications
- * @param {import('express').Request} req - Request object.
- * @param {import('express').Response} res - Response object.
- * @returns {void}
- */
-export const deleteAllReqIdentifications = async (req, res) => {
-  const { userId } = req
-  try {
-    const isAuthorized = await UserService.userExists(userId)
-    if (!isAuthorized) {
-      return res.status(403).json({ message: 'Unauthorized' })
-    }
-    const { success } = await ReqIdentificationService.deleteAll()
-    if (success) {
-      return res.sendStatus(204)
-    } else {
-      return res.status(500).json({ message: 'Internal Server Error' })
-    }
-  } catch (error) {
-    if (error instanceof HttpException) {
-      return res.status(error.status).json({
-        message: error.message,
-        ...(error.errors && { errors: error.errors })
-      })
-    }
-    return res.status(500).json({ message: 'Internal Server Error' })
-  }
-}
-
 // /**
 //  * Retrieves a single requirements identification by ID.
 //  * @function getReqIdentificationById
