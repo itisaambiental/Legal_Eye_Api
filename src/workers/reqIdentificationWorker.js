@@ -25,7 +25,6 @@ const CONCURRENCY = Number(CONCURRENCY_REQ_IDENTIFICATIONS || 1)
 reqIdentificationQueue.process(CONCURRENCY, async (job, done) => {
   /** @type {ReqIdentificationJobData} */
   const { reqIdentificationId, legalBases, requirements } = job.data
-  console.log(job.id)
   try {
     const currentJob = await reqIdentificationQueue.getJob(job.id)
     if (!currentJob) throw new HttpException(404, 'Job not found')
@@ -40,9 +39,7 @@ reqIdentificationQueue.process(CONCURRENCY, async (job, done) => {
             )
           )
       )
-
       if (legalBasis.length === 0) continue
-
       const subjectNames = [
         ...new Set(
           legalBasis.map((lb) => lb.subject.subject_name).filter(Boolean)

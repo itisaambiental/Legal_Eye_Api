@@ -940,8 +940,8 @@ class ReqIdentificationService {
       if (!reqIdentification) {
         throw new HttpException(404, 'Requirement identification not found')
       }
-      const deleted = await ReqIdentificationRepository.deleteById(id)
-      if (!deleted) {
+      const reqIdentificationDeleted = await ReqIdentificationRepository.deleteById(id)
+      if (!reqIdentificationDeleted) {
         throw new HttpException(404, 'Requirement identification not found')
       }
       return { success: true }
@@ -955,31 +955,27 @@ class ReqIdentificationService {
 
   /**
    * Deletes multiple requirement identifications by their IDs.
-   * @param {Array<number>} reqIdentificationIds - Array of requirement identification IDs to delete.
+   * @param {number[]} reqIdentificationIds - Array of requirement identification IDs to delete.
    * @returns {Promise<{ success: boolean }>} - An object indicating the deletion was successful.
    * @throws {HttpException} - If IDs not found or deletion fails.
    */
   static async deleteBatch (reqIdentificationIds) {
     try {
-      const existingPromises = reqIdentificationIds.map((id) =>
-        ReqIdentificationRepository.findById(id)
+      const existingReqIdentifications = await ReqIdentificationRepository.findByIds(
+        reqIdentificationIds
       )
-      const existingRecords = await Promise.all(existingPromises)
-      const foundIds = existingRecords
-        .filter((rec) => rec)
-        .map((rec) => rec.id)
-      if (foundIds.length !== reqIdentificationIds.length) {
+      if (existingReqIdentifications.length !== reqIdentificationIds.length) {
         const notFoundIds = reqIdentificationIds.filter(
-          (id) => !foundIds.includes(id)
+          (id) => !existingReqIdentifications.some((reqIdentification) => reqIdentification.id === id)
         )
         throw new HttpException(404, 'Requirement identifications not found for IDs', {
           notFoundIds
         })
       }
-      const deleted = await ReqIdentificationRepository.deleteBatch(
+      const reqIdentificationsDeleted = await ReqIdentificationRepository.deleteBatch(
         reqIdentificationIds
       )
-      if (!deleted) {
+      if (!reqIdentificationsDeleted) {
         throw new HttpException(404, 'Requirement identifications not found')
       }
       return { success: true }

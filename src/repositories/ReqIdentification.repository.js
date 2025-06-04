@@ -270,6 +270,136 @@ class ReqIdentificationRepository {
   }
 
   /**
+   * Retrieves multiple requirement identifications by their IDs.
+   *
+   * @param {number[]} reqIdentificationIds - Array of requirement identification IDs.
+   * @returns {Promise<ReqIdentification[]|null>} - Array of found ReqIdentification instances, or null if none found.
+   * @throws {HttpException} - If an error occurs during the query.
+   */
+  static async findByIds (reqIdentificationIds) {
+    if (reqIdentificationIds.length === 0) {
+      return null
+    }
+    const placeholders = reqIdentificationIds.map(() => '?').join(', ')
+    const query = `
+    SELECT 
+      ri.id AS req_identification_id,
+      ri.name,
+      ri.description,
+      ri.user_id,
+      ri.created_at,
+      ri.status,
+
+      u.id AS user_id,
+      u.name AS user_name,
+      u.gmail AS user_gmail,
+      u.role_id AS user_role_id,
+      u.profile_picture AS user_profile_picture,
+
+      s.id AS subject_id,
+      s.subject_name,
+
+      a.id AS aspect_id,
+      a.aspect_name,
+
+      lb.jurisdiction,
+      lb.state,
+      lb.municipality
+
+    FROM req_identifications ri
+    LEFT JOIN users u ON ri.user_id = u.id
+    LEFT JOIN req_identifications_requirements rir ON ri.id = rir.req_identification_id
+    LEFT JOIN req_identifications_requirement_legal_basis rirlb 
+      ON rir.req_identification_id = rirlb.req_identification_id 
+      AND rir.requirement_id = rirlb.requirement_id
+    LEFT JOIN legal_basis lb ON rirlb.legal_basis_id = lb.id
+    LEFT JOIN subjects s ON lb.subject_id = s.id
+    LEFT JOIN legal_basis_subject_aspect lbsa ON lb.id = lbsa.legal_basis_id
+    LEFT JOIN aspects a ON lbsa.aspect_id = a.id
+    WHERE ri.id IN (${placeholders})
+    ORDER BY ri.created_at DESC, ri.id DESC
+  `
+
+    try {
+      const [rows] = await pool.query(query, reqIdentificationIds)
+      if (rows.length === 0) return null
+
+      const reqIdentificationMap = new Map()
+
+      for (const row of rows) {
+        if (!reqIdentificationMap.has(row.req_identification_id)) {
+          const user = row.user_id
+            ? new User(
+              row.user_id,
+              row.user_name,
+              null,
+              row.user_gmail,
+              row.user_role_id,
+              row.user_profile_picture
+            )
+            : null
+
+          reqIdentificationMap.set(row.req_identification_id, {
+            id: row.req_identification_id,
+            name: row.name,
+            description: row.description,
+            createdAt: row.created_at,
+            status: row.status,
+            user,
+            subject: row.subject_id
+              ? {
+                  subject_id: row.subject_id,
+                  subject_name: row.subject_name
+                }
+              : null,
+            aspects: new Map(),
+            jurisdiction: row.jurisdiction,
+            state: row.state,
+            municipality: row.municipality
+          })
+        }
+
+        const reqIdentification = reqIdentificationMap.get(
+          row.req_identification_id
+        )
+
+        if (row.aspect_id && !reqIdentification.aspects.has(row.aspect_id)) {
+          reqIdentification.aspects.set(row.aspect_id, {
+            aspect_id: row.aspect_id,
+            aspect_name: row.aspect_name
+          })
+        }
+      }
+
+      return Array.from(reqIdentificationMap.values()).map(
+        (item) =>
+          new ReqIdentification(
+            item.id,
+            item.name,
+            item.description,
+            item.user,
+            item.createdAt,
+            item.status,
+            item.subject,
+            Array.from(item.aspects.values()),
+            item.jurisdiction,
+            item.state,
+            item.municipality
+          )
+      )
+    } catch (error) {
+      console.error(
+        'Error fetching requirement identifications by IDs:',
+        error.message
+      )
+      throw new HttpException(
+        500,
+        'Error fetching requirement identifications by IDs'
+      )
+    }
+  }
+
+  /**
    * Retrieves requirement identifications filtered by name.
    *
    * @param {string} name - The name to filter by.
@@ -1623,7 +1753,10 @@ class ReqIdentificationRepository {
       const updatedReqIdentification = await this.findById(id)
       return updatedReqIdentification
     } catch (error) {
-      console.error('Error updating requirement identification:', error.message)
+      console.error(
+        'Error updating requirement identification:',
+        error.message
+      )
       throw new HttpException(500, 'Error updating requirement identification')
     }
   }
@@ -1658,15 +1791,18 @@ class ReqIdentificationRepository {
   }
 
   /**
- * Checks if a requirement identification with the given name exists,
- * excluding the specified requirement identification ID.
- *
- * @param {string} reqIdentificationName - The name to check for uniqueness.
- * @param {number} reqIdentificationId - The ID to exclude from the check.
- * @returns {Promise<boolean>} - True if a duplicate name exists (excluding the given ID), false otherwise.
- * @throws {HttpException} - If an error occurs during the check.
- */
-  static async existsByNameExcludingId (reqIdentificationName, reqIdentificationId) {
+   * Checks if a requirement identification with the given name exists,
+   * excluding the specified requirement identification ID.
+   *
+   * @param {string} reqIdentificationName - The name to check for uniqueness.
+   * @param {number} reqIdentificationId - The ID to exclude from the check.
+   * @returns {Promise<boolean>} - True if a duplicate name exists (excluding the given ID), false otherwise.
+   * @throws {HttpException} - If an error occurs during the check.
+   */
+  static async existsByNameExcludingId (
+    reqIdentificationName,
+    reqIdentificationId
+  ) {
     const query = `
     SELECT 1
     FROM req_identifications
@@ -1674,7 +1810,10 @@ class ReqIdentificationRepository {
     LIMIT 1
   `
     try {
-      const [rows] = await pool.query(query, [reqIdentificationName, reqIdentificationId])
+      const [rows] = await pool.query(query, [
+        reqIdentificationName,
+        reqIdentificationId
+      ])
       return rows.length > 0
     } catch (error) {
       console.error(
@@ -1765,7 +1904,10 @@ class ReqIdentificationRepository {
       )
       return result.affectedRows > 0
     } catch (error) {
-      console.error('Error deleting requirement identification:', error.message)
+      console.error(
+        'Error deleting requirement identification:',
+        error.message
+      )
       throw new HttpException(
         500,
         'Error deleting requirement identification from the database'
@@ -1774,10 +1916,10 @@ class ReqIdentificationRepository {
   }
 
   /**
-     * Deletes multiple requirement identifications from the database using an array of IDs.
-     * @param {number[]} reqIdentificationIds - Array of requirement identification IDs to delete.
-     * @returns {Promise<boolean>} - True if deletion was successful, otherwise false.
-     */
+   * Deletes multiple requirement identifications from the database using an array of IDs.
+   * @param {number[]} reqIdentificationIds - Array of requirement identification IDs to delete.
+   * @returns {Promise<boolean>} - True if deletion was successful, otherwise false.
+   */
   static async deleteBatch (reqIdentificationIds) {
     const query = `
         DELETE FROM req_identifications
@@ -1787,7 +1929,10 @@ class ReqIdentificationRepository {
       const [result] = await pool.query(query, [reqIdentificationIds])
       return result.affectedRows > 0
     } catch (error) {
-      console.error('Error deleting requirement identifications batch:', error.message)
+      console.error(
+        'Error deleting requirement identifications batch:',
+        error.message
+      )
       throw new HttpException(
         500,
         'Error deleting requirement identifications from the database'
@@ -1796,15 +1941,18 @@ class ReqIdentificationRepository {
   }
 
   /**
-     * Deletes all requirement identifications from the database.
-     * @returns {Promise<void>}
-     * @throws {HttpException} - If an error occurs during deletion.
-     */
+   * Deletes all requirement identifications from the database.
+   * @returns {Promise<void>}
+   * @throws {HttpException} - If an error occurs during deletion.
+   */
   static async deleteAll () {
     try {
       await pool.query('DELETE FROM req_identifications')
     } catch (error) {
-      console.error('Error deleting all requirement identifications:', error.message)
+      console.error(
+        'Error deleting all requirement identifications:',
+        error.message
+      )
       throw new HttpException(
         500,
         'Error deleting all requirement identifications from the database'
