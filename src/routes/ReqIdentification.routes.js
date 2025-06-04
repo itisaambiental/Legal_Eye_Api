@@ -21,8 +21,7 @@ import {
   getReqIdentificationsByStateAndMunicipalities,
   updateReqIdentification,
   deleteReqIdentification,
-  deleteReqIdentificationsBatch,
-  deleteAllReqIdentifications
+  deleteReqIdentificationsBatch
   // getReqIdentificationById,
   // detectRequirements,
   // updateReqIdentificationById,
