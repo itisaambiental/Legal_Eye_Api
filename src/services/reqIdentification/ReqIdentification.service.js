@@ -928,6 +928,86 @@ class ReqIdentificationService {
     }
   }
 
+  /**
+   * Deletes a requirement identification by ID.
+   * @param {number} id - The ID of the requirement identification to delete.
+   * @returns {Promise<{ success: boolean }>} - An object indicating whether the deletion was successful.
+   * @throws {HttpException} - If the requirement identification is not found or an error occurs during deletion.
+   */
+  static async deleteById (id) {
+    try {
+      const reqIdentification = await ReqIdentificationRepository.findById(id)
+      if (!reqIdentification) {
+        throw new HttpException(404, 'Requirement identification not found')
+      }
+      const deleted = await ReqIdentificationRepository.deleteById(id)
+      if (!deleted) {
+        throw new HttpException(404, 'Requirement identification not found')
+      }
+      return { success: true }
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error
+      }
+      throw new HttpException(500, 'Failed to delete requirement identification')
+    }
+  }
+
+  /**
+   * Deletes multiple requirement identifications by their IDs.
+   * @param {Array<number>} reqIdentificationIds - Array of requirement identification IDs to delete.
+   * @returns {Promise<{ success: boolean }>} - An object indicating the deletion was successful.
+   * @throws {HttpException} - If IDs not found or deletion fails.
+   */
+  static async deleteBatch (reqIdentificationIds) {
+    try {
+      const existingPromises = reqIdentificationIds.map((id) =>
+        ReqIdentificationRepository.findById(id)
+      )
+      const existingRecords = await Promise.all(existingPromises)
+      const foundIds = existingRecords
+        .filter((rec) => rec)
+        .map((rec) => rec.id)
+      if (foundIds.length !== reqIdentificationIds.length) {
+        const notFoundIds = reqIdentificationIds.filter(
+          (id) => !foundIds.includes(id)
+        )
+        throw new HttpException(404, 'Requirement identifications not found for IDs', {
+          notFoundIds
+        })
+      }
+      const deleted = await ReqIdentificationRepository.deleteBatch(
+        reqIdentificationIds
+      )
+      if (!deleted) {
+        throw new HttpException(404, 'Requirement identifications not found')
+      }
+      return { success: true }
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error
+      }
+      throw new HttpException(500, 'Failed to delete requirement identifications')
+    }
+  }
+
+  /**
+   * Deletes all requirement identifications.
+   * @returns {Promise<{ success: boolean }>} - An object indicating the deletion was successful.
+   * @throws {HttpException} - If an error occurs during deletion.
+   */
+  static async deleteAll () {
+    try {
+      await ReqIdentificationRepository.deleteAll()
+      return { success: true }
+    } catch (error) {
+      throw new HttpException(
+        500,
+        'Failed to delete all requirement identifications'
+      )
+    }
+  }
+
   //   /**
   //    * Retrieves a single identification by ID.
   //    *

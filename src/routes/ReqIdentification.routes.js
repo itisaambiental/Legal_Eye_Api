@@ -19,7 +19,10 @@ import {
   getReqIdentificationsByJurisdiction,
   getReqIdentificationsByState,
   getReqIdentificationsByStateAndMunicipalities,
-  updateReqIdentification
+  updateReqIdentification,
+  deleteReqIdentification,
+  deleteReqIdentificationsBatch,
+  deleteAllReqIdentifications
   // getReqIdentificationById,
   // detectRequirements,
   // updateReqIdentificationById,
@@ -161,6 +164,34 @@ router.get('/req-identification/search/subject/:subjectId/aspects', UserExtracto
  * @middleware UserExtractor
  */
 router.patch('/req-identification/:id', UserExtractor, updateReqIdentification)
+
+/**
+ * Route to delete a requirement identification by ID.
+ * @method DELETE
+ * @path /req-identification/:id
+ * @description Deletes a requirement identification by its ID.
+ * @middleware UserExtractor
+ */
+router.delete('/req-identification/:id', UserExtractor, deleteReqIdentification)
+
+/**
+ * Route to delete multiple requirement identifications using an array of IDs.
+ * @method DELETE
+ * @path /req-identification/delete/batch
+ * @body {Array<number>} reqIdentificationIds - Array of IDs of the requirement identifications to delete.
+ * @description Deletes multiple requirement identifications from the system.
+ * @middleware UserExtractor
+ */
+router.delete('/req-identification/delete/batch', UserExtractor, deleteReqIdentificationsBatch)
+
+/**
+ * Route to delete all requirement identifications.
+ * @method DELETE
+ * @path /req-identification/delete/all
+ * @description Deletes all requirement identifications from the system.
+ * @middleware UserExtractor
+ */
+router.delete('/req-identification/delete/all', UserExtractor, deleteAllReqIdentifications)
 
 // /**
 //  * Detects applicable requirements for a given identification based on subject and aspects,

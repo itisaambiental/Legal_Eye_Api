@@ -1752,6 +1752,66 @@ class ReqIdentificationRepository {
     }
   }
 
+  /**
+   * Deletes a requirement identification by its ID.
+   * @param {number} id - The ID of the requirement identification to delete.
+   * @returns {Promise<boolean>} - Returns true if the deletion is successful, false otherwise.
+   */
+  static async deleteById (id) {
+    try {
+      const [result] = await pool.query(
+        'DELETE FROM req_identifications WHERE id = ?',
+        [id]
+      )
+      return result.affectedRows > 0
+    } catch (error) {
+      console.error('Error deleting requirement identification:', error.message)
+      throw new HttpException(
+        500,
+        'Error deleting requirement identification from the database'
+      )
+    }
+  }
+
+  /**
+     * Deletes multiple requirement identifications from the database using an array of IDs.
+     * @param {number[]} reqIdentificationIds - Array of requirement identification IDs to delete.
+     * @returns {Promise<boolean>} - True if deletion was successful, otherwise false.
+     */
+  static async deleteBatch (reqIdentificationIds) {
+    const query = `
+        DELETE FROM req_identifications
+        WHERE id IN (?)
+      `
+    try {
+      const [result] = await pool.query(query, [reqIdentificationIds])
+      return result.affectedRows > 0
+    } catch (error) {
+      console.error('Error deleting requirement identifications batch:', error.message)
+      throw new HttpException(
+        500,
+        'Error deleting requirement identifications from the database'
+      )
+    }
+  }
+
+  /**
+     * Deletes all requirement identifications from the database.
+     * @returns {Promise<void>}
+     * @throws {HttpException} - If an error occurs during deletion.
+     */
+  static async deleteAll () {
+    try {
+      await pool.query('DELETE FROM req_identifications')
+    } catch (error) {
+      console.error('Error deleting all requirement identifications:', error.message)
+      throw new HttpException(
+        500,
+        'Error deleting all requirement identifications from the database'
+      )
+    }
+  }
+
   //   /**
   //  * Updates the status of an identification.
   //  * @param {Object} identification - The identification data.
