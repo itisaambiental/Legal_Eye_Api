@@ -382,38 +382,27 @@ export const getReqIdentificationsByStateAndMunicipalities = async (req, res) =>
 }
 
 /**
- * Partially updates a requirement identification.
+ * Updates a requirement identification.
  * @function updateReqIdentification
- * @param {import('express').Request} req - Request object, expects { id } as URL parameter and any of { reqIdentificationName, reqIdentificationDescription, userId } in body.
+ * @param {import('express').Request} req - Request object, expects { id } as URL parameter and any of { reqIdentificationName, reqIdentificationDescription, newUserId } in body.
  * @param {import('express').Response} res - Response object.
  * @returns {Object} - The updated requirement identification data.
  */
 export const updateReqIdentification = async (req, res) => {
   const { userId } = req
   const { id } = req.params
-  const { reqIdentificationName, reqIdentificationDescription, userId: newUserId } = req.body
-
+  const { reqIdentificationName, reqIdentificationDescription, newUserId } = req.body
   try {
     const isAuthorized = await UserService.userExists(userId)
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-
-    // If a new userId is provided, verify that user exists
-    if (newUserId !== undefined) {
-      const targetUserExists = await UserService.userExists(Number(newUserId))
-      if (!targetUserExists) {
-        return res.status(404).json({ message: 'User not found' })
-      }
-    }
-
-    const updated = await ReqIdentificationService.update(Number(id), {
+    const reqIdentification = await ReqIdentificationService.update(Number(id), {
       reqIdentificationName,
       reqIdentificationDescription,
-      userId: newUserId !== undefined ? Number(newUserId) : undefined
+      newUserId: Number(newUserId)
     })
-
-    return res.status(200).json({ reqIdentification: updated })
+    return res.status(200).json({ reqIdentification })
   } catch (error) {
     if (error instanceof HttpException) {
       return res.status(error.status).json({
@@ -424,9 +413,6 @@ export const updateReqIdentification = async (req, res) => {
     return res.status(500).json({ message: 'Internal Server Error' })
   }
 }
-
-// PARA CADA FUNCION EN EL SERVICIO DE FILTRADO SE DEBE IMPLEMENTAR UNA CONTROLADOR SIGUIENDO EL ESTANDAR Y GUIANDOSE DE LA FUNCION getAllReqIdentifications.
-// COMENZAR DESDE AQUI
 
 // /**
 //  * Retrieves a single requirements identification by ID.

@@ -155,7 +155,7 @@ router.get('/req-identification/search/subject/:subjectId', UserExtractor, getRe
 router.get('/req-identification/search/subject/:subjectId/aspects', UserExtractor, getReqIdentificationsBySubjectAndAspects)
 
 /**
- * Partially updates a requirement identification by its ID.
+ * Updates a requirement identification by its ID.
  * @method PATCH
  * @path /req-identification/:id
  * @middleware UserExtractor

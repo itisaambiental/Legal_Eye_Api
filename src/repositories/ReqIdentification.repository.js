@@ -1592,12 +1592,49 @@ class ReqIdentificationRepository {
   }
 
   /**
+   * Updates a requirement identification record in the database.
+   *
+   * @param {number} id - The ID of the requirement identification to update.
+   * @param {Object} reqIdentification - The requirement identification data.
+   * @param {string|null} [reqIdentification.reqIdentificationName] - The new name of the requirement identification, (or null to keep current).
+   * @param {string|null} [reqIdentification.reqIdentificationDescription] - The new description of the requirement identification, (or null to keep current).
+   * @param {number|null} [reqIdentification.newUserId] -  the new user ID of the requirement identification, (or null to keep current).
+   * @returns {Promise<ReqIdentification|null>} - The updated ReqIdentification, or null if not found.
+   * @throws {HttpException} - If an error occurs during update.
+   */
+  static async update (id, reqIdentification) {
+    try {
+      const updateQuery = `
+        UPDATE req_identifications
+        SET
+          name        = IFNULL(?, name),
+          description = IFNULL(?, description),
+          user_id     = IFNULL(?, user_id)
+        WHERE id = ?
+      `
+      const values = [
+        reqIdentification.reqIdentificationName,
+        reqIdentification.reqIdentificationDescription,
+        reqIdentification.newUserId,
+        id
+      ]
+      const [result] = await pool.query(updateQuery, values)
+      if (result.affectedRows === 0) return null
+      const updatedReqIdentification = await this.findById(id)
+      return updatedReqIdentification
+    } catch (error) {
+      console.error('Error updating requirement identification:', error.message)
+      throw new HttpException(500, 'Error updating requirement identification')
+    }
+  }
+
+  /**
    * Checks if a requirement identification exists with the given name.
    * @param {string} reqIdentificationName - The name to check for existence.
    * @returns {Promise<boolean>} - True if a record with the same name exists, false otherwise.
    * @throws {HttpException} - If an error occurs during the check.
    */
-  static async existsByReqIdentificationName (reqIdentificationName) {
+  static async existsByName (reqIdentificationName) {
     const query = `
     SELECT 1
     FROM req_identifications
@@ -1607,6 +1644,37 @@ class ReqIdentificationRepository {
 
     try {
       const [rows] = await pool.query(query, [reqIdentificationName])
+      return rows.length > 0
+    } catch (error) {
+      console.error(
+        'Error checking if requirement identification exists:',
+        error.message
+      )
+      throw new HttpException(
+        500,
+        'Error checking if requirement identification exists'
+      )
+    }
+  }
+
+  /**
+ * Checks if a requirement identification with the given name exists,
+ * excluding the specified requirement identification ID.
+ *
+ * @param {string} reqIdentificationName - The name to check for uniqueness.
+ * @param {number} reqIdentificationId - The ID to exclude from the check.
+ * @returns {Promise<boolean>} - True if a duplicate name exists (excluding the given ID), false otherwise.
+ * @throws {HttpException} - If an error occurs during the check.
+ */
+  static async existsByNameExcludingId (reqIdentificationName, reqIdentificationId) {
+    const query = `
+    SELECT 1
+    FROM req_identifications
+    WHERE name = ? AND id != ?
+    LIMIT 1
+  `
+    try {
+      const [rows] = await pool.query(query, [reqIdentificationName, reqIdentificationId])
       return rows.length > 0
     } catch (error) {
       console.error(
@@ -1681,49 +1749,6 @@ class ReqIdentificationRepository {
         500,
         'Error linking legal basis to requirement identification'
       )
-    }
-  }
-
-  /**
-   * Updates a requirement identification record in the database.
-   *
-   * @param {number} id - The ID of the requirement identification to update.
-   * @param {Object} fields - The data to update.
-   * @param {string|null} [fields.reqIdentificationName] - New name (or null to keep current).
-   * @param {string|null} [fields.reqIdentificationDescription] - New description (or null to keep current).
-   * @param {number|null} [fields.userId] - New user ID (or null to keep current).
-   * @returns {Promise<ReqIdentification|null>} - The updated ReqIdentification, or null if not found.
-   * @throws {HttpException} - If an error occurs during update.
-   */
-  static async update (id, { reqIdentificationName, reqIdentificationDescription, userId }) {
-    try {
-      // Verify existence
-      const existing = await this.findById(id)
-      if (!existing) {
-        return null
-      }
-
-      const updateQuery = `
-        UPDATE req_identifications
-        SET
-          name        = IFNULL(?, name),
-          description = IFNULL(?, description),
-          user_id     = IFNULL(?, user_id)
-        WHERE id = ?
-      `
-      const values = [
-        reqIdentificationName ?? null,
-        reqIdentificationDescription ?? null,
-        userId ?? null,
-        id
-      ]
-
-      await pool.query(updateQuery, values)
-
-      return await this.findById(id)
-    } catch (error) {
-      console.error('Error updating requirement identification:', error.message)
-      throw new HttpException(500, 'Error updating requirement identification')
     }
   }
 

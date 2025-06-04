@@ -5,7 +5,10 @@ import AspectsRepository from '../../repositories/Aspects.repository.js'
 import LegalBasisRepository from '../../repositories/LegalBasis.repository.js'
 import RequirementRepository from '../../repositories/Requirements.repository.js'
 import ReqIdentificationRepository from '../../repositories/ReqIdentification.repository.js'
-import { reqIdentificationSchema, reqIdentificationUpdateSchema } from '../../schemas/reqIdentification.schema.js'
+import {
+  reqIdentificationSchema,
+  reqIdentificationUpdateSchema
+} from '../../schemas/reqIdentification.schema.js'
 import reqIdentificationQueue from '../../workers/reqIdentificationWorker.js'
 import HttpException from '../../services/errors/HttpException.js'
 import FileService from '../files/File.service.js'
@@ -17,16 +20,16 @@ import { es } from 'date-fns/locale'
  */
 class ReqIdentificationService {
   /**
- * @typedef {Object} Aspect
- * @property {number} aspect_id - The ID of the aspect.
- * @property {string} aspect_name - The name of the aspect.
- */
+   * @typedef {Object} Aspect
+   * @property {number} aspect_id - The ID of the aspect.
+   * @property {string} aspect_name - The name of the aspect.
+   */
 
   /**
- * @typedef {Object} Subject
- * @property {number} subject_id - The ID of the subject.
- * @property {string} subject_name - The name of the subject.
- */
+   * @typedef {Object} Subject
+   * @property {number} subject_id - The ID of the subject.
+   * @property {string} subject_name - The name of the subject.
+   */
 
   /** @typedef {import('./../../models/User.model.js').default} User */
 
@@ -59,11 +62,8 @@ class ReqIdentificationService {
    */
   static async create (userId, reqIdentification) {
     try {
-      const parsedReqIdentification =
-        reqIdentificationSchema.parse(reqIdentification)
-      const legalBases = await LegalBasisRepository.findByIds(
-        parsedReqIdentification.legalBasisIds
-      )
+      const parsedReqIdentification = reqIdentificationSchema.parse(reqIdentification)
+      const legalBases = await LegalBasisRepository.findByIds(parsedReqIdentification.legalBasisIds)
       if (legalBases.length !== parsedReqIdentification.legalBasisIds.length) {
         const notFoundIds = parsedReqIdentification.legalBasisIds.filter(
           (id) => !legalBases.some((lb) => lb.id === id)
@@ -73,7 +73,7 @@ class ReqIdentificationService {
         })
       }
       const reqIdentificationExistsByName =
-        await ReqIdentificationRepository.existsByReqIdentificationName(
+        await ReqIdentificationRepository.existsByName(
           parsedReqIdentification.reqIdentificationName
         )
       if (reqIdentificationExistsByName) {
@@ -226,7 +226,7 @@ class ReqIdentificationService {
     try {
       const reqIdentification = await ReqIdentificationRepository.findById(id)
       if (!reqIdentification) {
-        return HttpException(404, 'ReqIdentification not found')
+        return HttpException(404, 'Requirement identification not found')
       }
 
       let user = null
@@ -270,7 +270,9 @@ class ReqIdentificationService {
    */
   static async getByName (name) {
     try {
-      const reqIdentifications = await ReqIdentificationRepository.findByName(name)
+      const reqIdentifications = await ReqIdentificationRepository.findByName(
+        name
+      )
       if (!reqIdentifications) {
         return []
       }
@@ -280,7 +282,9 @@ class ReqIdentificationService {
           let user = null
           if (reqIdentification.user) {
             const profilePictureUrl = reqIdentification.user.profile_picture
-              ? await FileService.getFile(reqIdentification.user.profile_picture)
+              ? await FileService.getFile(
+                reqIdentification.user.profile_picture
+              )
               : null
             user = {
               ...reqIdentification.user,
@@ -324,7 +328,8 @@ class ReqIdentificationService {
    */
   static async getByDescription (description) {
     try {
-      const reqIdentifications = await ReqIdentificationRepository.findByDescription(description)
+      const reqIdentifications =
+        await ReqIdentificationRepository.findByDescription(description)
       if (!reqIdentifications) {
         return []
       }
@@ -334,7 +339,9 @@ class ReqIdentificationService {
           let user = null
           if (reqIdentification.user) {
             const profilePictureUrl = reqIdentification.user.profile_picture
-              ? await FileService.getFile(reqIdentification.user.profile_picture)
+              ? await FileService.getFile(
+                reqIdentification.user.profile_picture
+              )
               : null
             user = {
               ...reqIdentification.user,
@@ -382,7 +389,9 @@ class ReqIdentificationService {
       if (!user) {
         throw new HttpException(404, 'User not found')
       }
-      const reqIdentifications = await ReqIdentificationRepository.findByUserId(userId)
+      const reqIdentifications = await ReqIdentificationRepository.findByUserId(
+        userId
+      )
       if (!reqIdentifications) {
         return []
       }
@@ -392,7 +401,9 @@ class ReqIdentificationService {
           let user = null
           if (reqIdentification.user) {
             const profilePictureUrl = reqIdentification.user.profile_picture
-              ? await FileService.getFile(reqIdentification.user.profile_picture)
+              ? await FileService.getFile(
+                reqIdentification.user.profile_picture
+              )
               : null
             user = {
               ...reqIdentification.user,
@@ -428,18 +439,19 @@ class ReqIdentificationService {
   }
 
   /**
- * Retrieves requirement identifications filtered by a creation date range.
- * Both 'from' and 'to' are optional. If provided, they should be in 'YYYY-MM-DD' or valid date format.
- *
- * @function getByCreatedAt
- * @param {string} [from] - Start date.
- * @param {string} [to] - End date.
- * @returns {Promise<ReqIdentification[]>} - List of requirement identifications.
- * @throws {HttpException}
- */
+   * Retrieves requirement identifications filtered by a creation date range.
+   * Both 'from' and 'to' are optional. If provided, they should be in 'YYYY-MM-DD' or valid date format.
+   *
+   * @function getByCreatedAt
+   * @param {string} [from] - Start date.
+   * @param {string} [to] - End date.
+   * @returns {Promise<ReqIdentification[]>} - List of requirement identifications.
+   * @throws {HttpException}
+   */
   static async getByCreatedAt (from, to) {
     try {
-      const reqIdentifications = await ReqIdentificationRepository.findByCreatedAt(from, to)
+      const reqIdentifications =
+        await ReqIdentificationRepository.findByCreatedAt(from, to)
       if (!reqIdentifications) {
         return []
       }
@@ -449,7 +461,9 @@ class ReqIdentificationService {
           let user = null
           if (reqIdentification.user) {
             const profilePictureUrl = reqIdentification.user.profile_picture
-              ? await FileService.getFile(reqIdentification.user.profile_picture)
+              ? await FileService.getFile(
+                reqIdentification.user.profile_picture
+              )
               : null
             user = {
               ...reqIdentification.user,
@@ -493,7 +507,9 @@ class ReqIdentificationService {
    */
   static async getByStatus (status) {
     try {
-      const reqIdentifications = await ReqIdentificationRepository.findByStatus(status)
+      const reqIdentifications = await ReqIdentificationRepository.findByStatus(
+        status
+      )
       if (!reqIdentifications) {
         return []
       }
@@ -503,7 +519,9 @@ class ReqIdentificationService {
           let user = null
           if (reqIdentification.user) {
             const profilePictureUrl = reqIdentification.user.profile_picture
-              ? await FileService.getFile(reqIdentification.user.profile_picture)
+              ? await FileService.getFile(
+                reqIdentification.user.profile_picture
+              )
               : null
             user = {
               ...reqIdentification.user,
@@ -551,7 +569,8 @@ class ReqIdentificationService {
       if (!subject) {
         throw new HttpException(404, 'Subject not found')
       }
-      const reqIdentifications = await ReqIdentificationRepository.findBySubjectId(subjectId)
+      const reqIdentifications =
+        await ReqIdentificationRepository.findBySubjectId(subjectId)
       if (!reqIdentifications) {
         return []
       }
@@ -561,7 +580,9 @@ class ReqIdentificationService {
           let user = null
           if (reqIdentification.user) {
             const profilePictureUrl = reqIdentification.user.profile_picture
-              ? await FileService.getFile(reqIdentification.user.profile_picture)
+              ? await FileService.getFile(
+                reqIdentification.user.profile_picture
+              )
               : null
             user = {
               ...reqIdentification.user,
@@ -619,10 +640,11 @@ class ReqIdentificationService {
           notFoundIds
         })
       }
-      const reqIdentifications = await ReqIdentificationRepository.findBySubjectAndAspects(
-        subjectId,
-        aspectIds
-      )
+      const reqIdentifications =
+        await ReqIdentificationRepository.findBySubjectAndAspects(
+          subjectId,
+          aspectIds
+        )
       if (!reqIdentifications) {
         return []
       }
@@ -632,7 +654,9 @@ class ReqIdentificationService {
           let user = null
           if (reqIdentification.user) {
             const profilePictureUrl = reqIdentification.user.profile_picture
-              ? await FileService.getFile(reqIdentification.user.profile_picture)
+              ? await FileService.getFile(
+                reqIdentification.user.profile_picture
+              )
               : null
             user = {
               ...reqIdentification.user,
@@ -676,7 +700,8 @@ class ReqIdentificationService {
    */
   static async getByJurisdiction (jurisdiction) {
     try {
-      const reqIdentifications = await ReqIdentificationRepository.findByJurisdiction(jurisdiction)
+      const reqIdentifications =
+        await ReqIdentificationRepository.findByJurisdiction(jurisdiction)
       if (!reqIdentifications) {
         return []
       }
@@ -686,7 +711,9 @@ class ReqIdentificationService {
           let user = null
           if (reqIdentification.user) {
             const profilePictureUrl = reqIdentification.user.profile_picture
-              ? await FileService.getFile(reqIdentification.user.profile_picture)
+              ? await FileService.getFile(
+                reqIdentification.user.profile_picture
+              )
               : null
             user = {
               ...reqIdentification.user,
@@ -730,7 +757,9 @@ class ReqIdentificationService {
    */
   static async getByState (state) {
     try {
-      const reqIdentifications = await ReqIdentificationRepository.findByState(state)
+      const reqIdentifications = await ReqIdentificationRepository.findByState(
+        state
+      )
       if (!reqIdentifications) {
         return []
       }
@@ -740,7 +769,9 @@ class ReqIdentificationService {
           let user = null
           if (reqIdentification.user) {
             const profilePictureUrl = reqIdentification.user.profile_picture
-              ? await FileService.getFile(reqIdentification.user.profile_picture)
+              ? await FileService.getFile(
+                reqIdentification.user.profile_picture
+              )
               : null
             user = {
               ...reqIdentification.user,
@@ -785,10 +816,11 @@ class ReqIdentificationService {
    */
   static async getByStateAndMunicipalities (state, municipalities = []) {
     try {
-      const reqIdentifications = await ReqIdentificationRepository.findByStateAndMunicipalities(
-        state,
-        municipalities
-      )
+      const reqIdentifications =
+        await ReqIdentificationRepository.findByStateAndMunicipalities(
+          state,
+          municipalities
+        )
       if (!reqIdentifications) {
         return []
       }
@@ -798,7 +830,9 @@ class ReqIdentificationService {
           let user = null
           if (reqIdentification.user) {
             const profilePictureUrl = reqIdentification.user.profile_picture
-              ? await FileService.getFile(reqIdentification.user.profile_picture)
+              ? await FileService.getFile(
+                reqIdentification.user.profile_picture
+              )
               : null
             user = {
               ...reqIdentification.user,
@@ -837,53 +871,60 @@ class ReqIdentificationService {
    * Partially updates a requirement identification.
    *
    * @param {number} id - The ID of the requirement identification to update.
-   * @param {Object} updateData - The fields to update.
-   * @param {string} [updateData.reqIdentificationName] - New name.
-   * @param {string} [updateData.reqIdentificationDescription] - New description.
-   * @param {number} [updateData.userId] - New user ID.
+   * @param {Object} reqIdentification - Parameters for updating a requirement identification.
+   * @param {string} reqIdentification.reqIdentificationName - Name of the requirement identification.
+   * @param {string|null} [reqIdentification.reqIdentificationDescription] - Optional description of the requirement identification.
+   * @param {number} [reqIdentification.newUserId] - ID of the user assigned to the requirement identification.
    * @returns {Promise<ReqIdentification>} - The updated requirement identification.
-   * @throws {HttpException} - On validation failure or repository errors.
+   * @throws {HttpException}
    */
-  static async update (id, updateData) {
+  static async update (id, reqIdentification) {
     try {
-      const { reqIdentificationName, reqIdentificationDescription, userId } =
-        reqIdentificationUpdateSchema.parse(updateData)
-
-      // 2. Verify the identification exists
-      const existing = await ReqIdentificationRepository.findById(id)
-      if (!existing) {
+      const parsedReqIdentification = reqIdentificationUpdateSchema.parse(reqIdentification)
+      const reqIdentificationExists = await ReqIdentificationRepository.findById(id)
+      if (!reqIdentificationExists) {
         throw new HttpException(404, 'Requirement identification not found')
       }
-      if (reqIdentificationName !== undefined) {
-        const duplicates = await ReqIdentificationRepository.findByName(reqIdentificationName)
-        if (duplicates) {
-          const collision = duplicates.find((ri) => ri.id !== id)
-          if (collision) {
-            throw new HttpException(409, 'Another requirement identification with this name already exists')
-          }
+      if (parsedReqIdentification.newUserId) {
+        const user = await UserRepository.findById(parsedReqIdentification.newUserId)
+        if (!user) {
+          throw new HttpException(404, 'User not found')
         }
       }
-      const updatedReqIdentification = await ReqIdentificationRepository.update(id, {
-        reqIdentificationName: reqIdentificationName ?? null,
-        reqIdentificationDescription: reqIdentificationDescription ?? null,
-        userId: userId ?? null
-      })
+      if (parsedReqIdentification.reqIdentificationName) {
+        const reqIdentificationExistsByName = await ReqIdentificationRepository.existsByNameExcludingId(parsedReqIdentification.reqIdentificationName, id)
+        if (reqIdentificationExistsByName) {
+          throw new HttpException(
+            409,
+            'Requirement Identification name already exists'
+          )
+        }
+      }
+      const updatedReqIdentification = await ReqIdentificationRepository.update(
+        id,
+        {
+          reqIdentificationName: parsedReqIdentification.reqIdentificationName,
+          reqIdentificationDescription: parsedReqIdentification.reqIdentificationDescription,
+          newUserId: parsedReqIdentification.newUserId
+        }
+      )
       if (!updatedReqIdentification) {
-        throw new HttpException(500, 'Failed to update requirement identification')
+        throw new HttpException(404, 'Requirement identification not found')
       }
       return updatedReqIdentification
     } catch (error) {
       if (error instanceof z.ZodError) {
         const validationErrors = error.errors.map((e) => ({
-          field: e.path.join('.'),
+          field: e.path[0],
           message: e.message
         }))
         throw new HttpException(400, 'Validation failed', validationErrors)
       }
-      if (error instanceof HttpException) {
-        throw error
-      }
-      throw new HttpException(500, 'Failed to update requirement identification')
+      if (error instanceof HttpException) throw error
+      throw new HttpException(
+        500,
+        'Failed to update requirement identification'
+      )
     }
   }
 

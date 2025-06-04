@@ -63,49 +63,39 @@ export const reqIdentificationSchema = z.object({
 
 /**
  * Zod validation schema for updating a ReqIdentification record.
- * Allows only reqIdentificationName, reqIdentificationDescription, and userId.
- * Requires at least one of these fields to be present.
+ * All fields are optional and will default to null if not provided.
  */
-export const reqIdentificationUpdateSchema = z
-  .object({
-    /**
-     * New name for the requirement identification.
-     * Optional, if provided must be a non-empty string up to 255 characters.
-     */
-    reqIdentificationName: z
-      .string()
-      .min(1, { message: 'The requirement identification name cannot be empty' })
-      .max(255, {
-        message:
-          'The requirement identification name cannot exceed 255 characters'
-      })
-      .optional(),
+export const reqIdentificationUpdateSchema = z.object({
+  /**
+   * New name for the requirement identification.
+   */
+  reqIdentificationName: z
+    .string()
+    .min(1, { message: 'The requirement identification name cannot be empty' })
+    .max(255, {
+      message: 'The requirement identification name cannot exceed 255 characters'
+    })
+    .optional()
+    .transform((val) => val ?? null),
 
-    /**
-     * New description for the requirement identification.
-     * Optional, can be a string or null.
-     */
-    reqIdentificationDescription: z.string().optional().nullable(),
+  /**
+   * New description for the requirement identification.
+   */
+  reqIdentificationDescription: z
+    .string()
+    .optional()
+    .nullable()
+    .transform((val) => val ?? null),
 
-    /**
-     * New user ID responsible for the requirement identification.
-     * Optional, if provided must be a positive integer.
-     */
-    userId: z
-      .number({
-        invalid_type_error: 'userId must be a number'
-      })
-      .int('userId must be an integer')
-      .positive('userId must be a positive integer')
-      .optional()
-  })
-  .refine(
-    (data) =>
-      data.reqIdentificationName !== undefined ||
-      data.reqIdentificationDescription !== undefined ||
-      data.userId !== undefined,
-    {
-      message: 'At least one of reqIdentificationName, reqIdentificationDescription, or userId must be provided',
-      path: [] // applies to the root
-    }
-  )
+  /**
+   * New user ID for the requirement identification.
+   */
+  newUserId: z
+    .number({
+      invalid_type_error: 'userId must be a number'
+    })
+    .int('userId must be an integer')
+    .positive('userId must be a positive integer')
+    .optional()
+    .transform((val) => val ?? null)
+})
