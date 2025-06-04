@@ -163,14 +163,6 @@ router.get('/req-identification/search/subject/:subjectId/aspects', UserExtracto
 router.patch('/req-identification/:id', UserExtractor, updateReqIdentification)
 
 // /**
-//  * Retrieves a single req_identification by ID.
-//  * @method GET
-//  * @path /reqIdentification/:id
-//  * @middleware UserExtractor
-//  */
-// router.get('/reqIdentification/:id', UserExtractor, getReqIdentificationById)
-
-// /**
 //  * Detects applicable requirements for a given identification based on subject and aspects,
 //  * then links them into req_identifications_requirements.
 //  * @method POST

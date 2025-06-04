@@ -868,7 +868,7 @@ class ReqIdentificationService {
   }
 
   /**
-   * Partially updates a requirement identification.
+   * Updates a requirement identification.
    *
    * @param {number} id - The ID of the requirement identification to update.
    * @param {Object} reqIdentification - Parameters for updating a requirement identification.
@@ -927,52 +927,6 @@ class ReqIdentificationService {
       )
     }
   }
-
-  // TAREA: Implementar función `update` para actualizar identificaciones de requerimientos.
-  //
-  // OBJETIVO:
-  // Se debe permitir la actualización parcial de los siguientes campos de una identificación:
-  // - Nombre (`reqIdentificationName`)
-  // - Descripción (`reqIdentificationDescription`)
-  // - Usuario responsable (`userId`)
-  //
-  // VALIDACIONES NECESARIAS:
-  // - Verificar que la identificación con el ID recibido exista.
-  // - Si se proporciona un nuevo nombre, validar que no exista otra identificación con ese mismo nombre.
-  // - Si se proporciona un nuevo ID de usuario, validar que dicho usuario exista.
-  // - Si no se recibe ningún campo para actualizar, se debe dejar la identificación actual sin lanzar errores (mantener la identificación sin cambios).
-
-  //
-  // COMPONENTES A CREAR O MODIFICAR:
-  //
-  // 1. RUTA:
-  // - Agregar una nueva ruta PATCH en el archivo de rutas `reqIdentification.routes.js`.
-  // - Ejemplo: `PATCH /req-identification/:id`.
-  //
-  // 2. CONTROLADOR:
-  // - Crear un nuevo controlador llamado `updateReqIdentification`.
-  // - Este debe obtener el ID desde `req.params.id` y los campos a actualizar desde `req.body`.
-  // - Llamar al método del servicio `ReqIdentificationService.update(...)`.
-  //
-  // 3. SERVICIO:
-  // - Implementar el método `update` en la clase `ReqIdentificationService`.
-  // - Este método debe aplicar todas las validaciones y luego invocar el repositorio para guardar los cambios.
-  //
-  // 4. ESQUEMA DE VALIDACIÓN:
-  // - Crear un nuevo esquema Zod llamado `reqIdentificationUpdateSchema`.
-  // - Este esquema debe permitir solo los campos `reqIdentificationName`, `reqIdentificationDescription` y `userId`.
-  // - Validar que al menos uno de estos campos esté presente en la solicitud.
-  //
-  // 5. REPOSITORIO:
-  // - Agregar un método nuevo en `ReqIdentificationRepository` para hacer la actualización en la base de datos.
-  // - Este método debe construir dinámicamente el SQL solo con los campos recibidos.
-  //
-  // CONSIDERACIONES ADICIONALES:
-  // - Esta funcionalidad debe estar protegida por middleware `UserExtractor` para asegurar que solo usuarios autenticados puedan actualizar identificaciones.
-  // - En caso de éxito, se debe retornar un status HTTP 200 junto con la identificación actualizada en formato JSON.
-  //   Ejemplo de respuesta: `return res.status(200).json({ reqIdentification })`.
-  // - En caso de error (por ejemplo, usuario no encontrado, nombre duplicado), se debe lanzar `HttpException` con el código y mensaje correspondiente.
-  // - Si no se recibe ningún campo para actualizar, simplemente se debe retornar la identificación sin modificaciones, sin lanzar errores.
 
   //   /**
   //    * Retrieves a single identification by ID.
