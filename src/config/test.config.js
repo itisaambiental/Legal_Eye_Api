@@ -6,6 +6,7 @@ import { redisClient } from './redis.config.js'
 import emailQueue from '../workers/emailWorker.js'
 import extractArticlesQueue from '../workers/extractArticlesWorker.js'
 import sendLegalBasisQueue from '../workers/sendLegalBasisWorker.js'
+import reqIdentificationQueue from '../workers/reqIdentificationWorker.js'
 
 const timeout = 500000
 
@@ -36,6 +37,7 @@ afterAll(async () => {
   await emailQueue.close()
   await extractArticlesQueue.close()
   await sendLegalBasisQueue.close()
+  await reqIdentificationQueue.close()
   if (serverInstance) {
     await new Promise((resolve, reject) => {
       serverInstance.close((err) => {

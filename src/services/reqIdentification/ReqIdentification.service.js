@@ -19,17 +19,21 @@ import { es } from 'date-fns/locale'
  * Service class for handling requirement identifications operations.
  */
 class ReqIdentificationService {
-  /**
-   * @typedef {Object} Aspect
-   * @property {number} aspect_id - The ID of the aspect.
-   * @property {string} aspect_name - The name of the aspect.
-   */
+/**
+ * @typedef {Object} Aspect
+ * @property {number} aspect_id - The ID of the aspect.
+ * @property {string} aspect_name - The name of the aspect.
+ * @property {string} [abbreviation] - Optional abbreviation for the aspect.
+ * @property {number} [order_index] - Optional order index for the aspect.
+ */
 
   /**
-   * @typedef {Object} Subject
-   * @property {number} subject_id - The ID of the subject.
-   * @property {string} subject_name - The name of the subject.
-   */
+ * @typedef {Object} Subject
+ * @property {number} subject_id - The ID of the subject.
+ * @property {string} subject_name - The name of the subject.
+ * @property {string} [abbreviation] - Optional abbreviation for the subject.
+ * @property {number} [order_index] - Optional order index for the subject.
+ */
 
   /** @typedef {import('./../../models/User.model.js').default} User */
 

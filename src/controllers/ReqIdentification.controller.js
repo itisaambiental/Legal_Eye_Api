@@ -23,7 +23,7 @@ export const createReqIdentification = async (req, res) => {
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-    const { reqIdentificationId, jobId } = await ReqIdentificationService.create(userId, {
+    const { reqIdentificationId, jobId } = await ReqIdentificationService.create(Number(userId), {
       reqIdentificationName,
       reqIdentificationDescription,
       legalBasisIds,

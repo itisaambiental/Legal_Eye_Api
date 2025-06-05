@@ -266,15 +266,14 @@ class LegalBasisRepository {
   }
 
   /**
-   * Retrieves multiple legal basis records by their IDs.
-   * @param {Array<number>} legalBasisIds - An array of IDs of the legal bases to retrieve.
-   * @returns {Promise<LegalBasis[]>} - An array of legal basis records.
-   * @throws {HttpException} - If an error occurs during retrieval.
-   */
+ * Retrieves multiple legal basis records by their IDs.
+ * @param {Array<number>} legalBasisIds - An array of IDs of the legal bases to retrieve.
+ * @returns {Promise<LegalBasis[]>} - An array of legal basis records.
+ * @throws {HttpException} - If an error occurs during retrieval.
+ */
   static async findByIds (legalBasisIds) {
-    if (legalBasisIds.length === 0) {
-      return []
-    }
+    if (legalBasisIds.length === 0) return []
+
     const query = `
     SELECT 
       legal_basis.id, 
@@ -286,10 +285,17 @@ class LegalBasisRepository {
       legal_basis.municipality, 
       legal_basis.last_reform, 
       legal_basis.url, 
+
       subjects.id AS subject_id, 
       subjects.subject_name AS subject_name,
+      subjects.abbreviation AS subject_abbreviation,
+      subjects.order_index AS subject_order_index,
+
       aspects.id AS aspect_id, 
-      aspects.aspect_name AS aspect_name
+      aspects.aspect_name AS aspect_name,
+      aspects.abbreviation AS aspect_abbreviation,
+      aspects.order_index AS aspect_order_index
+
     FROM legal_basis
     JOIN subjects ON legal_basis.subject_id = subjects.id
     LEFT JOIN legal_basis_subject_aspect ON legal_basis.id = legal_basis_subject_aspect.legal_basis_id
@@ -297,10 +303,13 @@ class LegalBasisRepository {
     WHERE legal_basis.id IN (?)
     ORDER BY legal_basis.id DESC;
   `
+
     try {
       const [rows] = await pool.query(query, [legalBasisIds])
       if (rows.length === 0) return []
+
       const legalBasisMap = new Map()
+
       rows.forEach((row) => {
         if (!legalBasisMap.has(row.id)) {
           legalBasisMap.set(row.id, {
@@ -315,18 +324,24 @@ class LegalBasisRepository {
             url: row.url,
             subject: {
               subject_id: row.subject_id,
-              subject_name: row.subject_name
+              subject_name: row.subject_name,
+              abbreviation: row.subject_abbreviation,
+              order_index: row.subject_order_index
             },
             aspects: []
           })
         }
+
         if (row.aspect_id) {
           legalBasisMap.get(row.id).aspects.push({
             aspect_id: row.aspect_id,
-            aspect_name: row.aspect_name
+            aspect_name: row.aspect_name,
+            abbreviation: row.aspect_abbreviation,
+            order_index: row.aspect_order_index
           })
         }
       })
+
       return Array.from(legalBasisMap.values()).map((legalBasis) => {
         return new LegalBasis(
           legalBasis.id,
