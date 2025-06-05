@@ -1084,6 +1084,10 @@ class LegalBasisService {
     }
   }
 
+  // ACA DEBEMOS CREAR UNA FUNCION EN EL REPOSITORIO LegalBasisRepository QUE BUSQUE POR ID DEL FUNDAMENTO SI TIENE ALGUNA RELACION ACTIVA CON
+  // ALGUNA IDENTIFICACION DE REQUERIMIENTOS. SI TIENE UNA RELACION ACTIVA, NO DEBERIA PERMITIR BORRAR EL FUNDAMENTO PARA ASEGURAR LA INTEGRIDAD REFERENCIAL Y MOSTRAR UN MENSAJE DE ERROR.
+  // SE PUEDE GUIAR DE LA FUNCION deleteById en el servicio  Legal_Eye_Api\src\services\subjects\Subjects.service.js.
+
   /**
    * Deletes a Legal base by ID.
    * @param {number} legalBasisId - The ID of the Legal base to delete.
@@ -1127,6 +1131,10 @@ class LegalBasisService {
       throw new HttpException(500, 'Unexpected error during LegalBasis deletion')
     }
   }
+
+  // ACA DEBEMOS CREAR UNA FUNCION EN EL REPOSITORIO LegalBasisRepository QUE BUSQUE POR IDS MULTIPLES DE LOS FUNDAMENTOS SI TIENEN ALGUNA RELACION ACTIVA CON
+  // ALGUNA IDENTIFICACION DE REQUERIMIENTOS. SI TIENEN UNA RELACION ACTIVA, NO DEBERIA PERMITIR BORRAR LOS FUNDAMENTOS PARA ASEGURAR LA INTEGRIDAD REFERENCIAL Y MOSTRAR UN MENSAJE DE ERROR.
+  // SE PUEDE GUIAR DE LA FUNCION deleteSubjectsBatch en el servicio  Legal_Eye_Api\src\services\subjects\Subjects.service.js.
 
   /**
  * Deletes multiple Legal Basis records by their IDs.

@@ -19,21 +19,21 @@ import { es } from 'date-fns/locale'
  * Service class for handling requirement identifications operations.
  */
 class ReqIdentificationService {
-/**
- * @typedef {Object} Aspect
- * @property {number} aspect_id - The ID of the aspect.
- * @property {string} aspect_name - The name of the aspect.
- * @property {string} [abbreviation] - Optional abbreviation for the aspect.
- * @property {number} [order_index] - Optional order index for the aspect.
- */
+  /**
+   * @typedef {Object} Aspect
+   * @property {number} aspect_id - The ID of the aspect.
+   * @property {string} aspect_name - The name of the aspect.
+   * @property {string} [abbreviation] - Optional abbreviation for the aspect.
+   * @property {number} [order_index] - Optional order index for the aspect.
+   */
 
   /**
- * @typedef {Object} Subject
- * @property {number} subject_id - The ID of the subject.
- * @property {string} subject_name - The name of the subject.
- * @property {string} [abbreviation] - Optional abbreviation for the subject.
- * @property {number} [order_index] - Optional order index for the subject.
- */
+   * @typedef {Object} Subject
+   * @property {number} subject_id - The ID of the subject.
+   * @property {string} subject_name - The name of the subject.
+   * @property {string} [abbreviation] - Optional abbreviation for the subject.
+   * @property {number} [order_index] - Optional order index for the subject.
+   */
 
   /** @typedef {import('./../../models/User.model.js').default} User */
 
@@ -66,8 +66,11 @@ class ReqIdentificationService {
    */
   static async create (userId, reqIdentification) {
     try {
-      const parsedReqIdentification = reqIdentificationSchema.parse(reqIdentification)
-      const legalBases = await LegalBasisRepository.findByIds(parsedReqIdentification.legalBasisIds)
+      const parsedReqIdentification =
+        reqIdentificationSchema.parse(reqIdentification)
+      const legalBases = await LegalBasisRepository.findByIds(
+        parsedReqIdentification.legalBasisIds
+      )
       if (legalBases.length !== parsedReqIdentification.legalBasisIds.length) {
         const notFoundIds = parsedReqIdentification.legalBasisIds.filter(
           (id) => !legalBases.some((lb) => lb.id === id)
@@ -884,19 +887,27 @@ class ReqIdentificationService {
    */
   static async update (id, reqIdentification) {
     try {
-      const parsedReqIdentification = reqIdentificationUpdateSchema.parse(reqIdentification)
-      const reqIdentificationExists = await ReqIdentificationRepository.findById(id)
+      const parsedReqIdentification =
+        reqIdentificationUpdateSchema.parse(reqIdentification)
+      const reqIdentificationExists =
+        await ReqIdentificationRepository.findById(id)
       if (!reqIdentificationExists) {
         throw new HttpException(404, 'Requirement identification not found')
       }
       if (parsedReqIdentification.newUserId) {
-        const user = await UserRepository.findById(parsedReqIdentification.newUserId)
+        const user = await UserRepository.findById(
+          parsedReqIdentification.newUserId
+        )
         if (!user) {
           throw new HttpException(404, 'User not found')
         }
       }
       if (parsedReqIdentification.reqIdentificationName) {
-        const reqIdentificationExistsByName = await ReqIdentificationRepository.existsByNameExcludingId(parsedReqIdentification.reqIdentificationName, id)
+        const reqIdentificationExistsByName =
+          await ReqIdentificationRepository.existsByNameExcludingId(
+            parsedReqIdentification.reqIdentificationName,
+            id
+          )
         if (reqIdentificationExistsByName) {
           throw new HttpException(
             409,
@@ -908,7 +919,8 @@ class ReqIdentificationService {
         id,
         {
           reqIdentificationName: parsedReqIdentification.reqIdentificationName,
-          reqIdentificationDescription: parsedReqIdentification.reqIdentificationDescription,
+          reqIdentificationDescription:
+            parsedReqIdentification.reqIdentificationDescription,
           newUserId: parsedReqIdentification.newUserId
         }
       )
@@ -944,7 +956,8 @@ class ReqIdentificationService {
       if (!reqIdentification) {
         throw new HttpException(404, 'Requirement identification not found')
       }
-      const reqIdentificationDeleted = await ReqIdentificationRepository.deleteById(id)
+      const reqIdentificationDeleted =
+        await ReqIdentificationRepository.deleteById(id)
       if (!reqIdentificationDeleted) {
         throw new HttpException(404, 'Requirement identification not found')
       }
@@ -953,7 +966,10 @@ class ReqIdentificationService {
       if (error instanceof HttpException) {
         throw error
       }
-      throw new HttpException(500, 'Failed to delete requirement identification')
+      throw new HttpException(
+        500,
+        'Failed to delete requirement identification'
+      )
     }
   }
 
@@ -965,20 +981,25 @@ class ReqIdentificationService {
    */
   static async deleteBatch (reqIdentificationIds) {
     try {
-      const existingReqIdentifications = await ReqIdentificationRepository.findByIds(
-        reqIdentificationIds
-      )
+      const existingReqIdentifications =
+        await ReqIdentificationRepository.findByIds(reqIdentificationIds)
       if (existingReqIdentifications.length !== reqIdentificationIds.length) {
         const notFoundIds = reqIdentificationIds.filter(
-          (id) => !existingReqIdentifications.some((reqIdentification) => reqIdentification.id === id)
+          (id) =>
+            !existingReqIdentifications.some(
+              (reqIdentification) => reqIdentification.id === id
+            )
         )
-        throw new HttpException(404, 'Requirement identifications not found for IDs', {
-          notFoundIds
-        })
+        throw new HttpException(
+          404,
+          'Requirement identifications not found for IDs',
+          {
+            notFoundIds
+          }
+        )
       }
-      const reqIdentificationsDeleted = await ReqIdentificationRepository.deleteBatch(
-        reqIdentificationIds
-      )
+      const reqIdentificationsDeleted =
+        await ReqIdentificationRepository.deleteBatch(reqIdentificationIds)
       if (!reqIdentificationsDeleted) {
         throw new HttpException(404, 'Requirement identifications not found')
       }
@@ -987,533 +1008,12 @@ class ReqIdentificationService {
       if (error instanceof HttpException) {
         throw error
       }
-      throw new HttpException(500, 'Failed to delete requirement identifications')
+      throw new HttpException(
+        500,
+        'Failed to delete requirement identifications'
+      )
     }
   }
-
-  //   /**
-  //    * Retrieves a single identification by ID.
-  //    *
-  //    * @param {number} id - The identification ID.
-  //    * @returns {Promise<import('../models/ReqIdentification.model.js').default>}
-  //    * @throws {HttpException}
-  //    */
-  //   static async getById (id) {
-  //     try {
-  //       const entity = await ReqIdentificationRepository.findById({ id })
-  //       if (!entity) throw new HttpException(404, 'Identification not found')
-  //       return entity
-  //     } catch (err) {
-  //       if (err instanceof HttpException) throw err
-  //       throw new HttpException(500, 'Failed to retrieve identification')
-  //     }
-  //   }
-
-  //   /**
-  //    * Finds multiple identifications by their IDs.
-  //    *
-  //    * @param {Array<number>} identificationIds - Array of identification IDs.
-  //    * @returns {Promise<import('../models/ReqIdentification.model.js').default[]>}
-  //    * @throws {HttpException}
-  //    */
-  //   static async findByIds (identificationIds) {
-  //     try {
-  //       return await ReqIdentificationRepository.findByIds(identificationIds)
-  //     } catch (err) {
-  //       if (err instanceof HttpException) throw err
-  //       throw new HttpException(500, 'Failed to retrieve identifications by IDs')
-  //     }
-  //   }
-
-  //   /**
-  //    * Checks if an identification name already exists.
-  //    *
-  //    * @param {string} identificationName - Name to check.
-  //    * @returns {Promise<boolean>}
-  //    * @throws {HttpException}
-  //    */
-  //   static async existsByName (identificationName) {
-  //     try {
-  //       return await ReqIdentificationRepository.existsByName(identificationName)
-  //     } catch (err) {
-  //       if (err instanceof HttpException) throw err
-  //       throw new HttpException(500, 'Failed to check identification name existence')
-  //     }
-  //   }
-
-  //   /**
-  //    * Checks if an identification name already exists excluding a given ID.
-  //    *
-  //    * @param {Object} ReqIdentification - The identification data.
-  //    * @param {string} ReqIdentification.identificationName - The name to check.
-  //    * @param {number} ReqIdentification.identificationId - The ID to exclude.
-  //    * @returns {Promise<boolean>}
-  //    * @throws {HttpException}
-  //    */
-  //   static async existsByNameExcludingId (ReqIdentification) {
-  //     try {
-  //       return await ReqIdentificationRepository.existsByNameExcludingId(
-  //         ReqIdentification.identificationName,
-  //         ReqIdentification.identificationId
-  //       )
-  //     } catch (err) {
-  //       if (err instanceof HttpException) throw err
-  //       throw new HttpException(500, 'Failed to check identification name existence excluding ID')
-  //     }
-  //   }
-
-  //   /**
-  //    * Updates name and description by ID.
-  //    *
-  //    * @param {Object} ReqIdentification
-  //    * @param {number} ReqIdentification.id - The identification ID.
-  //    * @param {string} ReqIdentification.identificationName - Updated name.
-  //    * @param {string|null} [ReqIdentification.identificationDescription] - Updated description.
-  //    * @returns {Promise<import('../models/ReqIdentification.model.js').default>}
-  //    * @throws {HttpException}
-  //    */
-  //   static async updateById (ReqIdentification) {
-  //     try {
-  //       const payload = reqIdentificationUpdateSchema.parse(ReqIdentification)
-  //       if (await ReqIdentificationRepository.existsByNameExcludingId(
-  //         payload.identificationName,
-  //         ReqIdentification.id
-  //       )) {
-  //         throw new HttpException(409, 'Identification name already exists')
-  //       }
-  //       const updated = await ReqIdentificationRepository.updateById({
-  //         id: ReqIdentification.id,
-  //         name: payload.identificationName,
-  //         description: payload.identificationDescription
-  //       })
-  //       if (!updated) throw new HttpException(404, 'Identification not found')
-  //       return updated
-  //     } catch (err) {
-  //       if (err instanceof z.ZodError) {
-  //         const errors = err.errors.map(e => ({ field: e.path.join('.'), message: e.message }))
-  //         throw new HttpException(400, 'Validation failed', errors)
-  //       }
-  //       if (err instanceof HttpException) throw err
-  //       throw new HttpException(500, 'Unexpected error during update')
-  //     }
-  //   }
-
-  //   /**
-  //    * Deletes an identification by ID.
-  //    *
-  //    * @param {number} id - The identification ID.
-  //    * @returns {Promise<{ success: boolean }>}
-  //    * @throws {HttpException}
-  //    */
-  //   static async deleteById (id) {
-  //     try {
-  //       const ok = await ReqIdentificationRepository.deleteById({ id })
-  //       if (!ok) throw new HttpException(404, 'Identification not found')
-  //       return { success: true }
-  //     } catch (err) {
-  //       if (err instanceof HttpException) throw err
-  //       throw new HttpException(500, 'Unexpected error during deletion')
-  //     }
-  //   }
-
-  //   /**
-  //    * Deletes all identifications.
-  //    *
-  //    * @returns {Promise<void>}
-  //    * @throws {HttpException}
-  //    */
-  //   static async deleteAll () {
-  //     try {
-  //       await ReqIdentificationRepository.deleteAll()
-  //     } catch (err) {
-  //       if (err instanceof HttpException) throw err
-  //       throw new HttpException(500, 'Failed to delete all identifications')
-  //     }
-  //   }
-
-  //   /**
-  //    * Marks an identification as 'Failed'.
-  //    *
-  //    * @param {number} id - The identification ID.
-  //    * @returns {Promise<{ success: boolean }>}
-  //    * @throws {HttpException}
-  //    */ /**
-  //    * Updates the status of an identification.
-  //    *
-  //    * @param {Object} ReqIdentification - The identification data.
-  //    * @param {number} ReqIdentification.id - The identification ID.
-  //    * @param {'Active'|'Failed'|'Completed'} ReqIdentification.status - The new status.
-  //    * @returns {Promise<{ success: boolean }>} - Returns success flag.
-  //    * @throws {HttpException}
-  //    */
-  //   static async updateStatus (ReqIdentification) {
-  //     try {
-  //       const ok = await ReqIdentificationRepository.updateStatus({
-  //         id: ReqIdentification.id,
-  //         status: ReqIdentification.status
-  //       })
-  //       return { success: ok }
-  //     } catch (err) {
-  //       if (err instanceof HttpException) throw err
-  //       throw new HttpException(500, 'Unexpected error during status update')
-  //     }
-  //   }
-
-  //   /**
-  //    * Marks an identification as 'Completed'.
-  //    *
-  //    * @param {number} id - The identification ID.
-  //    * @returns {Promise<{ success: boolean }>}
-  //    * @throws {HttpException}
-  //    */
-  //   static async markAsCompleted (id) {
-  //     try {
-  //       const ok = await ReqIdentificationRepository.markAsCompleted(id)
-  //       return { success: ok }
-  //     } catch (err) {
-  //       if (err instanceof HttpException) throw err
-  //       throw new HttpException(500, 'Failed to mark as completed')
-  //     }
-  //   }
-
-  //   /**
-  //    * Marks an identification as 'Failed'.
-  //    *
-  //    * @param {number} id - The identification ID.
-  //    * @returns {Promise<{ success: boolean }>}
-  //    * @throws {HttpException}
-  //    */
-  //   static async markAsFailed (id) {
-  //     try {
-  //       const ok = await ReqIdentificationRepository.markAsFailed(id)
-  //       return { success: ok }
-  //     } catch (err) {
-  //       if (err instanceof HttpException) throw err
-  //       throw new HttpException(500, 'Failed to mark as failed')
-  //     }
-  //   }
-
-  //   /**
-  //  * Links a requirement to an identification.
-  //  *
-  //  * @param {Object} ReqIdentification
-  //  * @param {number} ReqIdentification.identificationId - The identification ID.
-  //  * @param {number} ReqIdentification.requirementId - The requirement ID.
-  //  * @returns {Promise<{ success: boolean }>}
-  //  * @throws {HttpException}
-  //  */
-  //   static async linkRequirement (ReqIdentification) {
-  //   // Validación y parsing con el schema de enlace
-  //     const payload = reqIdentificationLinkSchema.parse(ReqIdentification)
-
-  //     try {
-  //     // Usamos los valores ya parseados en lugar de reenviar el objeto sin validar
-  //       const ok = await ReqIdentificationRepository.linkRequirement({
-  //         identificationId: payload.identificationId,
-  //         requirementId: payload.requirementId
-  //       })
-  //       return { success: ok }
-  //     } catch (err) {
-  //       if (err instanceof HttpException) throw err
-  //       throw new HttpException(500, 'Failed to link requirement')
-  //     }
-  //   }
-
-  //   /**
-  //    * Unlinks a requirement from an identification.
-  //    *
-  //    * @param {Object} ReqIdentification
-  //    * @param {number} ReqIdentification.identificationId - The identification ID.
-  //    * @param {number} ReqIdentification.requirementId - The requirement ID.
-  //    * @returns {Promise<{ success: boolean }>}
-  //    * @throws {HttpException}
-  //    */
-  //   static async unlinkRequirement (ReqIdentification) {
-  //     try {
-  //       const ok = await ReqIdentificationRepository.unlinkRequirement(ReqIdentification)
-  //       return { success: ok }
-  //     } catch (err) {
-  //       if (err instanceof HttpException) throw err
-  //       throw new HttpException(500, 'Failed to unlink requirement')
-  //     }
-  //   }
-
-  //   /**
-  //    * Retrieves all requirements linked to an identification.
-  //    *
-  //    * @param {number} identificationId - The identification ID.
-  //    * @returns {Promise<import('../models/Requirement.model.js').default[]>}
-  //    * @throws {HttpException}
-  //    */
-  //   static async getLinkedRequirements (identificationId) {
-  //     try {
-  //       return await ReqIdentificationRepository.getLinkedRequirements({ identificationId })
-  //     } catch (err) {
-  //       if (err instanceof HttpException) throw err
-  //       throw new HttpException(500, 'Failed to fetch linked requirements')
-  //     }
-  //   }
-
-  //   /**
-  //    * Links metadata for a requirement.
-  //    *
-  //    * @param {Object} ReqIdentification
-  //    * @param {number} ReqIdentification.identificationId
-  //    * @param {number} ReqIdentification.requirementId
-  //    * @param {string} ReqIdentification.requirementNumber
-  //    * @param {number|null} ReqIdentification.requirementTypeId
-  //    * @returns {Promise<{ success: boolean }>}
-  //    * @throws {HttpException}
-  //    */
-  //   static async linkMetadata (ReqIdentification) {
-  //     try {
-  //       const ok = await ReqIdentificationRepository.linkMetadata(ReqIdentification)
-  //       return { success: ok }
-  //     } catch (err) {
-  //       if (err instanceof HttpException) throw err
-  //       throw new HttpException(500, 'Failed to link metadata')
-  //     }
-  //   }
-
-  //   /**
-  //    * Unlinks metadata for a requirement.
-  //    *
-  //    * @param {Object} ReqIdentification
-  //    * @param {number} ReqIdentification.identificationId
-  //    * @param {number} ReqIdentification.requirementId
-  //    * @returns {Promise<{ success: boolean }>}
-  //    * @throws {HttpException}
-  //    */
-  //   static async unlinkMetadata (ReqIdentification) {
-  //     try {
-  //       const ok = await ReqIdentificationRepository.unlinkMetadata(ReqIdentification)
-  //       return { success: ok }
-  //     } catch (err) {
-  //       if (err instanceof HttpException) throw err
-  //       throw new HttpException(500, 'Failed to unlink metadata')
-  //     }
-  //   }
-
-  //   /**
-  //    * Retrieves metadata linked to a requirement.
-  //    *
-  //    * @param {Object} ReqIdentification
-  //    * @param {number} ReqIdentification.identificationId
-  //    * @param {number} ReqIdentification.requirementId
-  //    * @returns {Promise<{ requirementNumber: string, requirementType: import('../models/RequirementType.model.js').default }|null>}
-  //    * @throws {HttpException}
-  //    */
-  //   static async getLinkedMetadata (ReqIdentification) {
-  //     try {
-  //       return await ReqIdentificationRepository.getLinkedMetadata(ReqIdentification)
-  //     } catch (err) {
-  //       if (err instanceof HttpException) throw err
-  //       throw new HttpException(500, 'Failed to fetch linked metadata')
-  //     }
-  //   }
-
-  //   /**
-  //  * Links one or more legal basis to a requirement under an identification,
-  //  * aplicando antes las reglas de negocio.
-  //  *
-  //  * @param {Object} ReqIdentification
-  //  * @param {number} ReqIdentification.identificationId - El ID de la identificación.
-  //  * @param {number} ReqIdentification.requirementId    - El ID del requerimiento.
-  //  * @param {number[]} ReqIdentification.legalBasisIds  - Array de IDs de legal basis a enlazar.
-  //  * @returns {Promise<{ success: boolean }>}
-  //  * @throws {HttpException}
-  //  */
-  //   static async linkLegalBasis (ReqIdentification) {
-  //     try {
-  //       // Validaciones de negocio previas
-  //       await this.validateLegalBasisSelection(ReqIdentification.legalBasisIds)
-
-  //       // Grabo el enlace
-  //       const ok = await ReqIdentificationRepository.linkLegalBasis(ReqIdentification)
-  //       return { success: ok }
-  //     } catch (err) {
-  //       if (err instanceof HttpException) throw err
-  //       throw new HttpException(500, 'Failed to link legal basis')
-  //     }
-  //   }
-
-  //   /**
-  //    * Unlinks a legal basis from a requirement.
-  //    *
-  //    * @param {Object} ReqIdentification
-  //    * @param {number} ReqIdentification.identificationId
-  //    * @param {number} ReqIdentification.requirementId
-  //    * @param {number} ReqIdentification.legalBasisId
-  //    * @returns {Promise<{ success: boolean }>}
-  //    * @throws {HttpException}
-  //    */
-  //   static async unlinkLegalBasis (ReqIdentification) {
-  //     try {
-  //       const ok = await ReqIdentificationRepository.unlinkLegalBasis(ReqIdentification)
-  //       return { success: ok }
-  //     } catch (err) {
-  //       if (err instanceof HttpException) throw err
-  //       throw new HttpException(500, 'Failed to unlink legal basis')
-  //     }
-  //   }
-
-  //   /**
-  //    * Retrieves legal bases linked to a requirement.
-  //    *
-  //    * @param {Object} ReqIdentification
-  //    * @param {number} ReqIdentification.identificationId
-  //    * @param {number} ReqIdentification.requirementId
-  //    * @returns {Promise<import('../models/LegalBasis.model.js').default[]>}
-  //    * @throws {HttpException}
-  //    */
-  //   static async getLinkedLegalBases (ReqIdentification) {
-  //     try {
-  //       return await ReqIdentificationRepository.getLinkedLegalBases(ReqIdentification)
-  //     } catch (err) {
-  //       if (err instanceof HttpException) throw err
-  //       throw new HttpException(500, 'Failed to fetch linked legal bases')
-  //     }
-  //   }
-
-  //   /**
-  //    * Links an article under a legal basis.
-  //    *
-  //    * @param {Object} ReqIdentification
-  //    * @param {number} ReqIdentification.identificationId
-  //    * @param {number} ReqIdentification.requirementId
-  //    * @param {number} ReqIdentification.legalBasisId
-  //    * @param {number} ReqIdentification.articleId
-  //    * @param {string} ReqIdentification.articleType
-  //    * @returns {Promise<{ success: boolean }>}
-  //    * @throws {HttpException}
-  //    */
-  //   static async linkArticle (ReqIdentification) {
-  //     try {
-  //       const ok = await ReqIdentificationRepository.linkArticle(ReqIdentification)
-  //       return { success: ok }
-  //     } catch (err) {
-  //       if (err instanceof HttpException) throw err
-  //       throw new HttpException(500, 'Failed to link article')
-  //     }
-  //   }
-
-  //   /**
-  //  * Retrieves articles linked to a requirement.
-  //  *
-  //  * @param {Object} ReqIdentification - The query data.
-  //  * @param {number} ReqIdentification.identificationId - The identification ID.
-  //  * @param {number} ReqIdentification.requirementId - The requirement ID.
-  //  * @returns {Promise<import('../models/Article.model.js').default[]>}
-  //  * @throws {HttpException}
-  //  */
-  //   static async getLinkedArticles (ReqIdentification) {
-  //     try {
-  //       return await ReqIdentificationRepository.getLinkedArticles({
-  //         identificationId: ReqIdentification.identificationId,
-  //         requirementId: ReqIdentification.requirementId
-  //       })
-  //     } catch (err) {
-  //       if (err instanceof HttpException) throw err
-  //       throw new HttpException(500, 'Failed to fetch linked articles')
-  //     }
-  //   }
-
-  //   /**
-  //  * Unlinks an article under a legal basis.
-  //  *
-  //  * @param {Object} ReqIdentification - The unlink data.
-  //  * @param {number} ReqIdentification.identificationId - The identification ID.
-  //  * @param {number} ReqIdentification.requirementId - The requirement ID.
-  //  * @param {number} ReqIdentification.legalBasisId - The legal basis ID.
-  //  * @param {number} ReqIdentification.articleId - The article ID to unlink.
-  //  * @returns {Promise<{ success: boolean }>} - True if the link was deleted, false otherwise.
-  //  * @throws {HttpException}
-  //  */
-  //   static async unlinkArticle (ReqIdentification) {
-  //     try {
-  //       const ok = await ReqIdentificationRepository.unlinkArticle({
-  //         identificationId: ReqIdentification.identificationId,
-  //         requirementId: ReqIdentification.requirementId,
-  //         legalBasisId: ReqIdentification.legalBasisId,
-  //         articleId: ReqIdentification.articleId
-  //       })
-  //       return { success: ok }
-  //     } catch (err) {
-  //       if (err instanceof HttpException) throw err
-  //       throw new HttpException(500, 'Failed to unlink article')
-  //     }
-  //   }
-
-  //   /**
-  //  * Links a legal verb translation.
-  //  *
-  //  * @param {Object} ReqIdentification - The link data.
-  //  * @param {number} ReqIdentification.identificationId - The identification ID.
-  //  * @param {number} ReqIdentification.requirementId - The requirement ID.
-  //  * @param {number} ReqIdentification.legalVerbId - The legal verb ID.
-  //  * @param {string} ReqIdentification.translation - The translated text.
-  //  * @returns {Promise<{ success: boolean }>}
-  //  * @throws {HttpException}
-  //  */
-  //   static async linkLegalVerb (ReqIdentification) {
-  //     try {
-  //       const ok = await ReqIdentificationRepository.linkLegalVerb({
-  //         identificationId: ReqIdentification.identificationId,
-  //         requirementId: ReqIdentification.requirementId,
-  //         legalVerbId: ReqIdentification.legalVerbId,
-  //         translation: ReqIdentification.translation
-  //       })
-  //       return { success: ok }
-  //     } catch (err) {
-  //       if (err instanceof HttpException) throw err
-  //       throw new HttpException(500, 'Failed to link legal verb')
-  //     }
-  //   }
-
-  //   /**
-  //  * Retrieves legal verbs linked to a requirement.
-  //  *
-  //  * @param {Object} ReqIdentification - The query data.
-  //  * @param {number} ReqIdentification.identificationId - The identification ID.
-  //  * @param {number} ReqIdentification.requirementId - The requirement ID.
-  //  * @returns {Promise<import('../models/LegalVerb.model.js').default[]>}
-  //  * @throws {HttpException}
-  //  */
-  //   static async getLinkedLegalVerbs (ReqIdentification) {
-  //     try {
-  //       return await ReqIdentificationRepository.getLinkedLegalVerbs({
-  //         identificationId: ReqIdentification.identificationId,
-  //         requirementId: ReqIdentification.requirementId
-  //       })
-  //     } catch (err) {
-  //       if (err instanceof HttpException) throw err
-  //       throw new HttpException(500, 'Failed to fetch linked legal verbs')
-  //     }
-  //   }
-
-  //   /**
-  //    * Unlinks a legal verb translation from a requirement in an identification.
-  //    *
-  //    * @param {Object} ReqIdentification - The unlink data.
-  //    * @param {number} ReqIdentification.identificationId - The ID of the identification.
-  //    * @param {number} ReqIdentification.requirementId - The ID of the requirement.
-  //    * @param {number} ReqIdentification.legalVerbId - The ID of the legal verb.
-  //    * @returns {Promise<{ success: boolean }>} - True if the link was deleted, false otherwise.
-  //    * @throws {HttpException}
-  //    */
-  //   static async unlinkLegalVerb (ReqIdentification) {
-  //     try {
-  //       const ok = await ReqIdentificationRepository.unlinkLegalVerb({
-  //         identificationId: ReqIdentification.identificationId,
-  //         requirementId: ReqIdentification.requirementId,
-  //         legalVerbId: ReqIdentification.legalVerbId
-  //       })
-  //       return { success: ok }
-  //     } catch (err) {
-  //       if (err instanceof HttpException) throw err
-  //       throw new HttpException(500, 'Failed to unlink legal verb')
-  //     }
-  //   }
 }
 
 export default ReqIdentificationService

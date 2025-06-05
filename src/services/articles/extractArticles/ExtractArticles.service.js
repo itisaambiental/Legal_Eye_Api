@@ -9,7 +9,7 @@ import LegalBasisRepository from '../../../repositories/LegalBasis.repository.js
 class ExtractArticlesService {
   /**
    * Retrieves the status of an article extraction job from the queue.
-   * @param {string} jobId - The job ID.
+   * @param {number|string} jobId - The job ID.
    * @returns {Promise<import('../../queue/Queue.service.js').JobStateResponse>} - The job state and relevant data.
    * @throws {HttpException} - If an error occurs while retrieving the job state.
    */
