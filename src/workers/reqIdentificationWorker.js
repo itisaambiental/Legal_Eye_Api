@@ -25,6 +25,7 @@ const CONCURRENCY = Number(CONCURRENCY_REQ_IDENTIFICATIONS || 1)
 reqIdentificationQueue.process(CONCURRENCY, async (job, done) => {
   /** @type {ReqIdentificationJobData} */
   const { reqIdentificationId, legalBases, requirements } = job.data
+
   try {
     const currentJob = await reqIdentificationQueue.getJob(job.id)
     if (!currentJob) throw new HttpException(404, 'Job not found')
@@ -39,27 +40,33 @@ reqIdentificationQueue.process(CONCURRENCY, async (job, done) => {
             )
           )
       )
+
       if (legalBasis.length === 0) continue
-      const subjectNames = [
+
+      const subjectAbbreviations = [
         ...new Set(
-          legalBasis.map((lb) => lb.subject.subject_name).filter(Boolean)
+          legalBasis.map((lb) => lb.subject.abbreviation).filter(Boolean)
         )
       ]
-      const aspectNames = [
+
+      const aspectAbbreviations = [
         ...new Set(
           legalBasis.flatMap((lb) =>
-            lb.aspects.map((a) => a.aspect_name).filter(Boolean)
+            lb.aspects.map((a) => a.abbreviation).filter(Boolean)
           )
         )
       ]
+
       const states = [
         ...new Set(legalBasis.map((lb) => lb.state).filter(Boolean))
       ]
+
       const municipalities = [
         ...new Set(legalBasis.map((lb) => lb.municipality).filter(Boolean))
       ]
-      const subject = subjectNames.join(', ')
-      const aspect = aspectNames.join(', ')
+
+      const subject = subjectAbbreviations.join(', ')
+      const aspect = aspectAbbreviations.join(', ')
       const state = states.join(', ')
       const municipality = municipalities.join(', ')
       const requirementNumber = requirement.requirement_number
