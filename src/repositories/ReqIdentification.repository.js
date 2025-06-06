@@ -1919,8 +1919,8 @@ class ReqIdentificationRepository {
 
     try {
       await pool.query(query, values)
-    } catch (err) {
-      console.error('Error linking requirement:', err.message)
+    } catch (error) {
+      console.error('Error linking requirement:', error.message)
       throw new HttpException(500, 'Error linking requirement')
     }
   }
@@ -1948,14 +1948,60 @@ class ReqIdentificationRepository {
 
     try {
       await pool.query(query, values)
-    } catch (err) {
+    } catch (error) {
       console.error(
         'Error linking legal basis to requirement identification:',
-        err.message
+        error.message
       )
       throw new HttpException(
         500,
         'Error linking legal basis to requirement identification'
+      )
+    }
+  }
+
+  /**
+   * Links an article to a legal basis and requirement within a requirement identification.
+   *
+   * @param {number} reqIdentificationId - The ID of the requirement identification.
+   * @param {number} requirementId - The ID of the requirement.
+   * @param {number} legalBasisId - The ID of the legal basis.
+   * @param {number} articleId - The ID of the article to link.
+   * @param {'mandatory' | 'complementary' | 'general'} [articleType='general'] - Optional article type. Defaults to 'general'.
+   * @returns {Promise<void>} - Resolves when the article is successfully linked.
+   * @throws {HttpException} - If a database error occurs.
+   */
+  static async linkArticleToLegalBaseToRequirement (
+    reqIdentificationId,
+    requirementId,
+    legalBasisId,
+    articleId,
+    articleType = 'general'
+  ) {
+    const query = `
+    INSERT INTO req_identifications_requirement_legal_basis_articles
+      (req_identification_id, requirement_id, legal_basis_id, article_id, article_type)
+    VALUES (?, ?, ?, ?, ?)
+  `
+
+    const values = [
+      reqIdentificationId,
+      requirementId,
+      legalBasisId,
+      articleId,
+      articleType
+    ]
+
+    try {
+      await pool.query(query, values)
+    } catch (error) {
+      console.error(
+        'Error linking article to legal basis and requirement:',
+        error.message
+      )
+      throw new HttpException(
+        500,
+        'Error linking article to legal basis and requirement'
       )
     }
   }

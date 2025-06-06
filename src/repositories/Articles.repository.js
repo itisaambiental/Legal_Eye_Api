@@ -157,7 +157,7 @@ class ArticlesRepository {
    * Fetches articles associated with a specific legal basis, ordered by 'article_order'.
    * Returns a list of Article instances.
    * @param {number} legalBasisId - The ID of the legal basis.
-   * @returns {Promise<Array<Article|null>>} - The list of ordered Article instances.
+   * @returns {Promise<Article[] | null>} - The list of ordered Article instances.
    * @throws {HttpException} - If an error occurs during retrieval.
    */
   static async findByLegalBasisId (legalBasisId) {
@@ -192,7 +192,7 @@ class ArticlesRepository {
    * Retrieves articles by name or partial name for a specific legal basis from the database.
    * @param {number} legalBasisId - The ID of the legal basis to filter articles by.
    * @param {string} articleName - The name or part of the name of the article to retrieve.
-   * @returns {Promise<Array<Article|null>>} - A list of Article instances matching the name for the given legal basis.
+   * @returns {Promise<Article[] | null>} - A list of Article instances matching the name for the given legal basis.
    * @throws {HttpException} - If an error occurs during retrieval.
    */
   static async findByName (legalBasisId, articleName) {
@@ -228,7 +228,7 @@ class ArticlesRepository {
    * Retrieves articles by a partial or flexible match in their description for a specific legal basis from the database.
    * @param {number} legalBasisId - The ID of the legal basis to filter articles by.
    * @param {string} description - The description or part of the description to search for.
-   * @returns {Promise<Array<Article|null>>} - A list of Article instances matching the description for the given legal basis.
+   * @returns {Promise<Article[] | null>} - A list of Article instances matching the description for the given legal basis.
    * @throws {HttpException} - If an error occurs during retrieval.
    */
   static async findByDescription (legalBasisId, description) {

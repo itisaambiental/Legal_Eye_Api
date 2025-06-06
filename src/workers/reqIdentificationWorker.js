@@ -1,4 +1,5 @@
 import reqIdentificationQueue from '../queues/reqIdentificationQueue.js'
+import ArticlesRepository from '../repositories/Articles.repository.js'
 import ReqIdentificationRepository from '../repositories/ReqIdentification.repository.js'
 import HttpException from '../services/errors/HttpException.js'
 import { CONCURRENCY_REQ_IDENTIFICATIONS } from '../config/variables.config.js'
@@ -95,6 +96,19 @@ reqIdentificationQueue.process(CONCURRENCY, async (job, done) => {
           requirement.id,
           legalBase.id
         )
+        const articles = await ArticlesRepository.findByLegalBasisId(
+          legalBase.id
+        )
+        if (articles) {
+          for (const article of articles) {
+            await ReqIdentificationRepository.linkArticleToLegalBaseToRequirement(
+              reqIdentificationId,
+              requirement.id,
+              legalBase.id,
+              article.id
+            )
+          }
+        }
       }
     }
   } catch (error) {
