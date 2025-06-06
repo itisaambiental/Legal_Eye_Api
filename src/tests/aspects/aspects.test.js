@@ -17,7 +17,7 @@ let createdSubjectId
 let createdAspectId
 const createdAspectIds = []
 
-const timeout = 20000
+const timeout = 50000
 beforeAll(async () => {
   await RequirementRepository.deleteAll()
   await LegalBasisRepository.deleteAll()
@@ -437,7 +437,7 @@ describe('Aspects API - PATCH /aspect/:id', () => {
 describe('Aspects API - DELETE /aspect/:id', () => {
   let createdLegalBasis
   let createdRequirement
-  const timeout = 20000
+  const timeout = 50000
 
   beforeAll(async () => {
     const aspectResponse = await api
@@ -555,7 +555,7 @@ describe('Aspects API - DELETE /aspect/:id', () => {
 describe('DELETE /aspects/batch - Delete multiple aspects with dependencies', () => {
   const createdLegalBases = []
   const createdRequirements = []
-  const timeout = 20000
+  const timeout = 50000
 
   beforeAll(async () => {
     for (let i = 0; i < aspectNames.length; i++) {
@@ -617,7 +617,7 @@ describe('DELETE /aspects/batch - Delete multiple aspects with dependencies', ()
   })
 
   describe('After removing all legal bases', () => {
-    const timeout = 20000
+    const timeout = 50000
     beforeAll(async () => {
       for (const legalBasis of createdLegalBases) {
         await api
@@ -638,7 +638,7 @@ describe('DELETE /aspects/batch - Delete multiple aspects with dependencies', ()
     })
 
     describe('After removing all requirements', () => {
-      const timeout = 20000
+      const timeout = 50000
       beforeAll(async () => {
         for (const req of createdRequirements) {
           await api

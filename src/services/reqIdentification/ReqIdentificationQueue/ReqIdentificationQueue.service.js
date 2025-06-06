@@ -1,4 +1,4 @@
-import HttpException from '../errors/HttpException.js'
+import HttpException from '../../errors/HttpException.js'
 import reqIdentificationQueue from '../../../workers/reqIdentificationWorker.js'
 import QueueService from '../../queue/Queue.service.js'
 import ReqIdentificationRepository from '../../../repositories/ReqIdentification.repository.js'
@@ -32,8 +32,8 @@ class ReqIdentificationQueueService {
   }
 
   /**
-   * Checks if there are pending jobs related to a requirement identification.
-   * @param {number} reqIdentificationId - The ID of the identification to check.
+   * Checks if there are pending jobs for a specific requirement identification.
+   * @param {number} reqIdentificationId - The ID of the requirement identification to check.
    * @returns {Promise<{ hasPendingJobs: boolean, jobId: string | number | null }>}
    */
   static async hasPendingReqIdentificationJobs (reqIdentificationId) {

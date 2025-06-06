@@ -2,6 +2,7 @@ import RequirementRepository from '../../repositories/Requirements.repository.js
 import requirementSchema from '../../schemas/requirement.schema.js'
 import SubjectsRepository from '../../repositories/Subject.repository.js'
 import AspectsRepository from '../../repositories/Aspects.repository.js'
+import ReqIdentificationQueueService from '../../services/reqIdentification/ReqIdentificationQueue/ReqIdentificationQueue.service.js'
 import HttpException from '../errors/HttpException.js'
 import { z } from 'zod'
 
@@ -10,20 +11,20 @@ import { z } from 'zod'
  */
 class RequirementService {
   /**
- * @typedef {Object} Aspect
- * @property {number} aspect_id - The ID of the aspect.
- * @property {string} aspect_name - The name of the aspect.
- * @property {string} [abbreviation] - Optional abbreviation for the aspect.
- * @property {number} [order_index] - Optional order index for the aspect.
- */
+   * @typedef {Object} Aspect
+   * @property {number} aspect_id - The ID of the aspect.
+   * @property {string} aspect_name - The name of the aspect.
+   * @property {string} [abbreviation] - Optional abbreviation for the aspect.
+   * @property {number} [order_index] - Optional order index for the aspect.
+   */
 
   /**
- * @typedef {Object} Subject
- * @property {number} subject_id - The ID of the subject.
- * @property {string} subject_name - The name of the subject.
- * @property {string} [abbreviation] - Optional abbreviation for the subject.
- * @property {number} [order_index] - Optional order index for the subject.
- */
+   * @typedef {Object} Subject
+   * @property {number} subject_id - The ID of the subject.
+   * @property {string} subject_name - The name of the subject.
+   * @property {string} [abbreviation] - Optional abbreviation for the subject.
+   * @property {number} [order_index] - Optional order index for the subject.
+   */
 
   /**
    * @typedef {Object} Requirement
@@ -144,7 +145,10 @@ class RequirementService {
         }))
         throw new HttpException(400, 'Validation failed', validationErrors)
       }
-      throw new HttpException(500, 'Unexpected error during requirement creation')
+      throw new HttpException(
+        500,
+        'Unexpected error during requirement creation'
+      )
     }
   }
 
@@ -185,7 +189,10 @@ class RequirementService {
       if (error instanceof HttpException) {
         throw error
       }
-      throw new HttpException(500, 'Failed to retrieve requirement record by ID')
+      throw new HttpException(
+        500,
+        'Failed to retrieve requirement record by ID'
+      )
     }
   }
 
@@ -653,11 +660,29 @@ class RequirementService {
    */
   static async deleteById (requirementId) {
     try {
-      const existingRequirement = await RequirementRepository.findById(
-        requirementId
-      )
-      if (!existingRequirement) {
+      const requirement = await RequirementRepository.findById(requirementId)
+      if (!requirement) {
         throw new HttpException(404, 'Requirement not found')
+      }
+      const { isAssociatedToReqIdentifications } =
+        await RequirementRepository.checkReqIdentificationAssociations(
+          requirementId
+        )
+      if (isAssociatedToReqIdentifications) {
+        throw new HttpException(
+          409,
+          'The Requirement is associated with one or more requirement identifications'
+        )
+      }
+      const reqIdentificationJobs =
+        await ReqIdentificationQueueService.hasPendingRequirementJobs(
+          requirementId
+        )
+      if (reqIdentificationJobs.hasPendingJobs) {
+        throw new HttpException(
+          409,
+          'Cannot delete Requirement with pending Requirement Identification jobs'
+        )
       }
       const requirementDeleted = await RequirementRepository.delete(
         requirementId
@@ -696,6 +721,51 @@ class RequirementService {
           notFoundIds
         })
       }
+      const reqIdentificationAssociations =
+        await RequirementRepository.checkReqIdentificationAssociationsBatch(
+          requirementIds
+        )
+      const requirementsWithReqIdentificationAssociations =
+        reqIdentificationAssociations.filter(
+          (requirement) => requirement.isAssociatedToReqIdentifications
+        )
+
+      if (requirementsWithReqIdentificationAssociations.length > 0) {
+        throw new HttpException(
+          409,
+          'Some Requirements are associated with requirement identifications',
+          {
+            requirements: requirementsWithReqIdentificationAssociations.map(
+              (requirement) => ({
+                id: requirement.id,
+                name: requirement.name
+              })
+            )
+          }
+        )
+      }
+      const pendingReqIdentificationJobs = []
+      await Promise.all(
+        requirements.map(async (requirement) => {
+          const reqIdentificationJobs =
+            await ReqIdentificationQueueService.hasPendingRequirementJobs(
+              requirement.id
+            )
+          if (reqIdentificationJobs.hasPendingJobs) {
+            pendingReqIdentificationJobs.push({
+              id: requirement.id,
+              name: requirement.requirement_name
+            })
+          }
+        })
+      )
+      if (pendingReqIdentificationJobs.length > 0) {
+        throw new HttpException(
+          409,
+          'Cannot delete Requirements with pending Requirement Identification jobs',
+          { requirements: pendingReqIdentificationJobs }
+        )
+      }
       const requirementsDeleted = await RequirementRepository.deleteBatch(
         requirementIds
       )
@@ -709,7 +779,7 @@ class RequirementService {
       }
       throw new HttpException(
         500,
-        'Unexpected error during batch deletion of Requirements'
+        'Unexpected error during batch deletion of requirements'
       )
     }
   }

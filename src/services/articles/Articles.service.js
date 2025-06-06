@@ -5,6 +5,7 @@ import {
   articlesSchema
 } from '../../schemas/article.schema.js'
 import SendLegalBasisService from '../legalBasis/sendLegalBasis/SendLegalBasis.service.js'
+import ReqIdentificationQueueService from '../reqIdentification/ReqIdentificationQueue/ReqIdentificationQueue.service.js'
 import HttpException from '../errors/HttpException.js'
 import { z } from 'zod'
 import { convert } from 'html-to-text'
@@ -254,14 +255,31 @@ class ArticlesService {
       if (!existingArticle) {
         throw new HttpException(404, 'Article not found')
       }
-      const { hasPendingJobs: hasPendingSendLegalBasisJobs } =
-        await SendLegalBasisService.hasPendingSendJobs(
-          existingArticle.legal_basis_id
+      const { isAssociatedToReqIdentifications } =
+        await ArticlesRepository.checkReqIdentificationAssociations(id)
+      if (isAssociatedToReqIdentifications) {
+        throw new HttpException(
+          409,
+          'The Article is associated with one or more requirement identifications'
         )
-      if (hasPendingSendLegalBasisJobs) {
+      }
+      const sendLegalBasisJobs = await SendLegalBasisService.hasPendingSendJobs(
+        existingArticle.legal_basis_id
+      )
+      if (sendLegalBasisJobs.hasPendingJobs) {
         throw new HttpException(
           409,
           'Cannot delete Article with pending Send Legal Basis jobs'
+        )
+      }
+      const reqIdentificationJobs =
+        await ReqIdentificationQueueService.hasPendingLegalBasisJobs(
+          existingArticle.legal_basis_id
+        )
+      if (reqIdentificationJobs.hasPendingJobs) {
+        throw new HttpException(
+          409,
+          'Cannot delete Article with pending Requirement Identification jobs'
         )
       }
       const articleDeleted = await ArticlesRepository.deleteById(id)
@@ -294,15 +312,50 @@ class ArticlesService {
           notFoundIds
         })
       }
+      const reqIdentificationAssociations =
+        await ArticlesRepository.checkReqIdentificationAssociationsBatch(
+          articleIds
+        )
+      const articlesWithReqIdentificationAssociations =
+        reqIdentificationAssociations.filter(
+          (article) => article.isAssociatedToReqIdentifications
+        )
+
+      if (articlesWithReqIdentificationAssociations.length > 0) {
+        throw new HttpException(
+          409,
+          'Some Articles are associated with requirement identifications',
+          {
+            articles: articlesWithReqIdentificationAssociations.map((article) => ({
+              id: article.id,
+              name: article.name
+            }))
+          }
+        )
+      }
+
       const pendingSendLegalBasisJobs = []
+      const pendingReqIdentificationJobs = []
       await Promise.all(
         existingArticles.map(async (article) => {
-          const { hasPendingJobs: hasPendingSendLegalBasisJobsForArticle } =
+          const sendLegalBasisJobs =
             await SendLegalBasisService.hasPendingSendJobs(
               article.legal_basis_id
             )
-          if (hasPendingSendLegalBasisJobsForArticle) {
+          const reqIdentificationJobs =
+            await ReqIdentificationQueueService.hasPendingLegalBasisJobs(
+              article.legal_basis_id
+            )
+
+          if (sendLegalBasisJobs.hasPendingJobs) {
             pendingSendLegalBasisJobs.push({
+              id: article.id,
+              name: article.article_name
+            })
+          }
+
+          if (reqIdentificationJobs.hasPendingJobs) {
+            pendingReqIdentificationJobs.push({
               id: article.id,
               name: article.article_name
             })
@@ -316,6 +369,15 @@ class ArticlesService {
           { articles: pendingSendLegalBasisJobs }
         )
       }
+
+      if (pendingReqIdentificationJobs.length > 0) {
+        throw new HttpException(
+          409,
+          'Cannot delete Articles with pending Requirement Identification jobs',
+          { articles: pendingReqIdentificationJobs }
+        )
+      }
+
       const articlesDeleted = await ArticlesRepository.deleteBatch(articleIds)
       if (!articlesDeleted) {
         throw new HttpException(404, 'Articles not found')

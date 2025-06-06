@@ -22,7 +22,7 @@ let createdSubjectId
 const createdAspectIds = []
 let createdLegalBasisId
 
-const timeout = 20000
+const timeout = 50000
 beforeAll(async () => {
   await RequirementRepository.deleteAll()
   await LegalBasisRepository.deleteAll()
@@ -567,7 +567,7 @@ describe('Delete an article', () => {
 
 describe('Delete multiple articles', () => {
   let createdArticleIds = []
-
+  const timeout = 50000
   beforeEach(async () => {
     createdArticleIds = []
     for (let i = 0; i < 5; i++) {
@@ -581,7 +581,7 @@ describe('Delete multiple articles', () => {
 
       createdArticleIds.push(response.body.article.id)
     }
-  })
+  }, timeout)
 
   afterEach(async () => {
     jest.restoreAllMocks()

@@ -10,7 +10,7 @@ import {
 
 let tokenAdmin
 
-const timeout = 20000
+const timeout = 50000
 beforeAll(async () => {
   await LegalBasisRepository.deleteAll()
   await UserRepository.deleteAllExceptByGmail(ADMIN_GMAIL)

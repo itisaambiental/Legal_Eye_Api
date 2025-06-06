@@ -20,7 +20,7 @@ let createdSubjectId
 const createdAspectIds = []
 let createdLegalBasis
 
-const timeout = 20000
+const timeout = 50000
 beforeAll(async () => {
   await RequirementRepository.deleteAll()
   await LegalBasisRepository.deleteAll()

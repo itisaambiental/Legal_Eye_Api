@@ -266,11 +266,11 @@ class LegalBasisRepository {
   }
 
   /**
- * Retrieves multiple legal basis records by their IDs.
- * @param {Array<number>} legalBasisIds - An array of IDs of the legal bases to retrieve.
- * @returns {Promise<LegalBasis[]>} - An array of legal basis records.
- * @throws {HttpException} - If an error occurs during retrieval.
- */
+   * Retrieves multiple legal basis records by their IDs.
+   * @param {Array<number>} legalBasisIds - An array of IDs of the legal bases to retrieve.
+   * @returns {Promise<LegalBasis[]>} - An array of legal basis records.
+   * @throws {HttpException} - If an error occurs during retrieval.
+   */
   static async findByIds (legalBasisIds) {
     if (legalBasisIds.length === 0) return []
 
@@ -1652,6 +1652,78 @@ VALUES ${aspectsIds.map(() => '(?, ?, ?)').join(', ')}
       throw new HttpException(500, 'Error deleting all legal basis records')
     } finally {
       connection.release()
+    }
+  }
+
+  /**
+   * Checks if a legal basis is associated with any requirement identification.
+   * @param {number} legalBasisId - The ID of the legal basis to check.
+   * @returns {Promise<{ isAssociatedToReqIdentifications: boolean }>}
+   * @throws {HttpException}
+   */
+  static async checkReqIdentificationAssociations (legalBasisId) {
+    try {
+      const [rows] = await pool.query(
+        `
+      SELECT COUNT(*) AS identificationCount
+      FROM req_identifications_requirement_legal_basis
+      WHERE legal_basis_id = ?
+      `,
+        [legalBasisId]
+      )
+
+      return {
+        isAssociatedToReqIdentifications: rows[0].identificationCount > 0
+      }
+    } catch (error) {
+      console.error(
+        'Error checking legal basis-identification associations:',
+        error.message
+      )
+      throw new HttpException(
+        500,
+        'Error checking legal basis associations with identifications'
+      )
+    }
+  }
+
+  /**
+   * Checks if any of the given legal basis records are associated with requirement identifications.
+   * @param {Array<number>} legalBasisIds - Array of legal basis IDs to check.
+   * @returns {Promise<Array<{ id: number, name: string, isAssociatedToReqIdentifications: boolean }>>}
+   * @throws {HttpException}
+   */
+  static async checkReqIdentificationAssociationsBatch (legalBasisIds) {
+    try {
+      const [rows] = await pool.query(
+        `
+      SELECT 
+        lb.id AS legalBasisId,
+        lb.legal_name AS legalBasisName,
+        COUNT(rirlb.req_identification_id) AS identificationCount
+      FROM legal_basis lb
+      LEFT JOIN req_identifications_requirement_legal_basis rirlb 
+        ON lb.id = rirlb.legal_basis_id
+      WHERE lb.id IN (?)
+      GROUP BY lb.id
+      `,
+        [legalBasisIds]
+      )
+
+      return rows.map((row) => ({
+        id: row.legalBasisId,
+        name: row.legalBasisName,
+        isAssociatedToReqIdentifications: row.identificationCount > 0
+      }))
+    } catch (error) {
+      console.error(
+        'Error checking batch legal basis-identification associations:',
+        error.message
+      )
+      throw new HttpException(
+        500,
+        'Error checking batch legal basis associations with identifications'
+      )
     }
   }
 }
