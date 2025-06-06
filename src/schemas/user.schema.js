@@ -28,18 +28,20 @@ const userSchema = z.object({
 
   /**
    * User's role ID.
-   * Must be either 1 (Admin) or 2 (Analyst).
-   * Transforms the input to an integer and ensures it's a valid number.
+   * Accepts a string, validates numeric and allowed values, then transforms to number.
    */
   roleId: z
     .string()
-    .transform((value) => parseInt(value, 10))
-    .refine((value) => !isNaN(value), {
+    .refine((val) => !Number.isNaN(Number(val)), {
       message: 'The roleId must be a valid number'
     })
-    .refine((value) => value === 1 || value === 2, {
+    .refine((val) => {
+      const num = Number(val)
+      return num === 1 || num === 2
+    }, {
       message: 'The roleId must be either 1 (Admin) or 2 (Analyst)'
-    }),
+    })
+    .transform((val) => Number(val)),
 
   /**
    * Validation schema for user's profile picture.

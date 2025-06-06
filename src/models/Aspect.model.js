@@ -1,6 +1,5 @@
 /**
  * Class representing an Aspect.
- * Stores information about aspects linked to specific subjects.
  */
 class Aspect {
   /**
@@ -12,7 +11,14 @@ class Aspect {
    * @param {string} abbreviation - The abbreviation for the aspect.
    * @param {number} orderIndex - The display order index.
    */
-  constructor (id, aspectName, subjectId, subjectName, abbreviation, orderIndex) {
+  constructor (
+    id,
+    aspectName,
+    subjectId,
+    subjectName,
+    abbreviation,
+    orderIndex
+  ) {
     this.id = id
     this.aspect_name = aspectName
     this.subject_id = subjectId

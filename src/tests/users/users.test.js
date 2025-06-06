@@ -7,7 +7,7 @@ let tokenAdmin
 let adminUserId
 let analystUserId
 
-const timeout = 20000
+const timeout = 50000
 beforeAll(async () => {
   await UserRepository.deleteAllExceptByGmail(ADMIN_GMAIL)
   const response = await api

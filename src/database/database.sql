@@ -1,22 +1,12 @@
 -- Table: roles
--- This table stores user roles within the system.
--- Columns:
--- - id: Unique identifier for each role, auto-incremented.
--- - name: Defines the name of the role, restricted to 'Admin' or 'Analyst'.
+-- Description: table stores user roles within the system.
 CREATE TABLE IF NOT EXISTS roles (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     name ENUM('Admin', 'Analyst') NOT NULL UNIQUE
 );
 
 -- Table: users
--- This table stores user information including credentials and profile.
--- Columns:
--- - id: Unique identifier for each user, auto-incremented.
--- - name: Full name of the user.
--- - password: Hashed password of the user.
--- - gmail: User's email address, must be unique.
--- - role_id: Foreign key referencing the 'roles' table.
--- - profile_picture: URL of the user's profile picture, optional.
+-- Description: This table stores user information including credentials and profile.
 CREATE TABLE IF NOT EXISTS users (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
@@ -28,12 +18,7 @@ CREATE TABLE IF NOT EXISTS users (
 );
 
 -- Table: verification_codes
--- This table stores verification codes for user account recovery and validation.
--- Columns:
--- - id: Unique identifier for each verification code, auto-incremented.
--- - gmail: Email address associated with the verification code.
--- - code: Verification code used for password reset or validation.
--- - expires_at: Expiration timestamp of the verification code.
+-- Description: This table stores verification codes for user account recovery and validation.
 CREATE TABLE IF NOT EXISTS verification_codes (
     id INT AUTO_INCREMENT PRIMARY KEY,
     gmail VARCHAR(255) NOT NULL,
@@ -42,12 +27,7 @@ CREATE TABLE IF NOT EXISTS verification_codes (
 );
 
 -- Table: subjects
--- This table stores the main subjects or categories that legal documents can belong to.
--- Columns:
--- - id: Unique identifier for each subject, auto-incremented.
--- - subject_name: Name of the subject, such as 'Environmental', 'Security', etc.
--- - abbreviation: Optional short code for the subject.
--- - order_index: Optional ordering index for display purposes.
+-- Description: This table stores the main subjects or categories that legal documents can belong to.
 CREATE TABLE IF NOT EXISTS subjects (
     id INT AUTO_INCREMENT PRIMARY KEY,
     subject_name VARCHAR(255) NOT NULL,
@@ -56,13 +36,7 @@ CREATE TABLE IF NOT EXISTS subjects (
 );
 
 -- Table: aspects
--- Stores specific aspects linked to subjects. Each subject can have multiple aspects.
--- Columns:
--- - id: Unique identifier for each aspect, auto-incremented.
--- - subject_id: Foreign key referencing the 'subjects' table.
--- - aspect_name: Name of the aspect related to the subject.
--- - abbreviation: Optional short code for the aspect.
--- - order_index: Optional ordering index for display purposes.
+-- Description: Stores specific aspects linked to subjects. Each subject can have multiple aspects.
 CREATE TABLE IF NOT EXISTS aspects (
     id INT AUTO_INCREMENT PRIMARY KEY,
     subject_id INT NOT NULL,
@@ -74,18 +48,7 @@ CREATE TABLE IF NOT EXISTS aspects (
 );
 
 -- Table: legal_basis
--- This table stores legal documents and their classifications.
--- Columns:
--- - id: Unique identifier for each legal basis, auto-incremented.
--- - legal_name: Name of the legal document.
--- - abbreviation: Abbreviation of the legal document, optional.
--- - classification: Type of legal document, defined by specific categories.
--- - jurisdiction: Defines the jurisdiction (State, Federal, Local).
--- - state: State associated with the legal document, if applicable.
--- - municipality: Municipality associated with the legal document, if applicable.
--- - url: URL of the legal document.
--- - last_reform: Date of the last reform to the legal document.
--- - subject_id: Id of the associated subject.
+-- Description: This table stores legal documents and their classifications.
 CREATE TABLE IF NOT EXISTS legal_basis (
     id INT AUTO_INCREMENT PRIMARY KEY,
     legal_name VARCHAR(1000) NOT NULL,
@@ -115,25 +78,7 @@ CREATE TABLE IF NOT EXISTS legal_basis (
 );
 
 -- Table: article
--- This table stores articles related to legal documents.
--- Columns:
--- - id: Unique identifier for each article, auto-incremented.
--- - legal_basis_id: Foreign key referencing the 'legal_basis' table.
--- - article_name: Name of the article.
--- - description: Detailed description of the article, optional.
--- - plain_description: Simplified, searchable plain-text version of the article's description.
--- - article_order: Order of the article within the legal document.
--- Indices:
--- - FULLTEXT(plain_description): 
---   This index enables advanced text searches on the 'plain_description' column. 
---   It allows the use of the `MATCH ... AGAINST` clause in queries to:
---     - Perform full-text searches on the 'plain_description' column.
---     - Retrieve rows based on their textual relevance to the search terms.
---     - Support flexible searches with natural language or boolean query modes.
---   The `FULLTEXT` index significantly improves the performance of text searches
---   compared to using operators like `LIKE`.
--- Constraints:
--- - FOREIGN KEY (legal_basis_id): Ensures referential integrity by linking each article to a corresponding entry in the 'legal_basis' table. Deletes are cascaded.
+-- Description: This table stores articles related to legal documents.
 CREATE TABLE IF NOT EXISTS article (
     id INT AUTO_INCREMENT PRIMARY KEY,
     legal_basis_id INT NOT NULL,
@@ -146,11 +91,7 @@ CREATE TABLE IF NOT EXISTS article (
 );
 
 -- Table: legal_basis_subject_aspect
--- This table establishes a many-to-many relationship between 'legal_basis', 'subjects', and 'aspects'.
--- Columns:
--- - legal_basis_id: Foreign key referencing the 'legal_basis' table.
--- - subject_id: Foreign key referencing the 'subjects' table.
--- - aspect_id: Foreign key referencing the 'aspects' table.
+-- Description: This table establishes a many-to-many relationship between 'legal_basis', 'subjects', and 'aspects'.
 CREATE TABLE IF NOT EXISTS legal_basis_subject_aspect (
     legal_basis_id INT NOT NULL,
     subject_id INT NOT NULL,
@@ -160,14 +101,13 @@ CREATE TABLE IF NOT EXISTS legal_basis_subject_aspect (
     FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE RESTRICT,
     FOREIGN KEY (aspect_id) REFERENCES aspects(id) ON DELETE RESTRICT
 );
-
 -- Table: requirements
 -- Description: This table stores the requirements associated with a subject and an aspect,
--- along with detailed descriptions, conditions, evidence types, periodicity, and jurisdiction.
+-- along with detailed descriptions, conditions, evidence types, periodicity, acceptance criteria, and jurisdiction.
 CREATE TABLE IF NOT EXISTS requirements (
     id INT AUTO_INCREMENT PRIMARY KEY,
     subject_id INT NOT NULL,
-    requirement_number VARCHAR(255) NOT NULL,
+    requirement_number INT NOT NULL,
     requirement_name VARCHAR(255) NOT NULL,
     mandatory_description LONGTEXT NOT NULL,
     complementary_description LONGTEXT NOT NULL,
@@ -181,7 +121,12 @@ CREATE TABLE IF NOT EXISTS requirements (
         'Recomendación',
         'Pendiente'
     ) NOT NULL,
-    evidence ENUM('Trámite', 'Registro', 'Específica', 'Documento') NOT NULL,
+    evidence ENUM(
+        'Trámite',
+        'Registro',
+        'Específica',
+        'Documento'
+    ) NOT NULL,
     specify_evidence VARCHAR(255),
     periodicity ENUM(
         'Anual',
@@ -190,6 +135,7 @@ CREATE TABLE IF NOT EXISTS requirements (
         'Única vez',
         'Específica'
     ) NOT NULL,
+    acceptance_criteria TEXT NOT NULL,
     FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE RESTRICT,
     FULLTEXT(mandatory_description),
     FULLTEXT(complementary_description),
@@ -215,7 +161,6 @@ CREATE TABLE IF NOT EXISTS requirement_subject_aspect (
     FOREIGN KEY (aspect_id) REFERENCES aspects(id) ON DELETE RESTRICT
 );
 
-
 -- Table: requirement_types
 -- Description: This table stores the types of requirements that can be associated with identificacion requirements.
 -- including the type name,  description and a classification.
@@ -229,7 +174,7 @@ CREATE TABLE IF NOT EXISTS requirement_types (
 );
 
 -- Table: legal_verbs
--- Description: Esta tabla almacena los verbos legales junto con su descripción y su traducción.
+-- Description: This table stores legal verbs along with their description and translation.
 CREATE TABLE IF NOT EXISTS legal_verbs (
   id INT AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(255) NOT NULL,
@@ -237,4 +182,74 @@ CREATE TABLE IF NOT EXISTS legal_verbs (
   translation LONGTEXT NOT NULL,
   FULLTEXT (description),
   FULLTEXT (translation)
+);
+
+-- Table: req_identifications
+-- Description: Metadata of a legal requirements identification analysis.
+CREATE TABLE IF NOT EXISTS req_identifications (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    user_id BIGINT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    status ENUM('Active', 'Failed', 'Completed') DEFAULT 'Active',
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
+    FULLTEXT KEY idx_req_identifications_description (description)
+);
+
+-- Table: req_identifications_requirements
+-- Description: All requirements included in a given identification.
+CREATE TABLE IF NOT EXISTS req_identifications_requirements (
+    req_identification_id INT NOT NULL,  
+    requirement_id INT NOT NULL,
+    requirement_name VARCHAR(255) NOT NULL,
+    requirement_type_id INT,
+    PRIMARY KEY (req_identification_id, requirement_id),
+    FOREIGN KEY (req_identification_id) REFERENCES req_identifications(id) ON DELETE CASCADE,
+    FOREIGN KEY (requirement_id) REFERENCES requirements(id) ON DELETE RESTRICT,
+    FOREIGN KEY (requirement_type_id) REFERENCES requirement_types(id) ON DELETE RESTRICT
+);
+
+-- Table: req_identifications_requirement_legal_verbs
+-- Description: Translated legal verb outputs for each requirement in an identification.
+CREATE TABLE IF NOT EXISTS req_identifications_requirement_legal_verbs (
+    req_identification_id INT NOT NULL,
+    requirement_id INT NOT NULL,
+    legal_verb_id INT NOT NULL,
+    translation LONGTEXT NOT NULL,  
+    PRIMARY KEY (req_identification_id, requirement_id, legal_verb_id),
+    FOREIGN KEY (req_identification_id, requirement_id)
+        REFERENCES req_identifications_requirements(req_identification_id, requirement_id)
+        ON DELETE CASCADE,
+    FOREIGN KEY (legal_verb_id) REFERENCES legal_verbs(id) ON DELETE CASCADE
+);
+
+
+-- Table: req_identifications_requirement_legal_basis
+-- Description: Legal basis that justifies each requirement.
+CREATE TABLE IF NOT EXISTS req_identifications_requirement_legal_basis (
+    req_identification_id INT NOT NULL,  
+    requirement_id INT NOT NULL,                 
+    legal_basis_id INT NOT NULL,                 
+    PRIMARY KEY (req_identification_id, requirement_id, legal_basis_id),
+    FOREIGN KEY (req_identification_id, requirement_id)
+        REFERENCES req_identifications_requirements(req_identification_id, requirement_id)
+        ON DELETE CASCADE,
+    FOREIGN KEY (legal_basis_id) REFERENCES legal_basis(id) ON DELETE RESTRICT
+);
+
+-- Table: req_identifications_requirement_legal_basis_articles
+-- Description: Articles related to a requirement under a legal basis.
+CREATE TABLE IF NOT EXISTS req_identifications_requirement_legal_basis_articles (
+    req_identification_id INT NOT NULL,  
+    requirement_id INT NOT NULL,                 
+    legal_basis_id INT NOT NULL,                 
+    article_id INT NOT NULL,                     
+    article_type ENUM('mandatory', 'complementary', 'general') NOT NULL DEFAULT 'general',
+    PRIMARY KEY (req_identification_id, requirement_id, legal_basis_id, article_id),
+    FOREIGN KEY (req_identification_id, requirement_id)
+        REFERENCES req_identifications_requirements(req_identification_id, requirement_id)
+        ON DELETE CASCADE,
+    FOREIGN KEY (legal_basis_id) REFERENCES legal_basis(id) ON DELETE RESTRICT,
+    FOREIGN KEY (article_id) REFERENCES article(id) ON DELETE CASCADE
 );

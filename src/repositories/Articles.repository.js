@@ -7,20 +7,20 @@ import Article from '../models/Article.model.js'
  */
 class ArticlesRepository {
   /**
- * Inserts an article associated with a legal basis into the database.
- *
- * This function stores both the HTML content and its plain text equivalent
- * for efficient searches and display purposes.
- *
- * @param {number} legalBasisId - The ID of the legal basis to associate the article with.
- * @param {Object} article - The article to insert.
- * @param {string} article.title - The title of the article.
- * @param {string} article.article - The HTML content of the article.
- * @param {string} article.plainArticle - The plain text equivalent of the article content.
- * @param {number} article.order - The order of the article.
- * @returns {Promise<Article>} - Returns the created Article instance.
- * @throws {HttpException} - If an error occurs during insertion.
- */
+   * Inserts an article associated with a legal basis into the database.
+   *
+   * This function stores both the HTML content and its plain text equivalent
+   * for efficient searches and display purposes.
+   *
+   * @param {number} legalBasisId - The ID of the legal basis to associate the article with.
+   * @param {Object} article - The article to insert.
+   * @param {string} article.title - The title of the article.
+   * @param {string} article.article - The HTML content of the article.
+   * @param {string} article.plainArticle - The plain text equivalent of the article content.
+   * @param {number} article.order - The order of the article.
+   * @returns {Promise<Article>} - Returns the created Article instance.
+   * @throws {HttpException} - If an error occurs during insertion.
+   */
   static async create (legalBasisId, article) {
     const query = `
     INSERT INTO article (legal_basis_id, article_name, description, plain_description, article_order)
@@ -44,20 +44,20 @@ class ArticlesRepository {
   }
 
   /**
- * Inserts multiple articles associated with a legal basis into the database.
- *
- * This function stores both the HTML content and its plain text equivalent
- * for efficient searches and display purposes.
- *
- * @param {number} legalBasisId - The ID of the legal basis.
- * @param {Array<Object>} articles - The list of articles to insert.
- * @param {string} articles[].title - The title of the article.
- * @param {string} articles[].article - The HTML content of the article.
- * @param {string} articles[].plainArticle - The plain text equivalent of the article content.
- * @param {number} articles[].order - The order of the article.
- * @returns {Promise<boolean>} - Returns true if insertion is successful, false otherwise.
- * @throws {HttpException} - If an error occurs during insertion.
- */
+   * Inserts multiple articles associated with a legal basis into the database.
+   *
+   * This function stores both the HTML content and its plain text equivalent
+   * for efficient searches and display purposes.
+   *
+   * @param {number} legalBasisId - The ID of the legal basis.
+   * @param {Array<Object>} articles - The list of articles to insert.
+   * @param {string} articles[].title - The title of the article.
+   * @param {string} articles[].article - The HTML content of the article.
+   * @param {string} articles[].plainArticle - The plain text equivalent of the article content.
+   * @param {number} articles[].order - The order of the article.
+   * @returns {Promise<boolean>} - Returns true if insertion is successful, false otherwise.
+   * @throws {HttpException} - If an error occurs during insertion.
+   */
   static async createMany (legalBasisId, articles) {
     if (articles.length === 0) {
       return false
@@ -81,7 +81,10 @@ class ArticlesRepository {
       return true
     } catch (error) {
       console.error('Error inserting articles:', error.message)
-      throw new HttpException(500, 'Error inserting articles into the database')
+      throw new HttpException(
+        500,
+        'Error inserting articles into the database'
+      )
     }
   }
 
@@ -115,11 +118,11 @@ class ArticlesRepository {
   }
 
   /**
- * Finds articles in the database using an array of IDs.
- * @param {Array<number>} articleIds - Array of article IDs to find.
- * @returns {Promise<Array<Article>>} - Array of Article instances matching the provided IDs.
- * @throws {HttpException} - If an error occurs during retrieval.
- */
+   * Finds articles in the database using an array of IDs.
+   * @param {Array<number>} articleIds - Array of article IDs to find.
+   * @returns {Promise<Array<Article>>} - Array of Article instances matching the provided IDs.
+   * @throws {HttpException} - If an error occurs during retrieval.
+   */
   static async findByIds (articleIds) {
     if (articleIds.length === 0) {
       return []
@@ -143,7 +146,10 @@ class ArticlesRepository {
       )
     } catch (error) {
       console.error('Error finding articles by IDs:', error.message)
-      throw new HttpException(500, 'Error finding articles by IDs from the database')
+      throw new HttpException(
+        500,
+        'Error finding articles by IDs from the database'
+      )
     }
   }
 
@@ -151,7 +157,7 @@ class ArticlesRepository {
    * Fetches articles associated with a specific legal basis, ordered by 'article_order'.
    * Returns a list of Article instances.
    * @param {number} legalBasisId - The ID of the legal basis.
-   * @returns {Promise<Array<Article|null>>} - The list of ordered Article instances.
+   * @returns {Promise<Article[] | null>} - The list of ordered Article instances.
    * @throws {HttpException} - If an error occurs during retrieval.
    */
   static async findByLegalBasisId (legalBasisId) {
@@ -183,12 +189,12 @@ class ArticlesRepository {
   }
 
   /**
- * Retrieves articles by name or partial name for a specific legal basis from the database.
- * @param {number} legalBasisId - The ID of the legal basis to filter articles by.
- * @param {string} articleName - The name or part of the name of the article to retrieve.
- * @returns {Promise<Array<Article|null>>} - A list of Article instances matching the name for the given legal basis.
- * @throws {HttpException} - If an error occurs during retrieval.
- */
+   * Retrieves articles by name or partial name for a specific legal basis from the database.
+   * @param {number} legalBasisId - The ID of the legal basis to filter articles by.
+   * @param {string} articleName - The name or part of the name of the article to retrieve.
+   * @returns {Promise<Article[] | null>} - A list of Article instances matching the name for the given legal basis.
+   * @throws {HttpException} - If an error occurs during retrieval.
+   */
   static async findByName (legalBasisId, articleName) {
     const query = `
     SELECT id, legal_basis_id, article_name, description, plain_description, article_order
@@ -197,7 +203,10 @@ class ArticlesRepository {
     ORDER BY article_order
   `
     try {
-      const [rows] = await pool.query(query, [legalBasisId, `%${articleName}%`])
+      const [rows] = await pool.query(query, [
+        legalBasisId,
+        `%${articleName}%`
+      ])
       if (rows.length === 0) return null
       return rows.map(
         (row) =>
@@ -216,12 +225,12 @@ class ArticlesRepository {
   }
 
   /**
- * Retrieves articles by a partial or flexible match in their description for a specific legal basis from the database.
- * @param {number} legalBasisId - The ID of the legal basis to filter articles by.
- * @param {string} description - The description or part of the description to search for.
- * @returns {Promise<Array<Article|null>>} - A list of Article instances matching the description for the given legal basis.
- * @throws {HttpException} - If an error occurs during retrieval.
- */
+   * Retrieves articles by a partial or flexible match in their description for a specific legal basis from the database.
+   * @param {number} legalBasisId - The ID of the legal basis to filter articles by.
+   * @param {string} description - The description or part of the description to search for.
+   * @returns {Promise<Article[] | null>} - A list of Article instances matching the description for the given legal basis.
+   * @throws {HttpException} - If an error occurs during retrieval.
+   */
   static async findByDescription (legalBasisId, description) {
     try {
       const query = `
@@ -249,16 +258,16 @@ class ArticlesRepository {
   }
 
   /**
- * Updates an article by its ID.
- * @param {number} id - The ID of the article to update.
- * @param {Object} article - The updated article data.
- * @param {string|null} article.title - The new title of the article, or null to keep the current title.
- * @param {string|null} article.article - The new content of the article, or null to keep the current content.
- * @param {string|null} article.plainArticle - The plain text equivalent of the article content.
- * @param {number|null} article.order - The new order of the article, or null to keep the current order.
- * @returns {Promise<boolean|Article>} - Returns the updated Article instance if successful, false otherwise.
- * @throws {HttpException} - If an error occurs during update.
- */
+   * Updates an article by its ID.
+   * @param {number} id - The ID of the article to update.
+   * @param {Object} article - The updated article data.
+   * @param {string|null} article.title - The new title of the article, or null to keep the current title.
+   * @param {string|null} article.article - The new content of the article, or null to keep the current content.
+   * @param {string|null} article.plainArticle - The plain text equivalent of the article content.
+   * @param {number|null} article.order - The new order of the article, or null to keep the current order.
+   * @returns {Promise<boolean|Article>} - Returns the updated Article instance if successful, false otherwise.
+   * @throws {HttpException} - If an error occurs during update.
+   */
   static async updateById (id, article) {
     const query = `
     UPDATE article
@@ -269,7 +278,13 @@ class ArticlesRepository {
       article_order = IFNULL(?, article_order)
     WHERE id = ?
   `
-    const values = [article.title, article.article, article.plainArticle, article.order, id]
+    const values = [
+      article.title,
+      article.article,
+      article.plainArticle,
+      article.order,
+      id
+    ]
     try {
       const [rows] = await pool.query(query, values)
       if (rows.affectedRows === 0) {
@@ -284,11 +299,11 @@ class ArticlesRepository {
   }
 
   /**
- * Deletes an article by its ID.
- * @param {number} id - The ID of the article to delete.
- * @returns {Promise<boolean>} - Returns true if the deletion is successful, false otherwise.
- * @throws {HttpException} - If an error occurs during deletion.
- */
+   * Deletes an article by its ID.
+   * @param {number} id - The ID of the article to delete.
+   * @returns {Promise<boolean>} - Returns true if the deletion is successful, false otherwise.
+   * @throws {HttpException} - If an error occurs during deletion.
+   */
   static async deleteById (id) {
     const query = `
     DELETE FROM article
@@ -307,11 +322,11 @@ class ArticlesRepository {
   }
 
   /**
- * Deletes multiple articles from the database using an array of IDs.
- * @param {Array<number>} articleIds - Array of article IDs to delete.
- * @returns {Promise<boolean>} - True if articles were deleted, otherwise false.
- * @throws {HttpException} - If an error occurs during the deletion.
- */
+   * Deletes multiple articles from the database using an array of IDs.
+   * @param {Array<number>} articleIds - Array of article IDs to delete.
+   * @returns {Promise<boolean>} - True if articles were deleted, otherwise false.
+   * @throws {HttpException} - If an error occurs during the deletion.
+   */
   static async deleteBatch (articleIds) {
     const query = `
     DELETE FROM article WHERE id IN (?)
@@ -329,16 +344,91 @@ class ArticlesRepository {
   }
 
   /**
- * Deletes all articles from the database.
- * @returns {Promise<void>}
- * @throws {HttpException} - If an error occurs during deletion.
- */
+   * Deletes all articles from the database.
+   * @returns {Promise<void>}
+   * @throws {HttpException} - If an error occurs during deletion.
+   */
   static async deleteAll () {
     try {
       await pool.query('DELETE FROM article')
     } catch (error) {
       console.error('Error deleting all articles:', error.message)
-      throw new HttpException(500, 'Error deleting all articles from the database')
+      throw new HttpException(
+        500,
+        'Error deleting all articles from the database'
+      )
+    }
+  }
+
+  /**
+   * Checks if an article is associated with any requirement identification.
+   * @param {number} articleId - The ID of the article to check.
+   * @returns {Promise<{ isAssociatedToReqIdentifications: boolean }>}
+   * @throws {HttpException}
+   */
+  static async checkReqIdentificationAssociations (articleId) {
+    try {
+      const [rows] = await pool.query(
+        `
+      SELECT COUNT(*) AS identificationCount
+      FROM req_identifications_requirement_legal_basis_articles
+      WHERE article_id = ?
+      `,
+        [articleId]
+      )
+
+      return {
+        isAssociatedToReqIdentifications: rows[0].identificationCount > 0
+      }
+    } catch (error) {
+      console.error(
+        'Error checking article-identification associations:',
+        error.message
+      )
+      throw new HttpException(
+        500,
+        'Error checking article associations with identifications'
+      )
+    }
+  }
+
+  /**
+   * Checks if any of the given articles are associated with requirement identifications.
+   * @param {Array<number>} articleIds - Array of article IDs to check.
+   * @returns {Promise<Array<{ id: number, name: string, isAssociatedToReqIdentifications: boolean }>>}
+   * @throws {HttpException}
+   */
+  static async checkReqIdentificationAssociationsBatch (articleIds) {
+    try {
+      const [rows] = await pool.query(
+        `
+      SELECT 
+        a.id AS articleId,
+        a.article_name AS articleName,
+        COUNT(rirlba.req_identification_id) AS identificationCount
+      FROM article a
+      LEFT JOIN req_identifications_requirement_legal_basis_articles rirlba
+        ON a.id = rirlba.article_id
+      WHERE a.id IN (?)
+      GROUP BY a.id
+      `,
+        [articleIds]
+      )
+
+      return rows.map((row) => ({
+        id: row.articleId,
+        name: row.articleName,
+        isAssociatedToReqIdentifications: row.identificationCount > 0
+      }))
+    } catch (error) {
+      console.error(
+        'Error checking batch article-identification associations:',
+        error.message
+      )
+      throw new HttpException(
+        500,
+        'Error checking batch article associations with identifications'
+      )
     }
   }
 }

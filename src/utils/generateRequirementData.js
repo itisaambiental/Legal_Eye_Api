@@ -6,7 +6,7 @@
  */
 export default function generateRequirementData (overrides = {}) {
   const defaultData = {
-    requirementNumber: 'REQ-001',
+    requirementNumber: 1,
     requirementName: 'Test Requirement',
     mandatoryDescription: 'This is a mandatory description.',
     complementaryDescription: 'This is a complementary description.',
@@ -16,7 +16,8 @@ export default function generateRequirementData (overrides = {}) {
     complementaryKeywords: 'Complementary, Requirement',
     condition: 'Crítica',
     evidence: 'Documento',
-    periodicity: 'Anual'
+    periodicity: 'Anual',
+    acceptanceCriteria: 'Criteria'
   }
 
   const data = { ...defaultData, ...overrides }

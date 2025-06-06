@@ -8,46 +8,49 @@ const requirementSchema = z
   .object({
     /**
      * ID of the associated subject.
-     * Must be a string convertible to a number.
+     * Must be a number (can be passed as string and coerced).
      */
-    subjectId: z
-      .string()
-      .refine(
-        (val) => !isNaN(Number(val)),
-        'The subjectId must be a valid number'
-      )
-      .transform((val) => Number(val)),
+    subjectId: z.coerce
+      .number({ invalid_type_error: 'The subjectId must be a valid number' })
+      // Si coerciona a NaN, forzamos un error con este mensaje:
+      .refine((val) => !Number.isNaN(val), {
+        message: 'The subjectId must be a valid number'
+      }),
 
     /**
      * IDs of the associated aspects.
-     * Must be a stringified JSON array of numbers.
      */
-    aspectsIds: z.string()
-      .refine((val) => {
-        try {
-          const parsedArray = JSON.parse(val)
-          return (
-            Array.isArray(parsedArray) &&
-            parsedArray.every((item) => typeof item === 'number')
-          )
-        } catch {
-          return false
+    aspectsIds: z.preprocess(
+      (val) => {
+        if (typeof val === 'string') {
+          try {
+            return JSON.parse(val)
+          } catch {
+            return val
+          }
         }
-      }, 'Each aspectId must be a valid array of numbers')
-      .transform((val) => z.array(z.number()).parse(JSON.parse(val)))
-      .refine(
-        (val) => val.length > 0,
-        'aspectsIds must contain at least one number'
-      ),
+        return val
+      },
+      z
+        .array(
+          z
+            .number({
+              invalid_type_error: 'Each aspect ID must be a number'
+            })
+            .int('Each aspect ID must be an integer')
+        )
+        .min(1, {
+          message: 'aspectsIds must contain at least one number'
+        })
+    ),
 
     /**
-     * Unique requirement number (clave).
-     * Must be a non-empty string with a maximum of 255 characters.
+     * Requirement number.
      */
-    requirementNumber: z
-      .string()
-      .min(1, 'The requirement number is required')
-      .max(255, 'The requirement number cannot exceed 255 characters'),
+    requirementNumber: z.coerce
+      .number({ invalid_type_error: 'The requirementNumber must be a number' })
+      .int('The requirementNumber must be an integer')
+      .positive('The requirementNumber must be greater than 0'),
 
     /**
      * Name or title of the requirement.
@@ -108,7 +111,7 @@ const requirementSchema = z
 
     /**
      * Condition or criticality level of the requirement.
-     * Must be one of the following: Crítica, Operativa, Recomendación, Pendiente.
+     * Must be one of: Crítica, Operativa, Recomendación, Pendiente.
      */
     condition: z.enum(['Crítica', 'Operativa', 'Recomendación', 'Pendiente'], {
       message:
@@ -117,7 +120,7 @@ const requirementSchema = z
 
     /**
      * Type of evidence required for the requirement.
-     * Must be one of the following: Trámite, Registro, Específica, Documento.
+     * Must be one of: Trámite, Registro, Específica, Documento.
      */
     evidence: z.enum(['Trámite', 'Registro', 'Específica', 'Documento'], {
       message:
@@ -126,28 +129,36 @@ const requirementSchema = z
 
     /**
      * If evidence is "Específica", this field must contain a description.
-     * Must be a string with a max of 255 characters.
      * Optional otherwise.
      */
     specifyEvidence: z
       .string()
       .max(255, 'The specifyEvidence field cannot exceed 255 characters')
+      .nullable()
       .optional(),
 
     /**
      * Periodicity of the requirement.
-     * Must be one of the following: Anual, 2 años, Por evento, Única vez, Específica.
+     * Must be one of: Anual, 2 años, Por evento, Única vez, Específica.
      */
     periodicity: z.enum(['Anual', '2 años', 'Por evento', 'Única vez', 'Específica'], {
       message:
-        'The periodicity must be one of the following: Anual, 2 años, Por evento, Única vez.'
-    })
+        'The periodicity must be one of the following: Anual, 2 años, Por evento, Única vez, Específica'
+    }),
+
+    /**
+     * Acceptance criteria for the requirement.
+     * Must be a non-empty string.
+     */
+    acceptanceCriteria: z
+      .string()
+      .min(1, 'The acceptance criteria is required.')
   })
   .superRefine((data, context) => {
     /**
-     * Custom validations:
-     * - If evidence is "Específica", then specifyEvidence is required.
-     * - If evidence is not "Específica", then specifyEvidence must be empty or undefined.
+     * Custom validation rules:
+     * - If evidence is "Específica", specifyEvidence must be provided.
+     * - If evidence is not "Específica", specifyEvidence must be empty or undefined.
      */
     if (data.evidence === 'Específica') {
       if (!data.specifyEvidence || data.specifyEvidence.trim() === '') {

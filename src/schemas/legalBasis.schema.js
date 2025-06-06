@@ -29,35 +29,38 @@ const legalBasisSchema = z
      * Subject ID associated with the legal basis.
      * Must be a string that can be converted to a valid number.
      */
-    subjectId: z
-      .string()
-      .refine(
-        (val) => !isNaN(Number(val)),
-        'The subjectId must be a valid number'
-      )
-      .transform((val) => Number(val)),
+    subjectId: z.coerce
+      .number({ invalid_type_error: 'The subjectId must be a valid number' })
+      .refine((val) => Number.isInteger(val), {
+        message: 'The subjectId must be a valid number'
+      }),
 
     /**
-     * Aspects IDs associated with the legal basis.
-     * Must be a stringified JSON array of valid numbers.
+     * IDs of the associated aspects.
      */
-    aspectsIds: z.string()
-      .refine((val) => {
-        try {
-          const parsedArray = JSON.parse(val)
-          return (
-            Array.isArray(parsedArray) &&
-        parsedArray.every((item) => typeof item === 'number')
-          )
-        } catch {
-          return false
+    aspectsIds: z.preprocess(
+      (val) => {
+        if (typeof val === 'string') {
+          try {
+            return JSON.parse(val)
+          } catch {
+            return val
+          }
         }
-      }, 'Each aspectId must be a valid array of numbers')
-      .transform((val) => z.array(z.number()).parse(JSON.parse(val)))
-      .refine(
-        (val) => val.length > 0,
-        'aspectsIds must contain at least one number'
-      ),
+        return val
+      },
+      z
+        .array(
+          z
+            .number({
+              invalid_type_error: 'Each aspect ID must be a number'
+            })
+            .int('Each aspect ID must be an integer')
+        )
+        .min(1, {
+          message: 'aspectsIds must contain at least one number'
+        })
+    ),
 
     /**
      * Classification of the legal basis.

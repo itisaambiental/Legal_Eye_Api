@@ -25,14 +25,11 @@ const singleArticleSchema = z.object({
 
   /**
    * The order of the article.
-   * Must be a number greater than 0.
    */
-  order: z.preprocess(
-    (value) => (typeof value === 'string' ? Number(value) : value),
-    z
-      .number({ message: 'The order must be a valid number' })
-      .positive('The order must be greater than 0')
-  )
+  order: z.coerce
+    .number({ invalid_type_error: 'The order must be a number' })
+    .int('The order must be an integer')
+    .positive('The order must be greater than 0')
 })
 
 /**
@@ -86,4 +83,9 @@ const sectionsResponseSchema = z.object({
   isValid: z.boolean()
 })
 
-export { singleArticleSchema, articlesSchema, singleArticleModelSchema, sectionsResponseSchema }
+export {
+  singleArticleSchema,
+  articlesSchema,
+  singleArticleModelSchema,
+  sectionsResponseSchema
+}

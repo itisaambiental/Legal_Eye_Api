@@ -2,6 +2,7 @@ import RequirementRepository from '../../repositories/Requirements.repository.js
 import requirementSchema from '../../schemas/requirement.schema.js'
 import SubjectsRepository from '../../repositories/Subject.repository.js'
 import AspectsRepository from '../../repositories/Aspects.repository.js'
+import ReqIdentificationQueueService from '../../services/reqIdentification/ReqIdentificationQueue/ReqIdentificationQueue.service.js'
 import HttpException from '../errors/HttpException.js'
 import { z } from 'zod'
 
@@ -10,55 +11,70 @@ import { z } from 'zod'
  */
 class RequirementService {
   /**
- * @typedef {Object} Requirement
-  * @property {number} id - The unique identifier of the requirement.
-  * @property {Object} subject - The subject associated with the requirement.
-  * @property {number} subject.subject_id - The ID of the subject.
-  * @property {string} subject.subject_name - The name of the subject.
-  * @property {Array<Object>} aspects - The aspects associated with the requirement.
-  * @property {number} aspects[].aspect_id - The ID of the aspect.
-  * @property {string} aspects[].aspect_name - The name of the aspect.
-  * @property {string} requirement_number - The unique number identifying the requirement.
-  * @property {string} requirement_name - The name of the requirement.
-  * @property {string} mandatory_description - The mandatory description of the requirement.
-  * @property {string} complementary_description - The complementary description of the requirement.
-  * @property {string} mandatory_sentences - The mandatory legal sentences related to the requirement.
-  * @property {string} complementary_sentences - The complementary legal sentences related to the requirement.
-  * @property {string} mandatory_keywords - Keywords related to the mandatory aspect of the requirement.
-  * @property {string} complementary_keywords - Keywords related to the complementary aspect of the requirement.
-  * @property {string} condition - The condition type ('Crítica', 'Operativa', 'Recomendación', 'Pendiente').
-  * @property {string} evidence - The type of evidence ('Trámite', 'Registro', 'Específica', 'Documento').
-  * @property {string} specify_evidence - The description of the specific evidence.
-  * @property {string} formatted_evidence - The formatted evidence.
-  * @property {string} periodicity - The specific periodicity.
-  * @property {string} specify_periodicity - The description of the specific periodicity.
- */
+   * @typedef {Object} Aspect
+   * @property {number} aspect_id - The ID of the aspect.
+   * @property {string} aspect_name - The name of the aspect.
+   * @property {string} [abbreviation] - Optional abbreviation for the aspect.
+   * @property {number} [order_index] - Optional order index for the aspect.
+   */
 
   /**
-  * @typedef {import('../../models/Requirement.model.js').default} RequirementModel
- */
+   * @typedef {Object} Subject
+   * @property {number} subject_id - The ID of the subject.
+   * @property {string} subject_name - The name of the subject.
+   * @property {string} [abbreviation] - Optional abbreviation for the subject.
+   * @property {number} [order_index] - Optional order index for the subject.
+   */
 
   /**
- * Formats a single requirement by concatenating `evidence` and `periodicity`
- * if their value is 'Específica'. Removes `specify_evidence` and `specify_periodicity` from the output.
- * @param {RequirementModel} requirement - A single requirement model instance.
- * @returns {Requirement} - The formatted requirement.
- */
+   * @typedef {Object} Requirement
+   * @property {number} id - The unique identifier of the requirement.
+   * @property {Subject} subject - The subject associated with the requirement.
+   * @property {Aspect[]} aspects - The aspects associated with the requirement.
+   * @property {number} requirement_number - The unique number identifying the requirement.
+   * @property {string} requirement_name - The name of the requirement.
+   * @property {string} mandatory_description - The mandatory description of the requirement.
+   * @property {string} complementary_description - The complementary description of the requirement.
+   * @property {string} mandatory_sentences - The mandatory legal sentences related to the requirement.
+   * @property {string} complementary_sentences - The complementary legal sentences related to the requirement.
+   * @property {string} mandatory_keywords - Keywords related to the mandatory aspect of the requirement.
+   * @property {string} complementary_keywords - Keywords related to the complementary aspect of the requirement.
+   * @property {string} condition - The condition type ('Crítica', 'Operativa', 'Recomendación', 'Pendiente').
+   * @property {string} evidence - The type of evidence ('Trámite', 'Registro', 'Específica', 'Documento').
+   * @property {string} specify_evidence - The description of the specific evidence.
+   * @property {string} formatted_evidence - The formatted evidence.
+   * @property {string} periodicity - The specific periodicity.
+   * @property {string} specify_periodicity - The description of the specific periodicity.
+   * @property {string} acceptance_criteria - The acceptance criteria for the requirement.
+   */
+
+  /**
+   * @typedef {import('../../models/Requirement.model.js').default} RequirementModel
+   */
+
+  /**
+   * Formats a single requirement by concatenating `evidence` and `periodicity`
+   * if their value is 'Específica'. Removes `specify_evidence` and `specify_periodicity` from the output.
+   * @param {RequirementModel} requirement - A single requirement model instance.
+   * @returns {Requirement} - The formatted requirement.
+   */
   static _formatRequirementWithSpecificValues (requirement) {
     return {
       ...requirement,
       formatted_evidence:
         requirement.evidence === 'Específica'
-          ? `${requirement.evidence} - ${requirement.specify_evidence || ''}`.trim()
+          ? `${requirement.evidence} - ${
+              requirement.specify_evidence || ''
+            }`.trim()
           : requirement.evidence
     }
   }
 
   /**
- * Formats a list of requirements by applying concatenation rules for 'Específica' values.
- * @param {RequirementModel[]} requirements - List of requirement model instances.
- * @returns {Requirement[]} List of formatted requirements.
- */
+   * Formats a list of requirements by applying concatenation rules for 'Específica' values.
+   * @param {RequirementModel[]} requirements - List of requirement model instances.
+   * @returns {Requirement[]} List of formatted requirements.
+   */
   static _formatRequirementsListWithSpecificValues (requirements) {
     return requirements.map(this._formatRequirementWithSpecificValues)
   }
@@ -69,7 +85,7 @@ class RequirementService {
    * @param {Object} requirement - Parameters for creating a requirement.
    * @param {number} requirement.subjectId - The subject ID.
    * @param {number[]} requirement.aspectsIds - The aspects IDs.
-   * @param {string} requirement.requirementNumber - The requirement number.
+   * @param {number} requirement.requirementNumber - The requirement number.
    * @param {string} requirement.requirementName - The requirement name.
    * @param {string} requirement.mandatoryDescription - The mandatory description.
    * @param {string} requirement.complementaryDescription - The complementary description.
@@ -81,6 +97,7 @@ class RequirementService {
    * @param {string} requirement.evidence - 'Trámite', etc.
    * @param {string} requirement.specifyEvidence - The description of the specific evidence.
    * @param {string} requirement.periodicity - 'Anual', etc.
+   * @param {string} requirement.acceptanceCriteria - The acceptance criteria.
    * @returns {Promise<Requirement>} - The created requirement.
    * @throws {HttpException} - If an error occurs during validation or creation.
    */
@@ -100,14 +117,9 @@ class RequirementService {
         const notFoundIds = parsedRequirement.aspectsIds.filter(
           (id) => !validAspectIds.includes(id)
         )
-        throw new HttpException(404, 'Aspects not found for IDs', { notFoundIds })
-      }
-      const requirementExistsByNumber =
-        await RequirementRepository.existsByRequirementNumber(
-          parsedRequirement.requirementNumber
-        )
-      if (requirementExistsByNumber) {
-        throw new HttpException(409, 'Requirement number already exists')
+        throw new HttpException(404, 'Aspects not found for IDs', {
+          notFoundIds
+        })
       }
       const requirementExistsByName =
         await RequirementRepository.existsByRequirementName(
@@ -119,7 +131,9 @@ class RequirementService {
       const createdRequirement = await RequirementRepository.create(
         parsedRequirement
       )
-      return RequirementService._formatRequirementWithSpecificValues(createdRequirement)
+      return RequirementService._formatRequirementWithSpecificValues(
+        createdRequirement
+      )
     } catch (error) {
       if (error instanceof HttpException) {
         throw error
@@ -131,15 +145,18 @@ class RequirementService {
         }))
         throw new HttpException(400, 'Validation failed', validationErrors)
       }
-      throw new HttpException(500, 'Unexpected error during requirement creation')
+      throw new HttpException(
+        500,
+        'Unexpected error during requirement creation'
+      )
     }
   }
 
   /**
- * Retrieves all requirements from the database.
- * @returns {Promise<Array<Requirement>>} - A list of all requirements.
- * @throws {HttpException} - If an error occurs during retrieval.
- */
+   * Retrieves all requirements from the database.
+   * @returns {Promise<Array<Requirement>>} - A list of all requirements.
+   * @throws {HttpException} - If an error occurs during retrieval.
+   */
   static async getAll () {
     try {
       const requirements = await RequirementRepository.findAll()
@@ -172,13 +189,16 @@ class RequirementService {
       if (error instanceof HttpException) {
         throw error
       }
-      throw new HttpException(500, 'Failed to retrieve requirement record by ID')
+      throw new HttpException(
+        500,
+        'Failed to retrieve requirement record by ID'
+      )
     }
   }
 
   /**
-   * Retrieves requirements by their requirement number or part of it.
-   * @param {string} requirementNumber - The requirement number or partial match.
+   * Retrieves requirements by their requirement number.
+   * @param {number} requirementNumber - The requirement number.
    * @returns {Promise<Array<Requirement>>} - A list of matching requirements.
    * @throws {HttpException} - If an error occurs during retrieval.
    */
@@ -243,7 +263,10 @@ class RequirementService {
       if (error instanceof HttpException) {
         throw error
       }
-      throw new HttpException(500, 'Failed to retrieve requirements by subject')
+      throw new HttpException(
+        500,
+        'Failed to retrieve requirements by subject'
+      )
     }
   }
 
@@ -265,7 +288,9 @@ class RequirementService {
         const notFoundIds = aspectIds.filter(
           (id) => !existingAspects.some((aspect) => aspect.id === id)
         )
-        throw new HttpException(404, 'Aspects not found for IDs', { notFoundIds })
+        throw new HttpException(404, 'Aspects not found for IDs', {
+          notFoundIds
+        })
       }
       const requirements = await RequirementRepository.findBySubjectAndAspects(
         subjectId,
@@ -421,7 +446,8 @@ class RequirementService {
    */
   static async getByComplementaryKeywords (keyword) {
     try {
-      const requirements = await RequirementRepository.findByComplementaryKeywords(keyword)
+      const requirements =
+        await RequirementRepository.findByComplementaryKeywords(keyword)
       if (!requirements) {
         return []
       }
@@ -456,7 +482,10 @@ class RequirementService {
       if (error instanceof HttpException) {
         throw error
       }
-      throw new HttpException(500, 'Failed to retrieve requirements by condition')
+      throw new HttpException(
+        500,
+        'Failed to retrieve requirements by condition'
+      )
     }
   }
 
@@ -511,13 +540,39 @@ class RequirementService {
   }
 
   /**
+   * Retrieves requirements filtered by a specific acceptance criteria.
+   * @param {string} acceptanceCriteria - The acceptance criteria text to filter by.
+   * @returns {Promise<Array<Requirement>>} - A list of Requirement instances matching the acceptance criteria.
+   * @throws {HttpException} - If an error occurs during retrieval.
+   */
+  static async getByAcceptanceCriteria (acceptanceCriteria) {
+    try {
+      const requirements = await RequirementRepository.findByAcceptanceCriteria(
+        acceptanceCriteria
+      )
+      if (!requirements) {
+        return []
+      }
+      return this._formatRequirementsListWithSpecificValues(requirements)
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error
+      }
+      throw new HttpException(
+        500,
+        'Failed to retrieve requirements by acceptance criteria'
+      )
+    }
+  }
+
+  /**
    * Updates an existing requirement by its ID.
    *
    * @param {number} requirementId - The ID of the requirement to update.
    * @param {Object} requirement - Parameters for updating a requirement.
    * @param {number} [requirement.subjectId] - The updated subject ID (optional).
    * @param {number[]} [requirement.aspectsIds] - The updated aspects IDs (optional).
-   * @param {string} [requirement.requirementNumber] - The updated requirement number (optional).
+   * @param {number} [requirement.requirementNumber] - The updated requirement number (optional).
    * @param {string} [requirement.requirementName] - The updated requirement name (optional).
    * @param {string} [requirement.mandatoryDescription] - The updated mandatory description (optional).
    * @param {string} [requirement.complementaryDescription] - The updated complementary description (optional).
@@ -530,6 +585,7 @@ class RequirementService {
    * @param {string} requirement.specifyPeriodicity - The description of the specific periodicity (optional).
    * @param {string} [requirement.periodicity] - The updated periodicity (optional).
    * @param {string} requirement.specifyEvidence - The description of the specific evidence (optional).
+   * @param {string} [requirement.acceptanceCriteria] - The updated acceptance criteria (optional).
    * @returns {Promise<Requirement>} - The updated requirement.
    * @throws {HttpException} - If an error occurs during validation or update.
    */
@@ -557,17 +613,9 @@ class RequirementService {
         const notFoundIds = parsedRequirement.aspectsIds.filter(
           (id) => !validAspectIds.includes(id)
         )
-        throw new HttpException(404, 'Aspects not found for IDs', { notFoundIds })
-      }
-      if (parsedRequirement.requirementNumber) {
-        const requirementExistsByNumber =
-          await RequirementRepository.existsByNumberExcludingId(
-            parsedRequirement.requirementNumber,
-            requirementId
-          )
-        if (requirementExistsByNumber) {
-          throw new HttpException(409, 'Requirement number already exists')
-        }
+        throw new HttpException(404, 'Aspects not found for IDs', {
+          notFoundIds
+        })
       }
       if (parsedRequirement.requirementName) {
         const requirementExistsByName =
@@ -583,7 +631,9 @@ class RequirementService {
         requirementId,
         parsedRequirement
       )
-      return RequirementService._formatRequirementWithSpecificValues(updatedRequirement)
+      return RequirementService._formatRequirementWithSpecificValues(
+        updatedRequirement
+      )
     } catch (error) {
       if (error instanceof HttpException) {
         throw error
@@ -595,7 +645,10 @@ class RequirementService {
         }))
         throw new HttpException(400, 'Validation failed', validationErrors)
       }
-      throw new HttpException(500, 'Unexpected error during requirement update')
+      throw new HttpException(
+        500,
+        'Unexpected error during requirement update'
+      )
     }
   }
 
@@ -607,11 +660,29 @@ class RequirementService {
    */
   static async deleteById (requirementId) {
     try {
-      const existingRequirement = await RequirementRepository.findById(
-        requirementId
-      )
-      if (!existingRequirement) {
+      const requirement = await RequirementRepository.findById(requirementId)
+      if (!requirement) {
         throw new HttpException(404, 'Requirement not found')
+      }
+      const { isAssociatedToReqIdentifications } =
+        await RequirementRepository.checkReqIdentificationAssociations(
+          requirementId
+        )
+      if (isAssociatedToReqIdentifications) {
+        throw new HttpException(
+          409,
+          'The Requirement is associated with one or more requirement identifications'
+        )
+      }
+      const reqIdentificationJobs =
+        await ReqIdentificationQueueService.hasPendingRequirementJobs(
+          requirementId
+        )
+      if (reqIdentificationJobs.hasPendingJobs) {
+        throw new HttpException(
+          409,
+          'Cannot delete Requirement with pending Requirement Identification jobs'
+        )
       }
       const requirementDeleted = await RequirementRepository.delete(
         requirementId
@@ -624,26 +695,80 @@ class RequirementService {
       if (error instanceof HttpException) {
         throw error
       }
-      throw new HttpException(500, 'Unexpected error during requirement deletion')
+      throw new HttpException(
+        500,
+        'Unexpected error during requirement deletion'
+      )
     }
   }
 
   /**
- * Deletes multiple requirements by their IDs.
- * @param {Array<number>} requirementIds - Array of requirement IDs to delete.
- * @returns {Promise<{ success: boolean }>} - An object indicating whether the deletion was successful.
- * @throws {HttpException} - If requirements not found, have active jobs, or deletion fails.
- */
+   * Deletes multiple requirements by their IDs.
+   * @param {Array<number>} requirementIds - Array of requirement IDs to delete.
+   * @returns {Promise<{ success: boolean }>} - An object indicating whether the deletion was successful.
+   * @throws {HttpException} - If requirements not found, have active jobs, or deletion fails.
+   */
   static async deleteBatch (requirementIds) {
     try {
-      const requirements = await RequirementRepository.findByIds(requirementIds)
+      const requirements = await RequirementRepository.findByIds(
+        requirementIds
+      )
       if (requirements.length !== requirementIds.length) {
         const notFoundIds = requirementIds.filter(
           (id) => !requirements.some((requirement) => requirement.id === id)
         )
-        throw new HttpException(404, 'Requirements not found for IDs', { notFoundIds })
+        throw new HttpException(404, 'Requirements not found for IDs', {
+          notFoundIds
+        })
       }
-      const requirementsDeleted = await RequirementRepository.deleteBatch(requirementIds)
+      const reqIdentificationAssociations =
+        await RequirementRepository.checkReqIdentificationAssociationsBatch(
+          requirementIds
+        )
+      const requirementsWithReqIdentificationAssociations =
+        reqIdentificationAssociations.filter(
+          (requirement) => requirement.isAssociatedToReqIdentifications
+        )
+
+      if (requirementsWithReqIdentificationAssociations.length > 0) {
+        throw new HttpException(
+          409,
+          'Some Requirements are associated with requirement identifications',
+          {
+            requirements: requirementsWithReqIdentificationAssociations.map(
+              (requirement) => ({
+                id: requirement.id,
+                name: requirement.name
+              })
+            )
+          }
+        )
+      }
+      const pendingReqIdentificationJobs = []
+      await Promise.all(
+        requirements.map(async (requirement) => {
+          const reqIdentificationJobs =
+            await ReqIdentificationQueueService.hasPendingRequirementJobs(
+              requirement.id
+            )
+          if (reqIdentificationJobs.hasPendingJobs) {
+            pendingReqIdentificationJobs.push({
+              id: requirement.id,
+              name: requirement.requirement_name
+            })
+          }
+        })
+      )
+      if (pendingReqIdentificationJobs.length > 0) {
+        throw new HttpException(
+          409,
+          'Cannot delete Requirements with pending Requirement Identification jobs',
+          { requirements: pendingReqIdentificationJobs }
+        )
+      }
+      const requirementsDeleted = await RequirementRepository.deleteBatch(
+        requirementIds
+      )
       if (!requirementsDeleted) {
         throw new HttpException(404, 'Requirements not found')
       }
@@ -652,7 +777,10 @@ class RequirementService {
       if (error instanceof HttpException) {
         throw error
       }
-      throw new HttpException(500, 'Unexpected error during batch deletion of Requirements')
+      throw new HttpException(
+        500,
+        'Unexpected error during batch deletion of requirements'
+      )
     }
   }
 }

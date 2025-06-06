@@ -71,7 +71,10 @@ class LegalBasisRepository {
       return legalBasis
     } catch (error) {
       console.error('Error creating legal basis:', error.message)
-      throw new HttpException(500, 'Error creating legal basis in the database')
+      throw new HttpException(
+        500,
+        'Error creating legal basis in the database'
+      )
     }
   }
 
@@ -269,9 +272,8 @@ class LegalBasisRepository {
    * @throws {HttpException} - If an error occurs during retrieval.
    */
   static async findByIds (legalBasisIds) {
-    if (legalBasisIds.length === 0) {
-      return []
-    }
+    if (legalBasisIds.length === 0) return []
+
     const query = `
     SELECT 
       legal_basis.id, 
@@ -283,10 +285,17 @@ class LegalBasisRepository {
       legal_basis.municipality, 
       legal_basis.last_reform, 
       legal_basis.url, 
+
       subjects.id AS subject_id, 
       subjects.subject_name AS subject_name,
+      subjects.abbreviation AS subject_abbreviation,
+      subjects.order_index AS subject_order_index,
+
       aspects.id AS aspect_id, 
-      aspects.aspect_name AS aspect_name
+      aspects.aspect_name AS aspect_name,
+      aspects.abbreviation AS aspect_abbreviation,
+      aspects.order_index AS aspect_order_index
+
     FROM legal_basis
     JOIN subjects ON legal_basis.subject_id = subjects.id
     LEFT JOIN legal_basis_subject_aspect ON legal_basis.id = legal_basis_subject_aspect.legal_basis_id
@@ -294,10 +303,13 @@ class LegalBasisRepository {
     WHERE legal_basis.id IN (?)
     ORDER BY legal_basis.id DESC;
   `
+
     try {
       const [rows] = await pool.query(query, [legalBasisIds])
       if (rows.length === 0) return []
+
       const legalBasisMap = new Map()
+
       rows.forEach((row) => {
         if (!legalBasisMap.has(row.id)) {
           legalBasisMap.set(row.id, {
@@ -312,18 +324,24 @@ class LegalBasisRepository {
             url: row.url,
             subject: {
               subject_id: row.subject_id,
-              subject_name: row.subject_name
+              subject_name: row.subject_name,
+              abbreviation: row.subject_abbreviation,
+              order_index: row.subject_order_index
             },
             aspects: []
           })
         }
+
         if (row.aspect_id) {
           legalBasisMap.get(row.id).aspects.push({
             aspect_id: row.aspect_id,
-            aspect_name: row.aspect_name
+            aspect_name: row.aspect_name,
+            abbreviation: row.aspect_abbreviation,
+            order_index: row.aspect_order_index
           })
         }
       })
+
       return Array.from(legalBasisMap.values()).map((legalBasis) => {
         return new LegalBasis(
           legalBasis.id,
@@ -509,7 +527,10 @@ class LegalBasisRepository {
         'Error retrieving legal basis by abbreviation:',
         error.message
       )
-      throw new HttpException(500, 'Error retrieving legal basis by abbreviation')
+      throw new HttpException(
+        500,
+        'Error retrieving legal basis by abbreviation'
+      )
     }
   }
 
@@ -685,7 +706,10 @@ class LegalBasisRepository {
         'Error retrieving legal basis by jurisdiction:',
         error.message
       )
-      throw new HttpException(500, 'Error retrieving legal basis by jurisdiction')
+      throw new HttpException(
+        500,
+        'Error retrieving legal basis by jurisdiction'
+      )
     }
   }
 
@@ -1458,27 +1482,28 @@ VALUES ${aspectsIds.map(() => '(?, ?, ?)').join(', ')}
         }
         const values = aspectsIds.flatMap((aspectId) => [
           legalBasisId,
-          subjectId || null,
+          subjectId,
           aspectId
         ])
         const [insertedResult] = await connection.query(
           insertAspectsQuery(aspectsIds),
           values
         )
-
         if (insertedResult.affectedRows !== aspectsIds.length) {
           await connection.rollback()
           throw new HttpException(500, 'Failed to insert aspects.')
         }
       }
-
       await connection.commit()
       const updatedLegalBasis = await this.findById(legalBasisId)
       return updatedLegalBasis
     } catch (error) {
       await connection.rollback()
       console.error('Error updating legal basis:', error.message)
-      throw new HttpException(500, 'Error updating legal basis in the database')
+      throw new HttpException(
+        500,
+        'Error updating legal basis in the database'
+      )
     } finally {
       connection.release()
     }
@@ -1529,7 +1554,10 @@ VALUES ${aspectsIds.map(() => '(?, ?, ?)').join(', ')}
     } catch (error) {
       await connection.rollback()
       console.error('Error deleting legal basis:', error.message)
-      throw new HttpException(500, 'Error deleting legal basis from the database')
+      throw new HttpException(
+        500,
+        'Error deleting legal basis from the database'
+      )
     } finally {
       connection.release()
     }
@@ -1591,7 +1619,10 @@ VALUES ${aspectsIds.map(() => '(?, ?, ?)').join(', ')}
     } catch (error) {
       await connection.rollback()
       console.error('Error deleting legal bases:', error.message)
-      throw new HttpException(500, 'Error deleting legal basis records in batch')
+      throw new HttpException(
+        500,
+        'Error deleting legal basis records in batch'
+      )
     } finally {
       connection.release()
     }
@@ -1621,6 +1652,78 @@ VALUES ${aspectsIds.map(() => '(?, ?, ?)').join(', ')}
       throw new HttpException(500, 'Error deleting all legal basis records')
     } finally {
       connection.release()
+    }
+  }
+
+  /**
+   * Checks if a legal basis is associated with any requirement identification.
+   * @param {number} legalBasisId - The ID of the legal basis to check.
+   * @returns {Promise<{ isAssociatedToReqIdentifications: boolean }>}
+   * @throws {HttpException}
+   */
+  static async checkReqIdentificationAssociations (legalBasisId) {
+    try {
+      const [rows] = await pool.query(
+        `
+      SELECT COUNT(*) AS identificationCount
+      FROM req_identifications_requirement_legal_basis
+      WHERE legal_basis_id = ?
+      `,
+        [legalBasisId]
+      )
+
+      return {
+        isAssociatedToReqIdentifications: rows[0].identificationCount > 0
+      }
+    } catch (error) {
+      console.error(
+        'Error checking legal basis-identification associations:',
+        error.message
+      )
+      throw new HttpException(
+        500,
+        'Error checking legal basis associations with identifications'
+      )
+    }
+  }
+
+  /**
+   * Checks if any of the given legal basis records are associated with requirement identifications.
+   * @param {Array<number>} legalBasisIds - Array of legal basis IDs to check.
+   * @returns {Promise<Array<{ id: number, name: string, isAssociatedToReqIdentifications: boolean }>>}
+   * @throws {HttpException}
+   */
+  static async checkReqIdentificationAssociationsBatch (legalBasisIds) {
+    try {
+      const [rows] = await pool.query(
+        `
+      SELECT 
+        lb.id AS legalBasisId,
+        lb.legal_name AS legalBasisName,
+        COUNT(rirlb.req_identification_id) AS identificationCount
+      FROM legal_basis lb
+      LEFT JOIN req_identifications_requirement_legal_basis rirlb 
+        ON lb.id = rirlb.legal_basis_id
+      WHERE lb.id IN (?)
+      GROUP BY lb.id
+      `,
+        [legalBasisIds]
+      )
+
+      return rows.map((row) => ({
+        id: row.legalBasisId,
+        name: row.legalBasisName,
+        isAssociatedToReqIdentifications: row.identificationCount > 0
+      }))
+    } catch (error) {
+      console.error(
+        'Error checking batch legal basis-identification associations:',
+        error.message
+      )
+      throw new HttpException(
+        500,
+        'Error checking batch legal basis associations with identifications'
+      )
     }
   }
 }

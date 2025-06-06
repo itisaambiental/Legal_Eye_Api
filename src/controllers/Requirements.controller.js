@@ -30,7 +30,8 @@ export const createRequirement = async (req, res) => {
     condition,
     evidence,
     specifyEvidence,
-    periodicity
+    periodicity,
+    acceptanceCriteria
   } = req.body
   try {
     const isAuthorized = await UserService.userExists(userId)
@@ -51,7 +52,8 @@ export const createRequirement = async (req, res) => {
       condition,
       evidence,
       specifyEvidence,
-      periodicity
+      periodicity,
+      acceptanceCriteria
     })
     return res.status(201).json({ requirement })
   } catch (error) {
@@ -115,7 +117,7 @@ export const getRequirementById = async (req, res) => {
 }
 
 /**
- * Retrieves requirements by their requirement number or part of it.
+ * Retrieves requirements by their requirement number.
  * @function getRequirementsByNumber
  * @param {import('express').Request} req - Request object, expects { number } in query.
  * @param {import('express').Response} res - Response object.
@@ -464,6 +466,33 @@ export const getRequirementsByPeriodicity = async (req, res) => {
 }
 
 /**
+ * Retrieves requirements filtered by a specific acceptance criteria.
+ * @function getRequirementsByAcceptanceCriteria
+ * @param {import('express').Request} req - Request object, expects { acceptanceCriteria } in query.
+ * @param {import('express').Response} res - Response object.
+ * @returns {Array<Object>} - A list of requirements matching the acceptance criteria.
+ */
+export const getRequirementsByAcceptanceCriteria = async (req, res) => {
+  const { userId } = req
+  const { acceptanceCriteria } = req.query
+  try {
+    const isAuthorized = await UserService.userExists(userId)
+    if (!isAuthorized) {
+      return res.status(403).json({ message: 'Unauthorized' })
+    }
+    const requirements = await RequirementService.getByAcceptanceCriteria(
+      acceptanceCriteria
+    )
+    return res.status(200).json({ requirements })
+  } catch (error) {
+    if (error instanceof HttpException) {
+      return res.status(error.status).json({ message: error.message })
+    }
+    return res.status(500).json({ message: 'Internal Server Error' })
+  }
+}
+
+/**
  * Updates an existing requirement by its ID.
  * @function updateRequirementById
  * @param {import('express').Request} req - Request object, expects { id } in params and updated requirement fields in body.
@@ -487,7 +516,8 @@ export const updateRequirement = async (req, res) => {
     condition,
     evidence,
     specifyEvidence,
-    periodicity
+    periodicity,
+    acceptanceCriteria
   } = req.body
   try {
     const isAuthorized = await UserService.userExists(userId)
@@ -508,7 +538,8 @@ export const updateRequirement = async (req, res) => {
       condition,
       evidence,
       specifyEvidence,
-      periodicity
+      periodicity,
+      acceptanceCriteria
     })
     return res.status(200).json({ requirement })
   } catch (error) {

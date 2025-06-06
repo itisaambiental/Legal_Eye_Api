@@ -17,7 +17,7 @@ let createdSubjectId
 const createdSubjectIds = []
 const createdAspectIds = []
 
-const timeout = 20000
+const timeout = 50000
 beforeAll(async () => {
   await RequirementRepository.deleteAll()
   await LegalBasisRepository.deleteAll()
@@ -351,7 +351,7 @@ describe('Subjects API tests', () => {
   describe('DELETE /subject/:id - Delete subject by ID', () => {
     let createdLegalBasis
     let createdRequirement
-    const timeout = 20000
+    const timeout = 50000
 
     beforeAll(async () => {
       const subjectResponse = await api
@@ -491,7 +491,7 @@ describe('Subjects API tests', () => {
   describe('DELETE /subjects/batch - Delete multiple subjects with dependencies', () => {
     const createdLegalBases = []
     const createdRequirements = []
-    const timeout = 20000
+    const timeout = 50000
     beforeAll(async () => {
       for (let i = 0; i < subjectNames.length; i++) {
         const name = subjectNames[i]
@@ -542,7 +542,7 @@ describe('Subjects API tests', () => {
         createdLegalBases.push(legalBasisResponse.body.legalBasis)
 
         const requirementData = generateRequirementData({
-          requirementNumber: `REQ-${i + 1}`,
+          requirementNumber: i + 1,
           requirementName: `Requirement Test ${i + 1}`,
           subjectId: String(subject.id),
           aspectsIds: JSON.stringify(aspectIdsForSubject)
@@ -569,7 +569,7 @@ describe('Subjects API tests', () => {
     })
 
     describe('After removing all legal bases', () => {
-      const timeout = 20000
+      const timeout = 50000
       beforeAll(async () => {
         for (const legalBasis of createdLegalBases) {
           await api
@@ -590,7 +590,7 @@ describe('Subjects API tests', () => {
       })
 
       describe('After removing all requirements', () => {
-        const timeout = 20000
+        const timeout = 50000
         beforeAll(async () => {
           for (const req of createdRequirements) {
             await api

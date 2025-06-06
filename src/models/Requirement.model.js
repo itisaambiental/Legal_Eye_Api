@@ -1,18 +1,29 @@
 /**
+ * @typedef {Object} Aspect
+ * @property {number} aspect_id - The ID of the aspect.
+ * @property {string} aspect_name - The name of the aspect.
+ * @property {string} [abbreviation] - Optional abbreviation for the aspect.
+ * @property {number} [order_index] - Optional order index for the aspect.
+ */
+
+/**
+ * @typedef {Object} Subject
+ * @property {number} subject_id - The ID of the subject.
+ * @property {string} subject_name - The name of the subject.
+ * @property {string} [abbreviation] - Optional abbreviation for the subject.
+ * @property {number} [order_index] - Optional order index for the subject.
+ */
+
+/**
  * Class representing a Legal Requirement.
- * Contains details about a specific requirement linked to a subject and multiple aspects.
  */
 class Requirement {
   /**
    * Constructs a Requirement instance.
    * @param {number} id - The ID of the requirement.
-   * @param {Object} subject - The subject associated with the requirement.
-   * @param {number} subject.subject_id - The ID of the subject.
-   * @param {string} subject.subject_name - The name of the subject.
-   * @param {Array<Object>} aspects - The aspects associated with the requirement.
-   * @param {number} aspects[].aspect_id - The ID of the aspect.
-   * @param {string} aspects[].aspect_name - The name of the aspect.
-   * @param {number} requirementNumber - The requirement number.
+   * @param {Subject} subject - The subject associated with the requirement.
+   * @param {Aspect[]} aspects - The aspects associated with the requirement.
+   * @param {number} requirementNumber - The requirement number (integer).
    * @param {string} requirementName - The name of the requirement.
    * @param {string} mandatoryDescription - The mandatory description of the requirement.
    * @param {string} complementaryDescription - The complementary description of the requirement.
@@ -21,9 +32,10 @@ class Requirement {
    * @param {string} mandatoryKeywords - Keywords related to the mandatory aspect of the requirement.
    * @param {string} complementaryKeywords - Keywords related to the complementary aspect of the requirement.
    * @param {string} condition - The condition type.
-   * @param {string} evidence - The type of evidencet.
+   * @param {string} evidence - The type of evidence.
    * @param {string} specifyEvidence - The description of the specific evidence.
    * @param {string} periodicity - The periodicity of the requirement.
+   * @param {string} acceptanceCriteria - The acceptance criteria for the requirement.
    */
   constructor (
     id,
@@ -40,7 +52,8 @@ class Requirement {
     condition,
     evidence,
     specifyEvidence,
-    periodicity
+    periodicity,
+    acceptanceCriteria
   ) {
     this.id = id
     this.subject = subject
@@ -57,6 +70,7 @@ class Requirement {
     this.evidence = evidence
     this.specify_evidence = specifyEvidence
     this.periodicity = periodicity
+    this.acceptance_criteria = acceptanceCriteria
   }
 }
 

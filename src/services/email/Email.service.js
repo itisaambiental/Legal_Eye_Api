@@ -32,7 +32,7 @@ class EmailService {
     try {
       const { to, subject, text, html } = mailData
       const mailOptions = {
-        from: EMAIL_USER,
+        from: String(EMAIL_USER),
         to,
         subject,
         text,
