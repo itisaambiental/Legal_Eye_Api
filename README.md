@@ -70,88 +70,88 @@ A continuación se detalla la estructura del proyecto:
 
 ```
 # Configuración General
-PORT=                          # Puerto en el que correrá la aplicación (ejemplo: 3000)
-JWT_SECRET=                    # Llave secreta para generar y verificar tokens JWT
-JWT_EXPIRATION=                # Tiempo de expiración de los tokens JWT (ejemplo: 7d para 7 días)
-APP_URL=                       # URL de la aplicación frontend
-ACM_SUITE_API_URL=             # URL de la API del sistema ACM SUITE.
-ACM_SUITE_EMAIL=               # Email de acceso del sistema ACM SUITE.
-ACM_SUITE_PASSWORD=            # Password de acceso del sistema ACM SUITE.
+PORT=                           # Puerto en el que correrá la aplicación (ejemplo: 3000)
+JWT_SECRET=                     # Llave secreta para generar y verificar tokens JWT
+JWT_EXPIRATION=                 # Tiempo de expiración de los tokens JWT (ejemplo: 7d para 7 días)
+APP_URL=                        # URL de la aplicación frontend
+ACM_SUITE_API_URL=              # URL de la API del sistema ACM SUITE.
+ACM_SUITE_EMAIL=                # Email de acceso del sistema ACM SUITE.
+ACM_SUITE_PASSWORD=             # Password de acceso del sistema ACM SUITE.
 
 # Base de Datos - Producción
-DB_PORT=                       # Puerto para la base de datos en producción
-DB_HOST=                       # Host de la base de datos en producción
-DB_USER=                       # Usuario de la base de datos en producción
-DB_PASSWORD=                   # Contraseña de la base de datos en producción
-DB_DATABASE=                   # Nombre de la base de datos en producción
+DB_PORT=                        # Puerto para la base de datos en producción
+DB_HOST=                        # Host de la base de datos en producción
+DB_USER=                        # Usuario de la base de datos en producción
+DB_PASSWORD=                    # Contraseña de la base de datos en producción
+DB_DATABASE=                    # Nombre de la base de datos en producción
 
 # Base de Datos - Desarrollo
-DB_PORT_DEV=                   # Puerto para la base de datos en desarrollo
-DB_HOST_DEV=                   # Host de la base de datos en desarrollo
-DB_USER_DEV=                   # Usuario de la base de datos en desarrollo
-DB_PASSWORD_DEV=               # Contraseña de la base de datos en desarrollo
-DB_DATABASE_DEV=               # Nombre de la base de datos en desarrollo
+DB_PORT_DEV=                    # Puerto para la base de datos en desarrollo
+DB_HOST_DEV=                    # Host de la base de datos en desarrollo
+DB_USER_DEV=                    # Usuario de la base de datos en desarrollo
+DB_PASSWORD_DEV=                # Contraseña de la base de datos en desarrollo
+DB_DATABASE_DEV=                # Nombre de la base de datos en desarrollo
 
-# Base de Datos - Pruebas
-DB_PORT_TEST=                  # Puerto para la base de datos en entorno de pruebas
-DB_HOST_TEST=                  # Host de la base de datos en entorno de pruebas
-DB_USER_TEST=                  # Usuario de la base de datos en entorno de pruebas
-DB_PASSWORD_TEST=              # Contraseña de la base de datos en entorno de pruebas
-DB_DATABASE_TEST=              # Nombre de la base de datos en entorno de pruebas
+# Base de Datos - Pruebas 
+DB_PORT_TEST=                   # Puerto para la base de datos en entorno de pruebas
+DB_HOST_TEST=                   # Host de la base de datos en entorno de pruebas
+DB_USER_TEST=                   # Usuario de la base de datos en entorno de pruebas
+DB_PASSWORD_TEST=               # Contraseña de la base de datos en entorno de pruebas
+DB_DATABASE_TEST=               # Nombre de la base de datos en entorno de pruebas
 
 # Redis - Producción
-REDIS_PASS=                    # Contraseña del servidor Redis en producción
-REDIS_USER=                    # Usuario para Redis en producción
-REDIS_HOST=                    # Host del servidor Redis en producción
-REDIS_PORT=                    # Puerto del servidor Redis en producción
+REDIS_PASS=                     # Contraseña del servidor Redis en producción
+REDIS_USER=                     # Usuario para Redis en producción
+REDIS_HOST=                     # Host del servidor Redis en producción
+REDIS_PORT=                     # Puerto del servidor Redis en producción
 
 # Redis - Desarrollo
-REDIS_PASS_DEV=                # Contraseña del servidor Redis en desarrollo
-REDIS_USER_DEV=                # Usuario para Redis en desarrollo
-REDIS_HOST_DEV=                # Host del servidor Redis en desarrollo
-REDIS_PORT_DEV=                # Puerto del servidor Redis en desarrollo
+REDIS_PASS_DEV=                 # Contraseña del servidor Redis en desarrollo
+REDIS_USER_DEV=                 # Usuario para Redis en desarrollo
+REDIS_HOST_DEV=                 # Host del servidor Redis en desarrollo
+REDIS_PORT_DEV=                 # Puerto del servidor Redis en desarrollo
 
 # Redis - Pruebas
-REDIS_PASS_TEST=               # Contraseña del servidor Redis en entorno de pruebas
-REDIS_USER_TEST=               # Usuario para Redis en entorno de pruebas
-REDIS_HOST_TEST=               # Host del servidor Redis en entorno de pruebas
-REDIS_PORT_TEST=               # Puerto del servidor Redis en entorno de pruebas
+REDIS_PASS_TEST=                # Contraseña del servidor Redis en entorno de pruebas
+REDIS_USER_TEST=                # Usuario para Redis en entorno de pruebas
+REDIS_HOST_TEST=                # Host del servidor Redis en entorno de pruebas
+REDIS_PORT_TEST=                # Puerto del servidor Redis en entorno de pruebas
 
 # Correo Electrónico
-EMAIL_USER=                    # Dirección de correo para envío de notificaciones
-EMAIL_HOST=                    # Host SMTP para el envío de correos
-EMAIL_PASS=                    # Contraseña para el EMAIL_USER
-AWS_USER_EMAIL=                # Usuario de AWS para servicios relacionados con correo
+EMAIL_USER=                     # Dirección de correo para envío de notificaciones
+EMAIL_HOST=                     # Host SMTP para el envío de correos
+EMAIL_PASS=                     # Contraseña para el EMAIL_USER
+AWS_USER_EMAIL=                 # Usuario de AWS para servicios relacionados con correo
 
 # AWS S3
-AWS_ACCESS_KEY_ID=             # Clave de acceso de AWS
-AWS_SECRET_ACCESS_KEY=         # Llave secreta de AWS
-AWS_REGION=                    # Región AWS (ejemplo: us-east-1)
-S3_BUCKET_NAME=                # Nombre del bucket S3
+AWS_ACCESS_KEY_ID=              # Clave de acceso de AWS
+AWS_SECRET_ACCESS_KEY=          # Llave secreta de AWS
+AWS_REGION=                     # Región AWS (ejemplo: us-east-1)
+S3_BUCKET_NAME=                 # Nombre del bucket S3
 
 # Administración
-ADMIN_GMAIL=                   # Correo electrónico del administrador
-ADMIN_ROLE=                    # ID del rol de administrador
-ADMIN_NAME=                    # Nombre del administrador
-ADMIN_PASSWORD_TEST=           # Contraseña del administrador para entorno de pruebas
+ADMIN_GMAIL=                    # Correo electrónico del administrador
+ADMIN_ROLE=                     # ID del rol de administrador
+ADMIN_NAME=                     # Nombre del administrador
+ADMIN_PASSWORD_TEST=            # Contraseña del administrador para entorno de pruebas
 
 # APIs Externas
-MICROSOFT_GRAPH_API=           # URL base de la API de Microsoft Graph
-OPENAI_API_KEY=                # Clave de API de OpenAI para procesamiento de IA
-ORGANIZATION_ID=               # ID de la organización de OpenAI
-PROJECT_ID=                    # ID del proyecto de OpenAI
+MICROSOFT_GRAPH_API=             # URL base de la API de Microsoft Graph
+OPENAI_API_KEY=                  # Clave de API de OpenAI para procesamiento de IA
+ORGANIZATION_ID=                 # ID de la organización de OpenAI
+PROJECT_ID=                      # ID del proyecto de OpenAI
 
 # Extracción de Artículos
-LIMIT_EXTRACT_ARTICLES=         # Límite máximo de solicitudes en cola para la extracción de artículos legales.
-CONCURRENCY_EXTRACT_ARTICLES=   # Número máximo de procesos concurrentes permitidos para la extracción de artículos.
+LIMIT_EXTRACT_ARTICLES=          # Límite máximo de solicitudes en cola para la extracción de artículos legales.
+CONCURRENCY_EXTRACT_ARTICLES=    # Número máximo de procesos concurrentes permitidos para la extracción de artículos.
 
 # Envío de Fundamentos
-LIMIT_SEND_LEGAL_BASIS=         # Límite máximo de solicitudes en cola para el envío de fundamentos legales.
-CONCURRENCY_SEND_LEGAL_BASIS=   # Número máximo de procesos concurrentes permitidos para el envío de fundamentos legales.
+LIMIT_SEND_LEGAL_BASIS=          # Límite máximo de solicitudes en cola para el envío de fundamentos legales.
+CONCURRENCY_SEND_LEGAL_BASIS=    # Número máximo de procesos concurrentes permitidos para el envío de fundamentos legales.
 
 # Identificación de Requerimientos
-LIMIT_REQ_IDENTIFICATIONS=      # Límite máximo de solicitudes en cola para la identificación de requerimientos.
-CONCURRENCY_REQ_IDENTIFICATIONS=# Número máximo de procesos concurrentes permitidos para la identificación de requerimientos.
+LIMIT_REQ_IDENTIFICATIONS=       # Límite máximo de solicitudes en cola para la identificación de requerimientos.
+CONCURRENCY_REQ_IDENTIFICATIONS= # Número máximo de procesos concurrentes permitidos para la identificación de requerimientos.
 
 ```
 
