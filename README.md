@@ -74,6 +74,9 @@ PORT=                          # Puerto en el que correrá la aplicación (ejemp
 JWT_SECRET=                    # Llave secreta para generar y verificar tokens JWT
 JWT_EXPIRATION=                # Tiempo de expiración de los tokens JWT (ejemplo: 7d para 7 días)
 APP_URL=                       # URL de la aplicación frontend
+ACM_SUITE_API_URL=             # URL de la API del sistema ACM SUITE.
+ACM_SUITE_EMAIL=               # Email de acceso del sistema ACM SUITE.
+ACM_SUITE_PASSWORD=            # Password de acceso del sistema ACM SUITE.
 
 # Base de Datos - Producción
 DB_PORT=                       # Puerto para la base de datos en producción
@@ -145,6 +148,11 @@ CONCURRENCY_EXTRACT_ARTICLES=   # Número máximo de procesos concurrentes permi
 # Envío de Fundamentos
 LIMIT_SEND_LEGAL_BASIS=         # Límite máximo de solicitudes en cola para el envío de fundamentos legales.
 CONCURRENCY_SEND_LEGAL_BASIS=   # Número máximo de procesos concurrentes permitidos para el envío de fundamentos legales.
+
+# Identificación de Requerimientos
+LIMIT_REQ_IDENTIFICATIONS=      # Límite máximo de solicitudes en cola para la identificación de requerimientos.
+CONCURRENCY_REQ_IDENTIFICATIONS=# Número máximo de procesos concurrentes permitidos para la identificación de requerimientos.
+
 ```
 
 ---

@@ -10,7 +10,7 @@ import RequirementRepository from '../../../repositories/Requirements.repository
  */
 class ReqIdentificationQueueService {
   /**
-   * Retrieves the status of a requirement identification job from the queue.
+   * Retrieves the status of a requirement iddentification job from the queue.
    * @param {number|string} jobId - The job ID.
    * @returns {Promise<import('../../queue/Queue.service.js').JobStateResponse>} - The job state and relevant data.
    */
