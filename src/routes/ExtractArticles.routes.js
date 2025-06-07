@@ -1,6 +1,6 @@
 /**
- * Routes module for articles operations.
- * Defines the API endpoints for articles records.
+ * Routes module for articles extraction operations.
+ * Defines the API endpoints for managing articles extraction jobs.
  */
 
 import { Router } from 'express'

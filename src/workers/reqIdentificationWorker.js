@@ -16,21 +16,40 @@ const CONCURRENCY = Number(CONCURRENCY_REQ_IDENTIFICATIONS || 1)
 
 /**
  * Worker for processing requirement identification jobs.
- * Steps:
- * 1. Validates job and dependencies.
- * 2. For each requirement:
- *    - Filters matching legal bases by subject and common aspects.
- *    - Generates the full requirement name from all unique matches.
- *    - Links requirement and all applicable legal bases.
  */
 reqIdentificationQueue.process(CONCURRENCY, async (job, done) => {
   /** @type {ReqIdentificationJobData} */
   const { reqIdentificationId, legalBases, requirements } = job.data
-
+  console.log('Processing requirement identification job:', job.id)
   try {
     const currentJob = await reqIdentificationQueue.getJob(job.id)
     if (!currentJob) throw new HttpException(404, 'Job not found')
 
+    let totalTasks = 0
+    for (const requirement of requirements) {
+      const legalBasis = legalBases.filter(
+        (lb) =>
+          lb.subject.subject_id === requirement.subject.subject_id &&
+          requirement.aspects.some((reqAspect) =>
+            lb.aspects.some(
+              (lbAspect) => lbAspect.aspect_id === reqAspect.aspect_id
+            )
+          )
+      )
+
+      for (const legalBase of legalBasis) {
+        const articles = await ArticlesRepository.findByLegalBasisId(
+          legalBase.id
+        )
+        totalTasks += articles?.length || 0
+      }
+    }
+
+    if (totalTasks === 0) {
+      await currentJob.progress(100)
+      return done()
+    }
+    let completedTasks = 0
     for (const requirement of requirements) {
       const legalBasis = legalBases.filter(
         (lb) =>
@@ -43,7 +62,6 @@ reqIdentificationQueue.process(CONCURRENCY, async (job, done) => {
       )
 
       if (legalBasis.length === 0) continue
-
       const subjectAbbreviations = [
         ...new Set(
           legalBasis.map((lb) => lb.subject.abbreviation).filter(Boolean)
@@ -96,9 +114,11 @@ reqIdentificationQueue.process(CONCURRENCY, async (job, done) => {
           requirement.id,
           legalBase.id
         )
+
         const articles = await ArticlesRepository.findByLegalBasisId(
           legalBase.id
         )
+
         if (articles) {
           for (const article of articles) {
             await ReqIdentificationRepository.linkArticleToLegalBaseToRequirement(
@@ -107,14 +127,23 @@ reqIdentificationQueue.process(CONCURRENCY, async (job, done) => {
               legalBase.id,
               article.id
             )
+
+            completedTasks += 1
+            await currentJob.progress(
+              Math.floor((completedTasks / totalTasks) * 100)
+            )
           }
         }
       }
     }
+
+    return done()
   } catch (error) {
     console.error(error)
     if (error instanceof HttpException) return done(error)
-    done(new HttpException(500, 'Unexpected error identifying requirements'))
+    return done(
+      new HttpException(500, 'Unexpected error identifying requirements')
+    )
   }
 })
 

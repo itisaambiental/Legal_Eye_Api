@@ -87,12 +87,12 @@ class QueueService {
   }
 
   /**
- * Cancels a job by either moving it to the failed state or removing it from the queue.
- * Jobs in 'completed' or 'failed' states cannot be modified.
- * @param {import('bull').Job} job - The Bull job instance.
- * @returns {Promise<boolean>} - True if the job was successfully canceled.
- * @throws {HttpException} - If the job cannot be canceled or removed.
- */
+   * Cancels a job by either moving it to the failed state or removing it from the queue.
+   * Jobs in 'completed' or 'failed' states cannot be modified.
+   * @param {import('bull').Job} job - The Bull job instance.
+   * @returns {Promise<boolean>} - True if the job was successfully canceled.
+   * @throws {HttpException} - If the job cannot be canceled or removed.
+   */
   static async cancelJob (job) {
     try {
       const isActive = await job.isActive()
@@ -101,7 +101,9 @@ class QueueService {
       if (isCompleted || isFailed) {
         throw new HttpException(
           400,
-          `Job cannot be canceled. Jobs in '${isCompleted ? 'completed' : 'failed'}' state cannot be modified.`
+          `Job cannot be canceled. Jobs in '${
+            isCompleted ? 'completed' : 'failed'
+          }' state cannot be modified.`
         )
       }
       if (isActive) {

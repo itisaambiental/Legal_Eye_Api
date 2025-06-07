@@ -5,7 +5,7 @@ import {
   articlesSchema
 } from '../../schemas/article.schema.js'
 import SendLegalBasisService from '../legalBasis/sendLegalBasis/SendLegalBasis.service.js'
-import ReqIdentificationQueueService from '../reqIdentification/ReqIdentificationQueue/ReqIdentificationQueue.service.js'
+import ReqIdentifyService from '../reqIdentification/reqIdentify/ReqIdentify.service.js'
 import HttpException from '../errors/HttpException.js'
 import { z } from 'zod'
 import { convert } from 'html-to-text'
@@ -273,7 +273,7 @@ class ArticlesService {
         )
       }
       const reqIdentificationJobs =
-        await ReqIdentificationQueueService.hasPendingLegalBasisJobs(
+        await ReqIdentifyService.hasPendingLegalBasisJobs(
           existingArticle.legal_basis_id
         )
       if (reqIdentificationJobs.hasPendingJobs) {
@@ -343,7 +343,7 @@ class ArticlesService {
               article.legal_basis_id
             )
           const reqIdentificationJobs =
-            await ReqIdentificationQueueService.hasPendingLegalBasisJobs(
+            await ReqIdentifyService.hasPendingLegalBasisJobs(
               article.legal_basis_id
             )
 

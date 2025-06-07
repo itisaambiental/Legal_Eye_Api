@@ -10,6 +10,7 @@ import {
   reqIdentificationUpdateSchema
 } from '../../schemas/reqIdentification.schema.js'
 import reqIdentificationQueue from '../../workers/reqIdentificationWorker.js'
+import ReqIdentifyService from '../reqIdentification/reqIdentify/ReqIdentify.service.js'
 import HttpException from '../../services/errors/HttpException.js'
 import FileService from '../files/File.service.js'
 import { format } from 'date-fns'
@@ -956,6 +957,14 @@ class ReqIdentificationService {
       if (!reqIdentification) {
         throw new HttpException(404, 'Requirement identification not found')
       }
+      const reqIdentificationJobs =
+        await ReqIdentifyService.hasPendingReqIdentificationJobs(id)
+      if (reqIdentificationJobs.hasPendingJobs) {
+        throw new HttpException(
+          409,
+          'Cannot delete Requirement Identification with pending Requirement Identification jobs'
+        )
+      }
       const reqIdentificationDeleted =
         await ReqIdentificationRepository.deleteById(id)
       if (!reqIdentificationDeleted) {
@@ -981,12 +990,12 @@ class ReqIdentificationService {
    */
   static async deleteBatch (reqIdentificationIds) {
     try {
-      const existingReqIdentifications =
+      const reqIdentifications =
         await ReqIdentificationRepository.findByIds(reqIdentificationIds)
-      if (existingReqIdentifications.length !== reqIdentificationIds.length) {
+      if (reqIdentifications.length !== reqIdentificationIds.length) {
         const notFoundIds = reqIdentificationIds.filter(
           (id) =>
-            !existingReqIdentifications.some(
+            !reqIdentifications.some(
               (reqIdentification) => reqIdentification.id === id
             )
         )
@@ -996,6 +1005,28 @@ class ReqIdentificationService {
           {
             notFoundIds
           }
+        )
+      }
+      const pendingReqIdentificationJobs = []
+      await Promise.all(
+        reqIdentifications.map(async (reqIdentification) => {
+          const reqIdentificationJobs =
+            await ReqIdentifyService.hasPendingReqIdentificationJobs(
+              reqIdentification.id
+            )
+          if (reqIdentificationJobs.hasPendingJobs) {
+            pendingReqIdentificationJobs.push({
+              id: reqIdentification.id,
+              name: reqIdentification.name
+            })
+          }
+        })
+      )
+      if (pendingReqIdentificationJobs.length > 0) {
+        throw new HttpException(
+          409,
+          'Cannot delete Requirement Identifications with pending Requirement Identification jobs',
+          { reqIdentifications: pendingReqIdentificationJobs }
         )
       }
       const reqIdentificationsDeleted =

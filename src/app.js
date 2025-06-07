@@ -16,8 +16,9 @@ import SendLegalBasisRoutes from './routes/SendLegalBasis.routes.js'
 import ArticlesRoutes from './routes/Articles.routes.js'
 import ExtractArticlesRoutes from './routes/ExtractArticles.routes.js'
 import RequirementsRoutes from './routes/Requirements.routes.js'
-import ReqIdentification from './routes/ReqIdentification.routes.js'
 import RequirementTypesRoutes from './routes/RequirementTypes.routes.js'
+import ReqIdentificationRoutes from './routes/ReqIdentification.routes.js'
+import ReqIdentifyRoutes from './routes/ReqIdentify.routes.js'
 import { NODE_ENV, APP_URL } from './config/variables.config.js'
 
 /**
@@ -59,7 +60,8 @@ app.use('/api', ExtractArticlesRoutes)
 app.use('/api', RequirementsRoutes)
 app.use('/api', RequirementTypesRoutes)
 app.use('/api', LegalVerbsRoutes)
-app.use('/api', ReqIdentification)
+app.use('/api', ReqIdentificationRoutes)
+app.use('/api', ReqIdentifyRoutes)
 
 /**
  * Handle 404 Not Found errors.
