@@ -18,21 +18,37 @@ const options = {
 const openai = new OpenAI(options)
 
 /**
- * Available AI models.
+ * Available AI models, grouped by category.
  */
 export const models = {
-  High: 'gpt-4.1',
-  Low: 'gpt-4.1-mini'
+  text: {
+    High: 'gpt-4.1',
+    Low: 'gpt-4.1-mini'
+  },
+  reasoning: {
+    High: 'o1',
+    Low: 'o1-mini'
+  }
 }
 
 /**
- * Selects the appropriate model based on the given intelligence level.
+ * Gets the text generation model based on intelligence level.
  *
- * @param {'High' | 'Low' | null | undefined} level - The desired level of intelligence.
- * @returns {string} - The model identifier.
+ * @param {'High' | 'Low' | null | undefined} level
+ * @returns {string}
  */
-export function getModel (level) {
-  return level === 'High' ? models.High : models.Low
+export function getTextModel (level) {
+  return level === 'High' ? models.text.High : models.text.Low
+}
+
+/**
+ * Gets the reasoning model based on intelligence level.
+ *
+ * @param {'High' | 'Low' | null | undefined} level
+ * @returns {string}
+ */
+export function getReasoningModel (level) {
+  return level === 'High' ? models.reasoning.High : models.reasoning.Low
 }
 
 export default openai

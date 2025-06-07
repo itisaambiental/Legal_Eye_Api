@@ -184,6 +184,7 @@ CREATE TABLE IF NOT EXISTS legal_verbs (
   FULLTEXT (translation)
 );
 
+
 -- Table: req_identifications
 -- Description: Metadata of a legal requirements identification analysis.
 CREATE TABLE IF NOT EXISTS req_identifications (
@@ -192,7 +193,7 @@ CREATE TABLE IF NOT EXISTS req_identifications (
     description TEXT,
     user_id BIGINT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    status ENUM('Active', 'Failed', 'Completed') DEFAULT 'Active',
+    status ENUM('Activo', 'Fallido', 'Completado') DEFAULT 'Activo',
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
     FULLTEXT KEY idx_req_identifications_description (description)
 );
@@ -245,7 +246,7 @@ CREATE TABLE IF NOT EXISTS req_identifications_requirement_legal_basis_articles 
     requirement_id INT NOT NULL,                 
     legal_basis_id INT NOT NULL,                 
     article_id INT NOT NULL,                     
-    article_type ENUM('mandatory', 'complementary', 'general') NOT NULL DEFAULT 'general',
+    article_type ENUM('obligatorio', 'complementario', 'general') NOT NULL DEFAULT 'general',
     PRIMARY KEY (req_identification_id, requirement_id, legal_basis_id, article_id),
     FOREIGN KEY (req_identification_id, requirement_id)
         REFERENCES req_identifications_requirements(req_identification_id, requirement_id)
@@ -253,3 +254,4 @@ CREATE TABLE IF NOT EXISTS req_identifications_requirement_legal_basis_articles 
     FOREIGN KEY (legal_basis_id) REFERENCES legal_basis(id) ON DELETE RESTRICT,
     FOREIGN KEY (article_id) REFERENCES article(id) ON DELETE CASCADE
 );
+

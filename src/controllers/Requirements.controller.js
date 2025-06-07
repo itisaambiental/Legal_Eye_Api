@@ -85,7 +85,10 @@ export const getAllRequirements = async (req, res) => {
     return res.status(200).json({ requirements })
   } catch (error) {
     if (error instanceof HttpException) {
-      return res.status(error.status).json({ message: error.message })
+      return res.status(error.status).json({
+        message: error.message,
+        ...(error.errors && { errors: error.errors })
+      })
     }
     return res.status(500).json({ message: 'Internal Server Error' })
   }
@@ -110,7 +113,10 @@ export const getRequirementById = async (req, res) => {
     return res.status(200).json({ requirement })
   } catch (error) {
     if (error instanceof HttpException) {
-      return res.status(error.status).json({ message: error.message })
+      return res.status(error.status).json({
+        message: error.message,
+        ...(error.errors && { errors: error.errors })
+      })
     }
     return res.status(500).json({ message: 'Internal Server Error' })
   }
@@ -135,7 +141,10 @@ export const getRequirementsByNumber = async (req, res) => {
     return res.status(200).json({ requirements })
   } catch (error) {
     if (error instanceof HttpException) {
-      return res.status(error.status).json({ message: error.message })
+      return res.status(error.status).json({
+        message: error.message,
+        ...(error.errors && { errors: error.errors })
+      })
     }
     return res.status(500).json({ message: 'Internal Server Error' })
   }
@@ -160,7 +169,10 @@ export const getRequirementsByName = async (req, res) => {
     return res.status(200).json({ requirements })
   } catch (error) {
     if (error instanceof HttpException) {
-      return res.status(error.status).json({ message: error.message })
+      return res.status(error.status).json({
+        message: error.message,
+        ...(error.errors && { errors: error.errors })
+      })
     }
     return res.status(500).json({ message: 'Internal Server Error' })
   }
@@ -185,7 +197,10 @@ export const getRequirementsBySubject = async (req, res) => {
     return res.status(200).json({ requirements })
   } catch (error) {
     if (error instanceof HttpException) {
-      return res.status(error.status).json({ message: error.message })
+      return res.status(error.status).json({
+        message: error.message,
+        ...(error.errors && { errors: error.errors })
+      })
     }
     return res.status(500).json({ message: 'Internal Server Error' })
   }
@@ -249,7 +264,10 @@ export const getRequirementsByMandatoryDescription = async (req, res) => {
     return res.status(200).json({ requirements })
   } catch (error) {
     if (error instanceof HttpException) {
-      return res.status(error.status).json({ message: error.message })
+      return res.status(error.status).json({
+        message: error.message,
+        ...(error.errors && { errors: error.errors })
+      })
     }
     return res.status(500).json({ message: 'Internal Server Error' })
   }
@@ -276,7 +294,10 @@ export const getRequirementsByComplementaryDescription = async (req, res) => {
     return res.status(200).json({ requirements })
   } catch (error) {
     if (error instanceof HttpException) {
-      return res.status(error.status).json({ message: error.message })
+      return res.status(error.status).json({
+        message: error.message,
+        ...(error.errors && { errors: error.errors })
+      })
     }
     return res.status(500).json({ message: 'Internal Server Error' })
   }
@@ -303,7 +324,10 @@ export const getRequirementsByMandatorySentences = async (req, res) => {
     return res.status(200).json({ requirements })
   } catch (error) {
     if (error instanceof HttpException) {
-      return res.status(error.status).json({ message: error.message })
+      return res.status(error.status).json({
+        message: error.message,
+        ...(error.errors && { errors: error.errors })
+      })
     }
     return res.status(500).json({ message: 'Internal Server Error' })
   }
@@ -330,7 +354,10 @@ export const getRequirementsByComplementarySentences = async (req, res) => {
     return res.status(200).json({ requirements })
   } catch (error) {
     if (error instanceof HttpException) {
-      return res.status(error.status).json({ message: error.message })
+      return res.status(error.status).json({
+        message: error.message,
+        ...(error.errors && { errors: error.errors })
+      })
     }
     return res.status(500).json({ message: 'Internal Server Error' })
   }
@@ -357,7 +384,10 @@ export const getRequirementsByMandatoryKeywords = async (req, res) => {
     return res.status(200).json({ requirements })
   } catch (error) {
     if (error instanceof HttpException) {
-      return res.status(error.status).json({ message: error.message })
+      return res.status(error.status).json({
+        message: error.message,
+        ...(error.errors && { errors: error.errors })
+      })
     }
     return res.status(500).json({ message: 'Internal Server Error' })
   }
@@ -384,7 +414,10 @@ export const getRequirementsByComplementaryKeywords = async (req, res) => {
     return res.status(200).json({ requirements })
   } catch (error) {
     if (error instanceof HttpException) {
-      return res.status(error.status).json({ message: error.message })
+      return res.status(error.status).json({
+        message: error.message,
+        ...(error.errors && { errors: error.errors })
+      })
     }
     return res.status(500).json({ message: 'Internal Server Error' })
   }
@@ -409,7 +442,10 @@ export const getRequirementsByCondition = async (req, res) => {
     return res.status(200).json({ requirements })
   } catch (error) {
     if (error instanceof HttpException) {
-      return res.status(error.status).json({ message: error.message })
+      return res.status(error.status).json({
+        message: error.message,
+        ...(error.errors && { errors: error.errors })
+      })
     }
     return res.status(500).json({ message: 'Internal Server Error' })
   }
@@ -434,7 +470,10 @@ export const getRequirementsByEvidence = async (req, res) => {
     return res.status(200).json({ requirements })
   } catch (error) {
     if (error instanceof HttpException) {
-      return res.status(error.status).json({ message: error.message })
+      return res.status(error.status).json({
+        message: error.message,
+        ...(error.errors && { errors: error.errors })
+      })
     }
     return res.status(500).json({ message: 'Internal Server Error' })
   }
@@ -459,7 +498,10 @@ export const getRequirementsByPeriodicity = async (req, res) => {
     return res.status(200).json({ requirements })
   } catch (error) {
     if (error instanceof HttpException) {
-      return res.status(error.status).json({ message: error.message })
+      return res.status(error.status).json({
+        message: error.message,
+        ...(error.errors && { errors: error.errors })
+      })
     }
     return res.status(500).json({ message: 'Internal Server Error' })
   }
@@ -486,7 +528,10 @@ export const getRequirementsByAcceptanceCriteria = async (req, res) => {
     return res.status(200).json({ requirements })
   } catch (error) {
     if (error instanceof HttpException) {
-      return res.status(error.status).json({ message: error.message })
+      return res.status(error.status).json({
+        message: error.message,
+        ...(error.errors && { errors: error.errors })
+      })
     }
     return res.status(500).json({ message: 'Internal Server Error' })
   }

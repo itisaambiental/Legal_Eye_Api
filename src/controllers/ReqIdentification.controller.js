@@ -6,7 +6,7 @@ import parseDate from '../utils/parseDate.js'
 /**
  * Controller for requirement identifications operations.
  * @module ReqIdentificationController
- */
+*/
 
 /**
  * Creates a new requirement identification.
@@ -23,7 +23,7 @@ export const createReqIdentification = async (req, res) => {
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-    const { reqIdentificationId, jobId } = await ReqIdentificationService.create(Number(userId), {
+    const { reqIdentificationId, jobId } = await ReqIdentificationService.create(userId, {
       reqIdentificationName,
       reqIdentificationDescription,
       legalBasisIds,
@@ -56,9 +56,12 @@ export const getAllReqIdentifications = async (req, res) => {
     }
     const reqIdentifications = await ReqIdentificationService.getAll()
     return res.status(200).json({ reqIdentifications })
-  } catch (err) {
-    if (err instanceof HttpException) {
-      return res.status(err.status).json({ message: err.message })
+  } catch (error) {
+    if (error instanceof HttpException) {
+      return res.status(error.status).json({
+        message: error.message,
+        ...(error.errors && { errors: error.errors })
+      })
     }
     return res.status(500).json({ message: 'Internal Server Error' })
   }
@@ -79,11 +82,14 @@ export const getReqIdentificationById = async (req, res) => {
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-    const reqIdentification = await ReqIdentificationService.getById(Number(id))
+    const reqIdentification = await ReqIdentificationService.getById(id)
     return res.status(200).json({ reqIdentification })
-  } catch (err) {
-    if (err instanceof HttpException) {
-      return res.status(err.status).json({ message: err.message })
+  } catch (error) {
+    if (error instanceof HttpException) {
+      return res.status(error.status).json({
+        message: error.message,
+        ...(error.errors && { errors: error.errors })
+      })
     }
     return res.status(500).json({ message: 'Internal Server Error' })
   }
@@ -106,9 +112,12 @@ export const getReqIdentificationsByName = async (req, res) => {
     }
     const reqIdentifications = await ReqIdentificationService.getByName(name)
     return res.status(200).json({ reqIdentifications })
-  } catch (err) {
-    if (err instanceof HttpException) {
-      return res.status(err.status).json({ message: err.message })
+  } catch (error) {
+    if (error instanceof HttpException) {
+      return res.status(error.status).json({
+        message: error.message,
+        ...(error.errors && { errors: error.errors })
+      })
     }
     return res.status(500).json({ message: 'Internal Server Error' })
   }
@@ -131,9 +140,12 @@ export const getReqIdentificationsByDescription = async (req, res) => {
     }
     const reqIdentifications = await ReqIdentificationService.getByDescription(description)
     return res.status(200).json({ reqIdentifications })
-  } catch (err) {
-    if (err instanceof HttpException) {
-      return res.status(err.status).json({ message: err.message })
+  } catch (error) {
+    if (error instanceof HttpException) {
+      return res.status(error.status).json({
+        message: error.message,
+        ...(error.errors && { errors: error.errors })
+      })
     }
     return res.status(500).json({ message: 'Internal Server Error' })
   }
@@ -154,11 +166,14 @@ export const getReqIdentificationsByUserId = async (req, res) => {
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-    const reqIdentifications = await ReqIdentificationService.getByUserId(Number(id))
+    const reqIdentifications = await ReqIdentificationService.getByUserId(id)
     return res.status(200).json({ reqIdentifications })
-  } catch (err) {
-    if (err instanceof HttpException) {
-      return res.status(err.status).json({ message: err.message })
+  } catch (error) {
+    if (error instanceof HttpException) {
+      return res.status(error.status).json({
+        message: error.message,
+        ...(error.errors && { errors: error.errors })
+      })
     }
     return res.status(500).json({ message: 'Internal Server Error' })
   }
@@ -197,9 +212,12 @@ export const getReqIdentificationsByCreatedAt = async (req, res) => {
 
     const reqIdentifications = await ReqIdentificationService.getByCreatedAt(parsedFrom, parsedTo)
     return res.status(200).json({ reqIdentifications })
-  } catch (err) {
-    if (err instanceof HttpException) {
-      return res.status(err.status).json({ message: err.message })
+  } catch (error) {
+    if (error instanceof HttpException) {
+      return res.status(error.status).json({
+        message: error.message,
+        ...(error.errors && { errors: error.errors })
+      })
     }
     return res.status(500).json({ message: 'Internal Server Error' })
   }
@@ -222,9 +240,12 @@ export const getReqIdentificationsByStatus = async (req, res) => {
     }
     const reqIdentifications = await ReqIdentificationService.getByStatus(status)
     return res.status(200).json({ reqIdentifications })
-  } catch (err) {
-    if (err instanceof HttpException) {
-      return res.status(err.status).json({ message: err.message })
+  } catch (error) {
+    if (error instanceof HttpException) {
+      return res.status(error.status).json({
+        message: error.message,
+        ...(error.errors && { errors: error.errors })
+      })
     }
     return res.status(500).json({ message: 'Internal Server Error' })
   }
@@ -244,11 +265,14 @@ export const getReqIdentificationsBySubjectId = async (req, res) => {
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-    const reqIdentifications = await ReqIdentificationService.getBySubjectId(Number(subjectId))
+    const reqIdentifications = await ReqIdentificationService.getBySubjectId(subjectId)
     return res.status(200).json({ reqIdentifications })
-  } catch (err) {
-    if (err instanceof HttpException) {
-      return res.status(err.status).json({ message: err.message })
+  } catch (error) {
+    if (error instanceof HttpException) {
+      return res.status(error.status).json({
+        message: error.message,
+        ...(error.errors && { errors: error.errors })
+      })
     }
     return res.status(500).json({ message: 'Internal Server Error' })
   }
@@ -277,14 +301,17 @@ export const getReqIdentificationsBySubjectAndAspects = async (req, res) => {
         : []
 
     const reqIdentifications = await ReqIdentificationService.getBySubjectAndAspects(
-      Number(subjectId),
+      subjectId,
       aspects
     )
 
     return res.status(200).json({ reqIdentifications })
-  } catch (err) {
-    if (err instanceof HttpException) {
-      return res.status(err.status).json({ message: err.message })
+  } catch (error) {
+    if (error instanceof HttpException) {
+      return res.status(error.status).json({
+        message: error.message,
+        ...(error.errors && { errors: error.errors })
+      })
     }
     return res.status(500).json({ message: 'Internal Server Error' })
   }
@@ -306,9 +333,12 @@ export const getReqIdentificationsByJurisdiction = async (req, res) => {
     }
     const reqIdentifications = await ReqIdentificationService.getByJurisdiction(jurisdiction)
     return res.status(200).json({ reqIdentifications })
-  } catch (err) {
-    if (err instanceof HttpException) {
-      return res.status(err.status).json({ message: err.message })
+  } catch (error) {
+    if (error instanceof HttpException) {
+      return res.status(error.status).json({
+        message: error.message,
+        ...(error.errors && { errors: error.errors })
+      })
     }
     return res.status(500).json({ message: 'Internal Server Error' })
   }
@@ -331,9 +361,12 @@ export const getReqIdentificationsByState = async (req, res) => {
     }
     const reqIdentifications = await ReqIdentificationService.getByState(state)
     return res.status(200).json({ reqIdentifications })
-  } catch (err) {
-    if (err instanceof HttpException) {
-      return res.status(err.status).json({ message: err.message })
+  } catch (error) {
+    if (error instanceof HttpException) {
+      return res.status(error.status).json({
+        message: error.message,
+        ...(error.errors && { errors: error.errors })
+      })
     }
     return res.status(500).json({ message: 'Internal Server Error' })
   }
@@ -373,9 +406,12 @@ export const getReqIdentificationsByStateAndMunicipalities = async (req, res) =>
       municipalitiesList
     )
     return res.status(200).json({ reqIdentifications })
-  } catch (err) {
-    if (err instanceof HttpException) {
-      return res.status(err.status).json({ message: err.message })
+  } catch (error) {
+    if (error instanceof HttpException) {
+      return res.status(error.status).json({
+        message: error.message,
+        ...(error.errors && { errors: error.errors })
+      })
     }
     return res.status(500).json({ message: 'Internal Server Error' })
   }
@@ -397,10 +433,10 @@ export const updateReqIdentification = async (req, res) => {
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-    const reqIdentification = await ReqIdentificationService.update(Number(id), {
+    const reqIdentification = await ReqIdentificationService.update(id, {
       reqIdentificationName,
       reqIdentificationDescription,
-      newUserId: Number(newUserId)
+      newUserId
     })
     return res.status(200).json({ reqIdentification })
   } catch (error) {
@@ -429,7 +465,7 @@ export const deleteReqIdentification = async (req, res) => {
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
-    const { success } = await ReqIdentificationService.deleteById(Number(id))
+    const { success } = await ReqIdentificationService.deleteById(id)
     if (success) {
       return res.sendStatus(204)
     } else {
@@ -469,7 +505,7 @@ export const deleteReqIdentificationsBatch = async (req, res) => {
       return res.status(403).json({ message: 'Unauthorized' })
     }
     const { success } = await ReqIdentificationService.deleteBatch(
-      reqIdentificationIds.map(Number)
+      reqIdentificationIds
     )
     if (success) {
       return res.sendStatus(204)

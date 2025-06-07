@@ -7,7 +7,7 @@ import ArticlesService from '../services/articles/Articles.service.js'
 import UserRepository from '../repositories/User.repository.js'
 import EmailService from '../services/email/Email.service.js'
 import { CONCURRENCY_EXTRACT_ARTICLES } from '../config/variables.config.js'
-import { getModel } from '../config/openapi.config.js'
+import { getTextModel } from '../config/openapi.config.js'
 import emailQueue from './emailWorker.js'
 
 /**
@@ -44,7 +44,7 @@ extractArticlesQueue.process(CONCURRENCY, async (job, done) => {
       legalBase.url
     )
     if (!success) throw new HttpException(500, 'Document Processing Error', error)
-    const model = getModel(intelligenceLevel)
+    const model = getTextModel(intelligenceLevel)
     const extractor = ArticleExtractorFactory.getExtractor(
       legalBase.classification,
       legalBase.legal_name,
