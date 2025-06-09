@@ -10,6 +10,7 @@ import {
   reqIdentificationUpdateSchema
 } from '../../schemas/reqIdentification.schema.js'
 import reqIdentificationQueue from '../../workers/reqIdentificationWorker.js'
+import ReqIdentifyService from '../reqIdentification/reqIdentify/ReqIdentify.service.js'
 import HttpException from '../../services/errors/HttpException.js'
 import FileService from '../files/File.service.js'
 import { format } from 'date-fns'
@@ -43,7 +44,7 @@ class ReqIdentificationService {
    * @property {string} name - The name of the identification.
    * @property {string|null} description - A description of the identification.
    * @property {string} createdAt - Formatted creation date (dd-MM-yyyy).
-   * @property {'Active'|'Failed'|'Completed'} status - The current status of the identification.
+   * @property {'Activo'|'Fallido'|'Completado'} status - The current status of the identification.
    * @property {User} user - The user who created the identification.
    * @property {Subject} subject - The subject associated with the identification.
    * @property {Aspect[]} aspects - List of associated aspects.
@@ -158,7 +159,9 @@ class ReqIdentificationService {
         }))
         throw new HttpException(400, 'Validation failed', validationErrors)
       }
-      if (error instanceof HttpException) throw error
+      if (error instanceof HttpException) {
+        throw error
+      }
       throw new HttpException(
         500,
         'Unexpected error during requirement identification creation'
@@ -199,7 +202,7 @@ class ReqIdentificationService {
           if (reqIdentification.createdAt) {
             formattedCreatedAt = format(
               new Date(reqIdentification.createdAt),
-              'dd-MM-yyyy',
+              'dd-MM-yyyy hh:mm a',
               { locale: es }
             )
           }
@@ -214,7 +217,9 @@ class ReqIdentificationService {
 
       return reqIdentificationsList
     } catch (error) {
-      if (error instanceof HttpException) throw error
+      if (error instanceof HttpException) {
+        throw error
+      }
       throw new HttpException(
         500,
         'Failed to retrieve requirement identifications'
@@ -233,7 +238,7 @@ class ReqIdentificationService {
     try {
       const reqIdentification = await ReqIdentificationRepository.findById(id)
       if (!reqIdentification) {
-        return HttpException(404, 'Requirement identification not found')
+        throw new HttpException(404, 'Requirement identification not found')
       }
 
       let user = null
@@ -250,7 +255,7 @@ class ReqIdentificationService {
       if (reqIdentification.createdAt) {
         formattedCreatedAt = format(
           new Date(reqIdentification.createdAt),
-          'dd-MM-yyyy',
+          'dd-MM-yyyy hh:mm a',
           { locale: es }
         )
       }
@@ -260,7 +265,9 @@ class ReqIdentificationService {
         createdAt: formattedCreatedAt
       }
     } catch (error) {
-      if (error instanceof HttpException) throw error
+      if (error instanceof HttpException) {
+        throw error
+      }
       throw new HttpException(
         500,
         'Failed to retrieve requirement identification by ID'
@@ -303,7 +310,7 @@ class ReqIdentificationService {
           if (reqIdentification.createdAt) {
             formattedCreatedAt = format(
               new Date(reqIdentification.createdAt),
-              'dd-MM-yyyy',
+              'dd-MM-yyyy hh:mm a',
               { locale: es }
             )
           }
@@ -318,7 +325,9 @@ class ReqIdentificationService {
 
       return reqIdentificationsList
     } catch (error) {
-      if (error instanceof HttpException) throw error
+      if (error instanceof HttpException) {
+        throw error
+      }
       throw new HttpException(
         500,
         'Failed to retrieve requirement identifications by name'
@@ -360,7 +369,7 @@ class ReqIdentificationService {
           if (reqIdentification.createdAt) {
             formattedCreatedAt = format(
               new Date(reqIdentification.createdAt),
-              'dd-MM-yyyy',
+              'dd-MM-yyyy hh:mm a',
               { locale: es }
             )
           }
@@ -375,7 +384,9 @@ class ReqIdentificationService {
 
       return reqIdentificationsList
     } catch (error) {
-      if (error instanceof HttpException) throw error
+      if (error instanceof HttpException) {
+        throw error
+      }
       throw new HttpException(
         500,
         'Failed to retrieve requirement identifications by description'
@@ -422,7 +433,7 @@ class ReqIdentificationService {
           if (reqIdentification.createdAt) {
             formattedCreatedAt = format(
               new Date(reqIdentification.createdAt),
-              'dd-MM-yyyy',
+              'dd-MM-yyyy hh:mm a',
               { locale: es }
             )
           }
@@ -437,7 +448,9 @@ class ReqIdentificationService {
 
       return reqIdentificationsList
     } catch (error) {
-      if (error instanceof HttpException) throw error
+      if (error instanceof HttpException) {
+        throw error
+      }
       throw new HttpException(
         500,
         'Failed to retrieve requirement identifications by user name'
@@ -482,7 +495,7 @@ class ReqIdentificationService {
           if (reqIdentification.createdAt) {
             formattedCreatedAt = format(
               new Date(reqIdentification.createdAt),
-              'dd-MM-yyyy',
+              'dd-MM-yyyy hh:mm a',
               { locale: es }
             )
           }
@@ -497,7 +510,9 @@ class ReqIdentificationService {
 
       return reqIdentificationsList
     } catch (error) {
-      if (error instanceof HttpException) throw error
+      if (error instanceof HttpException) {
+        throw error
+      }
       throw new HttpException(
         500,
         'Failed to retrieve requirement identifications by creation date range'
@@ -508,7 +523,7 @@ class ReqIdentificationService {
   /**
    * Retrieves requirement identifications by status.
    *
-   * @param {string} status - The status to filter by ('Active', 'Failed', or 'Completed').
+   * @param {string} status - The status to filter by ('Activo' | 'Fallido' | 'Completado').
    * @returns {Promise<ReqIdentification[]>} - List of requirement identifications.
    * @throws {HttpException}
    */
@@ -540,7 +555,7 @@ class ReqIdentificationService {
           if (reqIdentification.createdAt) {
             formattedCreatedAt = format(
               new Date(reqIdentification.createdAt),
-              'dd-MM-yyyy',
+              'dd-MM-yyyy hh:mm a',
               { locale: es }
             )
           }
@@ -555,7 +570,9 @@ class ReqIdentificationService {
 
       return reqIdentificationsList
     } catch (error) {
-      if (error instanceof HttpException) throw error
+      if (error instanceof HttpException) {
+        throw error
+      }
       throw new HttpException(
         500,
         'Failed to retrieve requirement identifications by status'
@@ -601,7 +618,7 @@ class ReqIdentificationService {
           if (reqIdentification.createdAt) {
             formattedCreatedAt = format(
               new Date(reqIdentification.createdAt),
-              'dd-MM-yyyy',
+              'dd-MM-yyyy hh:mm a',
               { locale: es }
             )
           }
@@ -616,7 +633,9 @@ class ReqIdentificationService {
 
       return reqIdentificationsList
     } catch (error) {
-      if (error instanceof HttpException) throw error
+      if (error instanceof HttpException) {
+        throw error
+      }
       throw new HttpException(
         500,
         'Failed to retrieve requirement identifications by subject ID'
@@ -675,7 +694,7 @@ class ReqIdentificationService {
           if (reqIdentification.createdAt) {
             formattedCreatedAt = format(
               new Date(reqIdentification.createdAt),
-              'dd-MM-yyyy',
+              'dd-MM-yyyy hh:mm a',
               { locale: es }
             )
           }
@@ -690,7 +709,9 @@ class ReqIdentificationService {
 
       return reqIdentificationsList
     } catch (error) {
-      if (error instanceof HttpException) throw error
+      if (error instanceof HttpException) {
+        throw error
+      }
       throw new HttpException(
         500,
         'Failed to retrieve requirement identifications by subject and aspects'
@@ -732,7 +753,7 @@ class ReqIdentificationService {
           if (reqIdentification.createdAt) {
             formattedCreatedAt = format(
               new Date(reqIdentification.createdAt),
-              'dd-MM-yyyy',
+              'dd-MM-yyyy hh:mm a',
               { locale: es }
             )
           }
@@ -747,7 +768,9 @@ class ReqIdentificationService {
 
       return reqIdentificationsList
     } catch (error) {
-      if (error instanceof HttpException) throw error
+      if (error instanceof HttpException) {
+        throw error
+      }
       throw new HttpException(
         500,
         'Failed to retrieve requirement identifications by jurisdiction'
@@ -790,7 +813,7 @@ class ReqIdentificationService {
           if (reqIdentification.createdAt) {
             formattedCreatedAt = format(
               new Date(reqIdentification.createdAt),
-              'dd-MM-yyyy',
+              'dd-MM-yyyy hh:mm a',
               { locale: es }
             )
           }
@@ -805,7 +828,9 @@ class ReqIdentificationService {
 
       return reqIdentificationsList
     } catch (error) {
-      if (error instanceof HttpException) throw error
+      if (error instanceof HttpException) {
+        throw error
+      }
       throw new HttpException(
         500,
         'Failed to retrieve requirement identifications by state'
@@ -851,7 +876,7 @@ class ReqIdentificationService {
           if (reqIdentification.createdAt) {
             formattedCreatedAt = format(
               new Date(reqIdentification.createdAt),
-              'dd-MM-yyyy',
+              'dd-MM-yyyy hh:mm a',
               { locale: es }
             )
           }
@@ -866,7 +891,9 @@ class ReqIdentificationService {
 
       return reqIdentificationsList
     } catch (error) {
-      if (error instanceof HttpException) throw error
+      if (error instanceof HttpException) {
+        throw error
+      }
       throw new HttpException(
         500,
         'Failed to retrieve requirement identifications by state and municipalities'
@@ -936,7 +963,9 @@ class ReqIdentificationService {
         }))
         throw new HttpException(400, 'Validation failed', validationErrors)
       }
-      if (error instanceof HttpException) throw error
+      if (error instanceof HttpException) {
+        throw error
+      }
       throw new HttpException(
         500,
         'Failed to update requirement identification'
@@ -955,6 +984,14 @@ class ReqIdentificationService {
       const reqIdentification = await ReqIdentificationRepository.findById(id)
       if (!reqIdentification) {
         throw new HttpException(404, 'Requirement identification not found')
+      }
+      const reqIdentificationJobs =
+        await ReqIdentifyService.hasPendingReqIdentificationJobs(id)
+      if (reqIdentificationJobs.hasPendingJobs) {
+        throw new HttpException(
+          409,
+          'Cannot delete Requirement Identification with pending Requirement Identification jobs'
+        )
       }
       const reqIdentificationDeleted =
         await ReqIdentificationRepository.deleteById(id)
@@ -981,12 +1018,13 @@ class ReqIdentificationService {
    */
   static async deleteBatch (reqIdentificationIds) {
     try {
-      const existingReqIdentifications =
-        await ReqIdentificationRepository.findByIds(reqIdentificationIds)
-      if (existingReqIdentifications.length !== reqIdentificationIds.length) {
+      const reqIdentifications = await ReqIdentificationRepository.findByIds(
+        reqIdentificationIds
+      )
+      if (reqIdentifications.length !== reqIdentificationIds.length) {
         const notFoundIds = reqIdentificationIds.filter(
           (id) =>
-            !existingReqIdentifications.some(
+            !reqIdentifications.some(
               (reqIdentification) => reqIdentification.id === id
             )
         )
@@ -996,6 +1034,28 @@ class ReqIdentificationService {
           {
             notFoundIds
           }
+        )
+      }
+      const pendingReqIdentificationJobs = []
+      await Promise.all(
+        reqIdentifications.map(async (reqIdentification) => {
+          const reqIdentificationJobs =
+            await ReqIdentifyService.hasPendingReqIdentificationJobs(
+              reqIdentification.id
+            )
+          if (reqIdentificationJobs.hasPendingJobs) {
+            pendingReqIdentificationJobs.push({
+              id: reqIdentification.id,
+              name: reqIdentification.name
+            })
+          }
+        })
+      )
+      if (pendingReqIdentificationJobs.length > 0) {
+        throw new HttpException(
+          409,
+          'Cannot delete Requirement Identifications with pending Requirement Identification jobs',
+          { reqIdentifications: pendingReqIdentificationJobs }
         )
       }
       const reqIdentificationsDeleted =

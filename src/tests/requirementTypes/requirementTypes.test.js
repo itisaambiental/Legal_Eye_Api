@@ -495,6 +495,33 @@ describe('DELETE /api/requirement-types/:id', () => {
     expect(response.body.message).toMatch(/not found/i)
   })
 
+  test('Should return 409 if the requirement type is associated with requirement identifications', async () => {
+    const requirementType = generateRequirementTypeData({
+      name: 'Conflict Type'
+    })
+    const creationResponse = await api
+      .post('/api/requirement-types')
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .send(requirementType)
+      .expect(201)
+
+    const id = creationResponse.body.requirementType.id
+
+    jest
+      .spyOn(RequirementTypesRepository, 'checkReqIdentificationAssociations')
+      .mockResolvedValueOnce({ isAssociatedToReqIdentifications: true })
+
+    const response = await api
+      .delete(`/api/requirement-types/${id}`)
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .expect(409)
+      .expect('Content-Type', /application\/json/)
+
+    expect(response.body.message).toMatch(
+      /associated with one or more requirement identifications/i
+    )
+  })
+
   test('Should return 401 if the user is unauthorized', async () => {
     const data = generateRequirementTypeData({ name: 'Unauthorized Delete' })
 
@@ -602,6 +629,61 @@ describe('DELETE /api/requirement-types/delete/batch', () => {
 
       expect(response.body.message).toMatch(/missing required field/i)
     }
+  })
+
+  test('Should return 409 if one or more requirement types are associated with requirement identifications', async () => {
+    const type1 = generateRequirementTypeData({ name: 'Associated Type 1' })
+    const type2 = generateRequirementTypeData({ name: 'Free Type 2' })
+
+    const res1 = await api
+      .post('/api/requirement-types')
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .send(type1)
+      .expect(201)
+
+    const res2 = await api
+      .post('/api/requirement-types')
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .send(type2)
+      .expect(201)
+
+    const typeId1 = res1.body.requirementType.id
+    const typeId2 = res2.body.requirementType.id
+
+    jest
+      .spyOn(
+        RequirementTypesRepository,
+        'checkReqIdentificationAssociationsBatch'
+      )
+      .mockResolvedValueOnce([
+        {
+          id: typeId1,
+          name: type1.name,
+          isAssociatedToReqIdentifications: true
+        },
+        {
+          id: typeId2,
+          name: type2.name,
+          isAssociatedToReqIdentifications: false
+        }
+      ])
+
+    const response = await api
+      .delete('/api/requirement-types/delete/batch')
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .send({ requirementTypesIds: [typeId1, typeId2] })
+      .expect(409)
+      .expect('Content-Type', /application\/json/)
+
+    expect(response.body.message).toMatch(
+      /associated with requirement identifications/i
+    )
+    expect(response.body.errors.requirementTypes).toEqual([
+      {
+        id: typeId1,
+        name: type1.name
+      }
+    ])
   })
 
   test('Should return 401 if the user is unauthorized', async () => {

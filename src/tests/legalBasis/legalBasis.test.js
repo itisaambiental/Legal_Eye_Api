@@ -6,6 +6,7 @@ import LegalBasisRepository from '../../repositories/LegalBasis.repository.js'
 import AspectsRepository from '../../repositories/Aspects.repository.js'
 import RequirementRepository from '../../repositories/Requirements.repository.js'
 import extractArticlesService from '../../services/articles/extractArticles/ExtractArticles.service.js'
+import ReqIdentifyService from '../../services/reqIdentification/reqIdentify/ReqIdentify.service.js'
 import SendLegalBasisService from '../../services/legalBasis/sendLegalBasis/SendLegalBasis.service.js'
 
 import {
@@ -66,9 +67,11 @@ beforeAll(async () => {
     createdAspectIds.push(aspect.id)
   }
 }, timeout)
+
 afterEach(() => {
   jest.restoreAllMocks()
 })
+
 describe('Create a legal base', () => {
   beforeEach(async () => {
     await LegalBasisRepository.deleteAll()
@@ -755,6 +758,7 @@ describe('Create a legal base', () => {
     )
   })
 })
+
 describe('Get All Legal Basis', () => {
   beforeEach(async () => {
     await LegalBasisRepository.deleteAll()
@@ -899,6 +903,7 @@ describe('Get Legal Basis By ID', () => {
     expect(response.body.error).toMatch(/token missing or invalid/i)
   })
 })
+
 describe('Get Legal Basis By Name', () => {
   let createdLegalBasis
 
@@ -1510,6 +1515,7 @@ describe('Get Legal Basis By Subject', () => {
     expect(response.body.error).toMatch(/token missing or invalid/i)
   })
 })
+
 describe('Get Legal Basis By Subject And Aspects', () => {
   let createdLegalBasis
 
@@ -1610,746 +1616,573 @@ describe('Get Legal Basis By Subject And Aspects', () => {
 
     expect(response.body.error).toMatch(/token missing or invalid/i)
   })
+})
 
-  describe('Get Legal Basis By Last Reform', () => {
-    let createdLegalBasis
+describe('Get Legal Basis By Last Reform', () => {
+  let createdLegalBasis
 
-    beforeEach(async () => {
-      await LegalBasisRepository.deleteAll()
-      const legalBasisData = generateLegalBasisData({
-        subjectId: String(createdSubjectId),
-        aspectsIds: JSON.stringify(createdAspectIds),
-        lastReform: '2024-01-01'
-      })
-
-      const response = await api
-        .post('/api/legalBasis')
-        .set('Authorization', `Bearer ${tokenAdmin}`)
-        .send(legalBasisData)
-        .expect(201)
-        .expect('Content-Type', /application\/json/)
-
-      createdLegalBasis = response.body.legalBasis
+  beforeEach(async () => {
+    await LegalBasisRepository.deleteAll()
+    const legalBasisData = generateLegalBasisData({
+      subjectId: String(createdSubjectId),
+      aspectsIds: JSON.stringify(createdAspectIds),
+      lastReform: '2024-01-01'
     })
 
-    test('Should return 400 if "from" date is invalid', async () => {
-      const response = await api
-        .get('/api/legalBasis/lastReform/lastReform')
-        .set('Authorization', `Bearer ${tokenAdmin}`)
-        .query({ from: 'invalid-date', to: '2024-12-31' })
-        .expect(400)
-        .expect('Content-Type', /application\/json/)
+    const response = await api
+      .post('/api/legalBasis')
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .send(legalBasisData)
+      .expect(201)
+      .expect('Content-Type', /application\/json/)
 
-      expect(response.body.message).toMatch(/Invalid date format/i)
-      expect(response.body.errors).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({
-            field: 'from',
-            message: expect.stringMatching(/is not a valid date/i)
-          })
-        ])
-      )
-    })
-
-    test('Should return 400 if "to" date is invalid', async () => {
-      const response = await api
-        .get('/api/legalBasis/lastReform/lastReform')
-        .set('Authorization', `Bearer ${tokenAdmin}`)
-        .query({ from: '2024-01-01', to: 'invalid-date' })
-        .expect(400)
-        .expect('Content-Type', /application\/json/)
-
-      expect(response.body.message).toMatch(/Invalid date format/i)
-      expect(response.body.errors).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({
-            field: 'to',
-            message: expect.stringMatching(/is not a valid date/i)
-          })
-        ])
-      )
-    })
-
-    test('Should return 200 and legal basis if valid "from" and "to" are provided', async () => {
-      const response = await api
-        .get('/api/legalBasis/lastReform/lastReform')
-        .set('Authorization', `Bearer ${tokenAdmin}`)
-        .query({ from: '2024-01-01', to: '2024-12-31' })
-        .expect(200)
-        .expect('Content-Type', /application\/json/)
-
-      const { legalBasis } = response.body
-      expect(legalBasis).toBeInstanceOf(Array)
-      expect(legalBasis).toHaveLength(1)
-      expect(legalBasis[0]).toMatchObject({
-        id: createdLegalBasis.id,
-        legal_name: createdLegalBasis.legal_name,
-        classification: createdLegalBasis.classification,
-        jurisdiction: createdLegalBasis.jurisdiction,
-        abbreviation: createdLegalBasis.abbreviation,
-        state: createdLegalBasis.state,
-        municipality: createdLegalBasis.municipality,
-        last_reform: createdLegalBasis.last_reform,
-        url: createdLegalBasis.url,
-        fileKey: createdLegalBasis.fileKey
-      })
-    })
-
-    test('Should return 200 if only "from" is provided', async () => {
-      const response = await api
-        .get('/api/legalBasis/lastReform/lastReform')
-        .set('Authorization', `Bearer ${tokenAdmin}`)
-        .query({ from: '2024-01-01' })
-        .expect(200)
-        .expect('Content-Type', /application\/json/)
-
-      expect(response.body.legalBasis).toBeInstanceOf(Array)
-    })
-
-    test('Should return 200 if only "to" is provided', async () => {
-      const response = await api
-        .get('/api/legalBasis/lastReform/lastReform')
-        .set('Authorization', `Bearer ${tokenAdmin}`)
-        .query({ to: '2024-12-31' }) // Solo enviamos "to"
-        .expect(200)
-        .expect('Content-Type', /application\/json/)
-
-      expect(response.body.legalBasis).toBeInstanceOf(Array)
-    })
-
-    test('Should return 401 if the user is unauthorized', async () => {
-      const response = await api
-        .get('/api/legalBasis/lastReform/lastReform')
-        .query({ from: '2024-01-01', to: '2024-12-31' })
-        .expect(401)
-        .expect('Content-Type', /application\/json/)
-
-      expect(response.body.error).toMatch(/token missing or invalid/i)
-    })
+    createdLegalBasis = response.body.legalBasis
   })
 
-  describe('Update a Legal Basis', () => {
-    let createdLegalBasis
-    beforeEach(async () => {
-      await LegalBasisRepository.deleteAll()
+  test('Should return 400 if "from" date is invalid', async () => {
+    const response = await api
+      .get('/api/legalBasis/lastReform/lastReform')
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .query({ from: 'invalid-date', to: '2024-12-31' })
+      .expect(400)
+      .expect('Content-Type', /application\/json/)
 
-      const legalBasisData = generateLegalBasisData({
-        subjectId: String(createdSubjectId),
-        aspectsIds: JSON.stringify(createdAspectIds)
-      })
-      const response = await api
-        .post('/api/legalBasis')
-        .set('Authorization', `Bearer ${tokenAdmin}`)
-        .send(legalBasisData)
-        .expect(201)
-        .expect('Content-Type', /application\/json/)
-
-      createdLegalBasis = response.body.legalBasis
-    })
-
-    test('Should successfully update a legal basis without a document', async () => {
-      const updatedData = generateLegalBasisData({
-        legalName: 'Updated Legal Name',
-        subjectId: String(createdSubjectId),
-        aspectsIds: JSON.stringify(createdAspectIds)
-      })
-
-      const updateResponse = await api
-        .patch(`/api/legalBasis/${createdLegalBasis.id}`)
-        .set('Authorization', `Bearer ${tokenAdmin}`)
-        .send(updatedData)
-        .expect(200)
-        .expect('Content-Type', /application\/json/)
-
-      const { jobId, legalBasis: updatedLegalBasis } = updateResponse.body
-      expect(jobId).toBeNull()
-
-      expect(updatedLegalBasis).toMatchObject({
-        ...createdLegalBasis,
-        legal_name: updatedData.legalName,
-        abbreviation: updatedData.abbreviation,
-        classification: updatedData.classification,
-        jurisdiction: updatedData.jurisdiction,
-        last_reform: updatedData.lastReform
-      })
-
-      expect(updatedLegalBasis.aspects).toEqual(
-        expect.arrayContaining(
-          createdAspectIds.map((aspectId) =>
-            expect.objectContaining({ aspect_id: aspectId })
-          )
-        )
-      )
-      expect(updatedLegalBasis.subject).toMatchObject({
-        subject_id: createdSubjectId,
-        subject_name: subjectName
-      })
-      const getResponse = await api
-        .get(`/api/legalBasis/${createdLegalBasis.id}`)
-        .set('Authorization', `Bearer ${tokenAdmin}`)
-        .expect(200)
-        .expect('Content-Type', /application\/json/)
-
-      const { legalBasis: retrievedLegalBasis } = getResponse.body
-      expect(retrievedLegalBasis).toMatchObject({
-        id: createdLegalBasis.id,
-        legal_name: updatedLegalBasis.legal_name,
-        classification: updatedLegalBasis.classification,
-        jurisdiction: updatedLegalBasis.jurisdiction,
-        abbreviation: updatedLegalBasis.abbreviation,
-        state: updatedLegalBasis.state,
-        municipality: updatedLegalBasis.municipality,
-        last_reform: updatedLegalBasis.last_reform,
-        url: updatedLegalBasis.url,
-        fileKey: updatedLegalBasis.fileKey,
-        subject: expect.objectContaining({
-          subject_id: createdSubjectId,
-          subject_name: subjectName
-        }),
-        aspects: expect.arrayContaining(
-          createdAspectIds.map((aspectId) =>
-            expect.objectContaining({ aspect_id: aspectId })
-          )
-        )
-      })
-    })
-    test('Should successfully update a legal basis with a document and return a jobId', async () => {
-      const document = Buffer.from('mock pdf content')
-      const updatedData = generateLegalBasisData({
-        legalName: 'Updated Legal Name with Document',
-        subjectId: String(createdSubjectId),
-        aspectsIds: JSON.stringify(createdAspectIds),
-        extractArticles: 'true'
-      })
-
-      const updateResponse = await api
-        .patch(`/api/legalBasis/${createdLegalBasis.id}`)
-        .set('Authorization', `Bearer ${tokenAdmin}`)
-        .attach('document', document, {
-          filename: 'file.pdf',
-          contentType: 'application/pdf'
-        })
-        .field('legalName', updatedData.legalName)
-        .field('abbreviation', updatedData.abbreviation)
-        .field('subjectId', updatedData.subjectId)
-        .field('aspectsIds', updatedData.aspectsIds)
-        .field('classification', updatedData.classification)
-        .field('jurisdiction', updatedData.jurisdiction)
-        .field('lastReform', updatedData.lastReform)
-        .field('extractArticles', updatedData.extractArticles)
-        .expect(200)
-        .expect('Content-Type', /application\/json/)
-
-      const { jobId, legalBasis: updatedLegalBasis } = updateResponse.body
-      expect(jobId).not.toBeNull()
-      expect(typeof jobId).toBe('string')
-      expect(updatedLegalBasis).toMatchObject({
-        ...createdLegalBasis,
-        legal_name: updatedData.legalName,
-        abbreviation: updatedData.abbreviation,
-        classification: updatedData.classification,
-        jurisdiction: updatedData.jurisdiction,
-        last_reform: updatedData.lastReform,
-        url: expect.stringContaining('file.pdf'),
-        fileKey: expect.stringContaining('file.pdf')
-      })
-      expect(updatedLegalBasis.aspects).toEqual(
-        expect.arrayContaining(
-          createdAspectIds.map((aspectId) =>
-            expect.objectContaining({ aspect_id: aspectId })
-          )
-        )
-      )
-      expect(updatedLegalBasis.subject).toMatchObject({
-        subject_id: createdSubjectId,
-        subject_name: subjectName
-      })
-    })
-    test('Should return 404 when trying to update a non-existing legal basis', async () => {
-      const nonExistentId = -1
-      const updatedData = generateLegalBasisData({
-        legalName: 'Non-Existent',
-        subjectId: String(createdSubjectId),
-        aspectsIds: JSON.stringify(createdAspectIds)
-      })
-
-      const response = await api
-        .patch(`/api/legalBasis/${nonExistentId}`)
-        .set('Authorization', `Bearer ${tokenAdmin}`)
-        .send(updatedData)
-        .expect(404)
-        .expect('Content-Type', /application\/json/)
-
-      expect(response.body.message).toMatch(/LegalBasis not found/i)
-    })
-
-    test('Should return 409 when trying to update a legal basis with a duplicate name', async () => {
-      const LegalBasisData = generateLegalBasisData({
-        legalName: 'Duplicate Name',
-        abbreviation: 'Duplicate Abbreviation',
-        subjectId: String(createdSubjectId),
-        aspectsIds: JSON.stringify(createdAspectIds)
-      })
-
-      await api
-        .post('/api/legalBasis')
-        .set('Authorization', `Bearer ${tokenAdmin}`)
-        .send(LegalBasisData)
-        .expect(201)
-        .expect('Content-Type', /application\/json/)
-
-      const response = await api
-        .patch(`/api/legalBasis/${createdLegalBasis.id}`)
-        .set('Authorization', `Bearer ${tokenAdmin}`)
-        .send(LegalBasisData)
-        .expect(409)
-        .expect('Content-Type', /application\/json/)
-
-      expect(response.body.message).toMatch(/LegalBasis already exists/i)
-    })
-    test('Should return 409 when trying to update a legal basis with a duplicate abbreviation', async () => {
-      const firstLegalBasisData = generateLegalBasisData({
-        legalName: 'First Legal Basis',
-        abbreviation: 'DUPLICATE_ABBR',
-        subjectId: String(createdSubjectId),
-        aspectsIds: JSON.stringify(createdAspectIds)
-      })
-
-      await api
-        .post('/api/legalBasis')
-        .set('Authorization', `Bearer ${tokenAdmin}`)
-        .send(firstLegalBasisData)
-        .expect(201)
-        .expect('Content-Type', /application\/json/)
-
-      const secondLegalBasisData = generateLegalBasisData({
-        legalName: 'Second Legal Basis',
-        abbreviation: 'UNIQUE_ABBR',
-        subjectId: String(createdSubjectId),
-        aspectsIds: JSON.stringify(createdAspectIds)
-      })
-
-      const creationResponse = await api
-        .post('/api/legalBasis')
-        .set('Authorization', `Bearer ${tokenAdmin}`)
-        .send(secondLegalBasisData)
-        .expect(201)
-        .expect('Content-Type', /application\/json/)
-      const createdLegalBasis = creationResponse.body.legalBasis
-      const response = await api
-        .patch(`/api/legalBasis/${createdLegalBasis.id}`)
-        .set('Authorization', `Bearer ${tokenAdmin}`)
-        .send({
-          ...secondLegalBasisData,
-          abbreviation: 'DUPLICATE_ABBR'
-        })
-        .expect(409)
-        .expect('Content-Type', /application\/json/)
-
-      expect(response.body.message).toMatch(
-        /LegalBasis abbreviation already exists/i
-      )
-    })
-
-    test('Should return 404 if Subject ID is invalid', async () => {
-      const updatedData = generateLegalBasisData({
-        legalName: 'Updated Legal Name',
-        subjectId: '-1',
-        aspectsIds: JSON.stringify(createdAspectIds)
-      })
-      const response = await api
-        .patch(`/api/legalBasis/${createdLegalBasis.id}`)
-        .set('Authorization', `Bearer ${tokenAdmin}`)
-        .send(updatedData)
-        .expect(404)
-        .expect('Content-Type', /application\/json/)
-      expect(response.body.message).toMatch(/Subject not found/i)
-    })
-    test('Should return 404 if Aspect IDs are invalid when updating a legal basis', async () => {
-      const invalidAspectIds = [-1, -2]
-      const updatedData = generateLegalBasisData({
-        legalName: 'Updated Legal Name',
-        subjectId: String(createdSubjectId),
-        aspectsIds: JSON.stringify(invalidAspectIds)
-      })
-
-      const response = await api
-        .patch(`/api/legalBasis/${createdLegalBasis.id}`)
-        .set('Authorization', `Bearer ${tokenAdmin}`)
-        .send(updatedData)
-        .expect(404)
-        .expect('Content-Type', /application\/json/)
-
-      expect(response.body.message).toMatch(/Aspects not found for IDs/i)
-      expect(response.body.errors).toEqual(
+    expect(response.body.message).toMatch(/Invalid date format/i)
+    expect(response.body.errors).toEqual(
+      expect.arrayContaining([
         expect.objectContaining({
-          notFoundIds: expect.arrayContaining(invalidAspectIds)
+          field: 'from',
+          message: expect.stringMatching(/is not a valid date/i)
         })
-      )
-    })
-    test('Should return 400 if removeDocument is true and a document is provided', async () => {
-      const document = Buffer.from('mock pdf content')
-      const updatedData = generateLegalBasisData({
-        legalName: 'Updated Legal Name',
-        subjectId: String(createdSubjectId),
-        aspectsIds: JSON.stringify(createdAspectIds),
-        removeDocument: 'true'
-      })
-
-      const response = await api
-        .patch(`/api/legalBasis/${createdLegalBasis.id}`)
-        .set('Authorization', `Bearer ${tokenAdmin}`)
-        .attach('document', document, {
-          filename: 'file.pdf',
-          contentType: 'application/pdf'
-        })
-        .field('legalName', updatedData.legalName)
-        .field('abbreviation', updatedData.abbreviation)
-        .field('subjectId', updatedData.subjectId)
-        .field('aspectsIds', updatedData.aspectsIds)
-        .field('classification', updatedData.classification)
-        .field('jurisdiction', updatedData.jurisdiction)
-        .field('lastReform', updatedData.lastReform)
-        .field('removeDocument', updatedData.removeDocument)
-        .field('extractArticles', updatedData.extractArticles)
-        .field('intelligenceLevel', updatedData.intelligenceLevel)
-        .expect(400)
-        .expect('Content-Type', /application\/json/)
-
-      expect(response.body.message).toBe(
-        'Cannot provide a document if removeDocument is true'
-      )
-    })
-    test('Should return 400 if extractArticles is true and no document is provided', async () => {
-      const updatedData = generateLegalBasisData({
-        legalName: 'Updated Legal Name',
-        subjectId: String(createdSubjectId),
-        aspectsIds: JSON.stringify(createdAspectIds),
-        extractArticles: 'true'
-      })
-      const response = await api
-        .patch(`/api/legalBasis/${createdLegalBasis.id}`)
-        .set('Authorization', `Bearer ${tokenAdmin}`)
-        .send(updatedData)
-        .expect(400)
-        .expect('Content-Type', /application\/json/)
-
-      expect(response.body.message).toBe(
-        'A document must be provided if extractArticles is true'
-      )
-    })
-    test('Should return 409 if removeDocument is true and there are pending jobs for the legal basis', async () => {
-      jest
-        .spyOn(extractArticlesService, 'hasPendingExtractionJobs')
-        .mockResolvedValue({
-          hasPendingJobs: true,
-          jobId: '12345'
-        })
-      const updatedData = generateLegalBasisData({
-        legalName: 'Updated Legal Name',
-        subjectId: String(createdSubjectId),
-        aspectsIds: JSON.stringify(createdAspectIds),
-        removeDocument: 'true'
-      })
-
-      const response = await api
-        .patch(`/api/legalBasis/${createdLegalBasis.id}`)
-        .set('Authorization', `Bearer ${tokenAdmin}`)
-        .send(updatedData)
-        .expect(409)
-        .expect('Content-Type', /application\/json/)
-      expect(response.body.message).toBe(
-        'The document cannot be removed because there are pending jobs for this Legal Basis'
-      )
-    })
-    test('Should return 409 if attempting to extract articles with a new document while there are pending jobs for the Legal Basis', async () => {
-      jest
-        .spyOn(extractArticlesService, 'hasPendingExtractionJobs')
-        .mockResolvedValue({
-          hasPendingJobs: true,
-          jobId: '12345'
-        })
-      const document = Buffer.from('mock pdf content')
-      const updatedData = generateLegalBasisData({
-        legalName: 'Updated Legal Name with Document',
-        subjectId: String(createdSubjectId),
-        aspectsIds: JSON.stringify(createdAspectIds),
-        extractArticles: 'true'
-      })
-      const response = await api
-        .patch(`/api/legalBasis/${createdLegalBasis.id}`)
-        .set('Authorization', `Bearer ${tokenAdmin}`)
-        .attach('document', document, {
-          filename: 'file.pdf',
-          contentType: 'application/pdf'
-        })
-        .field('legalName', updatedData.legalName)
-        .field('abbreviation', updatedData.abbreviation)
-        .field('subjectId', updatedData.subjectId)
-        .field('aspectsIds', updatedData.aspectsIds)
-        .field('classification', updatedData.classification)
-        .field('jurisdiction', updatedData.jurisdiction)
-        .field('lastReform', updatedData.lastReform)
-        .field('extractArticles', updatedData.extractArticles)
-        .field('intelligenceLevel', updatedData.intelligenceLevel)
-        .expect(409)
-        .expect('Content-Type', /application\/json/)
-      expect(response.body.message).toBe(
-        'A new document cannot be uploaded because there are pending jobs for this Legal Basis'
-      )
-    })
-    test('Should return 409 if extractArticles is true and there are pending jobs for the Legal Basis', async () => {
-      jest
-        .spyOn(extractArticlesService, 'hasPendingExtractionJobs')
-        .mockResolvedValue({
-          hasPendingJobs: true,
-          jobId: '12345'
-        })
-      const legalBasisData = generateLegalBasisData({
-        legalName: 'Legal Basis with Document',
-        abbreviation: 'Duplicate Abbreviation',
-        subjectId: String(createdSubjectId),
-        aspectsIds: JSON.stringify(createdAspectIds),
-        extractArticles: 'true'
-      })
-      const document = Buffer.from('mock pdf content')
-      const creationResponse = await api
-        .post('/api/legalBasis')
-        .set('Authorization', `Bearer ${tokenAdmin}`)
-        .attach('document', document, {
-          filename: 'file.pdf',
-          contentType: 'application/pdf'
-        })
-        .field('legalName', legalBasisData.legalName)
-        .field('abbreviation', legalBasisData.abbreviation)
-        .field('subjectId', legalBasisData.subjectId)
-        .field('aspectsIds', legalBasisData.aspectsIds)
-        .field('classification', legalBasisData.classification)
-        .field('jurisdiction', legalBasisData.jurisdiction)
-        .field('lastReform', legalBasisData.lastReform)
-        .field('extractArticles', legalBasisData.extractArticles)
-        .field('intelligenceLevel', legalBasisData.intelligenceLevel)
-        .expect(201)
-        .expect('Content-Type', /application\/json/)
-      const createdLegalBasis = creationResponse.body.legalBasis
-      const updatedData = generateLegalBasisData({
-        legalName: 'Updated Legal Name',
-        abbreviation: 'Update Abbreviation',
-        subjectId: String(createdSubjectId),
-        aspectsIds: JSON.stringify(createdAspectIds),
-        extractArticles: 'true'
-      })
-      const response = await api
-        .patch(`/api/legalBasis/${createdLegalBasis.id}`)
-        .set('Authorization', `Bearer ${tokenAdmin}`)
-        .field('legalName', updatedData.legalName)
-        .field('abbreviation', updatedData.abbreviation)
-        .field('subjectId', updatedData.subjectId)
-        .field('aspectsIds', updatedData.aspectsIds)
-        .field('classification', updatedData.classification)
-        .field('jurisdiction', updatedData.jurisdiction)
-        .field('lastReform', updatedData.lastReform)
-        .field('extractArticles', updatedData.extractArticles)
-        .field('intelligenceLevel', updatedData.intelligenceLevel)
-        .expect(409)
-        .expect('Content-Type', /application\/json/)
-
-      expect(response.body.message).toBe(
-        'Articles cannot be extracted because there is already a process that does so'
-      )
-    })
-    test('Should return 401 if the user is unauthorized', async () => {
-      const updatedData = generateLegalBasisData({
-        legalName: 'Updated Legal Name',
-        subjectId: String(createdSubjectId),
-        aspectsIds: JSON.stringify(createdAspectIds)
-      })
-
-      const response = await api
-        .patch(`/api/legalBasis/${createdLegalBasis.id}`)
-        .send(updatedData)
-        .expect(401)
-        .expect('Content-Type', /application\/json/)
-
-      expect(response.body.error).toMatch(/token missing or invalid/i)
-    })
+      ])
+    )
   })
-  describe('Delete Legal Basis By ID', () => {
-    let createdLegalBasis
-    beforeEach(async () => {
-      await LegalBasisRepository.deleteAll()
-      const legalBasisData = generateLegalBasisData({
-        subjectId: String(createdSubjectId),
-        aspectsIds: JSON.stringify(createdAspectIds)
-      })
-      const response = await api
-        .post('/api/legalBasis')
-        .set('Authorization', `Bearer ${tokenAdmin}`)
-        .send(legalBasisData)
-        .expect(201)
-        .expect('Content-Type', /application\/json/)
 
-      createdLegalBasis = response.body.legalBasis
-    })
-    test('Should delete a legal basis and return 204 status', async () => {
-      await api
-        .delete(`/api/legalBasis/${createdLegalBasis.id}`)
-        .set('Authorization', `Bearer ${tokenAdmin}`)
-        .expect(204)
-      const response = await api
-        .get('/api/legalBasis')
-        .set('Authorization', `Bearer ${tokenAdmin}`)
-        .expect(200)
+  test('Should return 400 if "to" date is invalid', async () => {
+    const response = await api
+      .get('/api/legalBasis/lastReform/lastReform')
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .query({ from: '2024-01-01', to: 'invalid-date' })
+      .expect(400)
+      .expect('Content-Type', /application\/json/)
 
-      const { legalBasis } = response.body
-      expect(legalBasis).toBeInstanceOf(Array)
-      expect(legalBasis).not.toContainEqual(
-        expect.objectContaining({ id: createdLegalBasis.id })
-      )
-    })
-    test('Should return 404 if the legal basis does not exist', async () => {
-      const nonExistentId = '-1'
-      const response = await api
-        .delete(`/api/legalBasis/${nonExistentId}`)
-        .set('Authorization', `Bearer ${tokenAdmin}`)
-        .expect(404)
-      expect(response.body.message).toMatch(/LegalBasis not found/i)
-    })
-    test('Should return 409 if the legal basis has pending Article Extraction jobs', async () => {
-      jest
-        .spyOn(extractArticlesService, 'hasPendingExtractionJobs')
-        .mockResolvedValue({ hasPendingJobs: true })
-      const response = await api
-        .delete(`/api/legalBasis/${createdLegalBasis.id}`)
-        .set('Authorization', `Bearer ${tokenAdmin}`)
-        .expect(409)
-
-      expect(response.body.message).toMatch(
-        /Cannot delete LegalBasis with pending Article Extraction jobs/i
-      )
-    })
-    test('Should return 409 if the legal basis has with pending Send jobs', async () => {
-      jest
-        .spyOn(SendLegalBasisService, 'hasPendingSendJobs')
-        .mockResolvedValue({
-          hasPendingJobs: true,
-          jobId: 'mockedJobId'
-        })
-      const response = await api
-        .delete(`/api/legalBasis/${createdLegalBasis.id}`)
-        .set('Authorization', `Bearer ${tokenAdmin}`)
-        .expect(409)
-        .expect('Content-Type', /application\/json/)
-      expect(response.body.message).toMatch(
-        /Cannot delete LegalBasis with pending Send Legal Basis jobs/i
-      )
-    })
-    test('Should return 401 if the user is unauthorized', async () => {
-      const response = await api
-        .delete(`/api/legalBasis/${createdLegalBasis.id}`)
-        .expect(401)
-        .expect('Content-Type', /application\/json/)
-      expect(response.body.error).toMatch(/token missing or invalid/i)
-    })
-  })
-  describe('Delete Multiple Legal Bases By IDs', () => {
-    let createdLegalBasis
-    beforeEach(async () => {
-      await LegalBasisRepository.deleteAll()
-      const legalBasisData = generateLegalBasisData({
-        subjectId: String(createdSubjectId),
-        aspectsIds: JSON.stringify(createdAspectIds)
-      })
-      const response = await api
-        .post('/api/legalBasis')
-        .set('Authorization', `Bearer ${tokenAdmin}`)
-        .send(legalBasisData)
-        .expect(201)
-        .expect('Content-Type', /application\/json/)
-      createdLegalBasis = response.body.legalBasis
-      jest
-        .spyOn(extractArticlesService, 'hasPendingExtractionJobs')
-        .mockResolvedValue({ hasPendingJobs: false })
-    })
-    test('Should delete multiple legal bases and return 204 status', async () => {
-      const idToDelete = [createdLegalBasis.id]
-      await api
-        .delete('/api/legalBasis/delete/batch')
-        .set('Authorization', `Bearer ${tokenAdmin}`)
-        .send({ legalBasisIds: idToDelete })
-        .expect(204)
-
-      const response = await api
-        .get('/api/legalBasis')
-        .set('Authorization', `Bearer ${tokenAdmin}`)
-        .expect(200)
-
-      const { legalBasis } = response.body
-
-      expect(legalBasis).toBeInstanceOf(Array)
-      expect(legalBasis).not.toContainEqual(
-        expect.objectContaining({ id: createdLegalBasis.id })
-      )
-    })
-    test('Should return 404 if any legal basis does not exist', async () => {
-      const nonExistentIds = ['-1', '-2']
-      const response = await api
-        .delete('/api/legalBasis/delete/batch')
-        .set('Authorization', `Bearer ${tokenAdmin}`)
-        .send({ legalBasisIds: nonExistentIds })
-        .expect(404)
-
-      expect(response.body.message).toMatch(/LegalBasis not found for IDs/i)
-      expect(response.body.errors.notFoundIds).toEqual(nonExistentIds)
-    })
-
-    test('Should return 400 if no legalBasisIds are provided', async () => {
-      const response = await api
-        .delete('/api/legalBasis/delete/batch')
-        .set('Authorization', `Bearer ${tokenAdmin}`)
-        .send({})
-        .expect(400)
-
-      expect(response.body.message).toMatch(
-        /Missing required fields: legalBasisIds/i
-      )
-    })
-    test('Should return 409 if the legal basis has pending Article Extraction jobs', async () => {
-      const idToDelete = createdLegalBasis.id
-      jest
-        .spyOn(extractArticlesService, 'hasPendingExtractionJobs')
-        .mockImplementation(async (id) => {
-          return { hasPendingJobs: id === idToDelete }
-        })
-      const response = await api
-        .delete('/api/legalBasis/delete/batch')
-        .set('Authorization', `Bearer ${tokenAdmin}`)
-        .send({ legalBasisIds: [idToDelete] })
-        .expect(409)
-      expect(response.body.message).toMatch(
-        /Cannot delete Legal Bases with pending Article Extraction jobs/i
-      )
-      expect(response.body.errors.legalBases).toContainEqual(
+    expect(response.body.message).toMatch(/Invalid date format/i)
+    expect(response.body.errors).toEqual(
+      expect.arrayContaining([
         expect.objectContaining({
-          id: idToDelete,
-          name: createdLegalBasis.legal_name
+          field: 'to',
+          message: expect.stringMatching(/is not a valid date/i)
         })
-      )
-    })
-    test('Should return 401 if the user is unauthorized', async () => {
-      const idToDelete = [createdLegalBasis.id]
+      ])
+    )
+  })
 
-      const response = await api
-        .delete('/api/legalBasis/delete/batch')
-        .send({ legalBasisIds: idToDelete })
-        .expect(401)
-        .expect('Content-Type', /application\/json/)
+  test('Should return 200 and legal basis if valid "from" and "to" are provided', async () => {
+    const response = await api
+      .get('/api/legalBasis/lastReform/lastReform')
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .query({ from: '2024-01-01', to: '2024-12-31' })
+      .expect(200)
+      .expect('Content-Type', /application\/json/)
 
-      expect(response.body.error).toMatch(/token missing or invalid/i)
+    const { legalBasis } = response.body
+    expect(legalBasis).toBeInstanceOf(Array)
+    expect(legalBasis).toHaveLength(1)
+    expect(legalBasis[0]).toMatchObject({
+      id: createdLegalBasis.id,
+      legal_name: createdLegalBasis.legal_name,
+      classification: createdLegalBasis.classification,
+      jurisdiction: createdLegalBasis.jurisdiction,
+      abbreviation: createdLegalBasis.abbreviation,
+      state: createdLegalBasis.state,
+      municipality: createdLegalBasis.municipality,
+      last_reform: createdLegalBasis.last_reform,
+      url: createdLegalBasis.url,
+      fileKey: createdLegalBasis.fileKey
     })
+  })
+
+  test('Should return 200 if only "from" is provided', async () => {
+    const response = await api
+      .get('/api/legalBasis/lastReform/lastReform')
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .query({ from: '2024-01-01' })
+      .expect(200)
+      .expect('Content-Type', /application\/json/)
+
+    expect(response.body.legalBasis).toBeInstanceOf(Array)
+  })
+
+  test('Should return 200 if only "to" is provided', async () => {
+    const response = await api
+      .get('/api/legalBasis/lastReform/lastReform')
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .query({ to: '2024-12-31' }) // Solo enviamos "to"
+      .expect(200)
+      .expect('Content-Type', /application\/json/)
+
+    expect(response.body.legalBasis).toBeInstanceOf(Array)
+  })
+
+  test('Should return 401 if the user is unauthorized', async () => {
+    const response = await api
+      .get('/api/legalBasis/lastReform/lastReform')
+      .query({ from: '2024-01-01', to: '2024-12-31' })
+      .expect(401)
+      .expect('Content-Type', /application\/json/)
+
+    expect(response.body.error).toMatch(/token missing or invalid/i)
   })
 })
-describe('Delete Legal Basis with pending Send Legal Basis Jobs', () => {
+
+describe('Update a Legal Basis', () => {
+  let createdLegalBasis
+  beforeEach(async () => {
+    await LegalBasisRepository.deleteAll()
+
+    const legalBasisData = generateLegalBasisData({
+      subjectId: String(createdSubjectId),
+      aspectsIds: JSON.stringify(createdAspectIds)
+    })
+    const response = await api
+      .post('/api/legalBasis')
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .send(legalBasisData)
+      .expect(201)
+      .expect('Content-Type', /application\/json/)
+
+    createdLegalBasis = response.body.legalBasis
+  })
+
+  test('Should successfully update a legal basis without a document', async () => {
+    const updatedData = generateLegalBasisData({
+      legalName: 'Updated Legal Name',
+      subjectId: String(createdSubjectId),
+      aspectsIds: JSON.stringify(createdAspectIds)
+    })
+
+    const updateResponse = await api
+      .patch(`/api/legalBasis/${createdLegalBasis.id}`)
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .send(updatedData)
+      .expect(200)
+      .expect('Content-Type', /application\/json/)
+
+    const { jobId, legalBasis: updatedLegalBasis } = updateResponse.body
+    expect(jobId).toBeNull()
+
+    expect(updatedLegalBasis).toMatchObject({
+      ...createdLegalBasis,
+      legal_name: updatedData.legalName,
+      abbreviation: updatedData.abbreviation,
+      classification: updatedData.classification,
+      jurisdiction: updatedData.jurisdiction,
+      last_reform: updatedData.lastReform
+    })
+
+    expect(updatedLegalBasis.aspects).toEqual(
+      expect.arrayContaining(
+        createdAspectIds.map((aspectId) =>
+          expect.objectContaining({ aspect_id: aspectId })
+        )
+      )
+    )
+    expect(updatedLegalBasis.subject).toMatchObject({
+      subject_id: createdSubjectId,
+      subject_name: subjectName
+    })
+    const getResponse = await api
+      .get(`/api/legalBasis/${createdLegalBasis.id}`)
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .expect(200)
+      .expect('Content-Type', /application\/json/)
+
+    const { legalBasis: retrievedLegalBasis } = getResponse.body
+    expect(retrievedLegalBasis).toMatchObject({
+      id: createdLegalBasis.id,
+      legal_name: updatedLegalBasis.legal_name,
+      classification: updatedLegalBasis.classification,
+      jurisdiction: updatedLegalBasis.jurisdiction,
+      abbreviation: updatedLegalBasis.abbreviation,
+      state: updatedLegalBasis.state,
+      municipality: updatedLegalBasis.municipality,
+      last_reform: updatedLegalBasis.last_reform,
+      url: updatedLegalBasis.url,
+      fileKey: updatedLegalBasis.fileKey,
+      subject: expect.objectContaining({
+        subject_id: createdSubjectId,
+        subject_name: subjectName
+      }),
+      aspects: expect.arrayContaining(
+        createdAspectIds.map((aspectId) =>
+          expect.objectContaining({ aspect_id: aspectId })
+        )
+      )
+    })
+  })
+  test('Should successfully update a legal basis with a document and return a jobId', async () => {
+    const document = Buffer.from('mock pdf content')
+    const updatedData = generateLegalBasisData({
+      legalName: 'Updated Legal Name with Document',
+      subjectId: String(createdSubjectId),
+      aspectsIds: JSON.stringify(createdAspectIds),
+      extractArticles: 'true'
+    })
+
+    const updateResponse = await api
+      .patch(`/api/legalBasis/${createdLegalBasis.id}`)
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .attach('document', document, {
+        filename: 'file.pdf',
+        contentType: 'application/pdf'
+      })
+      .field('legalName', updatedData.legalName)
+      .field('abbreviation', updatedData.abbreviation)
+      .field('subjectId', updatedData.subjectId)
+      .field('aspectsIds', updatedData.aspectsIds)
+      .field('classification', updatedData.classification)
+      .field('jurisdiction', updatedData.jurisdiction)
+      .field('lastReform', updatedData.lastReform)
+      .field('extractArticles', updatedData.extractArticles)
+      .expect(200)
+      .expect('Content-Type', /application\/json/)
+
+    const { jobId, legalBasis: updatedLegalBasis } = updateResponse.body
+    expect(jobId).not.toBeNull()
+    expect(typeof jobId).toBe('string')
+    expect(updatedLegalBasis).toMatchObject({
+      ...createdLegalBasis,
+      legal_name: updatedData.legalName,
+      abbreviation: updatedData.abbreviation,
+      classification: updatedData.classification,
+      jurisdiction: updatedData.jurisdiction,
+      last_reform: updatedData.lastReform,
+      url: expect.stringContaining('file.pdf'),
+      fileKey: expect.stringContaining('file.pdf')
+    })
+    expect(updatedLegalBasis.aspects).toEqual(
+      expect.arrayContaining(
+        createdAspectIds.map((aspectId) =>
+          expect.objectContaining({ aspect_id: aspectId })
+        )
+      )
+    )
+    expect(updatedLegalBasis.subject).toMatchObject({
+      subject_id: createdSubjectId,
+      subject_name: subjectName
+    })
+  })
+  test('Should return 404 when trying to update a non-existing legal basis', async () => {
+    const nonExistentId = -1
+    const updatedData = generateLegalBasisData({
+      legalName: 'Non-Existent',
+      subjectId: String(createdSubjectId),
+      aspectsIds: JSON.stringify(createdAspectIds)
+    })
+
+    const response = await api
+      .patch(`/api/legalBasis/${nonExistentId}`)
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .send(updatedData)
+      .expect(404)
+      .expect('Content-Type', /application\/json/)
+
+    expect(response.body.message).toMatch(/LegalBasis not found/i)
+  })
+
+  test('Should return 409 when trying to update a legal basis with a duplicate name', async () => {
+    const LegalBasisData = generateLegalBasisData({
+      legalName: 'Duplicate Name',
+      abbreviation: 'Duplicate Abbreviation',
+      subjectId: String(createdSubjectId),
+      aspectsIds: JSON.stringify(createdAspectIds)
+    })
+
+    await api
+      .post('/api/legalBasis')
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .send(LegalBasisData)
+      .expect(201)
+      .expect('Content-Type', /application\/json/)
+
+    const response = await api
+      .patch(`/api/legalBasis/${createdLegalBasis.id}`)
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .send(LegalBasisData)
+      .expect(409)
+      .expect('Content-Type', /application\/json/)
+
+    expect(response.body.message).toMatch(/LegalBasis already exists/i)
+  })
+  test('Should return 409 when trying to update a legal basis with a duplicate abbreviation', async () => {
+    const firstLegalBasisData = generateLegalBasisData({
+      legalName: 'First Legal Basis',
+      abbreviation: 'DUPLICATE_ABBR',
+      subjectId: String(createdSubjectId),
+      aspectsIds: JSON.stringify(createdAspectIds)
+    })
+
+    await api
+      .post('/api/legalBasis')
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .send(firstLegalBasisData)
+      .expect(201)
+      .expect('Content-Type', /application\/json/)
+
+    const secondLegalBasisData = generateLegalBasisData({
+      legalName: 'Second Legal Basis',
+      abbreviation: 'UNIQUE_ABBR',
+      subjectId: String(createdSubjectId),
+      aspectsIds: JSON.stringify(createdAspectIds)
+    })
+
+    const creationResponse = await api
+      .post('/api/legalBasis')
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .send(secondLegalBasisData)
+      .expect(201)
+      .expect('Content-Type', /application\/json/)
+    const createdLegalBasis = creationResponse.body.legalBasis
+    const response = await api
+      .patch(`/api/legalBasis/${createdLegalBasis.id}`)
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .send({
+        ...secondLegalBasisData,
+        abbreviation: 'DUPLICATE_ABBR'
+      })
+      .expect(409)
+      .expect('Content-Type', /application\/json/)
+
+    expect(response.body.message).toMatch(
+      /LegalBasis abbreviation already exists/i
+    )
+  })
+
+  test('Should return 404 if Subject ID is invalid', async () => {
+    const updatedData = generateLegalBasisData({
+      legalName: 'Updated Legal Name',
+      subjectId: '-1',
+      aspectsIds: JSON.stringify(createdAspectIds)
+    })
+    const response = await api
+      .patch(`/api/legalBasis/${createdLegalBasis.id}`)
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .send(updatedData)
+      .expect(404)
+      .expect('Content-Type', /application\/json/)
+    expect(response.body.message).toMatch(/Subject not found/i)
+  })
+  test('Should return 404 if Aspect IDs are invalid when updating a legal basis', async () => {
+    const invalidAspectIds = [-1, -2]
+    const updatedData = generateLegalBasisData({
+      legalName: 'Updated Legal Name',
+      subjectId: String(createdSubjectId),
+      aspectsIds: JSON.stringify(invalidAspectIds)
+    })
+
+    const response = await api
+      .patch(`/api/legalBasis/${createdLegalBasis.id}`)
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .send(updatedData)
+      .expect(404)
+      .expect('Content-Type', /application\/json/)
+
+    expect(response.body.message).toMatch(/Aspects not found for IDs/i)
+    expect(response.body.errors).toEqual(
+      expect.objectContaining({
+        notFoundIds: expect.arrayContaining(invalidAspectIds)
+      })
+    )
+  })
+  test('Should return 400 if removeDocument is true and a document is provided', async () => {
+    const document = Buffer.from('mock pdf content')
+    const updatedData = generateLegalBasisData({
+      legalName: 'Updated Legal Name',
+      subjectId: String(createdSubjectId),
+      aspectsIds: JSON.stringify(createdAspectIds),
+      removeDocument: 'true'
+    })
+
+    const response = await api
+      .patch(`/api/legalBasis/${createdLegalBasis.id}`)
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .attach('document', document, {
+        filename: 'file.pdf',
+        contentType: 'application/pdf'
+      })
+      .field('legalName', updatedData.legalName)
+      .field('abbreviation', updatedData.abbreviation)
+      .field('subjectId', updatedData.subjectId)
+      .field('aspectsIds', updatedData.aspectsIds)
+      .field('classification', updatedData.classification)
+      .field('jurisdiction', updatedData.jurisdiction)
+      .field('lastReform', updatedData.lastReform)
+      .field('removeDocument', updatedData.removeDocument)
+      .field('extractArticles', updatedData.extractArticles)
+      .field('intelligenceLevel', updatedData.intelligenceLevel)
+      .expect(400)
+      .expect('Content-Type', /application\/json/)
+
+    expect(response.body.message).toBe(
+      'Cannot provide a document if removeDocument is true'
+    )
+  })
+  test('Should return 400 if extractArticles is true and no document is provided', async () => {
+    const updatedData = generateLegalBasisData({
+      legalName: 'Updated Legal Name',
+      subjectId: String(createdSubjectId),
+      aspectsIds: JSON.stringify(createdAspectIds),
+      extractArticles: 'true'
+    })
+    const response = await api
+      .patch(`/api/legalBasis/${createdLegalBasis.id}`)
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .send(updatedData)
+      .expect(400)
+      .expect('Content-Type', /application\/json/)
+
+    expect(response.body.message).toBe(
+      'A document must be provided if extractArticles is true'
+    )
+  })
+  test('Should return 409 if removeDocument is true and there are pending jobs for the legal basis', async () => {
+    jest
+      .spyOn(extractArticlesService, 'hasPendingExtractionJobs')
+      .mockResolvedValue({
+        hasPendingJobs: true,
+        jobId: '12345'
+      })
+    const updatedData = generateLegalBasisData({
+      legalName: 'Updated Legal Name',
+      subjectId: String(createdSubjectId),
+      aspectsIds: JSON.stringify(createdAspectIds),
+      removeDocument: 'true'
+    })
+
+    const response = await api
+      .patch(`/api/legalBasis/${createdLegalBasis.id}`)
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .send(updatedData)
+      .expect(409)
+      .expect('Content-Type', /application\/json/)
+    expect(response.body.message).toBe(
+      'The document cannot be removed because there are pending jobs for this Legal Basis'
+    )
+  })
+  test('Should return 409 if attempting to extract articles with a new document while there are pending jobs for the Legal Basis', async () => {
+    jest
+      .spyOn(extractArticlesService, 'hasPendingExtractionJobs')
+      .mockResolvedValue({
+        hasPendingJobs: true,
+        jobId: '12345'
+      })
+    const document = Buffer.from('mock pdf content')
+    const updatedData = generateLegalBasisData({
+      legalName: 'Updated Legal Name with Document',
+      subjectId: String(createdSubjectId),
+      aspectsIds: JSON.stringify(createdAspectIds),
+      extractArticles: 'true'
+    })
+    const response = await api
+      .patch(`/api/legalBasis/${createdLegalBasis.id}`)
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .attach('document', document, {
+        filename: 'file.pdf',
+        contentType: 'application/pdf'
+      })
+      .field('legalName', updatedData.legalName)
+      .field('abbreviation', updatedData.abbreviation)
+      .field('subjectId', updatedData.subjectId)
+      .field('aspectsIds', updatedData.aspectsIds)
+      .field('classification', updatedData.classification)
+      .field('jurisdiction', updatedData.jurisdiction)
+      .field('lastReform', updatedData.lastReform)
+      .field('extractArticles', updatedData.extractArticles)
+      .field('intelligenceLevel', updatedData.intelligenceLevel)
+      .expect(409)
+      .expect('Content-Type', /application\/json/)
+    expect(response.body.message).toBe(
+      'A new document cannot be uploaded because there are pending jobs for this Legal Basis'
+    )
+  })
+  test('Should return 409 if extractArticles is true and there are pending jobs for the Legal Basis', async () => {
+    jest
+      .spyOn(extractArticlesService, 'hasPendingExtractionJobs')
+      .mockResolvedValue({
+        hasPendingJobs: true,
+        jobId: '12345'
+      })
+    const legalBasisData = generateLegalBasisData({
+      legalName: 'Legal Basis with Document',
+      abbreviation: 'Duplicate Abbreviation',
+      subjectId: String(createdSubjectId),
+      aspectsIds: JSON.stringify(createdAspectIds),
+      extractArticles: 'true'
+    })
+    const document = Buffer.from('mock pdf content')
+    const creationResponse = await api
+      .post('/api/legalBasis')
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .attach('document', document, {
+        filename: 'file.pdf',
+        contentType: 'application/pdf'
+      })
+      .field('legalName', legalBasisData.legalName)
+      .field('abbreviation', legalBasisData.abbreviation)
+      .field('subjectId', legalBasisData.subjectId)
+      .field('aspectsIds', legalBasisData.aspectsIds)
+      .field('classification', legalBasisData.classification)
+      .field('jurisdiction', legalBasisData.jurisdiction)
+      .field('lastReform', legalBasisData.lastReform)
+      .field('extractArticles', legalBasisData.extractArticles)
+      .field('intelligenceLevel', legalBasisData.intelligenceLevel)
+      .expect(201)
+      .expect('Content-Type', /application\/json/)
+    const createdLegalBasis = creationResponse.body.legalBasis
+    const updatedData = generateLegalBasisData({
+      legalName: 'Updated Legal Name',
+      abbreviation: 'Update Abbreviation',
+      subjectId: String(createdSubjectId),
+      aspectsIds: JSON.stringify(createdAspectIds),
+      extractArticles: 'true'
+    })
+    const response = await api
+      .patch(`/api/legalBasis/${createdLegalBasis.id}`)
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .field('legalName', updatedData.legalName)
+      .field('abbreviation', updatedData.abbreviation)
+      .field('subjectId', updatedData.subjectId)
+      .field('aspectsIds', updatedData.aspectsIds)
+      .field('classification', updatedData.classification)
+      .field('jurisdiction', updatedData.jurisdiction)
+      .field('lastReform', updatedData.lastReform)
+      .field('extractArticles', updatedData.extractArticles)
+      .field('intelligenceLevel', updatedData.intelligenceLevel)
+      .expect(409)
+      .expect('Content-Type', /application\/json/)
+
+    expect(response.body.message).toBe(
+      'Articles cannot be extracted because there is already a process that does so'
+    )
+  })
+  test('Should return 401 if the user is unauthorized', async () => {
+    const updatedData = generateLegalBasisData({
+      legalName: 'Updated Legal Name',
+      subjectId: String(createdSubjectId),
+      aspectsIds: JSON.stringify(createdAspectIds)
+    })
+
+    const response = await api
+      .patch(`/api/legalBasis/${createdLegalBasis.id}`)
+      .send(updatedData)
+      .expect(401)
+      .expect('Content-Type', /application\/json/)
+
+    expect(response.body.error).toMatch(/token missing or invalid/i)
+  })
+})
+
+describe('Delete Legal Basis By ID', () => {
   let createdLegalBasis
   beforeEach(async () => {
     await LegalBasisRepository.deleteAll()
@@ -2366,10 +2199,240 @@ describe('Delete Legal Basis with pending Send Legal Basis Jobs', () => {
 
     createdLegalBasis = response.body.legalBasis
   })
-  afterEach(() => {
-    jest.restoreAllMocks()
+  test('Should delete a legal basis and return 204 status', async () => {
+    await api
+      .delete(`/api/legalBasis/${createdLegalBasis.id}`)
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .expect(204)
+    const response = await api
+      .get('/api/legalBasis')
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .expect(200)
+
+    const { legalBasis } = response.body
+    expect(legalBasis).toBeInstanceOf(Array)
+    expect(legalBasis).not.toContainEqual(
+      expect.objectContaining({ id: createdLegalBasis.id })
+    )
   })
-  test('Should return 409 when trying to delete multiple Legal Bases with pending Send jobs', async () => {
+  test('Should return 404 if the legal basis does not exist', async () => {
+    const nonExistentId = '-1'
+    const response = await api
+      .delete(`/api/legalBasis/${nonExistentId}`)
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .expect(404)
+    expect(response.body.message).toMatch(/LegalBasis not found/i)
+  })
+  test('Should return 409 if the legal basis has pending Article Extraction jobs', async () => {
+    jest
+      .spyOn(extractArticlesService, 'hasPendingExtractionJobs')
+      .mockResolvedValue({ hasPendingJobs: true })
+    const response = await api
+      .delete(`/api/legalBasis/${createdLegalBasis.id}`)
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .expect(409)
+
+    expect(response.body.message).toMatch(
+      /pending Article Extraction jobs/i
+    )
+  })
+
+  test('Should return 409 if the legal basis is associated with one or more requirement identifications', async () => {
+    jest
+      .spyOn(LegalBasisRepository, 'checkReqIdentificationAssociations')
+      .mockResolvedValue({ isAssociatedToReqIdentifications: true })
+
+    const response = await api
+      .delete(`/api/legalBasis/${createdLegalBasis.id}`)
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .expect(409)
+      .expect('Content-Type', /application\/json/)
+
+    expect(response.body.message).toMatch(
+      /associated with one or more requirement identifications/i
+    )
+  })
+
+  test('Should return 409 if the legal basis has pending Requirement Identification jobs', async () => {
+    jest
+      .spyOn(ReqIdentifyService, 'hasPendingLegalBasisJobs')
+      .mockResolvedValue({ hasPendingJobs: true, jobId: 'mockedJobId' })
+
+    const response = await api
+      .delete(`/api/legalBasis/${createdLegalBasis.id}`)
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .expect(409)
+      .expect('Content-Type', /application\/json/)
+
+    expect(response.body.message).toMatch(
+      /pending Requirement Identification jobs/i
+    )
+  })
+
+  test('Should return 409 if the legal basis has pending Legal Basis Send jobs', async () => {
+    jest
+      .spyOn(SendLegalBasisService, 'hasPendingSendJobs')
+      .mockResolvedValue({ hasPendingJobs: true, jobId: 'mockedJobId' })
+    const response = await api
+      .delete(`/api/legalBasis/${createdLegalBasis.id}`)
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .expect(409)
+      .expect('Content-Type', /application\/json/)
+    expect(response.body.message).toMatch(
+      /pending Send Legal Basis jobs/i
+    )
+  })
+  test('Should return 401 if the user is unauthorized', async () => {
+    const response = await api
+      .delete(`/api/legalBasis/${createdLegalBasis.id}`)
+      .expect(401)
+      .expect('Content-Type', /application\/json/)
+    expect(response.body.error).toMatch(/token missing or invalid/i)
+  })
+})
+
+describe('Delete Multiple Legal Bases By IDs', () => {
+  let createdLegalBasis
+  beforeEach(async () => {
+    await LegalBasisRepository.deleteAll()
+    const legalBasisData = generateLegalBasisData({
+      subjectId: String(createdSubjectId),
+      aspectsIds: JSON.stringify(createdAspectIds)
+    })
+    const response = await api
+      .post('/api/legalBasis')
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .send(legalBasisData)
+      .expect(201)
+      .expect('Content-Type', /application\/json/)
+    createdLegalBasis = response.body.legalBasis
+  })
+  test('Should delete multiple legal bases and return 204 status', async () => {
+    const idToDelete = [createdLegalBasis.id]
+    await api
+      .delete('/api/legalBasis/delete/batch')
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .send({ legalBasisIds: idToDelete })
+      .expect(204)
+
+    const response = await api
+      .get('/api/legalBasis')
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .expect(200)
+
+    const { legalBasis } = response.body
+
+    expect(legalBasis).toBeInstanceOf(Array)
+    expect(legalBasis).not.toContainEqual(
+      expect.objectContaining({ id: createdLegalBasis.id })
+    )
+  })
+  test('Should return 404 if any legal basis does not exist', async () => {
+    const nonExistentIds = ['-1', '-2']
+    const response = await api
+      .delete('/api/legalBasis/delete/batch')
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .send({ legalBasisIds: nonExistentIds })
+      .expect(404)
+
+    expect(response.body.message).toMatch(/LegalBasis not found for IDs/i)
+    expect(response.body.errors.notFoundIds).toEqual(nonExistentIds)
+  })
+
+  test('Should return 400 if no legalBasisIds are provided', async () => {
+    const response = await api
+      .delete('/api/legalBasis/delete/batch')
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .send({})
+      .expect(400)
+
+    expect(response.body.message).toMatch(
+      /Missing required fields: legalBasisIds/i
+    )
+  })
+  test('Should return 409 if the legal basis has pending Article Extraction jobs', async () => {
+    jest
+      .spyOn(extractArticlesService, 'hasPendingExtractionJobs')
+      .mockImplementation(async (id) => {
+        return {
+          hasPendingJobs: id === createdLegalBasis.id,
+          jobId: id === createdLegalBasis.id ? 'mockedJobId' : null
+        }
+      })
+    const response = await api
+      .delete('/api/legalBasis/delete/batch')
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .send({ legalBasisIds: [createdLegalBasis.id] })
+      .expect(409)
+    expect(response.body.message).toMatch(
+      /pending Article Extraction jobs/i
+    )
+    expect(response.body.errors.legalBases).toContainEqual(
+      expect.objectContaining({
+        id: createdLegalBasis.id,
+        name: createdLegalBasis.legal_name
+      })
+    )
+  })
+
+  test('Should return 409 if the legal basis is associated with one or more requirement identifications', async () => {
+    jest
+      .spyOn(LegalBasisRepository, 'checkReqIdentificationAssociationsBatch')
+      .mockResolvedValue([
+        {
+          id: createdLegalBasis.id,
+          name: createdLegalBasis.legal_name,
+          isAssociatedToReqIdentifications: true
+        }
+      ])
+
+    const response = await api
+      .delete('/api/legalBasis/delete/batch')
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .send({ legalBasisIds: [createdLegalBasis.id] })
+      .expect(409)
+      .expect('Content-Type', /application\/json/)
+
+    expect(response.body.message).toMatch(
+      /associated with requirement identifications/i
+    )
+    expect(response.body.errors.legalBases).toEqual([
+      {
+        id: createdLegalBasis.id,
+        name: createdLegalBasis.legal_name
+      }
+    ])
+  })
+
+  test('Should return 409 if the legal basis has pending Requirement Identification jobs', async () => {
+    jest
+      .spyOn(ReqIdentifyService, 'hasPendingLegalBasisJobs')
+      .mockImplementation(async (id) => {
+        return {
+          hasPendingJobs: id === createdLegalBasis.id,
+          jobId: 'mockedJobId'
+        }
+      })
+
+    const response = await api
+      .delete('/api/legalBasis/delete/batch')
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .send({ legalBasisIds: [createdLegalBasis.id] })
+      .expect(409)
+      .expect('Content-Type', /application\/json/)
+
+    expect(response.body.message).toMatch(
+      /pending Requirement Identification jobs/i
+    )
+    expect(response.body.errors.legalBases).toEqual([
+      {
+        id: createdLegalBasis.id,
+        name: createdLegalBasis.legal_name
+      }
+    ])
+  })
+
+  test('Should return 409 if the legal basis has pending Legal Basis Send jobs', async () => {
     jest
       .spyOn(SendLegalBasisService, 'hasPendingSendJobs')
       .mockImplementation(async (id) => {
@@ -2385,7 +2448,7 @@ describe('Delete Legal Basis with pending Send Legal Basis Jobs', () => {
       .expect(409)
       .expect('Content-Type', /application\/json/)
     expect(response.body.message).toMatch(
-      /Cannot delete Legal Bases with pending Send Legal Basis jobs/i
+      /pending Send Legal Basis jobs/i
     )
     expect(response.body.errors.legalBases).toEqual(
       expect.arrayContaining([
@@ -2395,5 +2458,14 @@ describe('Delete Legal Basis with pending Send Legal Basis Jobs', () => {
         })
       ])
     )
+  })
+  test('Should return 401 if the user is unauthorized', async () => {
+    const response = await api
+      .delete('/api/legalBasis/delete/batch')
+      .send({ legalBasisIds: [createdLegalBasis.id] })
+      .expect(401)
+      .expect('Content-Type', /application\/json/)
+
+    expect(response.body.error).toMatch(/token missing or invalid/i)
   })
 })

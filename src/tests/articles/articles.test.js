@@ -8,6 +8,7 @@ import AspectsRepository from '../../repositories/Aspects.repository.js'
 import RequirementRepository from '../../repositories/Requirements.repository.js'
 import generateLegalBasisData from '../../utils/generateLegalBasisData.js'
 import generateArticleData from '../../utils/generateArticleData.js'
+import ReqIdentifyService from '../../services/reqIdentification/reqIdentify/ReqIdentify.service.js'
 import SendLegalBasisService from '../../services/legalBasis/sendLegalBasis/SendLegalBasis.service.js'
 
 import {
@@ -547,6 +548,42 @@ describe('Delete an article', () => {
     expect(response.body.error).toMatch(/token missing or invalid/i)
   })
 
+  test('Should prevent deleting an article if it is associated with a requirement identification', async () => {
+    jest
+      .spyOn(ArticlesRepository, 'checkReqIdentificationAssociations')
+      .mockResolvedValue({
+        isAssociatedToReqIdentifications: true
+      })
+
+    const response = await api
+      .delete(`/api/article/${createdArticleId}`)
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .expect(409)
+      .expect('Content-Type', /application\/json/)
+
+    expect(response.body.message).toMatch(
+      /associated with one or more requirement identifications/i
+    )
+  })
+
+  test('Should prevent deleting an article if there is a pending Requirement Identification job', async () => {
+    jest
+      .spyOn(ReqIdentifyService, 'hasPendingLegalBasisJobs')
+      .mockResolvedValue({
+        hasPendingJobs: true
+      })
+
+    const response = await api
+      .delete(`/api/article/${createdArticleId}`)
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .expect(409)
+      .expect('Content-Type', /application\/json/)
+
+    expect(response.body.message).toMatch(
+      /pending Requirement Identification jobs/i
+    )
+  })
+
   test('Should prevent deleting a single article if there is a pending Send Legal Basis job', async () => {
     jest.spyOn(SendLegalBasisService, 'hasPendingSendJobs').mockResolvedValue({
       hasPendingJobs: true,
@@ -559,9 +596,7 @@ describe('Delete an article', () => {
       .expect(409)
       .expect('Content-Type', /application\/json/)
 
-    expect(response.body.message).toMatch(
-      /Cannot delete Article with pending Send Legal Basis jobs/i
-    )
+    expect(response.body.message).toMatch(/pending Send Legal Basis jobs/i)
   })
 })
 
@@ -660,8 +695,36 @@ describe('Delete multiple articles', () => {
     expect(response.body.error).toMatch(/token missing or invalid/i)
   })
 
-  test('Should prevent deleting multiple articles if at least one has a pending Send Legal Basis job', async () => {
-    jest.spyOn(SendLegalBasisService, 'hasPendingSendJobs')
+  test('Should prevent deleting multiple articles if one is associated with a requirement identification', async () => {
+    jest
+      .spyOn(ArticlesRepository, 'checkReqIdentificationAssociationsBatch')
+      .mockResolvedValue(
+        createdArticleIds.map((id, index) => ({
+          id,
+          name: `Article ${index + 1}`,
+          isAssociatedToReqIdentifications: index === 0
+        }))
+      )
+
+    const response = await api
+      .delete('/api/articles/batch')
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .send({ articleIds: createdArticleIds })
+      .expect(409)
+      .expect('Content-Type', /application\/json/)
+
+    expect(response.body.message).toMatch(
+      /associated with requirement identifications/i
+    )
+
+    expect(response.body.errors.articles).toEqual([
+      { id: createdArticleIds[0], name: 'Article 1' }
+    ])
+  })
+
+  test('Should prevent deleting multiple articles if one has a pending Requirement Identification job', async () => {
+    jest
+      .spyOn(ReqIdentifyService, 'hasPendingLegalBasisJobs')
       .mockImplementation(async (legalBasisId) => {
         if (legalBasisId) {
           return { hasPendingJobs: true, jobId: 'mockedJobId' }
@@ -677,7 +740,27 @@ describe('Delete multiple articles', () => {
       .expect('Content-Type', /application\/json/)
 
     expect(response.body.message).toMatch(
-      /Cannot delete Articles with pending Send Legal Basis jobs/i
+      /pending Requirement Identification jobs/i
     )
+  })
+
+  test('Should prevent deleting multiple articles if at least one has a pending Send Legal Basis job', async () => {
+    jest
+      .spyOn(SendLegalBasisService, 'hasPendingSendJobs')
+      .mockImplementation(async (legalBasisId) => {
+        if (legalBasisId) {
+          return { hasPendingJobs: true, jobId: 'mockedJobId' }
+        }
+        return { hasPendingJobs: false, jobId: null }
+      })
+
+    const response = await api
+      .delete('/api/articles/batch')
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .send({ articleIds: createdArticleIds })
+      .expect(409)
+      .expect('Content-Type', /application\/json/)
+
+    expect(response.body.message).toMatch(/pending Send Legal Basis jobs/i)
   })
 })

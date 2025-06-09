@@ -8,13 +8,13 @@ import RequirementRepository from '../../../repositories/Requirements.repository
 /**
  * Service class for managing requirement identification queue jobs.
  */
-class ReqIdentificationQueueService {
+class ReqIdentifyService {
   /**
    * Retrieves the status of a requirement iddentification job from the queue.
    * @param {number|string} jobId - The job ID.
    * @returns {Promise<import('../../queue/Queue.service.js').JobStateResponse>} - The job state and relevant data.
    */
-  static async getIdentificationJobStatus (jobId) {
+  static async getReqIdentificationJobStatus (jobId) {
     try {
       const job = await reqIdentificationQueue.getJob(jobId)
       if (!job) {
@@ -27,7 +27,11 @@ class ReqIdentificationQueueService {
       return result
     } catch (error) {
       if (error instanceof HttpException) throw error
-      throw new HttpException(500, 'Failed to retrieve requirement identification job status', [{ jobId }])
+      throw new HttpException(
+        500,
+        'Failed to retrieve requirement identification job status',
+        [{ jobId }]
+      )
     }
   }
 
@@ -38,15 +42,21 @@ class ReqIdentificationQueueService {
    */
   static async hasPendingReqIdentificationJobs (reqIdentificationId) {
     try {
-      const identification = await ReqIdentificationRepository.findById(reqIdentificationId)
+      const identification = await ReqIdentificationRepository.findById(
+        reqIdentificationId
+      )
       if (!identification) {
         throw new HttpException(404, 'Requirement identification not found')
       }
 
       const statesToCheck = ['waiting', 'paused', 'active', 'delayed']
-      const jobs = await QueueService.getJobsByStates(reqIdentificationQueue, statesToCheck)
+      const jobs = await QueueService.getJobsByStates(
+        reqIdentificationQueue,
+        statesToCheck
+      )
       const job = jobs.find(
-        (job) => Number(job.data.reqIdentificationId) === Number(reqIdentificationId)
+        (job) =>
+          Number(job.data.reqIdentificationId) === Number(reqIdentificationId)
       )
 
       if (job) {
@@ -56,9 +66,11 @@ class ReqIdentificationQueueService {
       return { hasPendingJobs: false, jobId: null }
     } catch (error) {
       if (error instanceof HttpException) throw error
-      throw new HttpException(500, 'Failed to check pending requirement identification jobs', [
-        { reqIdentificationId }
-      ])
+      throw new HttpException(
+        500,
+        'Failed to check pending requirement identification jobs',
+        [{ reqIdentificationId }]
+      )
     }
   }
 
@@ -74,11 +86,16 @@ class ReqIdentificationQueueService {
         throw new HttpException(404, 'LegalBasis not found')
       }
       const statesToCheck = ['waiting', 'paused', 'active', 'delayed']
-      const jobs = await QueueService.getJobsByStates(reqIdentificationQueue, statesToCheck)
+      const jobs = await QueueService.getJobsByStates(
+        reqIdentificationQueue,
+        statesToCheck
+      )
       const job = jobs.find(
         (job) =>
           Array.isArray(job.data.legalBases) &&
-          job.data.legalBases.some((lb) => Number(lb.id) === Number(legalBasisId))
+          job.data.legalBases.some(
+            (lb) => Number(lb.id) === Number(legalBasisId)
+          )
       )
 
       if (job) {
@@ -88,7 +105,11 @@ class ReqIdentificationQueueService {
       return { hasPendingJobs: false, jobId: null }
     } catch (error) {
       if (error instanceof HttpException) throw error
-      throw new HttpException(500, 'Failed to check pending jobs by legal basis', [{ legalBasisId }])
+      throw new HttpException(
+        500,
+        'Failed to check pending jobs by legal basis',
+        [{ legalBasisId }]
+      )
     }
   }
 
@@ -104,7 +125,10 @@ class ReqIdentificationQueueService {
         throw new HttpException(404, 'Requirement not found')
       }
       const statesToCheck = ['waiting', 'paused', 'active', 'delayed']
-      const jobs = await QueueService.getJobsByStates(reqIdentificationQueue, statesToCheck)
+      const jobs = await QueueService.getJobsByStates(
+        reqIdentificationQueue,
+        statesToCheck
+      )
 
       const job = jobs.find(
         (job) =>
@@ -121,9 +145,13 @@ class ReqIdentificationQueueService {
       return { hasPendingJobs: false, jobId: null }
     } catch (error) {
       if (error instanceof HttpException) throw error
-      throw new HttpException(500, 'Failed to check pending jobs by requirement', [{ requirementId }])
+      throw new HttpException(
+        500,
+        'Failed to check pending jobs by requirement',
+        [{ requirementId }]
+      )
     }
   }
 }
 
-export default ReqIdentificationQueueService
+export default ReqIdentifyService

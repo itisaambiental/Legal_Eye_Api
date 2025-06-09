@@ -6,7 +6,7 @@ import SubjectsRepository from '../../repositories/Subject.repository.js'
 import AspectsRepository from '../../repositories/Aspects.repository.js'
 import ExtractArticlesService from '../articles/extractArticles/ExtractArticles.service.js'
 import SendLegalBasisService from './sendLegalBasis/SendLegalBasis.service.js'
-import ReqIdentificationQueueService from '../reqIdentification/ReqIdentificationQueue/ReqIdentificationQueue.service.js'
+import ReqIdentifyService from '../reqIdentification/reqIdentify/ReqIdentify.service.js'
 import { z } from 'zod'
 import HttpException from '../errors/HttpException.js'
 import FileService from '../files/File.service.js'
@@ -1140,7 +1140,7 @@ class LegalBasisService {
         )
       }
       const reqIdentificationJobs =
-        await ReqIdentificationQueueService.hasPendingLegalBasisJobs(
+        await ReqIdentifyService.hasPendingLegalBasisJobs(
           legalBasisId
         )
       if (reqIdentificationJobs.hasPendingJobs) {
@@ -1200,7 +1200,7 @@ class LegalBasisService {
           409,
           'Some Legal Bases are associated with requirement identifications',
           {
-            legalBasis: legalBasisWithReqIdentificationAssociations.map(
+            legalBases: legalBasisWithReqIdentificationAssociations.map(
               (legalBase) => ({
                 id: legalBase.id,
                 name: legalBase.name
@@ -1222,7 +1222,7 @@ class LegalBasisService {
           const sendLegalBasisJobs =
             await SendLegalBasisService.hasPendingSendJobs(legalBase.id)
           const reqIdentificationJobs =
-            await ReqIdentificationQueueService.hasPendingLegalBasisJobs(
+            await ReqIdentifyService.hasPendingLegalBasisJobs(
               legalBase.id
             )
 

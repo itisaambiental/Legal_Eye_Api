@@ -26,6 +26,7 @@ beforeAll(async () => {
 
 beforeEach(async () => {
   await LegalVerbsRepository.deleteAll()
+  jest.restoreAllMocks()
 })
 
 describe('POST /api/legal-verbs', () => {
@@ -420,6 +421,7 @@ describe('PATCH /api/legal-verbs/:id', () => {
     expect(response.body.error).toMatch(/token missing or invalid/i)
   })
 })
+
 describe('DELETE /api/legal-verbs/:id', () => {
   test('Should successfully delete a legal verb by ID', async () => {
     const legalVerb = generateLegalVerbData({ name: 'Delete Me' })
@@ -450,6 +452,29 @@ describe('DELETE /api/legal-verbs/:id', () => {
       .expect(404)
   })
 
+  test('Should return 409 if the legal verb is associated with requirement identifications', async () => {
+    const legalVerb = generateLegalVerbData({ name: 'Delete Me' })
+
+    const creationResponse = await api
+      .post('/api/legal-verbs')
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .send(legalVerb)
+      .expect(201)
+
+    const id = creationResponse.body.legalVerb.id
+
+    jest
+      .spyOn(LegalVerbsRepository, 'checkReqIdentificationAssociations')
+      .mockResolvedValueOnce({ isAssociatedToReqIdentifications: true })
+
+    const response = await api
+      .delete(`/api/legal-verbs/${id}`)
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .expect(409)
+
+    expect(response.body.message).toMatch(/associated with one or more requirement identifications/i)
+  })
+
   test('Should return 401 Unauthorized if token is missing', async () => {
     const legalVerb = generateLegalVerbData()
 
@@ -466,6 +491,7 @@ describe('DELETE /api/legal-verbs/:id', () => {
     expect(response.body.error).toMatch(/token missing or invalid/i)
   })
 })
+
 describe('DELETE /api/legal-verbs/delete/batch', () => {
   test('Should successfully delete multiple legal verbs', async () => {
     const verb1 = generateLegalVerbData({ name: 'Batch One' })
@@ -531,6 +557,59 @@ describe('DELETE /api/legal-verbs/delete/batch', () => {
         .send(payload)
         .expect(400)
     }
+  })
+
+  test('Should return 409 if one or more legal verbs are associated with requirement identifications', async () => {
+    const legalVerb1 = generateLegalVerbData({ name: 'Associated Verb 1' })
+    const legalVerb2 = generateLegalVerbData({ name: 'Free Verb 2' })
+
+    const res1 = await api
+      .post('/api/legal-verbs')
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .send(legalVerb1)
+      .expect(201)
+
+    const res2 = await api
+      .post('/api/legal-verbs')
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .send(legalVerb2)
+      .expect(201)
+
+    const legalVerbId1 = res1.body.legalVerb.id
+    const legalVerbId2 = res2.body.legalVerb.id
+
+    jest
+      .spyOn(LegalVerbsRepository, 'checkReqIdentificationAssociationsBatch')
+      .mockResolvedValueOnce([
+        {
+          id: legalVerbId1,
+          name: legalVerb1.name,
+          isAssociatedToReqIdentifications: true
+        },
+        {
+          id: legalVerbId2,
+          name: legalVerb2.name,
+          isAssociatedToReqIdentifications: false
+        }
+      ])
+
+    const response = await api
+      .delete('/api/legal-verbs/delete/batch')
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .send({ legalVerbsIds: [legalVerbId1, legalVerbId2] })
+      .expect(409)
+      .expect('Content-Type', /application\/json/)
+
+    expect(response.body.message).toMatch(
+      /associated with requirement identifications/i
+    )
+
+    expect(response.body.errors.legalVerbs).toEqual([
+      {
+        id: legalVerbId1,
+        name: legalVerb1.name
+      }
+    ])
   })
 
   test('Should return 401 Unauthorized if token is missing', async () => {

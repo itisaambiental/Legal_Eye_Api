@@ -1,6 +1,6 @@
 /**
- * Routes module for sending legal basis operations.
- * Defines the API endpoints for legal basis jobs.
+ * Routes module for legal basis sending operations.
+ * Defines the API endpoints for managing legal basis sending jobs.
  */
 
 import { Router } from 'express'

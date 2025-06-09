@@ -2,7 +2,7 @@ import RequirementRepository from '../../repositories/Requirements.repository.js
 import requirementSchema from '../../schemas/requirement.schema.js'
 import SubjectsRepository from '../../repositories/Subject.repository.js'
 import AspectsRepository from '../../repositories/Aspects.repository.js'
-import ReqIdentificationQueueService from '../../services/reqIdentification/ReqIdentificationQueue/ReqIdentificationQueue.service.js'
+import ReqIdentifyService from '../reqIdentification/reqIdentify/ReqIdentify.service.js'
 import HttpException from '../errors/HttpException.js'
 import { z } from 'zod'
 
@@ -675,7 +675,7 @@ class RequirementService {
         )
       }
       const reqIdentificationJobs =
-        await ReqIdentificationQueueService.hasPendingRequirementJobs(
+        await ReqIdentifyService.hasPendingRequirementJobs(
           requirementId
         )
       if (reqIdentificationJobs.hasPendingJobs) {
@@ -748,7 +748,7 @@ class RequirementService {
       await Promise.all(
         requirements.map(async (requirement) => {
           const reqIdentificationJobs =
-            await ReqIdentificationQueueService.hasPendingRequirementJobs(
+            await ReqIdentifyService.hasPendingRequirementJobs(
               requirement.id
             )
           if (reqIdentificationJobs.hasPendingJobs) {
