@@ -133,15 +133,12 @@ describe('ReqIdentificationService - create()', () => {
       reqIdentificationName: uniqueName,
       legalBasisIds: [createdLegalBasis.id]
     })
-
-    // Primera creación exitosa
     await api
       .post('/api/req-identification')
       .set('Authorization', `Bearer ${tokenAdmin}`)
       .send(basePayload)
       .expect(201)
 
-    // Intentar crear con el mismo nombre
     const res = await api
       .post('/api/req-identification')
       .set('Authorization', `Bearer ${tokenAdmin}`)
