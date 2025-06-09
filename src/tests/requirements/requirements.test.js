@@ -5,6 +5,7 @@ import RequirementRepository from '../../repositories/Requirements.repository.js
 import SubjectsRepository from '../../repositories/Subject.repository.js'
 import AspectsRepository from '../../repositories/Aspects.repository.js'
 import LegalBasisRepository from '../../repositories/LegalBasis.repository.js'
+import ReqIdentifyService from '../../services/reqIdentification/reqIdentify/ReqIdentify.service.js'
 import generateRequirementData from '../../utils/generateRequirementData.js'
 import {
   ADMIN_PASSWORD_TEST,
@@ -1999,7 +2000,6 @@ describe('Get Requirements By Acceptance Criteria', () => {
   })
 
   test('Should return the requirement after creating one with the given acceptance criteria', async () => {
-    // Creamos uno con ese criterio de aceptación
     const requirementData = generateRequirementData({
       subjectId: String(createdSubjectId),
       aspectsIds: JSON.stringify([createdAspectIds[0]]),
@@ -2013,8 +2013,6 @@ describe('Get Requirements By Acceptance Criteria', () => {
       .expect(201)
 
     createdRequirement = createRes.body.requirement
-
-    // Ahora probamos el filtro
     const response = await api
       .get('/api/requirements/search/acceptance-criteria')
       .set('Authorization', `Bearer ${tokenAdmin}`)
@@ -2027,8 +2025,32 @@ describe('Get Requirements By Acceptance Criteria', () => {
     expect(requirements).toHaveLength(1)
     expect(requirements[0]).toMatchObject({
       id: createdRequirement.id,
-      acceptance_criteria: testAcceptanceCriteria
-      // puedes añadir aquí el resto de campos que quieras verificar...
+      requirement_number: createdRequirement.requirement_number,
+      requirement_name: createdRequirement.requirement_name,
+      mandatory_description: createdRequirement.mandatory_description,
+      complementary_description: createdRequirement.complementary_description,
+      mandatory_sentences: createdRequirement.mandatory_sentences,
+      complementary_sentences: createdRequirement.complementary_sentences,
+      mandatory_keywords: createdRequirement.mandatory_keywords,
+      complementary_keywords: createdRequirement.complementary_keywords,
+      condition: createdRequirement.condition,
+      evidence: createdRequirement.evidence,
+      specify_evidence:
+        createdRequirement.evidence === 'Específica'
+          ? createdRequirement.specify_evidence
+          : null,
+      periodicity: createdRequirement.periodicity,
+      acceptance_criteria: createdRequirement.acceptance_criteria,
+      subject: expect.objectContaining({
+        subject_id: createdSubjectId,
+        subject_name: subjectName
+      }),
+      aspects: expect.arrayContaining([
+        expect.objectContaining({
+          aspect_id: createdAspectIds[0],
+          aspect_name: aspectsToCreate[0]
+        })
+      ])
     })
   })
 
@@ -2246,6 +2268,42 @@ describe('Delete a requirement', () => {
     expect(response.body.message).toMatch(/Requirement not found/i)
   })
 
+  test('Should return 409 if the requirement is associated with one or more requirement identifications', async () => {
+    jest
+      .spyOn(RequirementRepository, 'checkReqIdentificationAssociations')
+      .mockResolvedValue({ isAssociatedToReqIdentifications: true })
+
+    const response = await api
+      .delete(`/api/requirement/${createdRequirement.id}`)
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .expect(409)
+      .expect('Content-Type', /application\/json/)
+
+    expect(response.body.message).toMatch(
+      /associated with one or more requirement identifications/i
+    )
+  })
+
+  test('Should return 409 if the requirement has pending Requirement Identification jobs', async () => {
+    jest
+      .spyOn(RequirementRepository, 'checkReqIdentificationAssociations')
+      .mockResolvedValue({ isAssociatedToReqIdentifications: false })
+
+    jest
+      .spyOn(ReqIdentifyService, 'hasPendingRequirementJobs')
+      .mockResolvedValue({ hasPendingJobs: true, jobId: 'mockedJobId' })
+
+    const response = await api
+      .delete(`/api/requirement/${createdRequirement.id}`)
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .expect(409)
+      .expect('Content-Type', /application\/json/)
+
+    expect(response.body.message).toMatch(
+      /pending Requirement Identification jobs/i
+    )
+  })
+
   test('Should return 401 if user is unauthorized', async () => {
     const response = await api
       .delete(`/api/requirement/${createdRequirement.id}`)
@@ -2254,6 +2312,7 @@ describe('Delete a requirement', () => {
     expect(response.body.error).toMatch(/token missing or invalid/i)
   })
 })
+
 describe('Delete multiple requirements', () => {
   let createdRequirements
 
@@ -2319,6 +2378,83 @@ describe('Delete multiple requirements', () => {
     expect(response.body.message).toMatch(
       /Missing required fields: requirementIds/i
     )
+  })
+
+  test('Should return 409 if one or more requirements are associated with requirement identifications', async () => {
+    jest
+      .spyOn(RequirementRepository, 'checkReqIdentificationAssociationsBatch')
+      .mockResolvedValue([
+        {
+          id: createdRequirements[0],
+          name: 'Requirement Name 0',
+          isAssociatedToReqIdentifications: true
+        },
+        {
+          id: createdRequirements[1],
+          name: 'Requirement Name 1',
+          isAssociatedToReqIdentifications: false
+        }
+      ])
+
+    const response = await api
+      .delete('/api/requirements/batch')
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .send({ requirementIds: createdRequirements })
+      .expect(409)
+      .expect('Content-Type', /application\/json/)
+
+    expect(response.body.message).toMatch(
+      /associated with requirement identifications/i
+    )
+    expect(response.body.errors.requirements).toEqual([
+      {
+        id: createdRequirements[0],
+        name: 'Requirement Name 0'
+      }
+    ])
+  })
+
+  test('Should return 409 if one or more requirements have pending Requirement Identification jobs', async () => {
+    jest
+      .spyOn(RequirementRepository, 'checkReqIdentificationAssociationsBatch')
+      .mockResolvedValue([
+        {
+          id: createdRequirements[0],
+          name: 'Requirement Name 0',
+          isAssociatedToReqIdentifications: false
+        },
+        {
+          id: createdRequirements[1],
+          name: 'Requirement Name 1',
+          isAssociatedToReqIdentifications: false
+        }
+      ])
+
+    jest
+      .spyOn(ReqIdentifyService, 'hasPendingRequirementJobs')
+      .mockImplementation(async (id) => {
+        return {
+          hasPendingJobs: id === createdRequirements[1],
+          jobId: 'mockedJobId'
+        }
+      })
+
+    const response = await api
+      .delete('/api/requirements/batch')
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .send({ requirementIds: createdRequirements })
+      .expect(409)
+      .expect('Content-Type', /application\/json/)
+
+    expect(response.body.message).toMatch(
+      /pending Requirement Identification jobs/i
+    )
+    expect(response.body.errors.requirements).toEqual([
+      {
+        id: createdRequirements[1],
+        name: 'Requirement Name 1'
+      }
+    ])
   })
 
   test('Should return 401 if user is unauthorized', async () => {

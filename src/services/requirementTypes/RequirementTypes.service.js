@@ -100,7 +100,9 @@ class RequirementTypesService {
    */
   static async getByName (name) {
     try {
-      const requirementTypes = await RequirementTypesRepository.findByName(name)
+      const requirementTypes = await RequirementTypesRepository.findByName(
+        name
+      )
       if (!requirementTypes) {
         return []
       }
@@ -121,9 +123,8 @@ class RequirementTypesService {
    */
   static async getByDescription (description) {
     try {
-      const requirementTypes = await RequirementTypesRepository.findByDescription(
-        description
-      )
+      const requirementTypes =
+        await RequirementTypesRepository.findByDescription(description)
       if (!requirementTypes) {
         return []
       }
@@ -147,9 +148,8 @@ class RequirementTypesService {
    */
   static async getByClassification (classification) {
     try {
-      const requirementTypes = await RequirementTypesRepository.findByClassification(
-        classification
-      )
+      const requirementTypes =
+        await RequirementTypesRepository.findByClassification(classification)
       if (!requirementTypes) {
         return []
       }
@@ -234,7 +234,16 @@ class RequirementTypesService {
       if (!requirementType) {
         throw new HttpException(404, 'Requirement type not found')
       }
-      const requirementTypeDeleted = await RequirementTypesRepository.deleteById(id)
+      const { isAssociatedToReqIdentifications } =
+        await RequirementTypesRepository.checkReqIdentificationAssociations(id)
+      if (isAssociatedToReqIdentifications) {
+        throw new HttpException(
+          409,
+          'Requirement Type is associated with one or more requirement identifications'
+        )
+      }
+      const requirementTypeDeleted =
+        await RequirementTypesRepository.deleteById(id)
       if (!requirementTypeDeleted) {
         throw new HttpException(404, 'Requirement type not found')
       }
@@ -255,9 +264,8 @@ class RequirementTypesService {
    */
   static async deleteBatch (requirementTypeIds) {
     try {
-      const existingRequirementTypes = await RequirementTypesRepository.findByIds(
-        requirementTypeIds
-      )
+      const existingRequirementTypes =
+        await RequirementTypesRepository.findByIds(requirementTypeIds)
       if (existingRequirementTypes.length !== requirementTypeIds.length) {
         const notFoundIds = requirementTypeIds.filter(
           (id) => !existingRequirementTypes.some((rt) => rt.id === id)
@@ -266,9 +274,33 @@ class RequirementTypesService {
           notFoundIds
         })
       }
-      const requirementTypesDeleted = await RequirementTypesRepository.deleteBatch(
-        requirementTypeIds
-      )
+
+      const reqIdentificationAssociations =
+        await RequirementTypesRepository.checkReqIdentificationAssociationsBatch(
+          requirementTypeIds
+        )
+
+      const requirementsTypesWithAssociations =
+        reqIdentificationAssociations.filter(
+          (requirementType) => requirementType.isAssociatedToReqIdentifications
+        )
+
+      if (requirementsTypesWithAssociations.length > 0) {
+        throw new HttpException(
+          409,
+          'Some Requirement Types are associated with requirement identifications',
+          {
+            requirementTypes: requirementsTypesWithAssociations.map(
+              (requirementType) => ({
+                id: requirementType.id,
+                name: requirementType.name
+              })
+            )
+          }
+        )
+      }
+      const requirementTypesDeleted =
+        await RequirementTypesRepository.deleteBatch(requirementTypeIds)
       if (!requirementTypesDeleted) {
         throw new HttpException(404, 'Requirement types not found')
       }

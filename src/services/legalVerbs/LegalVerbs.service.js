@@ -18,8 +18,14 @@ class LegalVerbsService {
    */
   static async create ({ name, description, translation }) {
     try {
-      const legalVerbParsed = legalVerbsSchema.parse({ name, description, translation })
-      const LegalVerbNameExists = await LegalVerbsRepository.existsByName(legalVerbParsed.name)
+      const legalVerbParsed = legalVerbsSchema.parse({
+        name,
+        description,
+        translation
+      })
+      const LegalVerbNameExists = await LegalVerbsRepository.existsByName(
+        legalVerbParsed.name
+      )
       if (LegalVerbNameExists) {
         throw new HttpException(409, 'Legal verb name already exists')
       }
@@ -108,14 +114,19 @@ class LegalVerbsService {
    */
   static async getByDescription (description) {
     try {
-      const legalVerbs = await LegalVerbsRepository.findByDescription(description)
+      const legalVerbs = await LegalVerbsRepository.findByDescription(
+        description
+      )
       if (!legalVerbs) {
         return []
       }
       return legalVerbs
     } catch (error) {
       if (error instanceof HttpException) throw error
-      throw new HttpException(500, 'Failed to fetch legal verbs by description')
+      throw new HttpException(
+        500,
+        'Failed to fetch legal verbs by description'
+      )
     }
   }
 
@@ -127,14 +138,19 @@ class LegalVerbsService {
    */
   static async getByTranslation (translation) {
     try {
-      const legalVerbs = await LegalVerbsRepository.findByTranslation(translation)
+      const legalVerbs = await LegalVerbsRepository.findByTranslation(
+        translation
+      )
       if (!legalVerbs) {
         return []
       }
       return legalVerbs
     } catch (error) {
       if (error instanceof HttpException) throw error
-      throw new HttpException(500, 'Failed to fetch legal verbs by translation')
+      throw new HttpException(
+        500,
+        'Failed to fetch legal verbs by translation'
+      )
     }
   }
 
@@ -150,15 +166,20 @@ class LegalVerbsService {
    */
   static async updateById (id, { name, description, translation }) {
     try {
-      const legalVerbParsed = legalVerbsSchema.parse({ name, description, translation })
+      const legalVerbParsed = legalVerbsSchema.parse({
+        name,
+        description,
+        translation
+      })
       const legalVerb = await LegalVerbsRepository.findById(id)
       if (!legalVerb) {
         throw new HttpException(404, 'Legal verb not found')
       }
-      const LegalVerbNameExists = await LegalVerbsRepository.existsByNameExcludingId(
-        legalVerbParsed.name,
-        id
-      )
+      const LegalVerbNameExists =
+        await LegalVerbsRepository.existsByNameExcludingId(
+          legalVerbParsed.name,
+          id
+        )
       if (LegalVerbNameExists) {
         throw new HttpException(409, 'Legal verb name already exists')
       }
@@ -197,6 +218,14 @@ class LegalVerbsService {
       if (!legalVerb) {
         throw new HttpException(404, 'Legal verb not found')
       }
+      const { isAssociatedToReqIdentifications } =
+        await LegalVerbsRepository.checkReqIdentificationAssociations(id)
+      if (isAssociatedToReqIdentifications) {
+        throw new HttpException(
+          409,
+          'Legal Verb is associated with one or more requirement identifications'
+        )
+      }
       const deletedLegalVerb = await LegalVerbsRepository.deleteById(id)
       if (!deletedLegalVerb) {
         throw new HttpException(404, 'Legal verb not found')
@@ -225,7 +254,32 @@ class LegalVerbsService {
           notFoundIds
         })
       }
-      const deletedLegalVerbs = await LegalVerbsRepository.deleteBatch(legalVerbsIds)
+      const reqIdentificationAssociations =
+        await LegalVerbsRepository.checkReqIdentificationAssociationsBatch(
+          legalVerbsIds
+        )
+      const legalVerbsWithReqIdentificationAssociations =
+        reqIdentificationAssociations.filter(
+          (legalVerb) => legalVerb.isAssociatedToReqIdentifications
+        )
+
+      if (legalVerbsWithReqIdentificationAssociations.length > 0) {
+        throw new HttpException(
+          409,
+          'Some Legal Verbs are associated with requirement identifications',
+          {
+            legalVerbs: legalVerbsWithReqIdentificationAssociations.map(
+              (legalVerb) => ({
+                id: legalVerb.id,
+                name: legalVerb.name
+              })
+            )
+          }
+        )
+      }
+      const deletedLegalVerbs = await LegalVerbsRepository.deleteBatch(
+        legalVerbsIds
+      )
       if (!deletedLegalVerbs) {
         throw new HttpException(404, 'Legal verbs not found')
       }

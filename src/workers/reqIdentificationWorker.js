@@ -21,6 +21,7 @@ reqIdentificationQueue.process(CONCURRENCY, async (job, done) => {
   /** @type {ReqIdentificationJobData} */
   const { reqIdentificationId, legalBases, requirements } = job.data
   console.log('Processing requirement identification job:', job.id)
+
   try {
     const currentJob = await reqIdentificationQueue.getJob(job.id)
     if (!currentJob) throw new HttpException(404, 'Job not found')
@@ -36,12 +37,13 @@ reqIdentificationQueue.process(CONCURRENCY, async (job, done) => {
             )
           )
       )
-
       for (const legalBase of legalBasis) {
         const articles = await ArticlesRepository.findByLegalBasisId(
           legalBase.id
         )
-        totalTasks += articles?.length || 0
+        if (articles) {
+          totalTasks += articles.length
+        }
       }
     }
 
@@ -49,7 +51,9 @@ reqIdentificationQueue.process(CONCURRENCY, async (job, done) => {
       await currentJob.progress(100)
       return done()
     }
+
     let completedTasks = 0
+
     for (const requirement of requirements) {
       const legalBasis = legalBases.filter(
         (lb) =>
@@ -62,12 +66,12 @@ reqIdentificationQueue.process(CONCURRENCY, async (job, done) => {
       )
 
       if (legalBasis.length === 0) continue
+
       const subjectAbbreviations = [
         ...new Set(
           legalBasis.map((lb) => lb.subject.abbreviation).filter(Boolean)
         )
       ]
-
       const aspectAbbreviations = [
         ...new Set(
           legalBasis.flatMap((lb) =>
@@ -75,45 +79,52 @@ reqIdentificationQueue.process(CONCURRENCY, async (job, done) => {
           )
         )
       ]
-
       const states = [
         ...new Set(legalBasis.map((lb) => lb.state).filter(Boolean))
       ]
-
       const municipalities = [
         ...new Set(legalBasis.map((lb) => lb.municipality).filter(Boolean))
       ]
 
-      const subject = subjectAbbreviations.join(', ')
-      const aspect = aspectAbbreviations.join(', ')
-      const state = states.join(', ')
-      const municipality = municipalities.join(', ')
-      const requirementNumber = requirement.requirement_number
-
       const requirementName = [
-        subject,
-        aspect,
-        state,
-        municipality,
-        requirementNumber
+        subjectAbbreviations.join(', '),
+        aspectAbbreviations.join(', '),
+        states.join(', '),
+        municipalities.join(', '),
+        requirement.requirement_number
       ]
         .map((part) => String(part).trim())
         .filter((part) => part !== '')
         .filter((part, index, arr) => arr.indexOf(part) === index)
         .join(' - ')
 
-      await ReqIdentificationRepository.linkRequirement(
-        reqIdentificationId,
-        requirement.id,
-        requirementName
-      )
-
-      for (const legalBase of legalBasis) {
-        await ReqIdentificationRepository.linkLegalBaseToRequirement(
+      const existsRequirement =
+        await ReqIdentificationRepository.existsRequirementLink(
+          reqIdentificationId,
+          requirement.id
+        )
+      if (!existsRequirement) {
+        await ReqIdentificationRepository.linkRequirement(
           reqIdentificationId,
           requirement.id,
-          legalBase.id
+          requirementName
         )
+      }
+
+      for (const legalBase of legalBasis) {
+        const existsLegalBasis =
+          await ReqIdentificationRepository.existsLegalBaseRequirementLink(
+            reqIdentificationId,
+            requirement.id,
+            legalBase.id
+          )
+        if (!existsLegalBasis) {
+          await ReqIdentificationRepository.linkLegalBaseToRequirement(
+            reqIdentificationId,
+            requirement.id,
+            legalBase.id
+          )
+        }
 
         const articles = await ArticlesRepository.findByLegalBasisId(
           legalBase.id
@@ -121,12 +132,21 @@ reqIdentificationQueue.process(CONCURRENCY, async (job, done) => {
 
         if (articles) {
           for (const article of articles) {
-            await ReqIdentificationRepository.linkArticleToLegalBaseToRequirement(
-              reqIdentificationId,
-              requirement.id,
-              legalBase.id,
-              article.id
-            )
+            const existsArticle =
+              await ReqIdentificationRepository.existsArticleLegalBaseRequirementLink(
+                reqIdentificationId,
+                requirement.id,
+                legalBase.id,
+                article.id
+              )
+            if (!existsArticle) {
+              await ReqIdentificationRepository.linkArticleToLegalBaseToRequirement(
+                reqIdentificationId,
+                requirement.id,
+                legalBase.id,
+                article.id
+              )
+            }
 
             completedTasks += 1
             await currentJob.progress(

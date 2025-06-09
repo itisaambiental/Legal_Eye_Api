@@ -390,6 +390,78 @@ class RequirementTypesRepository {
       )
     }
   }
+
+  /**
+ * Checks if a requirement type is associated with any requirement identifications.
+ * @param {number} requirementTypeId - The ID of the requirement type to check.
+ * @returns {Promise<{ isAssociatedToReqIdentifications: boolean }>}
+ * @throws {HttpException} - If an error occurs during the query.
+ */
+  static async checkReqIdentificationAssociations (requirementTypeId) {
+    try {
+      const [rows] = await pool.query(
+      `
+      SELECT COUNT(*) AS identificationCount
+      FROM req_identifications_requirements
+      WHERE requirement_type_id = ?
+      `,
+      [requirementTypeId]
+      )
+
+      return {
+        isAssociatedToReqIdentifications: rows[0].identificationCount > 0
+      }
+    } catch (error) {
+      console.error(
+        'Error checking requirement type associations with identifications:',
+        error.message
+      )
+      throw new HttpException(
+        500,
+        'Error checking requirement type associations with identifications'
+      )
+    }
+  }
+
+  /**
+ * Checks which requirement types are associated with requirement identifications.
+ * @param {Array<number>} requirementTypeIds - Array of IDs to check.
+ * @returns {Promise<Array<{ id: number, name: string, isAssociatedToReqIdentifications: boolean }>>}
+ * @throws {HttpException}
+ */
+  static async checkReqIdentificationAssociationsBatch (requirementTypeIds) {
+    try {
+      const [rows] = await pool.query(
+      `
+      SELECT 
+        rt.id AS requirementTypeId,
+        rt.name AS requirementTypeName,
+        COUNT(rir.req_identification_id) AS identificationCount
+      FROM requirement_types rt
+      LEFT JOIN req_identifications_requirements rir 
+        ON rt.id = rir.requirement_type_id
+      WHERE rt.id IN (?)
+      GROUP BY rt.id
+      `,
+      [requirementTypeIds]
+      )
+
+      return rows.map((row) => ({
+        id: row.requirementTypeId,
+        name: row.requirementTypeName,
+        isAssociatedToReqIdentifications: row.identificationCount > 0
+      }))
+    } catch (error) {
+      console.error(
+        'Error checking requirement type associations with identifications:',
+        error.message
+      )
+      throw new HttpException(
+        500,
+        'Error checking batch requirement type associations'
+      )
+    }
+  }
 }
 
 export default RequirementTypesRepository

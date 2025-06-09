@@ -44,7 +44,7 @@ class ReqIdentificationService {
    * @property {string} name - The name of the identification.
    * @property {string|null} description - A description of the identification.
    * @property {string} createdAt - Formatted creation date (dd-MM-yyyy).
-   * @property {'Active'|'Failed'|'Completed'} status - The current status of the identification.
+   * @property {'Activo'|'Fallido'|'Completado'} status - The current status of the identification.
    * @property {User} user - The user who created the identification.
    * @property {Subject} subject - The subject associated with the identification.
    * @property {Aspect[]} aspects - List of associated aspects.

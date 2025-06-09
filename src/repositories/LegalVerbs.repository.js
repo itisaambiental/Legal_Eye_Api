@@ -379,6 +379,78 @@ class LegalVerbsRepository {
       )
     }
   }
+
+  /**
+ * Checks if a legal verb is associated with any requirement identifications.
+ * @param {number} legalVerbId - The ID of the legal verb to check.
+ * @returns {Promise<{ isAssociatedToReqIdentifications: boolean }>}
+ * @throws {HttpException} - If an error occurs during the query.
+ */
+  static async checkReqIdentificationAssociations (legalVerbId) {
+    try {
+      const [rows] = await pool.query(
+      `
+      SELECT COUNT(*) AS identificationCount
+      FROM req_identifications_requirement_legal_verbs
+      WHERE legal_verb_id = ?
+      `,
+      [legalVerbId]
+      )
+
+      return {
+        isAssociatedToReqIdentifications: rows[0].identificationCount > 0
+      }
+    } catch (error) {
+      console.error(
+        'Error checking legal verb associations with identifications:',
+        error.message
+      )
+      throw new HttpException(
+        500,
+        'Error checking legal verb associations with identifications'
+      )
+    }
+  }
+
+  /**
+ * Checks if any of the given legal verbs are associated with any requirement identifications.
+ * @param {Array<number>} legalVerbIds - Array of legal verb IDs to check.
+ * @returns {Promise<Array<{ id: number, name: string, isAssociatedToReqIdentifications: boolean }>>}
+ * @throws {HttpException}
+ */
+  static async checkReqIdentificationAssociationsBatch (legalVerbIds) {
+    try {
+      const [rows] = await pool.query(
+      `
+      SELECT 
+        lv.id AS legalVerbId,
+        lv.name AS legalVerbName,
+        COUNT(rirlv.req_identification_id) AS identificationCount
+      FROM legal_verbs lv
+      LEFT JOIN req_identifications_requirement_legal_verbs rirlv 
+        ON lv.id = rirlv.legal_verb_id
+      WHERE lv.id IN (?)
+      GROUP BY lv.id
+      `,
+      [legalVerbIds]
+      )
+
+      return rows.map((row) => ({
+        id: row.legalVerbId,
+        name: row.legalVerbName,
+        isAssociatedToReqIdentifications: row.identificationCount > 0
+      }))
+    } catch (error) {
+      console.error(
+        'Error checking legal verb batch associations with identifications:',
+        error.message
+      )
+      throw new HttpException(
+        500,
+        'Error checking batch legal verb associations with identifications'
+      )
+    }
+  }
 }
 
 export default LegalVerbsRepository

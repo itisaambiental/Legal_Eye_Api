@@ -1200,7 +1200,7 @@ class LegalBasisService {
           409,
           'Some Legal Bases are associated with requirement identifications',
           {
-            legalBasis: legalBasisWithReqIdentificationAssociations.map(
+            legalBases: legalBasisWithReqIdentificationAssociations.map(
               (legalBase) => ({
                 id: legalBase.id,
                 name: legalBase.name
