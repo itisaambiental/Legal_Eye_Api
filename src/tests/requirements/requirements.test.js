@@ -151,7 +151,6 @@ describe('Create a requirement', () => {
   })
 
   test('Should return 409 if requirement name already exists', async () => {
-    // Primero creamos con nombre X y número 1
     const baseReq = generateRequirementData({
       subjectId: String(createdSubjectId),
       aspectsIds: JSON.stringify([createdAspectIds[0]]),
@@ -164,12 +163,11 @@ describe('Create a requirement', () => {
       .send(baseReq)
       .expect(201)
 
-    // Ahora intentamos crear otro con el mismo nombre, pero número distinto
     const duplicateReq = generateRequirementData({
       subjectId: String(createdSubjectId),
       aspectsIds: JSON.stringify([createdAspectIds[0]]),
-      requirementName: 'Test Requirement Name', // mismo nombre
-      requirementNumber: 2 // entero válido distinto
+      requirementName: 'Test Requirement Name',
+      requirementNumber: 2
     })
     const response = await api
       .post('/api/requirements')
@@ -189,7 +187,7 @@ describe('Create a requirement', () => {
 
     const response = await api
       .post('/api/requirements')
-      .send(requirementData) // sin Authorization header
+      .send(requirementData)
       .expect(401)
       .expect('Content-Type', /application\/json/)
 
@@ -201,7 +199,7 @@ describe('Create a requirement', () => {
       const requirementData = generateRequirementData({
         subjectId: String(createdSubjectId),
         aspectsIds: JSON.stringify([createdAspectIds[0]]),
-        requirementNumber: 'foo' // no convertible a número
+        requirementNumber: 'foo'
       })
 
       const res = await api
