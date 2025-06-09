@@ -14,11 +14,11 @@ import {
   getReqIdentificationsByUserId,
   getReqIdentificationsByCreatedAt,
   getReqIdentificationsByStatus,
-  getReqIdentificationsBySubjectId,
-  getReqIdentificationsBySubjectAndAspects,
   getReqIdentificationsByJurisdiction,
   getReqIdentificationsByState,
   getReqIdentificationsByStateAndMunicipalities,
+  getReqIdentificationsBySubjectId,
+  getReqIdentificationsBySubjectAndAspects,
   updateReqIdentification,
   deleteReqIdentification,
   deleteReqIdentificationsBatch
