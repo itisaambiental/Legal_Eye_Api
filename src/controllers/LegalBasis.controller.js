@@ -55,7 +55,6 @@ export const createLegalBasis = async (req, res) => {
     )
     return res.status(201).json({ jobId, legalBasis })
   } catch (error) {
-    console.error('❌ Error in createLegalBasis:', error)
     if (error instanceof HttpException) {
       return res.status(error.status).json({
         message: error.message,

@@ -6,12 +6,10 @@ import RequirementRepository from '../../repositories/Requirements.repository.js
 import SubjectsRepository from '../../repositories/Subject.repository.js'
 import AspectsRepository from '../../repositories/Aspects.repository.js'
 import LegalBasisRepository from '../../repositories/LegalBasis.repository.js'
-
 import generateReqIdentificationData from '../../utils/generateReqIdentificationData.js'
 import generateLegalBasisData from '../../utils/generateLegalBasisData.js'
 import generateRequirementData from '../../utils/generateRequirementData.js'
 import reqIdentificationQueue from '../../workers/reqIdentificationWorker.js'
-
 import { ADMIN_GMAIL, ADMIN_PASSWORD_TEST } from '../../config/variables.config.js'
 
 let tokenAdmin

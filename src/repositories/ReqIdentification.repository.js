@@ -43,6 +43,52 @@ class ReqIdentificationRepository {
   }
 
   /**
+   * Updates the status of a requirement identification.
+   *
+   * @param {number} reqIdentificationId - The ID of the requirement identification.
+   * @param {'Activo' | 'Fallido' | 'Completado'} status - The new status.
+   * @returns {Promise<void>}
+   * @throws {HttpException}
+   */
+  static async updateStatus (reqIdentificationId, status) {
+    const query = `
+      UPDATE req_identifications
+      SET status = ?
+      WHERE id = ?
+    `
+    try {
+      await pool.query(query, [status, reqIdentificationId])
+    } catch (error) {
+      console.error(
+        'Error updating requirement identification status:',
+        error.message
+      )
+      throw new HttpException(
+        500,
+        'Error updating requirement identification status'
+      )
+    }
+  }
+
+  /**
+   * Marks a requirement identification as Failed.
+   * @param {number} reqIdentificationId - The ID of the requirement identification.
+   * @returns {Promise<void>}
+   */
+  static async markAsFailed (reqIdentificationId) {
+    return this.updateStatus(reqIdentificationId, 'Fallido')
+  }
+
+  /**
+   * Marks a requirement identification as Completed.
+   * @param {number} reqIdentificationId - The ID of the requirement identification.
+   * @returns {Promise<void>}
+   */
+  static async markAsCompleted (reqIdentificationId) {
+    return this.updateStatus(reqIdentificationId, 'Completado')
+  }
+
+  /**
    * Retrieves all requirement identifications.
    *
    * @returns {Promise<ReqIdentification[]|null>} - An array of all requirement identifications.
@@ -992,7 +1038,7 @@ class ReqIdentificationRepository {
   /**
    * Retrieves requirement identifications filtered by status.
    *
-   * @param {string} status - The status to filter by ('Active', 'Failed', or 'Completed').
+   * @param {string} status - The status to filter by ('Activo' | 'Fallido' | 'Completado').
    * @returns {Promise<ReqIdentification[]|null>} - An array of matching requirement identifications, or null if none found.
    * @throws {HttpException} - If an error occurs during the query.
    */
@@ -1926,6 +1972,29 @@ class ReqIdentificationRepository {
   }
 
   /**
+ * Checks if a requirement is already linked to a requirement identification.
+ *
+ * @param {number} reqIdentificationId
+ * @param {number} requirementId
+ * @returns {Promise<boolean>}
+ * @throws {HttpException}
+ */
+  static async existsRequirementLink (reqIdentificationId, requirementId) {
+    const query = `
+    SELECT 1 FROM req_identifications_requirements
+    WHERE req_identification_id = ? AND requirement_id = ?
+    LIMIT 1
+  `
+    try {
+      const [rows] = await pool.query(query, [reqIdentificationId, requirementId])
+      return rows.length > 0
+    } catch (error) {
+      console.error('Error checking requirement link:', error.message)
+      throw new HttpException(500, 'Error checking requirement link')
+    }
+  }
+
+  /**
    * Links a legal basis to a requirement within a requirement identification.
    *
    * @param {number} reqIdentificationId - The ID of the requirement identification.
@@ -1961,22 +2030,46 @@ class ReqIdentificationRepository {
   }
 
   /**
-   * Links an article to a legal basis and requirement within a requirement identification.
-   *
-   * @param {number} reqIdentificationId - The ID of the requirement identification.
-   * @param {number} requirementId - The ID of the requirement.
-   * @param {number} legalBasisId - The ID of the legal basis.
-   * @param {number} articleId - The ID of the article to link.
-   * @param {'mandatory' | 'complementary' | 'general'} [articleType='general'] - Optional article type. Defaults to 'general'.
-   * @returns {Promise<void>} - Resolves when the article is successfully linked.
-   * @throws {HttpException} - If a database error occurs.
-   */
+ * Checks if a legal basis is already linked to a requirement in a requirement identification.
+ *
+ * @param {number} reqIdentificationId
+ * @param {number} requirementId
+ * @param {number} legalBasisId
+ * @returns {Promise<boolean>}
+ * @throws {HttpException}
+ */
+  static async existsLegalBaseRequirementLink (reqIdentificationId, requirementId, legalBasisId) {
+    const query = `
+    SELECT 1 FROM req_identifications_requirement_legal_basis
+    WHERE req_identification_id = ? AND requirement_id = ? AND legal_basis_id = ?
+    LIMIT 1
+  `
+    try {
+      const [rows] = await pool.query(query, [reqIdentificationId, requirementId, legalBasisId])
+      return rows.length > 0
+    } catch (error) {
+      console.error('Error checking legal basis link:', error.message)
+      throw new HttpException(500, 'Error checking legal basis link')
+    }
+  }
+
+  /**
+ * Links an article to a legal basis and requirement within a requirement identification.
+ *
+ * @param {number} reqIdentificationId - The ID of the requirement identification.
+ * @param {number} requirementId - The ID of the requirement.
+ * @param {number} legalBasisId - The ID of the legal basis.
+ * @param {number} articleId - The ID of the article to link.
+ * @param {'Obligatorio' | 'Complementario' | 'General'} [articleType='General'] - Optional article type. Defaults to 'General'.
+ * @returns {Promise<void>} - Resolves when the article is successfully linked.
+ * @throws {HttpException} - If a database error occurs.
+ */
   static async linkArticleToLegalBaseToRequirement (
     reqIdentificationId,
     requirementId,
     legalBasisId,
     articleId,
-    articleType = 'general'
+    articleType = 'General'
   ) {
     const query = `
     INSERT INTO req_identifications_requirement_legal_basis_articles
@@ -2003,6 +2096,31 @@ class ReqIdentificationRepository {
         500,
         'Error linking article to legal basis and requirement'
       )
+    }
+  }
+
+  /**
+ * Checks if an article is already linked to a legal basis and requirement in a requirement identification.
+ *
+ * @param {number} reqIdentificationId
+ * @param {number} requirementId
+ * @param {number} legalBasisId
+ * @param {number} articleId
+ * @returns {Promise<boolean>}
+ * @throws {HttpException}
+ */
+  static async existsArticleLegalBaseRequirementLink (reqIdentificationId, requirementId, legalBasisId, articleId) {
+    const query = `
+    SELECT 1 FROM req_identifications_requirement_legal_basis_articles
+    WHERE req_identification_id = ? AND requirement_id = ? AND legal_basis_id = ? AND article_id = ?
+    LIMIT 1
+  `
+    try {
+      const [rows] = await pool.query(query, [reqIdentificationId, requirementId, legalBasisId, articleId])
+      return rows.length > 0
+    } catch (error) {
+      console.error('Error checking article link:', error.message)
+      throw new HttpException(500, 'Error checking article link')
     }
   }
 }

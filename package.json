@@ -15,6 +15,7 @@
     "test:extractArticles": "cross-env NODE_ENV=test jest --verbose tests/articles/extractArticles.test.js",
     "test:requirements": "cross-env NODE_ENV=test jest --verbose tests/requirements/requirements.test.js",
     "test:reqIdentification": "cross-env NODE_ENV=test jest --verbose tests/reqIdentification/reqIdentification.test.js",
+    "test:reqIdentify": "cross-env NODE_ENV=test jest --verbose tests/reqIdentification/reqIdentify.test.js",
     "test:legalVerbs": "cross-env NODE_ENV=test jest --verbose src/tests/legalVerbs/legalVerbs.test.js",
     "test:requirementTypes": "cross-env NODE_ENV=test jest --verbose src/tests/requirementTypes/requirementTypes.test.js",
     "test:files": "cross-env NODE_ENV=test jest --verbose tests/files/files.test.js",
