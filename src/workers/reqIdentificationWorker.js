@@ -20,8 +20,6 @@ const CONCURRENCY = Number(CONCURRENCY_REQ_IDENTIFICATIONS || 1)
 reqIdentificationQueue.process(CONCURRENCY, async (job, done) => {
   /** @type {ReqIdentificationJobData} */
   const { reqIdentificationId, legalBases, requirements } = job.data
-  console.log('Processing requirement identification job:', job.id)
-
   try {
     const currentJob = await reqIdentificationQueue.getJob(job.id)
     if (!currentJob) throw new HttpException(404, 'Job not found')
