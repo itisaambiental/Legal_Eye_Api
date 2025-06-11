@@ -99,3 +99,12 @@ export const reqIdentificationUpdateSchema = z.object({
     .optional()
     .transform((val) => val ?? null)
 })
+
+/**
+ * Zod validation schema for requirement identifier.
+ * This schema defines the structure of a requirement identifier,
+ */
+export const reqIdentifierSchema = z.object({
+  classification: z.enum(['Obligatorio', 'Complementario', 'General']),
+  score: z.number().min(1).max(10)
+})

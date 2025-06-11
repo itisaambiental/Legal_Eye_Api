@@ -79,6 +79,7 @@ extractArticlesQueue.process(CONCURRENCY, async (job, done) => {
 
     done(null)
   } catch (error) {
+    console.error(error)
     try {
       const user = await UserRepository.findById(userId)
       const legalBase = await LegalBasisRepository.findById(legalBasisId)

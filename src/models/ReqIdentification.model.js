@@ -29,7 +29,7 @@ export class ReqIdentificationRequirementLegalBasisArticle {
    * Constructs a ReqIdentificationRequirementLegalBasisArticle instance.
    *
    * @param {Article} article - The article object.
-   * @param {string} articleType - Type of article.
+   * @param {string} articleType - Type of the article.
    */
   constructor (article, articleType) {
     this.article = article

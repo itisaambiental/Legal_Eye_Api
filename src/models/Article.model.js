@@ -8,13 +8,22 @@ class Article {
    * @param {number} legalBasisId - The ID of the associated legal basis.
    * @param {string} articleName - The title of the article.
    * @param {string} description - The content of the article.
+   * @param {string} [plainDescription] - The plain content of the article.
    * @param {number} articleOrder - The order of the article.
    */
-  constructor (id, legalBasisId, articleName, description, articleOrder) {
+  constructor (
+    id,
+    legalBasisId,
+    articleName,
+    description,
+    plainDescription,
+    articleOrder
+  ) {
     this.id = id
     this.legal_basis_id = legalBasisId
     this.article_name = articleName
     this.description = description
+    this.plain_description = plainDescription
     this.article_order = articleOrder
   }
 }

@@ -18,6 +18,13 @@ import { EMAIL_USER, APP_URL } from '../../config/variables.config.js'
  */
 
 /**
+ * @typedef {Object} ReqIdentificationSummary
+ * @property {number} legalBasis - Total number of legal bases.
+ * @property {number} articles - Total number of articles.
+ * @property {number} requirements - Total number of requirements.
+ */
+
+/**
  * Service class for handling email operations.
  * Provides methods for sending different types of emails.
  */
@@ -224,6 +231,80 @@ Fallos: ${failedLegalBasesNames.length}`,
       subject: 'Error al enviar los fundamentos legales a ACM Suite',
       text: 'Ocurrió un error y ninguno de los fundamentos legales seleccionados pudo ser enviado a ACM Suite.',
       html: '<p><strong>Ocurrió un error</strong> y <strong>ninguno</strong> de los fundamentos legales seleccionados pudo ser enviado a ACM Suite.</p>'
+    }
+  }
+
+  /**
+ * Generates an email notifying that the requirement identification failed for a specific article.
+ * @param {string} gmail - The Gmail address of the user.
+ * @param {number} reqIdentificationId - ID of the requirement identification.
+ * @param {string} reqIdentificationName - Name of the requirement identification.
+ * @param {string} articleName - Name of the article that failed.
+ * @returns {EmailData}
+ */
+  static generateReqIdentificationArticleFailureEmail (gmail, reqIdentificationId, reqIdentificationName, articleName) {
+    const url = `${APP_URL}/reqIdentification/${reqIdentificationId}/requirements`
+    const message = `Ocurrió un error al identificar los requerimientos para el artículo "${articleName}" en la identificación "${reqIdentificationName}".`
+    return {
+      to: gmail,
+      subject: 'Error al identificar requerimientos para un artículo',
+      text: message,
+      html: `
+      <p><strong>${message}</strong></p>
+      <p><a href="${url}" target="_blank" style="padding: 8px 12px; background-color: #2563eb; color: white; text-decoration: none; border-radius: 4px;">Ver identificación de requerimientos</a></p>
+    `
+    }
+  }
+
+  /**
+ * Generates an email notifying that the entire requirement identification failed.
+ * @param {string} gmail - The Gmail address of the user.
+* @param {number} reqIdentificationId - ID of the requirement identification.
+ * @param {string} reqIdentificationName - Name of the requirement identification.
+ * @returns {EmailData}
+ */
+  static generateReqIdentificationFailureEmail (gmail, reqIdentificationId, reqIdentificationName) {
+    const url = `${APP_URL}/reqIdentification/${reqIdentificationId}/requirements`
+    const message = `Ocurrió un error y no se pudo completar la identificación de requerimientos "${reqIdentificationName}".`
+    return {
+      to: gmail,
+      subject: 'Error al identificar requerimientos',
+      text: message,
+      html: `
+      <p><strong>${message}</strong></p>
+      <p><a href="${url}" target="_blank" style="padding: 8px 12px; background-color: #dc2626; color: white; text-decoration: none; border-radius: 4px;">Ver identificación de requerimientos</a></p>
+    `
+    }
+  }
+
+  /**
+ * Generates an email summary of a successful requirement identification process.
+ * @param {string} gmail - The Gmail address of the user.
+ * @param {number} reqIdentificationId - ID of the requirement identification.
+ * @param {string} reqIdentificationName - Name of the requirement identification.
+ * @param {ReqIdentificationSummary} summary - Summary of the identification results.
+ * @returns {EmailData}
+ */
+  static generateReqIdentificationSummaryReportEmail (gmail, reqIdentificationId, reqIdentificationName, summary) {
+    const url = `${APP_URL}/reqIdentification/${reqIdentificationId}/requirements`
+    const { legalBasis, articles, requirements } = summary
+    const message = `La identificación de requerimientos "${reqIdentificationName}" se completó exitosamente.\n\n` +
+    `Resumen:\n- Fundamentos legales analizados: ${legalBasis}\n- Artículos clasificados: ${articles}\n- Requerimientos utilizados: ${requirements}`
+
+    return {
+      to: gmail,
+      subject: 'Resumen de identificación de requerimientos completada',
+      text: message,
+      html: `
+      <p><strong>La identificación de requerimientos "${reqIdentificationName}" se completó exitosamente.</strong></p>
+      <p><strong>Resumen:</strong></p>
+      <ul>
+        <li>Fundamentos analizados: ${legalBasis}</li>
+        <li>Artículos clasificados: ${articles}</li>
+        <li>Requerimientos utilizados: ${requirements}</li>
+      </ul>
+      <p><a href="${url}" target="_blank" style="padding: 8px 12px; background-color: #16a34a; color: white; text-decoration: none; border-radius: 4px;">Ver resultados</a></p>
+    `
     }
   }
 }

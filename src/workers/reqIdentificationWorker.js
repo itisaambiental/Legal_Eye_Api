@@ -1,8 +1,12 @@
 import reqIdentificationQueue from '../queues/reqIdentificationQueue.js'
 import ArticlesRepository from '../repositories/Articles.repository.js'
 import ReqIdentificationRepository from '../repositories/ReqIdentification.repository.js'
+import ReqIdentifierService from '../services/reqIdentification/reqIdentifier/ReqIdentifier.service.js'
+import EmailService from '../services/email/Email.service.js'
 import HttpException from '../services/errors/HttpException.js'
 import { CONCURRENCY_REQ_IDENTIFICATIONS } from '../config/variables.config.js'
+import { getReasoningModel } from '../config/openapi.config.js'
+import emailQueue from './emailWorker.js'
 
 /**
  * @typedef {Object} ReqIdentificationJobData
@@ -14,17 +18,23 @@ import { CONCURRENCY_REQ_IDENTIFICATIONS } from '../config/variables.config.js'
 
 const CONCURRENCY = Number(CONCURRENCY_REQ_IDENTIFICATIONS || 1)
 
-/**
- * Worker for processing requirement identification jobs.
- */
 reqIdentificationQueue.process(CONCURRENCY, async (job, done) => {
   /** @type {ReqIdentificationJobData} */
-  const { reqIdentificationId, legalBases, requirements } = job.data
+  const { reqIdentificationId, legalBases, requirements, intelligenceLevel } =
+    job.data
+
   try {
     const currentJob = await reqIdentificationQueue.getJob(job.id)
     if (!currentJob) throw new HttpException(404, 'Job not found')
+    const reqIdentification = await ReqIdentificationRepository.findById(reqIdentificationId)
+    if (!reqIdentification) throw new HttpException(404, 'Requirement identification not found')
 
+    const totalLegalBasis = new Set()
+    let totalArticles = 0
+    let totalRequirements = 0
     let totalTasks = 0
+    let completedTasks = 0
+
     for (const requirement of requirements) {
       const legalBasis = legalBases.filter(
         (lb) =>
@@ -39,18 +49,15 @@ reqIdentificationQueue.process(CONCURRENCY, async (job, done) => {
         const articles = await ArticlesRepository.findByLegalBasisId(
           legalBase.id
         )
-        if (articles) {
-          totalTasks += articles.length
-        }
+        if (articles) totalTasks += articles.length
       }
     }
 
     if (totalTasks === 0) {
+      await ReqIdentificationRepository.markAsCompleted(reqIdentificationId)
       await currentJob.progress(100)
       return done()
     }
-
-    let completedTasks = 0
 
     for (const requirement of requirements) {
       const legalBasis = legalBases.filter(
@@ -64,6 +71,9 @@ reqIdentificationQueue.process(CONCURRENCY, async (job, done) => {
       )
 
       if (legalBasis.length === 0) continue
+
+      totalRequirements++
+      legalBasis.forEach((lb) => totalLegalBasis.add(lb.id))
 
       const subjectAbbreviations = [
         ...new Set(
@@ -127,26 +137,50 @@ reqIdentificationQueue.process(CONCURRENCY, async (job, done) => {
         const articles = await ArticlesRepository.findByLegalBasisId(
           legalBase.id
         )
-
         if (articles) {
           for (const article of articles) {
-            const existsArticle =
-              await ReqIdentificationRepository.existsArticleLegalBaseRequirementLink(
-                reqIdentificationId,
-                requirement.id,
-                legalBase.id,
-                article.id
-              )
-            if (!existsArticle) {
-              await ReqIdentificationRepository.linkArticleToLegalBaseToRequirement(
-                reqIdentificationId,
-                requirement.id,
-                legalBase.id,
-                article.id
-              )
+            try {
+              const existsArticle =
+                await ReqIdentificationRepository.existsArticleLegalBaseRequirementLink(
+                  reqIdentificationId,
+                  requirement.id,
+                  legalBase.id,
+                  article.id
+                )
+              if (!existsArticle) {
+                const model = getReasoningModel(intelligenceLevel)
+                const reqIdentifier = new ReqIdentifierService(
+                  article,
+                  requirement,
+                  model
+                )
+                const { classification } = await reqIdentifier.identifyRequirements()
+                await ReqIdentificationRepository.linkArticleToLegalBaseToRequirement(
+                  reqIdentificationId,
+                  requirement.id,
+                  legalBase.id,
+                  article.id,
+                  classification
+                )
+                totalArticles++
+              }
+            } catch (err) {
+              try {
+                if (reqIdentification?.user?.gmail) {
+                  const emailData = EmailService.generateReqIdentificationArticleFailureEmail(
+                    reqIdentification.user.gmail,
+                    reqIdentificationId,
+                    reqIdentification.name,
+                    article.article_name
+                  )
+                  await emailQueue.add(emailData)
+                }
+              } catch (notifyErr) {
+                console.error('Error sending article failure email:', notifyErr)
+              }
             }
 
-            completedTasks += 1
+            completedTasks++
             await currentJob.progress(
               Math.floor((completedTasks / totalTasks) * 100)
             )
@@ -154,10 +188,44 @@ reqIdentificationQueue.process(CONCURRENCY, async (job, done) => {
         }
       }
     }
+    await ReqIdentificationRepository.markAsCompleted(reqIdentificationId)
+    if (reqIdentification?.user?.gmail) {
+      try {
+        const emailData = EmailService.generateReqIdentificationSummaryReportEmail(
+          reqIdentification.user.gmail,
+          reqIdentificationId,
+          reqIdentification.name,
+          {
+            legalBasis: totalLegalBasis.size,
+            articles: totalArticles,
+            requirements: totalRequirements
+          }
+        )
+        await emailQueue.add(emailData)
+      } catch (notifyErr) {
+        console.error('Error sending final summary notification:', notifyErr)
+      }
+    }
 
     return done()
   } catch (error) {
     console.error(error)
+    try {
+      await ReqIdentificationRepository.markAsFailed(reqIdentificationId)
+      const reqIdentification = await ReqIdentificationRepository.findById(
+        reqIdentificationId
+      )
+      if (reqIdentification?.user?.gmail) {
+        const emailData = EmailService.generateReqIdentificationFailureEmail(
+          reqIdentification.user.gmail,
+          reqIdentificationId,
+          reqIdentification.name
+        )
+        await emailQueue.add(emailData)
+      }
+    } catch (notifyErr) {
+      console.error('Error sending total failure notification:', notifyErr)
+    }
     if (error instanceof HttpException) return done(error)
     return done(
       new HttpException(500, 'Unexpected error identifying requirements')

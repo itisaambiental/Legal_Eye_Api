@@ -164,14 +164,16 @@ class ArticlesRepository {
     try {
       const [rows] = await pool.query(
         `
-        SELECT id, legal_basis_id, article_name, description, article_order
-        FROM article 
-        WHERE legal_basis_id = ? 
-        ORDER BY article_order
+      SELECT id, legal_basis_id, article_name, description, article_order, plain_description
+      FROM article 
+      WHERE legal_basis_id = ? 
+      ORDER BY article_order
       `,
         [legalBasisId]
       )
+
       if (rows.length === 0) return null
+
       return rows.map(
         (article) =>
           new Article(
@@ -179,6 +181,7 @@ class ArticlesRepository {
             article.legal_basis_id,
             article.article_name,
             article.description,
+            article.plain_description,
             article.article_order
           )
       )
