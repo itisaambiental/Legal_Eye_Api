@@ -27,7 +27,6 @@ class NormArticleExtractor extends ArticleExtractor {
         },
         { role: 'user', content: prompt }
       ],
-      temperature: 0,
       response_format: zodResponseFormat(sectionsResponseSchema, 'sections')
     }
     const attemptRequest = async (retryCount = 0) => {
@@ -211,7 +210,6 @@ ${numberedText}
         },
         { role: 'user', content: prompt }
       ],
-      temperature: 0,
       response_format: zodResponseFormat(
         singleArticleModelSchema,
         'articles_response'

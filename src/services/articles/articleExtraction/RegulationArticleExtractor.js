@@ -27,7 +27,6 @@ class RegulationArticleExtractor extends ArticleExtractor {
         },
         { role: 'user', content: prompt }
       ],
-      temperature: 0,
       response_format: zodResponseFormat(sectionsResponseSchema, 'sections')
     }
     const attemptRequest = async (retryCount = 0) => {
@@ -183,7 +182,6 @@ You MUST return the extracted sections **in the exact order in which they appear
         },
         { role: 'user', content: prompt }
       ],
-      temperature: 0,
       response_format: zodResponseFormat(
         singleArticleModelSchema,
         'articles_response'
