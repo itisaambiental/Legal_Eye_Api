@@ -13,7 +13,7 @@ class ReqIdentifierService {
   /**
    * @typedef {Object} RequirementIdentificationResult
    * @property {'Obligatorio' | 'Complementario' | 'General'} classification - The requirement identification of the article.
-   * @property {number} score - Confidence score.
+   * @property {number} score - Confidence score assigned to the article..
   */
 
   /**

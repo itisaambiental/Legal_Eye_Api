@@ -214,6 +214,7 @@ CREATE TABLE IF NOT EXISTS req_identifications_requirement_legal_basis_articles 
     legal_basis_id        INT NOT NULL,
     article_id            INT NOT NULL,
     article_type          ENUM('Obligatorio', 'Complementario', 'General') NOT NULL DEFAULT 'General',
+    score                 TINYINT UNSIGNED NOT NULL DEFAULT 1,
     PRIMARY KEY (req_identification_id, requirement_id, legal_basis_id, article_id),
     FOREIGN KEY (req_identification_id, requirement_id)
         REFERENCES req_identifications_requirements(req_identification_id, requirement_id)
@@ -224,3 +225,4 @@ CREATE TABLE IF NOT EXISTS req_identifications_requirement_legal_basis_articles 
     FOREIGN KEY (legal_basis_id) REFERENCES legal_basis(id) ON DELETE RESTRICT,
     FOREIGN KEY (article_id) REFERENCES article(id) ON DELETE RESTRICT
 );
+

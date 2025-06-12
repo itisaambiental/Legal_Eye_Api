@@ -20,12 +20,12 @@ const CONCURRENCY = Number(CONCURRENCY_REQ_IDENTIFICATIONS || 1)
 
 reqIdentificationQueue.process(CONCURRENCY, async (job, done) => {
   /** @type {ReqIdentificationJobData} */
-  const { reqIdentificationId, legalBases, requirements, intelligenceLevel } =
-    job.data
+  const { reqIdentificationId, legalBases, requirements, intelligenceLevel } = job.data
 
   try {
     const currentJob = await reqIdentificationQueue.getJob(job.id)
     if (!currentJob) throw new HttpException(404, 'Job not found')
+
     const reqIdentification = await ReqIdentificationRepository.findById(reqIdentificationId)
     if (!reqIdentification) throw new HttpException(404, 'Requirement identification not found')
 
@@ -46,10 +46,14 @@ reqIdentificationQueue.process(CONCURRENCY, async (job, done) => {
           )
       )
       for (const legalBase of legalBasis) {
-        const articles = await ArticlesRepository.findByLegalBasisId(
-          legalBase.id
-        )
-        if (articles) totalTasks += articles.length
+        try {
+          const articles = await ArticlesRepository.findByLegalBasisId(
+            legalBase.id
+          )
+          if (articles) totalTasks += articles.length
+        } catch {
+          continue
+        }
       }
     }
 
@@ -106,101 +110,110 @@ reqIdentificationQueue.process(CONCURRENCY, async (job, done) => {
         .filter((part, index, arr) => arr.indexOf(part) === index)
         .join(' - ')
 
-      const existsRequirement =
-        await ReqIdentificationRepository.existsRequirementLink(
-          reqIdentificationId,
-          requirement.id
-        )
-      if (!existsRequirement) {
-        await ReqIdentificationRepository.linkRequirement(
-          reqIdentificationId,
-          requirement.id,
-          requirementName
-        )
+      try {
+        const existsRequirement =
+          await ReqIdentificationRepository.existsRequirementLink(
+            reqIdentificationId,
+            requirement.id
+          )
+        if (!existsRequirement) {
+          await ReqIdentificationRepository.linkRequirement(
+            reqIdentificationId,
+            requirement.id,
+            requirementName
+          )
+        }
+      } catch {
+        continue
       }
 
       for (const legalBase of legalBasis) {
-        const existsLegalBasis =
-          await ReqIdentificationRepository.existsLegalBaseRequirementLink(
-            reqIdentificationId,
-            requirement.id,
-            legalBase.id
-          )
-        if (!existsLegalBasis) {
-          await ReqIdentificationRepository.linkLegalBaseToRequirement(
-            reqIdentificationId,
-            requirement.id,
-            legalBase.id
-          )
+        try {
+          const existsLegalBasis =
+            await ReqIdentificationRepository.existsLegalBaseRequirementLink(
+              reqIdentificationId,
+              requirement.id,
+              legalBase.id
+            )
+          if (!existsLegalBasis) {
+            await ReqIdentificationRepository.linkLegalBaseToRequirement(
+              reqIdentificationId,
+              requirement.id,
+              legalBase.id
+            )
+          }
+        } catch {
+          continue
         }
 
-        const articles = await ArticlesRepository.findByLegalBasisId(
-          legalBase.id
-        )
-        if (articles) {
-          for (const article of articles) {
+        const articles = await ArticlesRepository.findByLegalBasisId(legalBase.id)
+        for (const article of articles) {
+          try {
+            const existsArticle =
+              await ReqIdentificationRepository.existsArticleLegalBaseRequirementLink(
+                reqIdentificationId,
+                requirement.id,
+                legalBase.id,
+                article.id
+              )
+            if (!existsArticle) {
+              const model = getReasoningModel(intelligenceLevel)
+              const reqIdentifier = new ReqIdentifierService(
+                article,
+                requirement,
+                model
+              )
+              const { classification, score } = await reqIdentifier.identifyRequirements()
+              await ReqIdentificationRepository.linkArticleToLegalBaseToRequirement(
+                reqIdentificationId,
+                requirement.id,
+                legalBase.id,
+                article.id,
+                classification,
+                score
+              )
+              totalArticles++
+            }
+          } catch {
             try {
-              const existsArticle =
-                await ReqIdentificationRepository.existsArticleLegalBaseRequirementLink(
-                  reqIdentificationId,
-                  requirement.id,
-                  legalBase.id,
-                  article.id
-                )
-              if (!existsArticle) {
-                const model = getReasoningModel(intelligenceLevel)
-                const reqIdentifier = new ReqIdentifierService(
-                  article,
-                  requirement,
-                  model
-                )
-                const { classification } = await reqIdentifier.identifyRequirements()
-                await ReqIdentificationRepository.linkArticleToLegalBaseToRequirement(
-                  reqIdentificationId,
-                  requirement.id,
-                  legalBase.id,
-                  article.id,
-                  classification
-                )
-                totalArticles++
-              }
-            } catch (err) {
-              try {
-                if (reqIdentification?.user?.gmail) {
-                  const emailData = EmailService.generateReqIdentificationArticleFailureEmail(
+              if (reqIdentification?.user?.gmail) {
+                const emailData =
+                  EmailService.generateReqIdentificationArticleFailureEmail(
                     reqIdentification.user.gmail,
                     reqIdentificationId,
                     reqIdentification.name,
                     article.article_name
                   )
-                  await emailQueue.add(emailData)
-                }
-              } catch (notifyErr) {
-                console.error('Error sending article failure email:', notifyErr)
+                await emailQueue.add(emailData)
               }
+            } catch (notifyErr) {
+              console.error('Error sending article failure email:', notifyErr)
             }
-
-            completedTasks++
-            await currentJob.progress(
-              Math.floor((completedTasks / totalTasks) * 100)
-            )
+            continue
           }
+
+          await currentJob.progress(
+            Math.floor((++completedTasks / totalTasks) * 100)
+          )
         }
       }
     }
+
     await ReqIdentificationRepository.markAsCompleted(reqIdentificationId)
+
     if (reqIdentification?.user?.gmail) {
       try {
-        const emailData = EmailService.generateReqIdentificationSummaryReportEmail(
-          reqIdentification.user.gmail,
-          reqIdentificationId,
-          reqIdentification.name,
-          {
-            legalBasis: totalLegalBasis.size,
-            articles: totalArticles,
-            requirements: totalRequirements
-          }
-        )
+        const emailData =
+          EmailService.generateReqIdentificationSummaryReportEmail(
+            reqIdentification.user.gmail,
+            reqIdentificationId,
+            reqIdentification.name,
+            {
+              legalBasis: totalLegalBasis.size,
+              articles: totalArticles,
+              requirements: totalRequirements
+            }
+          )
         await emailQueue.add(emailData)
       } catch (notifyErr) {
         console.error('Error sending final summary notification:', notifyErr)
@@ -226,6 +239,7 @@ reqIdentificationQueue.process(CONCURRENCY, async (job, done) => {
     } catch (notifyErr) {
       console.error('Error sending total failure notification:', notifyErr)
     }
+
     if (error instanceof HttpException) return done(error)
     return done(
       new HttpException(500, 'Unexpected error identifying requirements')

@@ -30,10 +30,12 @@ export class ReqIdentificationRequirementLegalBasisArticle {
    *
    * @param {Article} article - The article object.
    * @param {string} articleType - Type of the article.
+   * @param {number} score - Confidence score assigned to the article.
    */
-  constructor (article, articleType) {
+  constructor (article, articleType, score) {
     this.article = article
     this.articleType = articleType
+    this.score = score
   }
 }
 
@@ -80,7 +82,7 @@ export class ReqIdentificationRequirement {
    * @param {string} requirementName - The name of the requirement.
    * @param {RequirementType} requirementType - The type of the requirement.
    * @param {ReqIdentificationRequirementLegalVerb[]} legalVerbs - Translated legal verbs.
-   * @param {ReqIdentificationRequirementLegalBasis[]} legalBases - Associated legal bases.
+   * @param {ReqIdentificationRequirementLegalBasis[]} legalBasis - Associated legal basis.
    */
   constructor (
     reqIdentificationId,
@@ -88,14 +90,14 @@ export class ReqIdentificationRequirement {
     requirementName,
     requirementType,
     legalVerbs,
-    legalBases
+    legalBasis
   ) {
     this.reqIdentificationId = reqIdentificationId
     this.requirement = requirement
     this.requirementName = requirementName
     this.requirementType = requirementType
     this.legalVerbs = legalVerbs
-    this.legalBases = legalBases
+    this.legalBasis = legalBasis
   }
 }
 
