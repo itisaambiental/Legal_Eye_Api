@@ -107,13 +107,17 @@ class EmailService {
   }
 
   /**
- * Generates an email notifying the user that the article extraction was successful.
- * @param {string} gmail - The Gmail address of the user.
- * @param {string} legalBasisName - The name of the legal basis.
- * @param {number} legalBasisId - The ID of the legal basis.
- * @returns {EmailData}
- */
-  static generateArticleExtractionSuccessEmail (gmail, legalBasisName, legalBasisId) {
+   * Generates an email notifying the user that the article extraction was successful.
+   * @param {string} gmail - The Gmail address of the user.
+   * @param {string} legalBasisName - The name of the legal basis.
+   * @param {number} legalBasisId - The ID of the legal basis.
+   * @returns {EmailData}
+   */
+  static generateArticleExtractionSuccessEmail (
+    gmail,
+    legalBasisName,
+    legalBasisId
+  ) {
     const articleUrl = `${APP_URL}/legal_basis/${legalBasisId}/articles`
 
     return {
@@ -134,12 +138,12 @@ Puedes consultar los artículos en: ${articleUrl}`,
   }
 
   /**
- * Generates an email notifying the user that the article extraction failed.
- * @param {string} gmail - The Gmail address of the user.
- * @param {string} legalBasisName - The name of the legal basis.
- * @param {string} reason - Reason why the extraction failed.
- * @returns {EmailData}
- */
+   * Generates an email notifying the user that the article extraction failed.
+   * @param {string} gmail - The Gmail address of the user.
+   * @param {string} legalBasisName - The name of the legal basis.
+   * @param {string} reason - Reason why the extraction failed.
+   * @returns {EmailData}
+   */
   static generateArticleExtractionFailureEmail (gmail, legalBasisName, reason) {
     return {
       to: gmail,
@@ -153,11 +157,11 @@ Razón: ${reason}`,
   }
 
   /**
- * Generates an email notifying the user that the legal basis failed to be sent.
- * @param {string} gmail - The Gmail address of the user.
- * @param {string} legalBasisName - The name of the legal basis.
- * @returns {EmailData}
- */
+   * Generates an email notifying the user that the legal basis failed to be sent.
+   * @param {string} gmail - The Gmail address of the user.
+   * @param {string} legalBasisName - The name of the legal basis.
+   * @returns {EmailData}
+   */
   static generateSendLegalBasisFailureEmail (gmail, legalBasisName) {
     return {
       to: gmail,
@@ -168,12 +172,12 @@ Razón: ${reason}`,
   }
 
   /**
- * Generates an email notifying the user that an article failed to be sent under a specific legal basis.
- * @param {string} gmail - The Gmail address of the user.
- * @param {string} legalBasisName - The name of the legal basis.
- * @param {string} articleName - The name of the article that failed.
- * @returns {EmailData}
- */
+   * Generates an email notifying the user that an article failed to be sent under a specific legal basis.
+   * @param {string} gmail - The Gmail address of the user.
+   * @param {string} legalBasisName - The name of the legal basis.
+   * @param {string} articleName - The name of the article that failed.
+   * @returns {EmailData}
+   */
   static generateSendArticleFailureEmail (gmail, legalBasisName, articleName) {
     return {
       to: gmail,
@@ -184,24 +188,34 @@ Razón: ${reason}`,
   }
 
   /**
- * Generates an email report summarizing successes and failures of sending legal bases.
- * @param {string} gmail - The Gmail address of the user.
- * @param {SuccessLegalBasisReport[]} successLegalBasesReports - List of successfully sent legal bases.
- * @param {string[]} failedLegalBasesNames - List of failed legal bases names.
- * @returns {EmailData}
- */
-  static generateLegalBasisSummaryReportEmail (gmail, successLegalBasesReports, failedLegalBasesNames) {
+   * Generates an email report summarizing successes and failures of sending legal bases.
+   * @param {string} gmail - The Gmail address of the user.
+   * @param {SuccessLegalBasisReport[]} successLegalBasesReports - List of successfully sent legal bases.
+   * @param {string[]} failedLegalBasesNames - List of failed legal bases names.
+   * @returns {EmailData}
+   */
+  static generateLegalBasisSummaryReportEmail (
+    gmail,
+    successLegalBasesReports,
+    failedLegalBasesNames
+  ) {
     const successList = successLegalBasesReports.length
-      ? `<ul>${successLegalBasesReports.map(item => `
+      ? `<ul>${successLegalBasesReports
+          .map(
+            (item) => `
       <li>
         ${item.name} 
         (Artículos enviados: ${item.articlesSent}, Artículos fallidos: ${item.articlesFailed})
       </li>
-    `).join('')}</ul>`
+    `
+          )
+          .join('')}</ul>`
       : '<p>Ningún fundamento enviado con éxito.</p>'
 
     const failureList = failedLegalBasesNames.length
-      ? `<ul>${failedLegalBasesNames.map(name => `<li>${name}</li>`).join('')}</ul>`
+      ? `<ul>${failedLegalBasesNames
+          .map((name) => `<li>${name}</li>`)
+          .join('')}</ul>`
       : '<p>Ningún fundamento falló.</p>'
 
     return {
@@ -221,10 +235,10 @@ Fallos: ${failedLegalBasesNames.length}`,
   }
 
   /**
- * Generates an email notifying the user that all legal bases failed to be sent.
- * @param {string} gmail - The Gmail address of the user.
- * @returns {EmailData}
- */
+   * Generates an email notifying the user that all legal bases failed to be sent.
+   * @param {string} gmail - The Gmail address of the user.
+   * @returns {EmailData}
+   */
   static generateAllLegalBasisFailedEmail (gmail) {
     return {
       to: gmail,
@@ -235,61 +249,90 @@ Fallos: ${failedLegalBasesNames.length}`,
   }
 
   /**
- * Generates an email notifying that the requirement identification failed for a specific article.
- * @param {string} gmail - The Gmail address of the user.
- * @param {number} reqIdentificationId - ID of the requirement identification.
- * @param {string} reqIdentificationName - Name of the requirement identification.
- * @param {string} articleName - Name of the article that failed.
- * @returns {EmailData}
- */
-  static generateReqIdentificationArticleFailureEmail (gmail, reqIdentificationId, reqIdentificationName, articleName) {
+   * Generates an email notifying that the requirement identification failed for a specific article.
+   * @param {string} gmail - The Gmail address of the user.
+   * @param {number} reqIdentificationId - ID of the requirement identification.
+   * @param {string} reqIdentificationName - Name of the requirement identification.
+   * @param {string} articleName - Name of the article that failed.
+   * @returns {EmailData}
+   */
+  static generateReqIdentificationArticleFailureEmail (
+    gmail,
+    reqIdentificationId,
+    reqIdentificationName,
+    articleName
+  ) {
     const url = `${APP_URL}/reqIdentification/${reqIdentificationId}/requirements`
     const message = `Ocurrió un error al identificar los requerimientos para el artículo "${articleName}" en la identificación "${reqIdentificationName}".`
+
     return {
       to: gmail,
       subject: 'Error al identificar requerimientos para un artículo',
-      text: message,
+      text: `${message}\nPuedes revisar la identificación en: ${url}`,
       html: `
       <p><strong>${message}</strong></p>
-      <p><a href="${url}" target="_blank" style="padding: 8px 12px; background-color: #2563eb; color: white; text-decoration: none; border-radius: 4px;">Ver identificación de requerimientos</a></p>
+      <p style="margin-top: 20px;">
+        <a href="${url}" target="_blank"
+          style="display: inline-block; padding: 10px 20px; background-color: #113c53; color: white;
+          text-decoration: none; border-radius: 5px;">
+          Ver identificación de requerimientos
+        </a>
+      </p>
     `
     }
   }
 
   /**
- * Generates an email notifying that the entire requirement identification failed.
- * @param {string} gmail - The Gmail address of the user.
-* @param {number} reqIdentificationId - ID of the requirement identification.
- * @param {string} reqIdentificationName - Name of the requirement identification.
- * @returns {EmailData}
- */
-  static generateReqIdentificationFailureEmail (gmail, reqIdentificationId, reqIdentificationName) {
+   * Generates an email notifying that the entire requirement identification failed.
+   * @param {string} gmail - The Gmail address of the user.
+   * @param {number} reqIdentificationId - ID of the requirement identification.
+   * @param {string} reqIdentificationName - Name of the requirement identification.
+   * @returns {EmailData}
+   */
+  static generateReqIdentificationFailureEmail (
+    gmail,
+    reqIdentificationId,
+    reqIdentificationName
+  ) {
     const url = `${APP_URL}/reqIdentification/${reqIdentificationId}/requirements`
     const message = `Ocurrió un error y no se pudo completar la identificación de requerimientos "${reqIdentificationName}".`
+
     return {
       to: gmail,
       subject: 'Error al identificar requerimientos',
-      text: message,
+      text: `${message}\nPuedes revisar la identificación en: ${url}`,
       html: `
       <p><strong>${message}</strong></p>
-      <p><a href="${url}" target="_blank" style="padding: 8px 12px; background-color: #dc2626; color: white; text-decoration: none; border-radius: 4px;">Ver identificación de requerimientos</a></p>
+      <p style="margin-top: 20px;">
+        <a href="${url}" target="_blank"
+          style="display: inline-block; padding: 10px 20px; background-color: #113c53; color: white;
+          text-decoration: none; border-radius: 5px;">
+          Ver identificación de requerimientos
+        </a>
+      </p>
     `
     }
   }
 
   /**
- * Generates an email summary of a successful requirement identification process.
- * @param {string} gmail - The Gmail address of the user.
- * @param {number} reqIdentificationId - ID of the requirement identification.
- * @param {string} reqIdentificationName - Name of the requirement identification.
- * @param {ReqIdentificationSummary} summary - Summary of the identification results.
- * @returns {EmailData}
- */
-  static generateReqIdentificationSummaryReportEmail (gmail, reqIdentificationId, reqIdentificationName, summary) {
+   * Generates an email summary of a successful requirement identification process.
+   * @param {string} gmail - The Gmail address of the user.
+   * @param {number} reqIdentificationId - ID of the requirement identification.
+   * @param {string} reqIdentificationName - Name of the requirement identification.
+   * @param {ReqIdentificationSummary} summary - Summary of the identification results.
+   * @returns {EmailData}
+   */
+  static generateReqIdentificationSummaryReportEmail (
+    gmail,
+    reqIdentificationId,
+    reqIdentificationName,
+    summary
+  ) {
     const url = `${APP_URL}/reqIdentification/${reqIdentificationId}/requirements`
     const { legalBasis, articles, requirements } = summary
-    const message = `La identificación de requerimientos "${reqIdentificationName}" se completó exitosamente.\n\n` +
-    `Resumen:\n- Fundamentos legales analizados: ${legalBasis}\n- Artículos clasificados: ${articles}\n- Requerimientos utilizados: ${requirements}`
+    const message =
+      `La identificación de requerimientos "${reqIdentificationName}" se completó exitosamente.\n\n` +
+      `Resumen:\n- Fundamentos legales analizados: ${legalBasis}\n- Artículos clasificados: ${articles}\n- Requerimientos utilizados: ${requirements}`
 
     return {
       to: gmail,
@@ -300,10 +343,16 @@ Fallos: ${failedLegalBasesNames.length}`,
       <p><strong>Resumen:</strong></p>
       <ul>
         <li>Fundamentos analizados: ${legalBasis}</li>
-        <li>Artículos clasificados: ${articles}</li>
-        <li>Requerimientos utilizados: ${requirements}</li>
+        <li>Artículos analizados: ${articles}</li>
+        <li>Instrucciones utilizadas: ${requirements}</li>
       </ul>
-      <p><a href="${url}" target="_blank" style="padding: 8px 12px; background-color: #16a34a; color: white; text-decoration: none; border-radius: 4px;">Ver resultados</a></p>
+      <p style="margin-top: 20px;">
+        <a href="${url}" target="_blank"
+          style="display: inline-block; padding: 10px 20px; background-color: #113c53; color: white;
+          text-decoration: none; border-radius: 5px;">
+          Ver resultados
+        </a>
+      </p>
     `
     }
   }

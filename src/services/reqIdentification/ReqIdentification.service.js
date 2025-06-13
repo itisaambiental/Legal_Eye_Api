@@ -954,7 +954,31 @@ class ReqIdentificationService {
       if (!updatedReqIdentification) {
         throw new HttpException(404, 'Requirement identification not found')
       }
-      return updatedReqIdentification
+      let user = null
+      if (updatedReqIdentification.user) {
+        const profilePictureUrl = updatedReqIdentification.user.profile_picture
+          ? await FileService.getFile(
+            updatedReqIdentification.user.profile_picture
+          )
+          : null
+        user = {
+          ...updatedReqIdentification.user,
+          profile_picture: profilePictureUrl
+        }
+      }
+      let formattedCreatedAt = null
+      if (updatedReqIdentification.createdAt) {
+        formattedCreatedAt = format(
+          new Date(updatedReqIdentification.createdAt),
+          'dd-MM-yyyy hh:mm a',
+          { locale: es }
+        )
+      }
+      return {
+        ...updatedReqIdentification,
+        user,
+        createdAt: formattedCreatedAt
+      }
     } catch (error) {
       if (error instanceof z.ZodError) {
         const validationErrors = error.errors.map((e) => ({

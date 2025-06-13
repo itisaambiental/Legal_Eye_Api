@@ -12,7 +12,6 @@ const requirementSchema = z
      */
     subjectId: z.coerce
       .number({ invalid_type_error: 'The subjectId must be a valid number' })
-      // Si coerciona a NaN, forzamos un error con este mensaje:
       .refine((val) => !Number.isNaN(val), {
         message: 'The subjectId must be a valid number'
       }),
