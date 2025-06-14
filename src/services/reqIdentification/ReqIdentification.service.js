@@ -1054,7 +1054,7 @@ class ReqIdentificationService {
         )
         throw new HttpException(
           404,
-          'Requirement identifications not found for IDs',
+          'Requirements identifications not found for IDs',
           {
             notFoundIds
           }
@@ -1078,14 +1078,14 @@ class ReqIdentificationService {
       if (pendingReqIdentificationJobs.length > 0) {
         throw new HttpException(
           409,
-          'Cannot delete Requirement Identifications with pending Requirement Identification jobs',
+          'Cannot delete Requirements Identifications with pending Requirement Identification jobs',
           { reqIdentifications: pendingReqIdentificationJobs }
         )
       }
       const reqIdentificationsDeleted =
         await ReqIdentificationRepository.deleteBatch(reqIdentificationIds)
       if (!reqIdentificationsDeleted) {
-        throw new HttpException(404, 'Requirement identifications not found')
+        throw new HttpException(404, 'Requirements identifications not found')
       }
       return { success: true }
     } catch (error) {
