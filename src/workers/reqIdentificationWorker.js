@@ -5,7 +5,7 @@ import RequirementTypesRepository from '../repositories/RequirementTypes.reposit
 import LegalVerbsRepository from '../repositories/LegalVerbs.repository.js'
 import ReqIdentifierService from '../services/reqIdentification/reqIdentifier/ReqIdentifier.service.js'
 import RequirementTypesIdentifierService from '../services/reqIdentification/reqIdentifier/RequirementTypesIdentifier.service.js'
-import LegalVerbsTranslatorService from '../services/reqIdentification/reqIdentifier/legalVerbsTranslator.js'
+import LegalVerbsTranslatorService from '../services/reqIdentification/reqIdentifier/LegalVerbsTranslator.service.js'
 import EmailService from '../services/email/Email.service.js'
 import HttpException from '../services/errors/HttpException.js'
 import { CONCURRENCY_REQ_IDENTIFICATIONS } from '../config/variables.config.js'
