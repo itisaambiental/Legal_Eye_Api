@@ -10,11 +10,7 @@ class ReqIdentifierService {
   /** @typedef {import('../../../models/Article.model.js').default} Article */
   /** @typedef {import('../../../models/Requirement.model.js').default} Requirement */
 
-  /**
-   * @typedef {Object} RequirementIdentificationResult
-   * @property {'Obligatorio' | 'Complementario' | 'General'} classification - The requirement identification of the article.
-   * @property {number} score - Confidence score assigned to the article..
-  */
+  /** @typedef {import('zod').infer<typeof reqIdentifierSchema>} reqIdentifierSchema */
 
   /**
    * Constructs an instance of ReqIdentifierService.
@@ -30,10 +26,10 @@ class ReqIdentifierService {
 
   /**
    * Method to identify requirements based on the provided article.
-   * @returns {Promise<RequirementIdentificationResult>} The result of the requirement identification.
+   * @returns {Promise<reqIdentifierSchema>} The result of the requirement identification.
    */
   async identifyRequirements () {
-    const prompt = this._buildidentifyRequirementsPrompt(
+    const prompt = this._buildIdentifyRequirementsPrompt(
       this.article,
       this.requirement
     )
@@ -78,30 +74,30 @@ class ReqIdentifierService {
    * @param {Requirement} requirement - The requirement to be used.
    * @return {string} The formatted prompt for the AI model.
    */
-  _buildidentifyRequirementsPrompt (article, requirement) {
+  _buildIdentifyRequirementsPrompt (article, requirement) {
     return `
-You are a legal expert specialized in regulatory compliance.
+    You are a legal expert specialized in regulatory compliance.
 
-Your task is to determine the classification of a legal article with respect to a specific legal requirement. The classification can be one of the following:
-- "Obligatorio" The article explicitly and reasonably supports the **mandatory** content of the requirement.
-- "Complementario" The article explicitly and reasonably supports the **complementary** content of the requirement.
-- "General": The article does not explicitly or reasonably support either the mandatory or complementary content of the requirement.
+    Your task is to determine the classification of a legal article with respect to a specific legal requirement. The classification can be one of the following:
+    - "Obligatorio" The article explicitly and reasonably supports the **mandatory** content of the requirement.
+    - "Complementario" The article explicitly and reasonably supports the **complementary** content of the requirement.
+    - "General": The article does not explicitly or reasonably support either the mandatory or complementary content of the requirement.
 
-### REQUIREMENT INFORMATION ###
-...
-Requirement name: ${requirement.requirement_name}
-Mandatory description: ${requirement.mandatory_description}
-Complementary description: ${requirement.complementary_description}
-Mandatory legal sentences ${requirement.mandatory_sentences}
-Complementary legal sentences${requirement.complementary_sentences}
-Mandatory keywords: ${requirement.mandatory_keywords}
-Complementary keywords: ${requirement.complementary_keywords}
+    ### REQUIREMENT INFORMATION ###
+    ...
+    Requirement name: ${requirement.requirement_name}
+    Mandatory description: ${requirement.mandatory_description}
+    Complementary description: ${requirement.complementary_description}
+    Mandatory legal sentences ${requirement.mandatory_sentences}
+    Complementary legal sentences${requirement.complementary_sentences}
+    Mandatory keywords: ${requirement.mandatory_keywords}
+    Complementary keywords: ${requirement.complementary_keywords}
 
 
-### LEGAL ARTICLE INFORMATION ###
-...
-Title: ${article.article_name}
-Text: ${article.plain_description}
+    ### LEGAL ARTICLE INFORMATION ###
+    ...
+    Title: ${article.article_name}
+    Text: ${article.plain_description}
   `
   }
 }

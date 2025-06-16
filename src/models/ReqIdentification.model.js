@@ -80,7 +80,7 @@ export class ReqIdentificationRequirement {
    * @param {number} reqIdentificationId - The ID of the parent requirement identification.
    * @param {Requirement} requirement - The requirement object.
    * @param {string} requirementName - The name of the requirement.
-   * @param {RequirementType} requirementType - The type of the requirement.
+   * @param {RequirementType[]} requirementTypes - The types of the requirement.
    * @param {ReqIdentificationRequirementLegalVerb[]} legalVerbs - Translated legal verbs.
    * @param {ReqIdentificationRequirementLegalBasis[]} legalBasis - Associated legal basis.
    */
@@ -88,14 +88,14 @@ export class ReqIdentificationRequirement {
     reqIdentificationId,
     requirement,
     requirementName,
-    requirementType,
+    requirementTypes,
     legalVerbs,
     legalBasis
   ) {
     this.reqIdentificationId = reqIdentificationId
     this.requirement = requirement
     this.requirementName = requirementName
-    this.requirementType = requirementType
+    this.requirementTypes = requirementTypes
     this.legalVerbs = legalVerbs
     this.legalBasis = legalBasis
   }

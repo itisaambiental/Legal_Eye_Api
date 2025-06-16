@@ -16,15 +16,15 @@ class Article {
     legalBasisId,
     articleName,
     description,
-    plainDescription,
-    articleOrder
+    articleOrder,
+    plainDescription
   ) {
     this.id = id
     this.legal_basis_id = legalBasisId
     this.article_name = articleName
     this.description = description
-    this.plain_description = plainDescription
     this.article_order = articleOrder
+    this.plain_description = plainDescription
   }
 }
 

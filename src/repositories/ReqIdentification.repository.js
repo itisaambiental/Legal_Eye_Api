@@ -2,6 +2,7 @@ import { pool } from '../config/db.config.js'
 import HttpException from '../services/errors/HttpException.js'
 import User from '../models/User.model.js'
 import { ReqIdentification } from '../models/ReqIdentification.model.js'
+import Article from '../models/Article.model.js'
 
 /**
  * Repository for requirement identifications and related operations.
@@ -2145,6 +2146,147 @@ class ReqIdentificationRepository {
         500,
         'Error linking article to legal basis and requirement'
       )
+    }
+  }
+
+  /**
+   * Retrieves the top mandatory articles for a given requirement in a requirement identification.
+   *
+   * @param {number} reqIdentificationId - ID of the requirement identification.
+   * @param {number} requirementId - ID of the requirement.
+   * @returns {Promise<Article[]|null>} - Array of Article instances, or null if none found.
+   * @throws {HttpException} - If the query fails or connection error occurs.
+   */
+  static async findTopMandatoryArticlesByRequirement (
+    reqIdentificationId,
+    requirementId
+  ) {
+    const query = `
+    SELECT * FROM (
+      SELECT 
+        a.id AS article_id,
+        a.legal_basis_id,
+        a.title AS article_name,
+        a.description,
+        a.plain_description,
+        a.article_order,
+        rirlba.requirement_id,
+        rirlba.req_identification_id,
+        ROW_NUMBER() OVER (
+          PARTITION BY rirlba.legal_basis_id 
+          ORDER BY rirlba.score DESC, rirlba.article_id ASC
+        ) AS rn
+      FROM req_identifications_requirement_legal_basis_articles rirlba
+      INNER JOIN article a ON rirlba.article_id = a.id
+      WHERE rirlba.req_identification_id = ?
+        AND rirlba.requirement_id = ?
+        AND rirlba.article_type = 'Obligatorio'
+    ) AS ranked
+    WHERE ranked.rn = 1
+  `
+
+    try {
+      const [rows] = await pool.query(query, [
+        reqIdentificationId,
+        requirementId
+      ])
+      if (rows.length === 0) return null
+
+      return rows.map(
+        (row) =>
+          new Article(
+            row.article_id,
+            row.legal_basis_id,
+            row.article_name,
+            row.description,
+            row.plain_description,
+            row.article_order
+          )
+      )
+    } catch (error) {
+      console.error(
+        'Error fetching top mandatory articles by requirement:',
+        error
+      )
+      throw new HttpException(
+        500,
+        'Error fetching top mandatory articles by requirement',
+        error
+      )
+    }
+  }
+
+  /**
+   * Links multiple requirement types to a specific requirement within a requirement identification.
+   *
+   * @param {number} reqIdentificationId - The ID of the requirement identification.
+   * @param {number} requirementId - The ID of the requirement.
+   * @param {number[]} requirementTypeIds - The IDs of the requirement types to assign.
+   * @returns {Promise<void>} - Resolves when the insert is successful.
+   * @throws {HttpException} - If an error occurs during the insert.
+   */
+  static async linkRequirementTypesToRequirement (
+    reqIdentificationId,
+    requirementId,
+    requirementTypeIds
+  ) {
+    try {
+      if (requirementTypeIds.length === 0) return
+      const values = requirementTypeIds.map((requirementTypeId) => [
+        reqIdentificationId,
+        requirementId,
+        requirementTypeId
+      ])
+
+      const query = `
+      INSERT INTO req_identifications_requirement_types 
+      (req_identification_id, requirement_id, requirement_type_id)
+      VALUES ?
+    `
+      await pool.query(query, [values])
+    } catch (error) {
+      console.error('Error linking requirement types:', error.message)
+      throw new HttpException(500, 'Error linking requirement types')
+    }
+  }
+
+  /**
+   * Links translated legal verbs to a specific requirement within a requirement identification.
+   *
+   * @param {number} reqIdentificationId - The ID of the requirement identification.
+   * @param {number} requirementId - The ID of the requirement.
+   * @param {import('zod').infer<typeof import('../schemas/reqIdentification.schema.js').legalVerbTranslationSchema>} legalVerbsTranslations - Array of legal verbs translations to link.
+   * @returns {Promise<void>} - Resolves when the insert is successful.
+   * @throws {HttpException} - If an error occurs during the insert.
+   */
+  static async linkLegalVerbsTranslationsToRequirement (
+    reqIdentificationId,
+    requirementId,
+    legalVerbsTranslations
+  ) {
+    try {
+      if (
+        !Array.isArray(legalVerbsTranslations) ||
+        legalVerbsTranslations.length === 0
+      ) { return }
+
+      const values = legalVerbsTranslations.map((lvt) => [
+        reqIdentificationId,
+        requirementId,
+        lvt.id,
+        lvt.translation
+      ])
+
+      const query = `
+      INSERT INTO req_identifications_requirement_legal_verbs
+      (req_identification_id, requirement_id, legal_verb_id, translation)
+      VALUES ?
+    `
+
+      await pool.query(query, [values])
+    } catch (error) {
+      console.error('Error linking legal verbs to requirement:', error.message)
+      throw new HttpException(500, 'Error linking legal verbs to requirement')
     }
   }
 }

@@ -37,13 +37,15 @@ extractArticlesQueue.process(CONCURRENCY, async (job, done) => {
   try {
     const currentJob = await extractArticlesQueue.getJob(job.id)
     if (!currentJob) throw new HttpException(404, 'Job not found')
-    if (await currentJob.isFailed()) { throw new HttpException(500, 'Job was canceled') }
+    if (await currentJob.isFailed()) {
+      throw new HttpException(500, 'Job was canceled')
+    }
     const legalBase = await LegalBasisRepository.findById(legalBasisId)
     if (!legalBase) throw new HttpException(404, 'LegalBasis not found')
     const { error, success, text } = await DocumentService.extractText(
       legalBase.url
     )
-    if (!success) throw new HttpException(500, 'Document Processing Error', error)
+    if (!success) { throw new HttpException(500, 'Document Processing Error', error) }
     const model = getTextModel(intelligenceLevel)
     const extractor = ArticleExtractorFactory.getExtractor(
       legalBase.classification,
@@ -57,12 +59,16 @@ extractArticlesQueue.process(CONCURRENCY, async (job, done) => {
     if (!extractedArticles || extractedArticles.length === 0) {
       throw new HttpException(500, 'Article Processing Error')
     }
-    if (await currentJob.isFailed()) { throw new HttpException(500, 'Job was canceled') }
+    if (await currentJob.isFailed()) {
+      throw new HttpException(500, 'Job was canceled')
+    }
     const insertionSuccess = await ArticlesService.createMany(
       legalBase.id,
       extractedArticles
     )
-    if (!insertionSuccess) { throw new HttpException(500, 'Failed to insert articles') }
+    if (!insertionSuccess) {
+      throw new HttpException(500, 'Failed to insert articles')
+    }
     try {
       const user = await UserRepository.findById(userId)
       if (user) {

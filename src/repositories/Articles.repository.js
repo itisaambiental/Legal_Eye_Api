@@ -181,8 +181,8 @@ class ArticlesRepository {
             article.legal_basis_id,
             article.article_name,
             article.description,
-            article.plain_description,
-            article.article_order
+            article.article_order,
+            article.plain_description
           )
       )
     } catch (error) {

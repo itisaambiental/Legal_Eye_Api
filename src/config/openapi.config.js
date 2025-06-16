@@ -26,8 +26,8 @@ export const models = {
     Low: 'gpt-4.1-mini'
   },
   reasoning: {
-    High: 'o1',
-    Low: 'o1-mini'
+    High: 'o3',
+    Low: 'o1'
   }
 }
 
