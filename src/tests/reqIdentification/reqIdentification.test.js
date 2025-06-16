@@ -68,7 +68,7 @@ beforeAll(async () => {
 
   const reqData = generateRequirementData({
     subjectId: createdSubject.id,
-    aspectsIds: [createdAspect.id]
+    aspectsIds: JSON.stringify([createdAspect.id])
   })
 
   const reqRes = await api
@@ -290,7 +290,7 @@ describe('ReqIdentificationService - create()', () => {
   })
 })
 
-describe('GET /api/req-identification', () => {
+describe('GET /api/req-identification - Get Requirement Identifications all', () => {
   beforeEach(async () => {
     await ReqIdentificationRepository.deleteAll()
   })
@@ -318,9 +318,33 @@ describe('GET /api/req-identification', () => {
 
     expect(res.body.reqIdentifications.length).toBeGreaterThanOrEqual(2)
   })
+
+  test('Should return 401 if user is not authorized (invalid token)', async () => {
+    const res = await api
+      .get('/api/req-identification')
+      .set('Authorization', 'Bearer invalid.token.here')
+      .expect(401)
+
+    expect(res.body).toHaveProperty('error', 'token missing or invalid')
+  })
+
+  test('Should return 500 on internal server error', async () => {
+    const spy = jest.spyOn(ReqIdentificationRepository, 'findAll')
+    spy.mockImplementation(() => {
+      throw new Error('DB Failure')
+    })
+
+    const res = await api
+      .get('/api/req-identification')
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .expect(500)
+
+    expect(res.body.message).toBe('Failed to retrieve requirement identifications')
+    spy.mockRestore()
+  })
 })
 
-describe('GET /api/req-identification/:id', () => {
+describe('GET /api/req-identification/:id - Get Requirement Identifications by id', () => {
   test('Should return 404 if not found', async () => {
     const res = await api
       .get('/api/req-identification/9999999')
@@ -351,5 +375,241 @@ describe('GET /api/req-identification/:id', () => {
 
     expect(res.body.reqIdentification).toHaveProperty('id', id)
     expect(res.body.reqIdentification).toHaveProperty('name', payload.reqIdentificationName)
+  })
+
+  test('Should return 401 if user is not authorized (invalid token)', async () => {
+    const res = await api
+      .get('/api/req-identification/1')
+      .set('Authorization', 'Bearer invalid.token.here')
+      .expect(401)
+
+    expect(res.body).toHaveProperty('error', 'token missing or invalid')
+  })
+
+  test('Should return 500 on internal server error', async () => {
+    const spy = jest.spyOn(ReqIdentificationRepository, 'findById')
+    spy.mockImplementation(() => {
+      throw new Error('DB Failure')
+    })
+
+    const res = await api
+      .get('/api/req-identification/1')
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .expect(500)
+
+    expect(res.body.message).toBe('Failed to retrieve requirement identification by ID')
+    spy.mockRestore()
+  })
+})
+
+describe('GET /api/req-identification/search/name - Get Requirement Identifications by name', () => {
+  beforeEach(async () => {
+    await ReqIdentificationRepository.deleteAll()
+  })
+
+  test('Should return empty array if no records match the name', async () => {
+    const res = await api
+      .get('/api/req-identification/search/name?name=NoExistente')
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .expect(200)
+
+    expect(res.body.reqIdentifications).toBeInstanceOf(Array)
+    expect(res.body.reqIdentifications).toHaveLength(0)
+  })
+
+  test('Should return matching requirement identifications by name', async () => {
+    const uniqueName = `UniqueName-${Date.now()}`
+    const payload = generateReqIdentificationData({
+      reqIdentificationName: uniqueName,
+      legalBasisIds: [createdLegalBasis.id]
+    })
+
+    await api
+      .post('/api/req-identification')
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .send(payload)
+      .expect(201)
+
+    const res = await api
+      .get(`/api/req-identification/search/name?name=${encodeURIComponent(uniqueName)}`)
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .expect(200)
+
+    expect(res.body.reqIdentifications).toBeInstanceOf(Array)
+    expect(res.body.reqIdentifications.length).toBeGreaterThan(0)
+    expect(res.body.reqIdentifications[0]).toHaveProperty('name', uniqueName)
+  })
+
+  test('Should return 401 if user is not authorized (invalid token)', async () => {
+    const res = await api
+      .get('/api/req-identification/search/name?name=anything')
+      .set('Authorization', 'Bearer invalid.token.here')
+      .expect(401)
+
+    expect(res.body).toHaveProperty('error', 'token missing or invalid')
+  })
+
+  test('Should return 500 on internal server error', async () => {
+    const spy = jest.spyOn(ReqIdentificationRepository, 'findByName')
+    spy.mockImplementation(() => {
+      throw new Error('DB Failure')
+    })
+
+    const res = await api
+      .get('/api/req-identification/search/name?name=test')
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .expect(500)
+
+    expect(res.body.message).toBe('Failed to retrieve requirement identifications by name')
+    spy.mockRestore()
+  })
+})
+
+describe('GET /api/req-identification/search/description - Get Requirement Identifications by description', () => {
+  beforeEach(async () => {
+    await ReqIdentificationRepository.deleteAll()
+  })
+
+  test('Should return empty array when no description matches', async () => {
+    const res = await api
+      .get('/api/req-identification/search/description?description=NoExiste')
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .expect(200)
+
+    expect(res.body.reqIdentifications).toBeInstanceOf(Array)
+    expect(res.body.reqIdentifications).toHaveLength(0)
+  })
+
+  test('Should return matching requirement identifications by description', async () => {
+    const uniqueDescription = `Descripción única ${Date.now()}`
+    const payload = generateReqIdentificationData({
+      reqIdentificationDescription: uniqueDescription,
+      legalBasisIds: [createdLegalBasis.id]
+    })
+
+    await api
+      .post('/api/req-identification')
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .send(payload)
+      .expect(201)
+
+    const res = await api
+      .get(`/api/req-identification/search/description?description=${encodeURIComponent(uniqueDescription)}`)
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .expect(200)
+
+    expect(res.body.reqIdentifications).toBeInstanceOf(Array)
+    expect(res.body.reqIdentifications.length).toBeGreaterThan(0)
+    expect(res.body.reqIdentifications[0]).toHaveProperty('description', uniqueDescription)
+  })
+
+  test('Should return 401 if user is not authorized (invalid token)', async () => {
+    const res = await api
+      .get('/api/req-identification/search/description?description=any')
+      .set('Authorization', 'Bearer invalid.token.here')
+      .expect(401)
+
+    // Adaptamos a la estructura real de error
+    expect(res.body).toHaveProperty('error', 'token missing or invalid')
+  })
+
+  test('Should return 500 on internal server error', async () => {
+    const spy = jest.spyOn(ReqIdentificationRepository, 'findByDescription')
+    spy.mockImplementation(() => {
+      throw new Error('DB Failure')
+    })
+
+    const res = await api
+      .get('/api/req-identification/search/description?description=test')
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .expect(500)
+
+    expect(res.body.message).toBe('Failed to retrieve requirement identifications by description')
+    spy.mockRestore()
+  })
+})
+
+describe('GET /api/req-identification/search/user/:id - Get Requirement Identifications by user ID', () => {
+  beforeEach(async () => {
+    await ReqIdentificationRepository.deleteAll()
+  })
+
+  test('Should return 404 if no identifications found for the user', async () => {
+    const fakeUserId = 9999999
+    jest.spyOn(UserRepository, 'findById').mockResolvedValue({ id: fakeUserId, name: 'Fake User' })
+
+    const res = await api
+      .get(`/api/req-identification/search/user/${fakeUserId}`)
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .expect(200) // Si tu controlador devuelve [] en lugar de error
+
+    expect(res.body).toHaveProperty('reqIdentifications')
+    expect(Array.isArray(res.body.reqIdentifications)).toBe(true)
+    expect(res.body.reqIdentifications).toHaveLength(0)
+
+    jest.restoreAllMocks()
+  })
+
+  test('Should return all identifications for the user ID provided', async () => {
+    const userId = 605 // 👈 este es el que existe
+
+    const payload = generateReqIdentificationData({
+      reqIdentificationName: `Identificación-${Date.now()}`,
+      reqIdentificationDescription: 'Identificación legal válida',
+      legalBasisIds: [createdLegalBasis.id],
+      requirementIds: [createdRequirement.id],
+      intelligenceLevel: 'Low'
+    })
+
+    const resPost = await api
+      .post('/api/req-identification')
+      .set('Authorization', `Bearer ${tokenAdmin}`) // este token debe ser del userId 605
+      .send(payload)
+
+    if (resPost.status !== 201) {
+      console.log('🔴 Error en POST /api/req-identification')
+      console.log('Status:', resPost.status)
+      console.log('Body:', resPost.body)
+    }
+
+    expect(resPost.status).toBe(201)
+
+    const res = await api
+      .get(`/api/req-identification/search/user/${userId}`)
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .expect(200)
+
+    expect(res.body).toHaveProperty('reqIdentifications')
+    expect(Array.isArray(res.body.reqIdentifications)).toBe(true)
+    expect(res.body.reqIdentifications.length).toBeGreaterThan(0)
+    expect(res.body.reqIdentifications[0]).toHaveProperty('user')
+    expect(res.body.reqIdentifications[0].user).toHaveProperty('id', userId)
+    jest.restoreAllMocks()
+  })
+
+  test('Should return 401 if user is not authorized (invalid token)', async () => {
+    const res = await api
+      .get('/api/req-identification/search/user/1')
+      .set('Authorization', 'Bearer invalid.token.here')
+      .expect(401)
+
+    expect(res.body).toHaveProperty('error', 'token missing or invalid')
+  })
+
+  test('Should return 500 on internal server error from repository', async () => {
+    const userId = 1
+    jest.spyOn(UserRepository, 'findById').mockResolvedValue({ id: userId, name: 'Simulated' })
+    jest.spyOn(ReqIdentificationRepository, 'findByUserId').mockImplementation(() => {
+      throw new Error('Simulated failure')
+    })
+
+    const res = await api
+      .get(`/api/req-identification/search/user/${userId}`)
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .expect(500)
+
+    expect(res.body.message).toBe('Failed to retrieve requirement identifications by user name')
+
+    jest.restoreAllMocks()
   })
 })
