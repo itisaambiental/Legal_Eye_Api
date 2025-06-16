@@ -108,3 +108,22 @@ export const reqIdentifierSchema = z.object({
   classification: z.enum(['Obligatorio', 'Complementario', 'General']),
   score: z.number().min(1).max(10)
 })
+
+/**
+ * Zod validation schema for requirement type identifier.
+ * This schema defines the structure of a requirement type identifier.
+ */
+export const requirementTypeIdentifiersSchema = z.array(
+  z.number().int().positive()
+)
+
+/**
+ * Zod validation schema for translated legal verbs.
+ * This schema defines the structure of a legal verb translation.
+ */
+export const legalVerbTranslationSchema = z.array(
+  z.object({
+    id: z.number().int().positive(),
+    translation: z.string().min(1)
+  })
+)

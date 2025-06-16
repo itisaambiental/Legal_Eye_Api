@@ -172,10 +172,21 @@ CREATE TABLE IF NOT EXISTS req_identifications_requirements (
     req_identification_id INT NOT NULL,
     requirement_id        INT NOT NULL,
     requirement_name      VARCHAR(255) NOT NULL,
-    requirement_type_id   INT,
     PRIMARY KEY (req_identification_id, requirement_id),
     FOREIGN KEY (req_identification_id) REFERENCES req_identifications(id) ON DELETE CASCADE,
-    FOREIGN KEY (requirement_id) REFERENCES requirements(id) ON DELETE RESTRICT,
+    FOREIGN KEY (requirement_id) REFERENCES requirements(id) ON DELETE RESTRICT
+);
+
+-- Table: req_identifications_requirement_types
+-- Description: Multiple requirement types assigned to a requirement in a specific identification.
+CREATE TABLE IF NOT EXISTS req_identifications_requirement_types (
+    req_identification_id INT NOT NULL,
+    requirement_id        INT NOT NULL,
+    requirement_type_id   INT NOT NULL,
+    PRIMARY KEY (req_identification_id, requirement_id, requirement_type_id),
+    FOREIGN KEY (req_identification_id, requirement_id)
+        REFERENCES req_identifications_requirements(req_identification_id, requirement_id)
+        ON DELETE CASCADE,
     FOREIGN KEY (requirement_type_id) REFERENCES requirement_types(id) ON DELETE RESTRICT
 );
 

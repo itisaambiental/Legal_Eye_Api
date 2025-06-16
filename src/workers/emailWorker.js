@@ -25,9 +25,7 @@ emailQueue.process(async (job, done) => {
     if (error instanceof HttpException) {
       return done(error)
     }
-    return done(
-      new HttpException(500, 'Unexpected error sending email')
-    )
+    return done(new HttpException(500, 'Unexpected error sending email'))
   }
 })
 

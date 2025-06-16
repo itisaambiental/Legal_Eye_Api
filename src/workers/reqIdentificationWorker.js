@@ -1,7 +1,11 @@
 import reqIdentificationQueue from '../queues/reqIdentificationQueue.js'
 import ArticlesRepository from '../repositories/Articles.repository.js'
 import ReqIdentificationRepository from '../repositories/ReqIdentification.repository.js'
+import RequirementTypesRepository from '../repositories/RequirementTypes.repository.js'
+import LegalVerbsRepository from '../repositories/LegalVerbs.repository.js'
 import ReqIdentifierService from '../services/reqIdentification/reqIdentifier/ReqIdentifier.service.js'
+import RequirementTypesIdentifierService from '../services/reqIdentification/reqIdentifier/RequirementTypesIdentifier.service.js'
+import LegalVerbsTranslatorService from '../services/reqIdentification/reqIdentifier/LegalVerbsTranslator.service.js'
 import EmailService from '../services/email/Email.service.js'
 import HttpException from '../services/errors/HttpException.js'
 import { CONCURRENCY_REQ_IDENTIFICATIONS } from '../config/variables.config.js'
@@ -20,14 +24,18 @@ const CONCURRENCY = Number(CONCURRENCY_REQ_IDENTIFICATIONS || 1)
 
 reqIdentificationQueue.process(CONCURRENCY, async (job, done) => {
   /** @type {ReqIdentificationJobData} */
-  const { reqIdentificationId, legalBases, requirements, intelligenceLevel } = job.data
+  const { reqIdentificationId, legalBases, requirements, intelligenceLevel } =
+    job.data
   try {
     const currentJob = await reqIdentificationQueue.getJob(job.id)
     if (!currentJob) throw new HttpException(404, 'Job not found')
 
-    const reqIdentification = await ReqIdentificationRepository.findById(reqIdentificationId)
-    if (!reqIdentification) throw new HttpException(404, 'Requirement identification not found')
+    const reqIdentification = await ReqIdentificationRepository.findById(
+      reqIdentificationId
+    )
+    if (!reqIdentification) { throw new HttpException(404, 'Requirement identification not found') }
 
+    const model = getReasoningModel(intelligenceLevel)
     const totalLegalBasis = new Set()
     let totalArticles = 0
     let totalRequirements = 0
@@ -145,7 +153,10 @@ reqIdentificationQueue.process(CONCURRENCY, async (job, done) => {
           continue
         }
 
-        const articles = await ArticlesRepository.findByLegalBasisId(legalBase.id)
+        const articles = await ArticlesRepository.findByLegalBasisId(
+          legalBase.id
+        )
+        if (!articles) continue
         for (const article of articles) {
           try {
             const existsArticle =
@@ -156,13 +167,13 @@ reqIdentificationQueue.process(CONCURRENCY, async (job, done) => {
                 article.id
               )
             if (!existsArticle) {
-              const model = getReasoningModel(intelligenceLevel)
               const reqIdentifier = new ReqIdentifierService(
                 article,
                 requirement,
                 model
               )
-              const { classification, score } = await reqIdentifier.identifyRequirements()
+              const { classification, score } =
+                await reqIdentifier.identifyRequirements()
               await ReqIdentificationRepository.linkArticleToLegalBaseToRequirement(
                 reqIdentificationId,
                 requirement.id,
@@ -196,10 +207,53 @@ reqIdentificationQueue.process(CONCURRENCY, async (job, done) => {
           )
         }
       }
+      const mandatoryArticles =
+        await ReqIdentificationRepository.findTopMandatoryArticlesByRequirement(
+          reqIdentificationId,
+          requirement.id
+        )
+      if (mandatoryArticles) {
+        try {
+          const requirementTypes = await RequirementTypesRepository.findAll()
+          if (requirementTypes) {
+            const requirementTypesIdentifierService =
+              new RequirementTypesIdentifierService(
+                mandatoryArticles,
+                requirementTypes,
+                model
+              )
+            const requirementsTypesIdentifiedIds =
+              await requirementTypesIdentifierService.identifyRequirementTypes()
+            await ReqIdentificationRepository.linkRequirementTypesToRequirement(
+              reqIdentificationId,
+              requirement.id,
+              requirementsTypesIdentifiedIds
+            )
+          }
+          const mandatoryArticlesText = mandatoryArticles
+            .map((article) => article.plain_description)
+            .join('\n')
+          const legalVerbs = await LegalVerbsRepository.findAll()
+          if (legalVerbs) {
+            const legalVerbsTranslator = new LegalVerbsTranslatorService(
+              mandatoryArticlesText,
+              legalVerbs,
+              model
+            )
+            const legalVerbsTranslations =
+              await legalVerbsTranslator.translateRequirements()
+            await ReqIdentificationRepository.linkLegalVerbsTranslationsToRequirement(
+              reqIdentificationId,
+              requirement.id,
+              legalVerbsTranslations
+            )
+          }
+        } catch {
+          continue
+        }
+      }
     }
-
     await ReqIdentificationRepository.markAsCompleted(reqIdentificationId)
-
     if (reqIdentification?.user?.gmail) {
       try {
         const emailData =

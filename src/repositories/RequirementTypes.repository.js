@@ -395,14 +395,14 @@ class RequirementTypesRepository {
  * Checks if a requirement type is associated with any requirement identifications.
  * @param {number} requirementTypeId - The ID of the requirement type to check.
  * @returns {Promise<{ isAssociatedToReqIdentifications: boolean }>}
- * @throws {HttpException} - If an error occurs during the query.
+ * @throws {HttpException}
  */
   static async checkReqIdentificationAssociations (requirementTypeId) {
     try {
       const [rows] = await pool.query(
       `
       SELECT COUNT(*) AS identificationCount
-      FROM req_identifications_requirements
+      FROM req_identifications_requirement_types
       WHERE requirement_type_id = ?
       `,
       [requirementTypeId]
@@ -436,10 +436,10 @@ class RequirementTypesRepository {
       SELECT 
         rt.id AS requirementTypeId,
         rt.name AS requirementTypeName,
-        COUNT(rir.req_identification_id) AS identificationCount
+        COUNT(rit.requirement_type_id) AS identificationCount
       FROM requirement_types rt
-      LEFT JOIN req_identifications_requirements rir 
-        ON rt.id = rir.requirement_type_id
+      LEFT JOIN req_identifications_requirement_types rit
+        ON rt.id = rit.requirement_type_id
       WHERE rt.id IN (?)
       GROUP BY rt.id
       `,
