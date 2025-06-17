@@ -2268,7 +2268,9 @@ class ReqIdentificationRepository {
       if (
         !Array.isArray(legalVerbsTranslations) ||
         legalVerbsTranslations.length === 0
-      ) { return }
+      ) {
+        return
+      }
 
       const values = legalVerbsTranslations.map((lvt) => [
         reqIdentificationId,

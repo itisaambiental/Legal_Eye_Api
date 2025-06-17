@@ -22,10 +22,35 @@ import emailQueue from './emailWorker.js'
 
 const CONCURRENCY = Number(CONCURRENCY_REQ_IDENTIFICATIONS || 1)
 
+/**
+ * Worker for processing requirement identification jobs.
+ *
+ * Steps:
+ * 1. Validates job and fetches requirement identification from DB.
+ * 2. For each requirement:
+ *    a. Filters applicable legal bases based on subject and aspects.
+ *    b. Links the requirement to the identification (if not already linked).
+ *    c. For each legal basis:
+ *       i. Links it to the requirement.
+ *       ii. Retrieves its articles and:
+ *           - Classifies each article.
+ *           - Links the article with classification and score.
+ *    d. Extracts top mandatory articles to:
+ *       i. Identify applicable requirement types.
+ *       ii. Translate legal verbs.
+ * 3. Tracks progress throughout the process.
+ * 4. Marks the identification as completed or failed.
+ * 5. Notifies the user by email with summary or error report.
+ *
+ * @param {import('bull').Job<import('../types').ReqIdentificationJobData>} job
+ * @param {import('bull').DoneCallback} done
+ */
+
 reqIdentificationQueue.process(CONCURRENCY, async (job, done) => {
   /** @type {ReqIdentificationJobData} */
   const { reqIdentificationId, legalBases, requirements, intelligenceLevel } =
     job.data
+
   try {
     const currentJob = await reqIdentificationQueue.getJob(job.id)
     if (!currentJob) throw new HttpException(404, 'Job not found')
@@ -43,6 +68,8 @@ reqIdentificationQueue.process(CONCURRENCY, async (job, done) => {
     let completedTasks = 0
 
     for (const requirement of requirements) {
+      totalTasks++
+
       const legalBasis = legalBases.filter(
         (lb) =>
           lb.subject.subject_id === requirement.subject.subject_id &&
@@ -52,6 +79,9 @@ reqIdentificationQueue.process(CONCURRENCY, async (job, done) => {
             )
           )
       )
+
+      totalTasks += legalBasis.length
+
       for (const legalBase of legalBasis) {
         try {
           const articles = await ArticlesRepository.findByLegalBasisId(
@@ -62,6 +92,8 @@ reqIdentificationQueue.process(CONCURRENCY, async (job, done) => {
           continue
         }
       }
+
+      totalTasks += 2
     }
 
     if (totalTasks === 0) {
@@ -86,35 +118,19 @@ reqIdentificationQueue.process(CONCURRENCY, async (job, done) => {
       totalRequirements++
       legalBasis.forEach((lb) => totalLegalBasis.add(lb.id))
 
-      const subjectAbbreviations = [
-        ...new Set(
-          legalBasis.map((lb) => lb.subject.abbreviation).filter(Boolean)
-        )
-      ]
-      const aspectAbbreviations = [
-        ...new Set(
-          legalBasis.flatMap((lb) =>
-            lb.aspects.map((a) => a.abbreviation).filter(Boolean)
-          )
-        )
-      ]
-      const states = [
-        ...new Set(legalBasis.map((lb) => lb.state).filter(Boolean))
-      ]
-      const municipalities = [
-        ...new Set(legalBasis.map((lb) => lb.municipality).filter(Boolean))
-      ]
-
       const requirementName = [
-        subjectAbbreviations.join(', '),
-        aspectAbbreviations.join(', '),
-        states.join(', '),
-        municipalities.join(', '),
-        requirement.requirement_number
+        ...new Set([
+          ...legalBasis.map((lb) => lb.subject.abbreviation).filter(Boolean),
+          ...legalBasis.flatMap((lb) =>
+            lb.aspects.map((a) => a.abbreviation).filter(Boolean)
+          ),
+          ...legalBasis.map((lb) => lb.state).filter(Boolean),
+          ...legalBasis.map((lb) => lb.municipality).filter(Boolean),
+          requirement.requirement_number
+        ])
       ]
         .map((part) => String(part).trim())
         .filter((part) => part !== '')
-        .filter((part, index, arr) => arr.indexOf(part) === index)
         .join(' - ')
 
       try {
@@ -133,6 +149,10 @@ reqIdentificationQueue.process(CONCURRENCY, async (job, done) => {
       } catch {
         continue
       }
+      completedTasks++
+      await currentJob.progress(
+        Math.floor((completedTasks / totalTasks) * 100)
+      )
 
       for (const legalBase of legalBasis) {
         try {
@@ -152,11 +172,16 @@ reqIdentificationQueue.process(CONCURRENCY, async (job, done) => {
         } catch {
           continue
         }
+        completedTasks++
+        await currentJob.progress(
+          Math.floor((completedTasks / totalTasks) * 100)
+        )
 
         const articles = await ArticlesRepository.findByLegalBasisId(
           legalBase.id
         )
         if (!articles) continue
+
         for (const article of articles) {
           try {
             const existsArticle =
@@ -201,12 +226,13 @@ reqIdentificationQueue.process(CONCURRENCY, async (job, done) => {
             }
             continue
           }
-
+          completedTasks++
           await currentJob.progress(
-            Math.floor((++completedTasks / totalTasks) * 100)
+            Math.floor((completedTasks / totalTasks) * 100)
           )
         }
       }
+
       const mandatoryArticles =
         await ReqIdentificationRepository.findTopMandatoryArticlesByRequirement(
           reqIdentificationId,
@@ -230,6 +256,11 @@ reqIdentificationQueue.process(CONCURRENCY, async (job, done) => {
               requirementsTypesIdentifiedIds
             )
           }
+          completedTasks++
+          await currentJob.progress(
+            Math.floor((completedTasks / totalTasks) * 100)
+          )
+
           const mandatoryArticlesText = mandatoryArticles
             .map((article) => article.plain_description)
             .join('\n')
@@ -241,18 +272,23 @@ reqIdentificationQueue.process(CONCURRENCY, async (job, done) => {
               model
             )
             const legalVerbsTranslations =
-              await legalVerbsTranslator.translateRequirements()
+              await legalVerbsTranslator.translateRequirement()
             await ReqIdentificationRepository.linkLegalVerbsTranslationsToRequirement(
               reqIdentificationId,
               requirement.id,
               legalVerbsTranslations
             )
           }
+          completedTasks++
+          await currentJob.progress(
+            Math.floor((completedTasks / totalTasks) * 100)
+          )
         } catch {
           continue
         }
       }
     }
+
     await ReqIdentificationRepository.markAsCompleted(reqIdentificationId)
     if (reqIdentification?.user?.gmail) {
       try {
