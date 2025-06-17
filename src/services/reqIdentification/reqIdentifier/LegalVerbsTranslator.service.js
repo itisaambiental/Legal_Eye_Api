@@ -27,7 +27,7 @@ class LegalVerbsTranslatorService {
    * @returns {Promise<LegalVerbTranslation>} A promise resolving to an array of translated legal verbs.
    * @throws {HttpException} If there is an error during the translation process.
    */
-  async translateRequirements () {
+  async translateRequirement () {
     const prompt = this._buildTranslateLegalVerbsPrompt(
       this.requirement,
       this.legalVerbs
