@@ -4,7 +4,7 @@ import { zodResponseFormat } from 'openai/helpers/zod'
 import HttpException from '../../errors/HttpException.js'
 
 /**
- * Service to translate a requirement into legal verb expressions.
+ * Service to translate a requirement(Mandatory Article) into legal verb expressions.
  */
 class LegalVerbsTranslatorService {
   /** @typedef {import('../../../models/LegalVerbs.model.js').default} LegalVerb */
