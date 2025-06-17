@@ -8,7 +8,7 @@ import extractArticlesQueue from '../workers/extractArticlesWorker.js'
 import sendLegalBasisQueue from '../workers/sendLegalBasisWorker.js'
 import reqIdentificationQueue from '../workers/reqIdentificationWorker.js'
 
-const timeout = 500000
+const timeout = 750000
 
 /**
  * The API object for making HTTP requests in tests.

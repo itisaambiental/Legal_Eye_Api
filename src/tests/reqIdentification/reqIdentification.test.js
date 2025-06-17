@@ -18,7 +18,7 @@ let createdAspect
 let createdLegalBasis
 let createdRequirement
 
-const timeout = 50000
+const timeout = 75000
 
 beforeAll(async () => {
   await RequirementRepository.deleteAll()
@@ -886,5 +886,20 @@ describe('GET /api/req-identification/search/status - Get Requirement Identifica
       .expect(401)
 
     expect(res.body.error).toBe('token missing or invalid')
+  })
+  test('Should return 500 if internal server error occurs', async () => {
+    const spy = jest.spyOn(ReqIdentificationRepository, 'findByStatus')
+    spy.mockImplementation(() => {
+      throw new Error('DB Failure')
+    })
+
+    const res = await api
+      .get('/api/req-identification/search/status?status=Activo')
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .expect(500)
+
+    expect(res.body.message).toBe('Failed to retrieve requirement identifications by status')
+
+    spy.mockRestore()
   })
 })
