@@ -185,11 +185,23 @@ router.delete('/req-identification/delete/batch', UserExtractor, deleteReqIdenti
  */
 
 /**
+ * Obtener todos los requerimientos asociados a una identificación de requerimientos.
+ * Utiliza el modelo ReqIdentificationRequirement (sin incluir legalBasis por ahora).
+ *
+ * @method GET
+ * @path /req-identification/requirements/:reqIdentificationId
+ * @returns {ReqIdentificationRequirement[]}
+ * @description Retorna los requerimientos enlazados a la identificación con sus tipos y verbos legales traducidos.
+ *
+ * Modelo base: C:\Users\jelpt\Documents\Legal_Eye\Legal_Eye_Api\src\models\ReqIdentification.model.js
+ */
+
+/**
  * Actualizar un requerimiento asociado a una identificación.
  * Puede modificar:
  *   - El nombre del requerimiento
- *   - Los tipos de requerimiento (eliminando y reinserando)
- *   - Los verbos legales con sus traducciones (eliminando y reinserando)
+ *   - Los tipos de requerimiento (eliminando y reinsertando)
+ *   - Los verbos legales con sus traducciones (eliminando y reinsertando)
  *
  * @method PATCH
  * @path /req-identification/requirements/:id
@@ -200,18 +212,6 @@ router.delete('/req-identification/delete/batch', UserExtractor, deleteReqIdenti
  *   legalVerbs?: { legalVerbId: number, translation: string }[]
  * }
  * @description Actualiza datos del requerimiento asociado a la identificación con ID `:id`.
- */
-
-/**
- * Obtener todos los requerimientos asociados a una identificación de requerimientos.
- * Utiliza el modelo ReqIdentificationRequirement (sin incluir legalBasis por ahora).
- *
- * @method GET
- * @path /req-identification/requirements/:reqIdentificationId
- * @returns {ReqIdentificationRequirement[]}
- * @description Retorna los requerimientos enlazados a la identificación con sus tipos y verbos legales traducidos.
- *
- * Modelo base: C:\Users\jelpt\Documents\Legal_Eye\Legal_Eye_Api\src\models\ReqIdentification.model.js
  */
 
 /**
