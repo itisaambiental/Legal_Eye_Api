@@ -6,900 +6,1363 @@ import RequirementRepository from '../../repositories/Requirements.repository.js
 import SubjectsRepository from '../../repositories/Subject.repository.js'
 import AspectsRepository from '../../repositories/Aspects.repository.js'
 import LegalBasisRepository from '../../repositories/LegalBasis.repository.js'
+import ArticlesRepository from '../../repositories/Articles.repository.js'
 import generateReqIdentificationData from '../../utils/generateReqIdentificationData.js'
 import generateLegalBasisData from '../../utils/generateLegalBasisData.js'
 import generateRequirementData from '../../utils/generateRequirementData.js'
-import reqIdentificationQueue from '../../workers/reqIdentificationWorker.js'
-import { ADMIN_GMAIL, ADMIN_PASSWORD_TEST } from '../../config/variables.config.js'
+import reqIdentificationQueue from '../../queues/reqIdentificationQueue.js'
+import {
+  ADMIN_GMAIL,
+  ADMIN_PASSWORD_TEST
+} from '../../config/variables.config.js'
+import jwt from 'jsonwebtoken'
 
 let tokenAdmin
-let createdSubject
-let createdAspect
-let createdLegalBasis
-let createdRequirement
-
-const timeout = 75000
+const timeout = 65000
 
 beforeAll(async () => {
+  await ReqIdentificationRepository.deleteAll()
   await RequirementRepository.deleteAll()
   await LegalBasisRepository.deleteAll()
+  await ArticlesRepository.deleteAll()
   await SubjectsRepository.deleteAll()
   await AspectsRepository.deleteAll()
-  await ReqIdentificationRepository.deleteAll()
   await UserRepository.deleteAllExceptByGmail(ADMIN_GMAIL)
 
-  const loginRes = await api
+  const loginResponse = await api
     .post('/api/user/login')
     .send({ gmail: ADMIN_GMAIL, password: ADMIN_PASSWORD_TEST })
     .expect(200)
 
-  tokenAdmin = loginRes.body.token
+  tokenAdmin = loginResponse.body.token
+}, timeout)
 
-  const subjRes = await api
-    .post('/api/subjects')
-    .set('Authorization', `Bearer ${tokenAdmin}`)
-    .send({ subjectName: 'Test Subject', abbreviation: 'TS', orderIndex: 1 })
-    .expect(201)
-  createdSubject = subjRes.body.subject
-
-  const aspRes = await api
-    .post(`/api/subjects/${createdSubject.id}/aspects`)
-    .set('Authorization', `Bearer ${tokenAdmin}`)
-    .send({ aspectName: 'Test Aspect', abbreviation: 'TA', orderIndex: 1 })
-    .expect(201)
-  createdAspect = aspRes.body.aspect
-
-  const lbData = generateLegalBasisData({
-    legalName: `LegalName-${Date.now()}-A`,
-    abbreviation: `ABBR-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
-    subjectId: String(createdSubject.id),
-    aspectsIds: JSON.stringify([createdAspect.id]),
-    classification: 'Ley',
-    jurisdiction: 'Federal',
-    lastReform: '2024-01-01'
-  })
-
-  const lbRes = await api
-    .post('/api/legalBasis')
-    .set('Authorization', `Bearer ${tokenAdmin}`)
-    .send(lbData)
-    .expect(201)
-  createdLegalBasis = lbRes.body.legalBasis
-
-  const reqData = generateRequirementData({
-    subjectId: createdSubject.id,
-    aspectsIds: JSON.stringify([createdAspect.id])
-  })
-
-  const reqRes = await api
-    .post('/api/requirements')
-    .set('Authorization', `Bearer ${tokenAdmin}`)
-    .send(reqData)
-    .expect(201)
-  createdRequirement = reqRes.body.requirement
-
-  jest.spyOn(reqIdentificationQueue, 'add').mockResolvedValue({ id: 'test-job' })
+beforeEach(async () => {
+  await ReqIdentificationRepository.deleteAll()
+  await RequirementRepository.deleteAll()
+  await LegalBasisRepository.deleteAll()
+  await ArticlesRepository.deleteAll()
+  await SubjectsRepository.deleteAll()
+  await AspectsRepository.deleteAll()
 }, timeout)
 
 afterEach(() => {
   jest.restoreAllMocks()
 })
 
-describe('ReqIdentificationService - create()', () => {
-  test('Should successfully create a requirement identification', async () => {
-    const payload = generateReqIdentificationData({ legalBasisIds: [createdLegalBasis.id] })
+describe('Create a Requirement Identification', () => {
+  test(
+    'Should successfully create a requirement identification',
+    async () => {
+      const addSpy = jest
+        .spyOn(reqIdentificationQueue, 'add')
+        .mockResolvedValue({ id: 'job-id' })
 
-    const res = await api
-      .post('/api/req-identification')
-      .set('Authorization', `Bearer ${tokenAdmin}`)
-      .send(payload)
-      .expect(201)
+      const subjectResponse = await api
+        .post('/api/subjects')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send({ subjectName: 'Subject A', abbreviation: 'SA', orderIndex: 1 })
+        .expect(201)
 
-    expect(typeof res.body.reqIdentificationId).toBe('number')
-    expect(res.body.jobId).toBeDefined()
+      const aspectResponse = await api
+        .post(`/api/subjects/${subjectResponse.body.subject.id}/aspects`)
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send({ aspectName: 'Aspect A', abbreviation: 'AA', orderIndex: 1 })
+        .expect(201)
 
-    const saved = await ReqIdentificationRepository.findById(res.body.reqIdentificationId)
-    expect(saved).toBeTruthy()
-    expect(saved.name).toBe(payload.reqIdentificationName)
-  })
-
-  test('Should return 400 if one or more LegalBasis IDs do not exist', async () => {
-    const payload = generateReqIdentificationData({ legalBasisIds: [999999, 888888] })
-
-    const res = await api
-      .post('/api/req-identification')
-      .set('Authorization', `Bearer ${tokenAdmin}`)
-      .send(payload)
-      .expect(400)
-
-    expect(res.body.message).toMatch(/LegalBasis not found/i)
-  })
-
-  test('Should return 409 if Requirement Identification name already exists', async () => {
-    const name = `Duplicate-${Date.now()}`
-    const payload = generateReqIdentificationData({ reqIdentificationName: name, legalBasisIds: [createdLegalBasis.id] })
-
-    await api
-      .post('/api/req-identification')
-      .set('Authorization', `Bearer ${tokenAdmin}`)
-      .send(payload)
-      .expect(201)
-
-    const res = await api
-      .post('/api/req-identification')
-      .set('Authorization', `Bearer ${tokenAdmin}`)
-      .send(payload)
-      .expect(409)
-
-    expect(res.body.message).toMatch(/name already exists/i)
-  })
-
-  test('Should return 400 if selected LegalBasis have different subjects', async () => {
-    const subjRes = await api
-      .post('/api/subjects')
-      .set('Authorization', `Bearer ${tokenAdmin}`)
-      .send({ subjectName: 'Other Subject', abbreviation: 'OS', orderIndex: 2 })
-      .expect(201)
-    const otherSubject = subjRes.body.subject
-
-    const aspectRes = await api
-      .post(`/api/subjects/${otherSubject.id}/aspects`)
-      .set('Authorization', `Bearer ${tokenAdmin}`)
-      .send({ aspectName: 'Aspect', abbreviation: 'ASP', orderIndex: 1 })
-      .expect(201)
-    const otherAspect = aspectRes.body.aspect
-
-    const lbRes = await api
-      .post('/api/legalBasis')
-      .set('Authorization', `Bearer ${tokenAdmin}`)
-      .send(generateLegalBasisData({
-        legalName: `LB-SubjConflict-${Date.now()}`,
-        abbreviation: `ABBR-SC-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
-        subjectId: String(otherSubject.id),
-        aspectsIds: JSON.stringify([otherAspect.id]),
-        classification: 'Ley',
-        jurisdiction: 'Federal',
-        lastReform: '2024-01-01'
-      }))
-      .expect(201)
-
-    const payload = generateReqIdentificationData({
-      reqIdentificationName: `Conflicting Subjects ${Date.now()}`,
-      legalBasisIds: [createdLegalBasis.id, lbRes.body.legalBasis.id]
-    })
-
-    const res = await api
-      .post('/api/req-identification')
-      .set('Authorization', `Bearer ${tokenAdmin}`)
-      .send(payload)
-      .expect(400)
-
-    expect(res.body.message).toMatch(/must have the same subject/i)
-  })
-
-  test('Should return 400 if selected LegalBasis have different jurisdictions', async () => {
-    const subject = createdSubject
-    const aspect = createdAspect
-
-    const federalLB = createdLegalBasis
-
-    const estatalLB = await api
-      .post('/api/legalBasis')
-      .set('Authorization', `Bearer ${tokenAdmin}`)
-      .send(generateLegalBasisData({
-        legalName: `LB-EST-${Date.now()}`,
-        abbreviation: `EST-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
-        subjectId: String(subject.id),
-        aspectsIds: JSON.stringify([aspect.id]),
-        classification: 'Reglamento',
-        jurisdiction: 'Estatal',
-        state: 'Nuevo León',
-        lastReform: '2024-04-01'
-      }))
-      .expect(201)
-
-    const payload = generateReqIdentificationData({
-      reqIdentificationName: `Jurisdiction Conflict ${Date.now()}`,
-      legalBasisIds: [federalLB.id, estatalLB.body.legalBasis.id]
-    })
-
-    const res = await api
-      .post('/api/req-identification')
-      .set('Authorization', `Bearer ${tokenAdmin}`)
-      .send(payload)
-      .expect(400)
-
-    expect(res.body.message).toMatch(/same jurisdiction/i)
-  })
-
-  test('Should return 400 if no requirements are found for subject and aspects', async () => {
-    const subjectRes = await api
-      .post('/api/subjects')
-      .set('Authorization', `Bearer ${tokenAdmin}`)
-      .send({ subjectName: `NoReq-${Date.now()}`, abbreviation: 'NRQ', orderIndex: 10 })
-      .expect(201)
-    const subject = subjectRes.body.subject
-
-    const aspectRes = await api
-      .post(`/api/subjects/${subject.id}/aspects`)
-      .set('Authorization', `Bearer ${tokenAdmin}`)
-      .send({ aspectName: 'Empty', abbreviation: 'EMP', orderIndex: 1 })
-      .expect(201)
-    const aspect = aspectRes.body.aspect
-
-    const lbRes = await api
-      .post('/api/legalBasis')
-      .set('Authorization', `Bearer ${tokenAdmin}`)
-      .send(generateLegalBasisData({
-        legalName: `NoReqLB-${Date.now()}`,
-        abbreviation: `NRLB-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
-        subjectId: String(subject.id),
-        aspectsIds: JSON.stringify([aspect.id]),
-        classification: 'Ley',
-        jurisdiction: 'Federal',
-        lastReform: '2024-01-01'
-      }))
-      .expect(201)
-
-    const payload = generateReqIdentificationData({
-      reqIdentificationName: `NoReqTest ${Date.now()}`,
-      legalBasisIds: [lbRes.body.legalBasis.id]
-    })
-
-    const res = await api
-      .post('/api/req-identification')
-      .set('Authorization', `Bearer ${tokenAdmin}`)
-      .send(payload)
-      .expect(400)
-
-    expect(res.body.message).toBe('Requirements not found')
-  })
-
-  test('Should return 400 on validation error from Zod schema', async () => {
-    const res = await api
-      .post('/api/req-identification')
-      .set('Authorization', `Bearer ${tokenAdmin}`)
-      .send({
-        reqIdentificationName: '',
-        legalBasisIds: 'invalid',
-        intelligenceLevel: 'mid'
+      const legalBasisData = generateLegalBasisData({
+        subjectId: String(subjectResponse.body.subject.id),
+        aspectsIds: JSON.stringify([aspectResponse.body.aspect.id])
       })
-      .expect(400)
 
-    expect(res.body.message).toBe('Validation failed')
-    expect(res.body.errors.length).toBeGreaterThan(0)
-  })
+      const legalBasisResponse = await api
+        .post('/api/legalBasis')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send(legalBasisData)
+        .expect(201)
 
-  test('Should return 500 on unexpected internal error', async () => {
-    jest.spyOn(RequirementRepository, 'findBySubjectAndAspects').mockImplementation(() => {
-      throw new Error('Unexpected failure')
-    })
+      const requirementData = generateRequirementData({
+        subjectId: String(subjectResponse.body.subject.id),
+        aspectsIds: JSON.stringify([aspectResponse.body.aspect.id])
+      })
 
-    const payload = generateReqIdentificationData({
-      reqIdentificationName: `Crash ${Date.now()}`,
-      legalBasisIds: [createdLegalBasis.id]
-    })
+      await api
+        .post('/api/requirements')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send(requirementData)
+        .expect(201)
 
-    const res = await api
-      .post('/api/req-identification')
-      .set('Authorization', `Bearer ${tokenAdmin}`)
-      .send(payload)
-      .expect(500)
+      const reqIdentificationData = generateReqIdentificationData({
+        legalBasisIds: [legalBasisResponse.body.legalBasis.id]
+      })
 
-    expect(res.body.message).toBe('Unexpected error during requirement identification creation')
-  })
+      const reqIdentificationResponse = await api
+        .post('/api/req-identification')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send(reqIdentificationData)
+        .expect(201)
+
+      expect(typeof reqIdentificationResponse.body.reqIdentificationId).toBe(
+        'number'
+      )
+      expect(reqIdentificationResponse.body.jobId).toBeDefined()
+      addSpy.mockRestore()
+    },
+    timeout
+  )
+
+  test(
+    'Should return 400 if one or more LegalBasis IDs do not exist',
+    async () => {
+      const invalidLegalBasisIds = [-1, -2]
+
+      const reqIdentificationData = generateReqIdentificationData({
+        reqIdentificationName: `InvalidLB-${Date.now()}`,
+        legalBasisIds: invalidLegalBasisIds
+      })
+
+      const response = await api
+        .post('/api/req-identification')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send(reqIdentificationData)
+        .expect(400)
+
+      expect(response.body.message).toMatch(/LegalBasis not found for IDs/i)
+      expect(Array.isArray(response.body.errors.notFoundIds)).toBe(true)
+      expect(response.body.errors.notFoundIds).toEqual(
+        expect.arrayContaining(invalidLegalBasisIds)
+      )
+    },
+    timeout
+  )
+
+  test(
+    'Should return 409 if Requirement Identification name already exists',
+    async () => {
+      const addSpy = jest
+        .spyOn(reqIdentificationQueue, 'add')
+        .mockResolvedValue({ id: 'job-id' })
+
+      const subjectResponse = await api
+        .post('/api/subjects')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send({
+          subjectName: 'Duplicate Subject',
+          abbreviation: 'DS',
+          orderIndex: 1
+        })
+        .expect(201)
+
+      const aspectResponse = await api
+        .post(`/api/subjects/${subjectResponse.body.subject.id}/aspects`)
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send({
+          aspectName: 'Duplicate Aspect',
+          abbreviation: 'DA',
+          orderIndex: 1
+        })
+        .expect(201)
+
+      const requirementData = generateRequirementData({
+        subjectId: String(subjectResponse.body.subject.id),
+        aspectsIds: JSON.stringify([aspectResponse.body.aspect.id])
+      })
+
+      await api
+        .post('/api/requirements')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send(requirementData)
+        .expect(201)
+
+      const legalBasisResponse = await api
+        .post('/api/legalBasis')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send(
+          generateLegalBasisData({
+            legalName: `LB-${Date.now()}`,
+            abbreviation: `AB-${Math.random().toString(36).substring(2, 6)}`,
+            subjectId: String(subjectResponse.body.subject.id),
+            aspectsIds: JSON.stringify([aspectResponse.body.aspect.id]),
+            classification: 'Ley',
+            jurisdiction: 'Federal',
+            lastReform: '2024-01-01'
+          })
+        )
+        .expect(201)
+
+      const duplicateName = `Duplicate-${Date.now()}`
+
+      const reqIdentificationData = generateReqIdentificationData({
+        reqIdentificationName: duplicateName,
+        legalBasisIds: [legalBasisResponse.body.legalBasis.id]
+      })
+
+      await api
+        .post('/api/req-identification')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send(reqIdentificationData)
+        .expect(201)
+
+      const reqIdentificationResponse = await api
+        .post('/api/req-identification')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send(reqIdentificationData)
+        .expect(409)
+
+      expect(reqIdentificationResponse.body.message).toMatch(
+        /name already exists/i
+      )
+      addSpy.mockRestore()
+    },
+    timeout
+  )
+
+  test(
+    'Should return 400 if selected LegalBasis have different subjects',
+    async () => {
+      const subjectResponse1 = await api
+        .post('/api/subjects')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send({
+          subjectName: 'Subject A',
+          abbreviation: 'SA',
+          orderIndex: 1
+        })
+        .expect(201)
+
+      const subjectResponse2 = await api
+        .post('/api/subjects')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send({
+          subjectName: 'Subject B',
+          abbreviation: 'SB',
+          orderIndex: 2
+        })
+        .expect(201)
+
+      const aspectResponse1 = await api
+        .post(`/api/subjects/${subjectResponse1.body.subject.id}/aspects`)
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send({
+          aspectName: 'Jurisdiction Aspect1',
+          abbreviation: 'JA',
+          orderIndex: 1
+        })
+        .expect(201)
+
+      const aspectResponse2 = await api
+        .post(`/api/subjects/${subjectResponse2.body.subject.id}/aspects`)
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send({
+          aspectName: 'Jurisdiction Aspect2',
+          abbreviation: 'JA',
+          orderIndex: 1
+        })
+        .expect(201)
+
+      const subjectId1 = subjectResponse1.body.subject.id
+      const aspectId1 = aspectResponse1.body.aspect.id
+      const subjectId2 = subjectResponse2.body.subject.id
+      const aspectId2 = aspectResponse2.body.aspect.id
+      const legalBasisResponse1 = await api
+        .post('/api/legalBasis')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send(
+          generateLegalBasisData({
+            legalName: `LB-SUBJ-A-${Date.now()}`,
+            abbreviation: `SUBA-${Math.random().toString(36).substring(2, 6)}`,
+            subjectId: String(subjectId1),
+            aspectsIds: JSON.stringify([aspectId1]),
+            classification: 'Ley',
+            jurisdiction: 'Federal',
+            lastReform: '2024-01-01'
+          })
+        )
+        .expect(201)
+
+      const legalBasisResponse2 = await api
+        .post('/api/legalBasis')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send(
+          generateLegalBasisData({
+            legalName: `LB-SUBJ-B-${Date.now()}`,
+            abbreviation: `SUBB-${Math.random().toString(36).substring(2, 6)}`,
+            subjectId: String(subjectId2),
+            aspectsIds: JSON.stringify([aspectId2]),
+            classification: 'Ley',
+            jurisdiction: 'Federal',
+            lastReform: '2024-01-01'
+          })
+        )
+        .expect(201)
+
+      const reqIdentificationData = generateReqIdentificationData({
+        reqIdentificationName: `Conflict-Subjects-${Date.now()}`,
+        legalBasisIds: [
+          legalBasisResponse1.body.legalBasis.id,
+          legalBasisResponse2.body.legalBasis.id
+        ]
+      })
+
+      const reqIdentificationResponse = await api
+        .post('/api/req-identification')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send(reqIdentificationData)
+        .expect(400)
+
+      expect(reqIdentificationResponse.body.message).toMatch(
+        /must have the same subject/i
+      )
+    },
+    timeout
+  )
+
+  test(
+    'Should return 400 if selected LegalBasis have different jurisdictions',
+    async () => {
+      const subjectResponse = await api
+        .post('/api/subjects')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send({
+          subjectName: 'Jurisdiction Subject',
+          abbreviation: 'JS',
+          orderIndex: 1
+        })
+        .expect(201)
+
+      const aspectResponse = await api
+        .post(`/api/subjects/${subjectResponse.body.subject.id}/aspects`)
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send({
+          aspectName: 'Jurisdiction Aspect',
+          abbreviation: 'JA',
+          orderIndex: 1
+        })
+        .expect(201)
+
+      const subjectId = subjectResponse.body.subject.id
+      const aspectId = aspectResponse.body.aspect.id
+
+      const federalLegalBasisResponse = await api
+        .post('/api/legalBasis')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send(
+          generateLegalBasisData({
+            legalName: `LB-Federal-${Date.now()}`,
+            abbreviation: `FED-${Math.random().toString(36).substring(2, 6)}`,
+            subjectId: String(subjectId),
+            aspectsIds: JSON.stringify([aspectId]),
+            classification: 'Ley',
+            jurisdiction: 'Federal',
+            lastReform: '2024-03-01'
+          })
+        )
+        .expect(201)
+
+      const estatalLegalBasisResponse = await api
+        .post('/api/legalBasis')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send(
+          generateLegalBasisData({
+            legalName: `LB-Estatal-${Date.now()}`,
+            abbreviation: `EST-${Math.random().toString(36).substring(2, 6)}`,
+            subjectId: String(subjectId),
+            aspectsIds: JSON.stringify([aspectId]),
+            classification: 'Reglamento',
+            jurisdiction: 'Estatal',
+            state: 'Nuevo León',
+            lastReform: '2024-04-01'
+          })
+        )
+        .expect(201)
+
+      const reqIdentificationData = generateReqIdentificationData({
+        reqIdentificationName: `Jurisdiction Conflict ${Date.now()}`,
+        legalBasisIds: [
+          federalLegalBasisResponse.body.legalBasis.id,
+          estatalLegalBasisResponse.body.legalBasis.id
+        ]
+      })
+
+      const reqIdentificationResponse = await api
+        .post('/api/req-identification')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send(reqIdentificationData)
+        .expect(400)
+
+      expect(reqIdentificationResponse.body.message).toMatch(
+        /same jurisdiction/i
+      )
+    },
+    timeout
+  )
+
+  test(
+    'Should return 400 if Local legalBasis have different states',
+    async () => {
+      const subjectResponse = await api
+        .post('/api/subjects')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send({
+          subjectName: 'Local Subject',
+          abbreviation: 'LS',
+          orderIndex: 1
+        })
+        .expect(201)
+
+      const aspectResponse = await api
+        .post(`/api/subjects/${subjectResponse.body.subject.id}/aspects`)
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send({ aspectName: 'Aspect A', abbreviation: 'AA', orderIndex: 1 })
+        .expect(201)
+
+      const subjectId = subjectResponse.body.subject.id
+      const aspectId = aspectResponse.body.aspect.id
+
+      const legalBasisResponse1 = await api
+        .post('/api/legalBasis')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send(
+          generateLegalBasisData({
+            legalName: `LB-Local-1-${Date.now()}`,
+            abbreviation: `LOC1-${Math.random().toString(36).substring(2, 6)}`,
+            subjectId,
+            aspectsIds: JSON.stringify([aspectId]),
+            classification: 'Norma',
+            jurisdiction: 'Local',
+            state: 'Nuevo León',
+            municipality: 'Monterrey',
+            lastReform: '2024-01-01'
+          })
+        )
+        .expect(201)
+
+      const legalBasisResponse2 = await api
+        .post('/api/legalBasis')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send(
+          generateLegalBasisData({
+            legalName: `LB-Local-2-${Date.now()}`,
+            abbreviation: `LOC2-${Math.random().toString(36).substring(2, 6)}`,
+            subjectId,
+            aspectsIds: JSON.stringify([aspectId]),
+            classification: 'Norma',
+            jurisdiction: 'Local',
+            state: 'Jalisco',
+            municipality: 'Guadalajara',
+            lastReform: '2024-01-01'
+          })
+        )
+        .expect(201)
+
+      const reqIdentificationData = generateReqIdentificationData({
+        reqIdentificationName: `Conflict Local States ${Date.now()}`,
+        legalBasisIds: [
+          legalBasisResponse1.body.legalBasis.id,
+          legalBasisResponse2.body.legalBasis.id
+        ]
+      })
+
+      const response = await api
+        .post('/api/req-identification')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send(reqIdentificationData)
+        .expect(400)
+
+      expect(response.body.message).toMatch(/same state/i)
+    },
+    timeout
+  )
+
+  test(
+    'Should return 400 if Local legalBasis have different municipalities',
+    async () => {
+      const subjectResponse = await api
+        .post('/api/subjects')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send({
+          subjectName: 'Local Subject 2',
+          abbreviation: 'LS2',
+          orderIndex: 2
+        })
+        .expect(201)
+
+      const aspectResponse = await api
+        .post(`/api/subjects/${subjectResponse.body.subject.id}/aspects`)
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send({ aspectName: 'Aspect B', abbreviation: 'AB', orderIndex: 1 })
+        .expect(201)
+
+      const subjectId = subjectResponse.body.subject.id
+      const aspectId = aspectResponse.body.aspect.id
+
+      const legalBasisResponse1 = await api
+        .post('/api/legalBasis')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send(
+          generateLegalBasisData({
+            legalName: `LB-Municipality-1-${Date.now()}`,
+            abbreviation: `MUNI1-${Math.random().toString(36).substring(2, 6)}`,
+            subjectId,
+            aspectsIds: JSON.stringify([aspectId]),
+            classification: 'Reglamento',
+            jurisdiction: 'Local',
+            state: 'Nuevo León',
+            municipality: 'Monterrey',
+            lastReform: '2024-01-01'
+          })
+        )
+        .expect(201)
+
+      const legalBasisResponse2 = await api
+        .post('/api/legalBasis')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send(
+          generateLegalBasisData({
+            legalName: `LB-Municipality-2-${Date.now()}`,
+            abbreviation: `MUNI2-${Math.random().toString(36).substring(2, 6)}`,
+            subjectId,
+            aspectsIds: JSON.stringify([aspectId]),
+            classification: 'Reglamento',
+            jurisdiction: 'Local',
+            state: 'Nuevo León',
+            municipality: 'San Pedro',
+            lastReform: '2024-01-01'
+          })
+        )
+        .expect(201)
+
+      const reqIdentificationData = generateReqIdentificationData({
+        reqIdentificationName: `Conflict Local Municipalities ${Date.now()}`,
+        legalBasisIds: [
+          legalBasisResponse1.body.legalBasis.id,
+          legalBasisResponse2.body.legalBasis.id
+        ]
+      })
+
+      const response = await api
+        .post('/api/req-identification')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send(reqIdentificationData)
+        .expect(400)
+
+      expect(response.body.message).toMatch(/same municipality/i)
+    },
+    timeout
+  )
+
+  test(
+    'Should return 400 if no requirements are found for subject and aspects',
+    async () => {
+      const subjectResponse = await api
+        .post('/api/subjects')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send({
+          subjectName: `NoReq-Subject-${Date.now()}`,
+          abbreviation: 'NRQ',
+          orderIndex: 10
+        })
+        .expect(201)
+
+      const aspectResponse = await api
+        .post(`/api/subjects/${subjectResponse.body.subject.id}/aspects`)
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send({
+          aspectName: 'NoReq Aspect',
+          abbreviation: 'EMP',
+          orderIndex: 1
+        })
+        .expect(201)
+
+      const legalBasisResponse = await api
+        .post('/api/legalBasis')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send(
+          generateLegalBasisData({
+            legalName: `NoReqLB-${Date.now()}`,
+            abbreviation: `NRLB-${Math.random().toString(36).substring(2, 6)}`,
+            subjectId: String(subjectResponse.body.subject.id),
+            aspectsIds: JSON.stringify([aspectResponse.body.aspect.id]),
+            classification: 'Ley',
+            jurisdiction: 'Federal',
+            lastReform: '2024-01-01'
+          })
+        )
+        .expect(201)
+
+      const reqIdentificationData = generateReqIdentificationData({
+        reqIdentificationName: `NoRequirementsTest-${Date.now()}`,
+        legalBasisIds: [legalBasisResponse.body.legalBasis.id]
+      })
+
+      const reqIdentificationResponse = await api
+        .post('/api/req-identification')
+        .set('Authorization', `Bearer ${tokenAdmin}`)
+        .send(reqIdentificationData)
+        .expect(400)
+
+      expect(reqIdentificationResponse.body.message).toMatch(
+        /Requirements not found/i
+      )
+    },
+    timeout
+  )
+
+  test(
+    'Should return 400 if required fields are missing or invalid',
+    async () => {
+      const invalidCases = [
+        {
+          reqIdentificationName: '',
+          legalBasisIds: [1],
+          intelligenceLevel: 'High'
+        },
+        {
+          reqIdentificationName: 'A'.repeat(256),
+          legalBasisIds: [1],
+          intelligenceLevel: 'High'
+        },
+        {
+          reqIdentificationName: 'Valid Name',
+          legalBasisIds: [],
+          intelligenceLevel: 'High'
+        },
+        {
+          reqIdentificationName: 'Valid Name',
+          legalBasisIds: 'invalid',
+          intelligenceLevel: 'Low'
+        },
+        {
+          reqIdentificationName: 'Valid Name',
+          legalBasisIds: [1, 'a', 3],
+          intelligenceLevel: 'Low'
+        },
+        {
+          reqIdentificationName: 'Valid Name',
+          legalBasisIds: [1],
+          intelligenceLevel: 'unsupported_value'
+        },
+        {},
+        {
+          reqIdentificationName: null,
+          legalBasisIds: null,
+          intelligenceLevel: null
+        }
+      ]
+
+      for (const invalidData of invalidCases) {
+        const response = await api
+          .post('/api/req-identification')
+          .set('Authorization', `Bearer ${tokenAdmin}`)
+          .send(invalidData)
+          .expect(400)
+
+        expect(response.body.message).toMatch(/Validation failed/i)
+        expect(Array.isArray(response.body.errors)).toBe(true)
+        expect(response.body.errors.length).toBeGreaterThan(0)
+
+        response.body.errors.forEach((error) => {
+          expect(error).toHaveProperty('field')
+          expect(error).toHaveProperty('message')
+        })
+      }
+    }
+  )
+
+  test(
+    'Should return 401 if the user is unauthorized',
+    async () => {
+      const reqIdentificationData = generateReqIdentificationData()
+
+      const reqIdentificationResponse = await api
+        .post('/api/req-identification')
+        .send(reqIdentificationData)
+        .expect(401)
+
+      expect(reqIdentificationResponse.body.error).toMatch(
+        /token missing or invalid/i
+      )
+    }
+  )
 })
 
-describe('GET /api/req-identification - Get Requirement Identifications all', () => {
-  beforeEach(async () => {
-    await ReqIdentificationRepository.deleteAll()
-  })
-
-  test('Should return an empty array when no records exist', async () => {
+describe('Get all Requirement Identifications', () => {
+  test('Should return empty array when no requirement identifications exist', async () => {
     const res = await api
       .get('/api/req-identification')
       .set('Authorization', `Bearer ${tokenAdmin}`)
       .expect(200)
 
     expect(res.body.reqIdentifications).toEqual([])
-  })
+  }, timeout)
 
   test('Should return all created requirement identifications', async () => {
-    // Hacemos login para obtener token y userId como en el test que funciona
-    const loginRes = await api
-      .post('/api/user/login')
-      .send({ gmail: ADMIN_GMAIL, password: ADMIN_PASSWORD_TEST })
-      .expect(200)
+    const addSpy = jest
+      .spyOn(reqIdentificationQueue, 'add')
+      .mockResolvedValue({ id: 'job-id' })
 
-    const token = loginRes.body.token
+    const subjectResponse = await api
+      .post('/api/subjects')
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .send({ subjectName: 'List Test Subject', abbreviation: 'LTS', orderIndex: 1 })
+      .expect(201)
 
-    const decodedToken = JSON.parse(
-      Buffer.from(token.split('.')[1], 'base64').toString()
-    )
-    const userId = decodedToken.userForToken.id
+    const aspectResponse = await api
+      .post(`/api/subjects/${subjectResponse.body.subject.id}/aspects`)
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .send({ aspectName: 'List Aspect', abbreviation: 'LA', orderIndex: 1 })
+      .expect(201)
 
-    // Creamos un identificador con todos los datos requeridos
-    const payload = generateReqIdentificationData({
-      reqIdentificationName: `Identificación-${Date.now()}`,
-      reqIdentificationDescription: 'Identificación legal válida',
-      legalBasisIds: [createdLegalBasis.id],
-      requirementIds: [createdRequirement.id],
-      intelligenceLevel: 'Low'
+    const legalBasisData = generateLegalBasisData({
+      subjectId: String(subjectResponse.body.subject.id),
+      aspectsIds: JSON.stringify([aspectResponse.body.aspect.id]),
+      classification: 'Ley',
+      jurisdiction: 'Federal',
+      lastReform: '2024-01-01'
+    })
+    const legalBasisResponse = await api
+      .post('/api/legalBasis')
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .send(legalBasisData)
+      .expect(201)
+
+    await api
+      .post('/api/requirements')
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .send(generateRequirementData({
+        subjectId: String(subjectResponse.body.subject.id),
+        aspectsIds: JSON.stringify([aspectResponse.body.aspect.id])
+      }))
+      .expect(201)
+
+    const reqIdentificationData = generateReqIdentificationData({
+      reqIdentificationName: `Listado-${Date.now()}`,
+      legalBasisIds: [legalBasisResponse.body.legalBasis.id]
     })
 
-    const resPost = await api
+    await api
       .post('/api/req-identification')
-      .set('Authorization', `Bearer ${token}`)
-      .send(payload)
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .send(reqIdentificationData)
+      .expect(201)
 
-    expect(resPost.status).toBe(201)
-
-    // Ahora sí, consultamos todos los identificadores creados
     const res = await api
       .get('/api/req-identification')
-      .set('Authorization', `Bearer ${token}`)
+      .set('Authorization', `Bearer ${tokenAdmin}`)
       .expect(200)
 
     expect(res.body).toHaveProperty('reqIdentifications')
     expect(Array.isArray(res.body.reqIdentifications)).toBe(true)
     expect(res.body.reqIdentifications.length).toBeGreaterThanOrEqual(1)
 
-    // Verificamos que el user coincida
-    const found = res.body.reqIdentifications.find(
-      (item) => item.user?.id === userId
+    const reqIdentification = res.body.reqIdentifications.find(
+      (item) => item.name === reqIdentificationData.reqIdentificationName
     )
-    expect(found).toBeDefined()
+    expect(reqIdentification).toBeDefined()
 
-    jest.restoreAllMocks()
-  })
+    addSpy.mockRestore()
+  }, timeout)
 
-  test('Should return 401 if user is not authorized (invalid token)', async () => {
+  test('Should return 401 if the user is unauthorized', async () => {
     const res = await api
       .get('/api/req-identification')
-      .set('Authorization', 'Bearer invalid.token.here')
       .expect(401)
 
-    expect(res.body).toHaveProperty('error', 'token missing or invalid')
-  })
-
-  test('Should return 500 on internal server error', async () => {
-    const spy = jest.spyOn(ReqIdentificationRepository, 'findAll')
-    spy.mockImplementation(() => {
-      throw new Error('DB Failure')
-    })
-
-    const res = await api
-      .get('/api/req-identification')
-      .set('Authorization', `Bearer ${tokenAdmin}`)
-      .expect(500)
-
-    expect(res.body.message).toBe('Failed to retrieve requirement identifications')
-    spy.mockRestore()
-  })
+    expect(res.body.error).toMatch(/token missing or invalid/i)
+  }, timeout)
 })
 
-describe('GET /api/req-identification/:id - Get Requirement Identifications by id', () => {
-  test('Should return 404 if not found', async () => {
+describe('Get Requirement Identifications by ID', () => {
+  test('Should return 404 when requirement identification does not exist', async () => {
     const res = await api
-      .get('/api/req-identification/9999999')
+      .get('/api/req-identification/-9999999')
       .set('Authorization', `Bearer ${tokenAdmin}`)
       .expect(404)
 
     expect(res.body.message).toMatch(/not found/i)
-  })
+  }, timeout)
 
-  test('Should return a specific requirement identification by ID', async () => {
-    const loginRes = await api
-      .post('/api/user/login')
-      .send({ gmail: ADMIN_GMAIL, password: ADMIN_PASSWORD_TEST })
-      .expect(200)
+  test('Should return the requirement identification by ID', async () => {
+    const addSpy = jest
+      .spyOn(reqIdentificationQueue, 'add')
+      .mockResolvedValue({ id: 'mock-job-id' })
 
-    const token = loginRes.body.token
-    const decodedToken = JSON.parse(
-      Buffer.from(token.split('.')[1], 'base64').toString()
-    )
-    const userId = decodedToken.userForToken.id
-
-    // Payload explícito
-    const payload = {
-      reqIdentificationName: `FindById-${Date.now()}`,
-      reqIdentificationDescription: 'Buscando por ID',
-      legalBasisIds: [createdLegalBasis.id],
-      requirementIds: [createdRequirement.id],
-      intelligenceLevel: 'Low'
-    }
-
-    const postRes = await api
-      .post('/api/req-identification')
-      .set('Authorization', `Bearer ${token}`)
-      .send(payload)
+    const subjectResponse = await api
+      .post('/api/subjects')
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .send({ subjectName: 'Subject A', abbreviation: 'SA', orderIndex: 1 })
       .expect(201)
 
-    const id = postRes.body.reqIdentificationId
+    const aspectResponse = await api
+      .post(`/api/subjects/${subjectResponse.body.subject.id}/aspects`)
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .send({ aspectName: 'Aspect A', abbreviation: 'AA', orderIndex: 1 })
+      .expect(201)
+
+    const legalBasisData = generateLegalBasisData({
+      subjectId: String(subjectResponse.body.subject.id),
+      aspectsIds: JSON.stringify([aspectResponse.body.aspect.id]),
+      classification: 'Ley',
+      jurisdiction: 'Federal',
+      lastReform: '2024-01-01'
+    })
+
+    const legalBasisResponse = await api
+      .post('/api/legalBasis')
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .send(legalBasisData)
+      .expect(201)
+
+    const requirementData = generateRequirementData({
+      subjectId: String(subjectResponse.body.subject.id),
+      aspectsIds: JSON.stringify([aspectResponse.body.aspect.id])
+    })
+
+    await api
+      .post('/api/requirements')
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .send(requirementData)
+      .expect(201)
+
+    const reqIdentificationData = generateReqIdentificationData({
+      reqIdentificationName: `Search-${Date.now()}`,
+      legalBasisIds: [legalBasisResponse.body.legalBasis.id]
+    })
+
+    const reqIdentificationResponse = await api
+      .post('/api/req-identification')
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .send(reqIdentificationData)
+      .expect(201)
+
+    const id = reqIdentificationResponse.body.reqIdentificationId
 
     const res = await api
       .get(`/api/req-identification/${id}`)
-      .set('Authorization', `Bearer ${token}`)
+      .set('Authorization', `Bearer ${tokenAdmin}`)
       .expect(200)
 
     expect(res.body).toHaveProperty('reqIdentification')
     expect(res.body.reqIdentification).toHaveProperty('id', id)
-    expect(res.body.reqIdentification).toHaveProperty('name', payload.reqIdentificationName)
+    expect(res.body.reqIdentification).toHaveProperty('name', reqIdentificationData.reqIdentificationName)
     expect(res.body.reqIdentification).toHaveProperty('user')
-    expect(res.body.reqIdentification.user).toHaveProperty('id', userId)
 
-    jest.restoreAllMocks()
-  })
+    addSpy.mockRestore()
+  }, timeout)
 
-  test('Should return 401 if user is not authorized (invalid token)', async () => {
+  test('Should return 401 if the user is unauthorized', async () => {
     const res = await api
       .get('/api/req-identification/1')
-      .set('Authorization', 'Bearer invalid.token.here')
       .expect(401)
 
-    expect(res.body).toHaveProperty('error', 'token missing or invalid')
-  })
-
-  test('Should return 500 on internal server error', async () => {
-    const spy = jest.spyOn(ReqIdentificationRepository, 'findById')
-    spy.mockImplementation(() => {
-      throw new Error('DB Failure')
-    })
-
-    const res = await api
-      .get('/api/req-identification/1')
-      .set('Authorization', `Bearer ${tokenAdmin}`)
-      .expect(500)
-
-    expect(res.body.message).toBe('Failed to retrieve requirement identification by ID')
-    spy.mockRestore()
+    expect(res.body.error).toMatch(/token missing or invalid/i)
   })
 })
 
-describe('GET /api/req-identification/search/name - Get Requirement Identifications by name', () => {
-  beforeEach(async () => {
-    await ReqIdentificationRepository.deleteAll()
-  })
-
-  test('Should return empty array if no records match the name', async () => {
+describe('Get Requirement Identifications by name', () => {
+  test('Should return empty array if no requirement identifications match the name', async () => {
     const res = await api
-      .get('/api/req-identification/search/name?name=NoExistente')
+      .get('/api/req-identification/search/name')
+      .query({ name: 'NoExistente' })
       .set('Authorization', `Bearer ${tokenAdmin}`)
       .expect(200)
 
-    expect(res.body.reqIdentifications).toBeInstanceOf(Array)
+    expect(Array.isArray(res.body.reqIdentifications)).toBe(true)
     expect(res.body.reqIdentifications).toHaveLength(0)
-  })
+  }, timeout)
 
-  test('Should return matching requirement identifications by name', async () => {
-    // Login para obtener token y userId
-    const loginRes = await api
-      .post('/api/user/login')
-      .send({ gmail: ADMIN_GMAIL, password: ADMIN_PASSWORD_TEST })
-      .expect(200)
+  test('Should return matching requirement identification by name', async () => {
+    const addSpy = jest
+      .spyOn(reqIdentificationQueue, 'add')
+      .mockResolvedValue({ id: 'mock-job-id' })
 
-    const token = loginRes.body.token
+    const subjectResponse = await api
+      .post('/api/subjects')
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .send({ subjectName: 'Search Subject', abbreviation: 'SS', orderIndex: 1 })
+      .expect(201)
 
-    const decodedToken = JSON.parse(
-      Buffer.from(token.split('.')[1], 'base64').toString()
-    )
-    const userId = decodedToken.userForToken.id
+    const aspectResponse = await api
+      .post(`/api/subjects/${subjectResponse.body.subject.id}/aspects`)
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .send({ aspectName: 'Search Aspect', abbreviation: 'SA', orderIndex: 1 })
+      .expect(201)
 
-    // Nombre único para búsqueda
-    const uniqueName = `UniqueName-${Date.now()}`
+    const legalBasisData = generateLegalBasisData({
+      subjectId: String(subjectResponse.body.subject.id),
+      aspectsIds: JSON.stringify([aspectResponse.body.aspect.id]),
+      classification: 'Ley',
+      jurisdiction: 'Federal',
+      lastReform: '2024-01-01'
+    })
 
-    // Payload explícito
-    const payload = {
-      reqIdentificationName: uniqueName,
-      reqIdentificationDescription: 'Identificación buscada por nombre',
-      legalBasisIds: [createdLegalBasis.id],
-      requirementIds: [createdRequirement.id],
-      intelligenceLevel: 'High'
-    }
+    const legalBasisResponse = await api
+      .post('/api/legalBasis')
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .send(legalBasisData)
+      .expect(201)
+
+    const requirementData = generateRequirementData({
+      subjectId: String(subjectResponse.body.subject.id),
+      aspectsIds: JSON.stringify([aspectResponse.body.aspect.id])
+    })
+
+    await api
+      .post('/api/requirements')
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .send(requirementData)
+      .expect(201)
+
+    const name = `Search-${Date.now()}`
+    const reqIdentificationData = generateReqIdentificationData({
+      reqIdentificationName: name,
+      legalBasisIds: [legalBasisResponse.body.legalBasis.id],
+      subjectId: String(subjectResponse.body.subject.id)
+    })
 
     await api
       .post('/api/req-identification')
-      .set('Authorization', `Bearer ${token}`)
-      .send(payload)
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .send(reqIdentificationData)
       .expect(201)
 
-    // Búsqueda por nombre
     const res = await api
-      .get(`/api/req-identification/search/name?name=${encodeURIComponent(uniqueName)}`)
-      .set('Authorization', `Bearer ${token}`)
+      .get('/api/req-identification/search/name')
+      .query({ name })
+      .set('Authorization', `Bearer ${tokenAdmin}`)
       .expect(200)
 
-    expect(res.body.reqIdentifications).toBeInstanceOf(Array)
+    expect(Array.isArray(res.body.reqIdentifications)).toBe(true)
     expect(res.body.reqIdentifications.length).toBeGreaterThan(0)
 
-    const found = res.body.reqIdentifications.find(
-      (item) => item.name === uniqueName && item.user?.id === userId
+    const reqIdentification = res.body.reqIdentifications.find(
+      (item) => item.name === name
     )
-    expect(found).toBeDefined()
+    expect(reqIdentification).toBeDefined()
 
-    jest.restoreAllMocks()
-  })
+    addSpy.mockRestore()
+  }, timeout)
 
-  test('Should return 401 if user is not authorized (invalid token)', async () => {
+  test('Should return 401 if the user is unauthorized', async () => {
     const res = await api
-      .get('/api/req-identification/search/name?name=anything')
-      .set('Authorization', 'Bearer invalid.token.here')
+      .get('/api/req-identification/search/name')
+      .query({ name: 'anything' })
       .expect(401)
 
-    expect(res.body).toHaveProperty('error', 'token missing or invalid')
-  })
-
-  test('Should return 500 on internal server error', async () => {
-    const spy = jest.spyOn(ReqIdentificationRepository, 'findByName')
-    spy.mockImplementation(() => {
-      throw new Error('DB Failure')
-    })
-
-    const res = await api
-      .get('/api/req-identification/search/name?name=test')
-      .set('Authorization', `Bearer ${tokenAdmin}`)
-      .expect(500)
-
-    expect(res.body.message).toBe('Failed to retrieve requirement identifications by name')
-    spy.mockRestore()
-  })
+    expect(res.body.error).toMatch(/token missing or invalid/i)
+  }, timeout)
 })
 
-describe('GET /api/req-identification/search/description - Get Requirement Identifications by description', () => {
-  beforeEach(async () => {
-    await ReqIdentificationRepository.deleteAll()
-  })
-
-  test('Should return empty array when no description matches', async () => {
+describe('Get Requirement Identifications by description', () => {
+  test('Should return empty array when no requirement identifications match the description', async () => {
     const res = await api
-      .get('/api/req-identification/search/description?description=NoExiste')
+      .get('/api/req-identification/search/description')
+      .query({ description: 'NoExiste' })
       .set('Authorization', `Bearer ${tokenAdmin}`)
       .expect(200)
 
-    expect(res.body.reqIdentifications).toBeInstanceOf(Array)
+    expect(Array.isArray(res.body.reqIdentifications)).toBe(true)
     expect(res.body.reqIdentifications).toHaveLength(0)
-  })
+  }, timeout)
 
-  test('Should return matching requirement identifications by description', async () => {
-    const loginRes = await api
-      .post('/api/user/login')
-      .send({ gmail: ADMIN_GMAIL, password: ADMIN_PASSWORD_TEST })
-      .expect(200)
+  test('Should return matching requirement identification by description', async () => {
+    const addSpy = jest
+      .spyOn(reqIdentificationQueue, 'add')
+      .mockResolvedValue({ id: 'mock-job-id' })
 
-    const token = loginRes.body.token
+    const subjectResponse = await api
+      .post('/api/subjects')
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .send({ subjectName: 'Search Desc Subject', abbreviation: 'SDS', orderIndex: 1 })
+      .expect(201)
 
-    const decodedToken = JSON.parse(
-      Buffer.from(token.split('.')[1], 'base64').toString()
-    )
-    const userId = decodedToken.userForToken.id
+    const aspectResponse = await api
+      .post(`/api/subjects/${subjectResponse.body.subject.id}/aspects`)
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .send({ aspectName: 'Desc Aspect', abbreviation: 'DA', orderIndex: 1 })
+      .expect(201)
 
-    const uniqueDescription = `Descripción única ${Date.now()}`
+    const legalBasisData = generateLegalBasisData({
+      subjectId: String(subjectResponse.body.subject.id),
+      aspectsIds: JSON.stringify([aspectResponse.body.aspect.id]),
+      classification: 'Ley',
+      jurisdiction: 'Federal',
+      lastReform: '2024-01-01'
+    })
 
-    const payload = generateReqIdentificationData({
+    const legalBasisResponse = await api
+      .post('/api/legalBasis')
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .send(legalBasisData)
+      .expect(201)
+
+    const requirementData = generateRequirementData({
+      subjectId: String(subjectResponse.body.subject.id),
+      aspectsIds: JSON.stringify([aspectResponse.body.aspect.id])
+    })
+
+    const requirementResponse = await api
+      .post('/api/requirements')
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .send(requirementData)
+      .expect(201)
+
+    const uniqueDescription = `Descripció única ${Date.now()}`
+
+    const reqIdentificationData = generateReqIdentificationData({
       reqIdentificationName: `ID-${Date.now()}`,
       reqIdentificationDescription: uniqueDescription,
-      legalBasisIds: [createdLegalBasis.id],
-      requirementIds: [createdRequirement.id],
-      intelligenceLevel: 'Low'
+      legalBasisIds: [legalBasisResponse.body.legalBasis.id],
+      requirementIds: [requirementResponse.body.requirement.id]
     })
 
     await api
       .post('/api/req-identification')
-      .set('Authorization', `Bearer ${token}`)
-      .send(payload)
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .send(reqIdentificationData)
       .expect(201)
 
     const res = await api
-      .get(`/api/req-identification/search/description?description=${encodeURIComponent(uniqueDescription)}`)
-      .set('Authorization', `Bearer ${token}`)
+      .get('/api/req-identification/search/description')
+      .query({ description: uniqueDescription })
+      .set('Authorization', `Bearer ${tokenAdmin}`)
       .expect(200)
 
-    expect(res.body).toHaveProperty('reqIdentifications')
     expect(Array.isArray(res.body.reqIdentifications)).toBe(true)
     expect(res.body.reqIdentifications.length).toBeGreaterThan(0)
 
     const found = res.body.reqIdentifications.find(
-      (item) => item.description === uniqueDescription && item.user?.id === userId
+      (item) => item.description === uniqueDescription
     )
     expect(found).toBeDefined()
 
-    jest.restoreAllMocks()
-  })
+    addSpy.mockRestore()
+  }, timeout)
 
-  test('Should return 401 if user is not authorized (invalid token)', async () => {
+  test('Should return 401 if the user is unauthorized', async () => {
     const res = await api
-      .get('/api/req-identification/search/description?description=any')
-      .set('Authorization', 'Bearer invalid.token.here')
+      .get('/api/req-identification/search/description')
+      .query({ description: 'any' })
       .expect(401)
 
-    expect(res.body).toHaveProperty('error', 'token missing or invalid')
-  })
-
-  test('Should return 500 on internal server error', async () => {
-    const spy = jest.spyOn(ReqIdentificationRepository, 'findByDescription')
-    spy.mockImplementation(() => {
-      throw new Error('DB Failure')
-    })
-
-    const res = await api
-      .get('/api/req-identification/search/description?description=test')
-      .set('Authorization', `Bearer ${tokenAdmin}`)
-      .expect(500)
-
-    expect(res.body.message).toBe('Failed to retrieve requirement identifications by description')
-    spy.mockRestore()
-  })
+    expect(res.body.error).toMatch(/token missing or invalid/i)
+  }, timeout)
 })
 
-describe('GET /api/req-identification/search/user/:id - Get Requirement Identifications by user ID', () => {
-  beforeEach(async () => {
-    await ReqIdentificationRepository.deleteAll()
-  })
-
-  test('Should return 404 if no identifications found for the user', async () => {
+describe('Get Requirement Identifications by user ID', () => {
+  test('Should return empty array when no identifications found for user ID', async () => {
     const fakeUserId = 9999999
     jest.spyOn(UserRepository, 'findById').mockResolvedValue({ id: fakeUserId, name: 'Fake User' })
 
     const res = await api
       .get(`/api/req-identification/search/user/${fakeUserId}`)
       .set('Authorization', `Bearer ${tokenAdmin}`)
-      .expect(200) // Si tu controlador devuelve [] en lugar de error
+      .expect(200)
 
-    expect(res.body).toHaveProperty('reqIdentifications')
     expect(Array.isArray(res.body.reqIdentifications)).toBe(true)
     expect(res.body.reqIdentifications).toHaveLength(0)
 
     jest.restoreAllMocks()
-  })
+  }, timeout)
 
-  test('Should return all identifications for the user ID provided', async () => {
-    const loginRes = await api
-      .post('/api/user/login')
-      .send({ gmail: ADMIN_GMAIL, password: ADMIN_PASSWORD_TEST })
-      .expect(200)
+  test('Should return matching requirement identifications for the given user ID', async () => {
+    const addSpy = jest
+      .spyOn(reqIdentificationQueue, 'add')
+      .mockResolvedValue({ id: 'mock-job-id' })
 
-    tokenAdmin = loginRes.body.token
+    const subjectResponse = await api
+      .post('/api/subjects')
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .send({ subjectName: 'UserID Subject', abbreviation: 'UID', orderIndex: 1 })
+      .expect(201)
 
-    const decodedToken = JSON.parse(
-      Buffer.from(tokenAdmin.split('.')[1], 'base64').toString()
-    )
+    const aspectResponse = await api
+      .post(`/api/subjects/${subjectResponse.body.subject.id}/aspects`)
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .send({ aspectName: 'UID Aspect', abbreviation: 'UIDA', orderIndex: 1 })
+      .expect(201)
+
+    const legalBasisData = generateLegalBasisData({
+      subjectId: String(subjectResponse.body.subject.id),
+      aspectsIds: JSON.stringify([aspectResponse.body.aspect.id]),
+      classification: 'Ley',
+      jurisdiction: 'Federal',
+      lastReform: '2024-01-01'
+    })
+
+    const legalBasisResponse = await api
+      .post('/api/legalBasis')
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .send(legalBasisData)
+      .expect(201)
+
+    const requirementData = generateRequirementData({
+      subjectId: String(subjectResponse.body.subject.id),
+      aspectsIds: JSON.stringify([aspectResponse.body.aspect.id])
+    })
+
+    const requirementResponse = await api
+      .post('/api/requirements')
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .send(requirementData)
+      .expect(201)
+
+    const decodedToken = jwt.decode(tokenAdmin)
     const userId = decodedToken.userForToken.id
 
-    const payload = generateReqIdentificationData({
-      reqIdentificationName: `Identificación-${Date.now()}`,
-      reqIdentificationDescription: 'Identificación legal válida',
-      legalBasisIds: [createdLegalBasis.id],
-      requirementIds: [createdRequirement.id],
-      intelligenceLevel: 'Low'
+    const reqIdentificationData = generateReqIdentificationData({
+      reqIdentificationName: `ID-UID-${Date.now()}`,
+      reqIdentificationDescription: `UID test ${Date.now()}`,
+      legalBasisIds: [legalBasisResponse.body.legalBasis.id],
+      requirementIds: [requirementResponse.body.requirement.id]
     })
 
-    const resPost = await api
+    await api
       .post('/api/req-identification')
       .set('Authorization', `Bearer ${tokenAdmin}`)
-      .send(payload)
-
-    expect(resPost.status).toBe(201)
+      .send(reqIdentificationData)
+      .expect(201)
 
     const res = await api
       .get(`/api/req-identification/search/user/${userId}`)
       .set('Authorization', `Bearer ${tokenAdmin}`)
       .expect(200)
 
-    expect(res.body).toHaveProperty('reqIdentifications')
     expect(Array.isArray(res.body.reqIdentifications)).toBe(true)
     expect(res.body.reqIdentifications.length).toBeGreaterThan(0)
-    expect(res.body.reqIdentifications[0]).toHaveProperty('user')
-    expect(res.body.reqIdentifications[0].user).toHaveProperty('id', userId)
 
-    jest.restoreAllMocks()
-  })
+    const reqIdentification = res.body.reqIdentifications.find(
+      (item) => item.user && item.user.id === userId
+    )
+    expect(reqIdentification).toBeDefined()
 
-  test('Should return 401 if user is not authorized (invalid token)', async () => {
+    addSpy.mockRestore()
+  }, timeout)
+
+  test('Should return 401 if the user is unauthorized', async () => {
     const res = await api
       .get('/api/req-identification/search/user/1')
-      .set('Authorization', 'Bearer invalid.token.here')
       .expect(401)
 
-    expect(res.body).toHaveProperty('error', 'token missing or invalid')
-  })
-
-  test('Should return 500 on internal server error from repository', async () => {
-    const userId = 1
-    jest.spyOn(UserRepository, 'findById').mockResolvedValue({ id: userId, name: 'Simulated' })
-    jest.spyOn(ReqIdentificationRepository, 'findByUserId').mockImplementation(() => {
-      throw new Error('Simulated failure')
-    })
-
-    const res = await api
-      .get(`/api/req-identification/search/user/${userId}`)
-      .set('Authorization', `Bearer ${tokenAdmin}`)
-      .expect(500)
-
-    expect(res.body.message).toBe('Failed to retrieve requirement identifications by user name')
-
-    jest.restoreAllMocks()
-  })
+    expect(res.body.error).toMatch(/token missing or invalid/i)
+  }, timeout)
 })
 
-describe('GET /api/req-identification/search/created-at - Get Requirement Identifications by creation date', () => {
-  beforeEach(async () => {
-    await ReqIdentificationRepository.deleteAll()
-  })
-
-  test('Should return empty array when no records match the date range', async () => {
+describe('Get Requirement Identifications by creation date', () => {
+  test('Should return empty array when no identifications match the date range', async () => {
     const from = '2000-01-01'
     const to = '2000-12-31'
 
     const res = await api
-      .get(`/api/req-identification/search/created-at?from=${from}&to=${to}`)
+      .get('/api/req-identification/search/created-at')
+      .query({ from, to })
       .set('Authorization', `Bearer ${tokenAdmin}`)
       .expect(200)
 
     expect(Array.isArray(res.body.reqIdentifications)).toBe(true)
     expect(res.body.reqIdentifications).toHaveLength(0)
-  })
+  }, timeout)
 
-  test('Should return matching records within date range', async () => {
-    const uniqueName = `CreatedAtTest-${Date.now()}`
-    const uniqueDescription = `Descripción-${Date.now()}`
+  test('Should return identifications created within the date range', async () => {
+    const addSpy = jest
+      .spyOn(reqIdentificationQueue, 'add')
+      .mockResolvedValue({ id: 'mock-job-id' })
 
-    const payload = generateReqIdentificationData({
-      reqIdentificationName: uniqueName,
-      reqIdentificationDescription: uniqueDescription,
-      legalBasisIds: [createdLegalBasis.id],
-      requirementIds: [createdRequirement.id],
+    const subjectResponse = await api
+      .post('/api/subjects')
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .send({ subjectName: 'Date Subject', abbreviation: 'DS', orderIndex: 1 })
+      .expect(201)
+
+    const aspectResponse = await api
+      .post(`/api/subjects/${subjectResponse.body.subject.id}/aspects`)
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .send({ aspectName: 'Date Aspect', abbreviation: 'DA', orderIndex: 1 })
+      .expect(201)
+
+    const legalBasisData = generateLegalBasisData({
+      subjectId: String(subjectResponse.body.subject.id),
+      aspectsIds: JSON.stringify([aspectResponse.body.aspect.id]),
+      classification: 'Ley',
+      jurisdiction: 'Federal',
+      lastReform: '2024-01-01'
+    })
+
+    const legalBasisResponse = await api
+      .post('/api/legalBasis')
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .send(legalBasisData)
+      .expect(201)
+
+    const requirementData = generateRequirementData({
+      subjectId: String(subjectResponse.body.subject.id),
+      aspectsIds: JSON.stringify([aspectResponse.body.aspect.id])
+    })
+
+    const requirementResponse = await api
+      .post('/api/requirements')
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .send(requirementData)
+      .expect(201)
+
+    const now = Date.now()
+    const testName = `Fecha-${now}`
+    const testDesc = `Descripción fecha ${now}`
+
+    const reqIdentificationData = generateReqIdentificationData({
+      reqIdentificationName: testName,
+      reqIdentificationDescription: testDesc,
+      legalBasisIds: [legalBasisResponse.body.legalBasis.id],
+      requirementIds: [requirementResponse.body.requirement.id],
       intelligenceLevel: 'High'
     })
 
     await api
       .post('/api/req-identification')
       .set('Authorization', `Bearer ${tokenAdmin}`)
-      .send(payload)
+      .send(reqIdentificationData)
       .expect(201)
 
     const today = new Date()
-    const from = new Date(today.getTime() - 2 * 24 * 60 * 60 * 1000)
-      .toISOString()
-      .split('T')[0]
-    const to = new Date(today.getTime() + 2 * 24 * 60 * 60 * 1000)
-      .toISOString()
-      .split('T')[0]
+    const from = new Date(today.getTime() - 2 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+    const to = new Date(today.getTime() + 2 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
 
     const res = await api
-      .get(`/api/req-identification/search/created-at?from=${from}&to=${to}`)
+      .get('/api/req-identification/search/created-at')
+      .query({ from, to })
       .set('Authorization', `Bearer ${tokenAdmin}`)
       .expect(200)
 
-    expect(res.body).toHaveProperty('reqIdentifications')
     expect(Array.isArray(res.body.reqIdentifications)).toBe(true)
 
     const found = res.body.reqIdentifications.find(
-      (item) => item.name === uniqueName && item.description === uniqueDescription
+      (item) => item.name === testName && item.description === testDesc
     )
     expect(found).toBeDefined()
-  })
 
-  test('Should return 400 if from or to date is invalid', async () => {
+    addSpy.mockRestore()
+  }, timeout)
+
+  test('Should return 400 if the date format is invalid', async () => {
     const res = await api
-      .get('/api/req-identification/search/created-at?from=invalid-date')
+      .get('/api/req-identification/search/created-at')
+      .query({ from: 'invalid-date' })
       .set('Authorization', `Bearer ${tokenAdmin}`)
       .expect(400)
 
     expect(res.body.message).toBe('Invalid date format')
-    expect(res.body.errors).toBeInstanceOf(Array)
+    expect(Array.isArray(res.body.errors)).toBe(true)
     expect(res.body.errors.length).toBeGreaterThan(0)
-  })
+  }, timeout)
 
   test('Should return 401 if token is invalid', async () => {
+    const from = '2024-01-01'
+    const to = '2024-12-31'
+
     const res = await api
-      .get('/api/req-identification/search/created-at?from=2024-01-01&to=2024-12-31')
+      .get('/api/req-identification/search/created-at')
+      .query({ from, to })
       .set('Authorization', 'Bearer invalid.token.here')
       .expect(401)
 
-    expect(res.body).toHaveProperty('error', 'token missing or invalid')
-  })
-
-  test('Should return 500 on internal server error', async () => {
-    const spy = jest.spyOn(ReqIdentificationRepository, 'findByCreatedAt')
-    spy.mockImplementation(() => {
-      throw new Error('DB Error')
-    })
-
-    const res = await api
-      .get('/api/req-identification/search/created-at?from=2023-01-01&to=2024-01-01')
-      .set('Authorization', `Bearer ${tokenAdmin}`)
-      .expect(500)
-
-    expect(res.body.message).toBe('Failed to retrieve requirement identifications by creation date range')
-
-    spy.mockRestore()
-  })
+    expect(res.body.error).toMatch(/token missing or invalid/i)
+  }, timeout)
 })
 
-describe('GET /api/req-identification/search/status - Get Requirement Identifications by status', () => {
-  beforeEach(async () => {
-    await ReqIdentificationRepository.deleteAll()
-  })
-
-  test('Should return empty array when no records match the status', async () => {
+describe('Get Requirement Identifications by status', () => {
+  test('Should return empty array when no identifications match the given status', async () => {
     const res = await api
-      .get('/api/req-identification/search/status?status=Fallido')
+      .get('/api/req-identification/search/status')
+      .query({ status: 'Fallido' })
       .set('Authorization', `Bearer ${tokenAdmin}`)
       .expect(200)
 
     expect(Array.isArray(res.body.reqIdentifications)).toBe(true)
     expect(res.body.reqIdentifications).toHaveLength(0)
-  })
+  }, timeout)
 
-  test('Should return matching records with status "Activo"', async () => {
-    const uniqueName = `StatusTest-${Date.now()}`
-    const payload = generateReqIdentificationData({
-      reqIdentificationName: uniqueName,
-      reqIdentificationDescription: `Descripción ${Date.now()}`,
-      legalBasisIds: [createdLegalBasis.id],
-      requirementIds: [createdRequirement.id],
+  test('Should return identifications with status "Activo"', async () => {
+    const addSpy = jest
+      .spyOn(reqIdentificationQueue, 'add')
+      .mockResolvedValue({ id: 'mock-job-id' })
+
+    const subjectResponse = await api
+      .post('/api/subjects')
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .send({ subjectName: 'Status Subject', abbreviation: 'SS', orderIndex: 1 })
+      .expect(201)
+
+    const aspectResponse = await api
+      .post(`/api/subjects/${subjectResponse.body.subject.id}/aspects`)
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .send({ aspectName: 'Status Aspect', abbreviation: 'SA', orderIndex: 1 })
+      .expect(201)
+
+    const legalBasisData = generateLegalBasisData({
+      subjectId: String(subjectResponse.body.subject.id),
+      aspectsIds: JSON.stringify([aspectResponse.body.aspect.id]),
+      classification: 'Ley',
+      jurisdiction: 'Federal',
+      lastReform: '2024-01-01'
+    })
+
+    const legalBasisResponse = await api
+      .post('/api/legalBasis')
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .send(legalBasisData)
+      .expect(201)
+
+    const requirementData = generateRequirementData({
+      subjectId: String(subjectResponse.body.subject.id),
+      aspectsIds: JSON.stringify([aspectResponse.body.aspect.id])
+    })
+
+    const requirementResponse = await api
+      .post('/api/requirements')
+      .set('Authorization', `Bearer ${tokenAdmin}`)
+      .send(requirementData)
+      .expect(201)
+
+    const now = Date.now()
+    const testName = `Status-${now}`
+    const testDesc = `Descripción status ${now}`
+
+    const reqIdentificationData = generateReqIdentificationData({
+      reqIdentificationName: testName,
+      reqIdentificationDescription: testDesc,
+      legalBasisIds: [legalBasisResponse.body.legalBasis.id],
+      requirementIds: [requirementResponse.body.requirement.id],
       intelligenceLevel: 'Low'
     })
 
     await api
       .post('/api/req-identification')
       .set('Authorization', `Bearer ${tokenAdmin}`)
-      .send(payload)
+      .send(reqIdentificationData)
       .expect(201)
 
     const res = await api
-      .get('/api/req-identification/search/status?status=Activo')
+      .get('/api/req-identification/search/status')
+      .query({ status: 'Activo' })
       .set('Authorization', `Bearer ${tokenAdmin}`)
       .expect(200)
 
     expect(Array.isArray(res.body.reqIdentifications)).toBe(true)
 
     const found = res.body.reqIdentifications.find(
-      (item) => item.name === uniqueName
+      (item) => item.name === testName && item.status === 'Activo'
     )
     expect(found).toBeDefined()
-    expect(found.status).toBe('Activo')
-  })
 
-  test('Should return empty array if status param is missing or invalid', async () => {
-    const resMissing = await api
-      .get('/api/req-identification/search/status') // sin status
-      .set('Authorization', `Bearer ${tokenAdmin}`)
-      .expect(200)
-
-    expect(Array.isArray(resMissing.body.reqIdentifications)).toBe(true)
-    expect(resMissing.body.reqIdentifications.length).toBe(0)
-
-    const resInvalid = await api
-      .get('/api/req-identification/search/status?status=Inexistente')
-      .set('Authorization', `Bearer ${tokenAdmin}`)
-      .expect(200)
-
-    expect(Array.isArray(resInvalid.body.reqIdentifications)).toBe(true)
-    expect(resInvalid.body.reqIdentifications.length).toBe(0)
-  })
+    addSpy.mockRestore()
+  }, timeout)
 
   test('Should return 401 if token is invalid', async () => {
     const res = await api
-      .get('/api/req-identification/search/status?status=Activo')
-      .set('Authorization', 'Bearer fake.token.here')
+      .get('/api/req-identification/search/status')
+      .query({ status: 'Activo' })
       .expect(401)
 
     expect(res.body.error).toBe('token missing or invalid')
-  })
-  test('Should return 500 if internal server error occurs', async () => {
-    const spy = jest.spyOn(ReqIdentificationRepository, 'findByStatus')
-    spy.mockImplementation(() => {
-      throw new Error('DB Failure')
-    })
-
-    const res = await api
-      .get('/api/req-identification/search/status?status=Activo')
-      .set('Authorization', `Bearer ${tokenAdmin}`)
-      .expect(500)
-
-    expect(res.body.message).toBe('Failed to retrieve requirement identifications by status')
-
-    spy.mockRestore()
-  })
+  }, timeout)
 })

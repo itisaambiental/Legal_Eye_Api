@@ -21,7 +21,6 @@ emailQueue.process(async (job, done) => {
     await EmailService.sendEmail({ to, subject, text, html })
     done()
   } catch (error) {
-    console.error(error)
     if (error instanceof HttpException) {
       return done(error)
     }

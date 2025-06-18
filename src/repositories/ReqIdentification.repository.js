@@ -2166,25 +2166,25 @@ class ReqIdentificationRepository {
       SELECT 
         a.id AS article_id,
         a.legal_basis_id,
-        a.title AS article_name,
+        a.article_name AS article_name,
         a.description,
         a.plain_description,
         a.article_order,
         rirlba.requirement_id,
         rirlba.req_identification_id,
-        ROW_NUMBER() OVER (
+        rirlba.score,
+        RANK() OVER (
           PARTITION BY rirlba.legal_basis_id 
           ORDER BY rirlba.score DESC, rirlba.article_id ASC
-        ) AS rn
+        ) AS \`rank\`
       FROM req_identifications_requirement_legal_basis_articles rirlba
       INNER JOIN article a ON rirlba.article_id = a.id
       WHERE rirlba.req_identification_id = ?
         AND rirlba.requirement_id = ?
         AND rirlba.article_type = 'Obligatorio'
     ) AS ranked
-    WHERE ranked.rn = 1
+    WHERE ranked.\`rank\` = 1
   `
-
     try {
       const [rows] = await pool.query(query, [
         reqIdentificationId,

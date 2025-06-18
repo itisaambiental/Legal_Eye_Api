@@ -162,7 +162,6 @@ sendLegalBasisQueue.process(CONCURRENCY, async (job, done) => {
     }
     done(null)
   } catch (error) {
-    console.error(error)
     try {
       const user = await UserRepository.findById(userId)
       if (user) {

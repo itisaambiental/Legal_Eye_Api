@@ -121,9 +121,9 @@ describe('Create a requirement', () => {
 
   test('Should return 404 if Subject ID is invalid', async () => {
     const requirementData = generateRequirementData({
-      subjectId: '-1', // string convertible a número
+      subjectId: '-1',
       aspectsIds: JSON.stringify([createdAspectIds[0]]),
-      requirementNumber: 1 // entero válido
+      requirementNumber: 1
     })
 
     const response = await api
@@ -138,7 +138,7 @@ describe('Create a requirement', () => {
   test('Should return 404 if Aspect ID is invalid', async () => {
     const requirementData = generateRequirementData({
       subjectId: String(createdSubjectId),
-      aspectsIds: JSON.stringify([-1]), // aspecto inválido
+      aspectsIds: JSON.stringify([-1]),
       requirementNumber: 1
     })
 

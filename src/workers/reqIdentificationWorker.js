@@ -311,7 +311,6 @@ reqIdentificationQueue.process(CONCURRENCY, async (job, done) => {
 
     return done()
   } catch (error) {
-    console.error(error)
     try {
       await ReqIdentificationRepository.markAsFailed(reqIdentificationId)
       const reqIdentification = await ReqIdentificationRepository.findById(
