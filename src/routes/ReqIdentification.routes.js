@@ -21,7 +21,8 @@ import {
   getReqIdentificationsBySubjectAndAspects,
   updateReqIdentification,
   deleteReqIdentification,
-  deleteReqIdentificationsBatch
+  deleteReqIdentificationsBatch,
+  addRequirementToReqIdentification
 } from '../controllers/ReqIdentification.controller.js'
 
 /**
@@ -183,6 +184,14 @@ router.delete('/req-identification/delete/batch', UserExtractor, deleteReqIdenti
  * }
  * @description Asocia un requerimiento con información completa a la identificación con ID `:id`.
  */
+
+/**
+ * Route to associate a requirement with a requirement identification.
+ * @method POST
+ * @path /req-identification/requirements/:id
+ * @middleware UserExtractor
+ */
+router.post('/req-identification/requirements/:id', UserExtractor, addRequirementToReqIdentification)
 
 /**
  * Obtener todos los requerimientos asociados a una identificación de requerimientos.

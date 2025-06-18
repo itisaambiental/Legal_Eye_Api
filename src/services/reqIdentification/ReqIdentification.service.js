@@ -7,8 +7,10 @@ import RequirementRepository from '../../repositories/Requirements.repository.js
 import ReqIdentificationRepository from '../../repositories/ReqIdentification.repository.js'
 import {
   reqIdentificationSchema,
-  reqIdentificationUpdateSchema
+  reqIdentificationUpdateSchema,
+  addRequirementToReqIdentificationSchema
 } from '../../schemas/reqIdentification.schema.js'
+
 import reqIdentificationQueue from '../../workers/reqIdentificationWorker.js'
 import ReqIdentifyService from '../reqIdentification/reqIdentify/ReqIdentify.service.js'
 import HttpException from '../../services/errors/HttpException.js'
@@ -1096,6 +1098,66 @@ class ReqIdentificationService {
         500,
         'Failed to delete requirement identifications'
       )
+    }
+  }
+
+  static async addRequirementToReqIdentification (reqIdentificationId, data) {
+    try {
+      const parsedData = addRequirementToReqIdentificationSchema.parse(data)
+      const { requirementId, requirementName, requirementTypeIds = [], legalVerbs = [] } = parsedData
+
+      const reqIdentification = await ReqIdentificationRepository.findById(reqIdentificationId)
+      if (!reqIdentification) {
+        throw new HttpException(404, `Requirement Identification with ID ${reqIdentificationId} not found`)
+      }
+
+      const requirement = await RequirementRepository.findById(requirementId)
+      if (!requirement) {
+        throw new HttpException(404, `Requirement with ID ${requirementId} not found`)
+      }
+
+      const exists = await ReqIdentificationRepository.existsRequirementLink(reqIdentificationId, requirementId)
+      if (exists) {
+        throw new HttpException(409, 'This requirement is already linked to the identification')
+      }
+
+      await ReqIdentificationRepository.linkRequirement(reqIdentificationId, requirementId, requirementName)
+
+      if (requirementTypeIds.length > 0) {
+        await ReqIdentificationRepository.linkRequirementTypesToRequirement(
+          reqIdentificationId,
+          requirementId,
+          requirementTypeIds
+        )
+      }
+
+      if (legalVerbs.length > 0) {
+        await ReqIdentificationRepository.linkLegalVerbsTranslationsToRequirement(
+          reqIdentificationId,
+          requirementId,
+          legalVerbs
+        )
+      }
+
+      return {
+        message: 'Requirement successfully linked to the identification',
+        reqIdentificationId,
+        requirementId
+      }
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        const validationErrors = error.errors.map((e) => ({
+          field: e.path[0],
+          message: e.message
+        }))
+        throw new HttpException(400, 'Validation failed', validationErrors)
+      }
+
+      if (error instanceof HttpException) {
+        throw error
+      }
+
+      throw new HttpException(500, 'Unexpected error while linking requirement')
     }
   }
 }

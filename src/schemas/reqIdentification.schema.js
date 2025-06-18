@@ -127,3 +127,27 @@ export const legalVerbTranslationSchema = z.array(
     translation: z.string().min(1)
   })
 )
+
+export const addRequirementToReqIdentificationSchema = z.object({
+  requirementId: z
+    .number({ required_error: 'requirementId is required' })
+    .int('requirementId must be an integer')
+    .positive('requirementId must be a positive integer'),
+
+  requirementName: z
+    .string({ required_error: 'requirementName is required' })
+    .min(1, 'requirementName cannot be empty'),
+
+  requirementTypeIds: z
+    .array(z.number().int().positive())
+    .optional(),
+
+  legalVerbs: z
+    .array(
+      z.object({
+        legalVerbId: z.number().int().positive(),
+        translation: z.string().min(1)
+      })
+    )
+    .optional()
+})
