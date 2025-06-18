@@ -181,31 +181,11 @@ router.delete('/req-identification/delete/batch', UserExtractor, deleteReqIdenti
  */
 
 /**
- * Asociar un fundamento legal a un requerimiento dentro de una identificación.
- * @method POST
- * @path /req-identification/requirements/legalBasis/:id
- * @description Asocia un fundamento legal al requerimiento dentro de la identificación con ID `:id`.
- */
-
-/**
- * Desasociar un fundamento legal de un requerimiento dentro de una identificación.
- * @method DELETE
- * @path /req-identification/requirements/legalBasis/:id
- * @description Elimina la asociación de un fundamento legal del requerimiento dentro de la identificación con ID `:id`.
- */
-
-/**
- * Asociar un artículo a un fundamento legal dentro de un requerimiento en una identificación.
- * @method POST
- * @path /req-identification/requirements/legalBasis/articles/:id
- * @description Asocia un artículo al fundamento legal de un requerimiento dentro de la identificación con ID `:id`.
- */
-
-/**
- * Desasociar un artículo de un fundamento legal dentro de un requerimiento en una identificación.
- * @method DELETE
- * @path /req-identification/requirements/legalBasis/articles/:id
- * @description Elimina la asociación de un artículo del fundamento legal de un requerimiento dentro de la identificación con ID `:id`.
+ * Actualizar el nombre del requerimiento dentro de una identificación.
+ * @method PATCH
+ * @path /req-identification/requirements/:id
+ * @body { requirementId: number, requirementName: string }
+ * @description Actualiza el nombre del requerimiento en la relación dentro de la identificación con ID `:id`.
  */
 
 export default router
