@@ -108,7 +108,7 @@ export const registerUser = async (req, res) => {
 export const getAllUsers = async (req, res) => {
   const { userId } = req
   try {
-    const isAuthorized = await UserService.isAuthorized(userId)
+    const isAuthorized = await UserService.userExists(userId)
     if (!isAuthorized) {
       return res.status(403).json({ message: 'Unauthorized' })
     }
