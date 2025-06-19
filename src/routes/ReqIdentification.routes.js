@@ -162,9 +162,26 @@ router.delete('/req-identification/:id', UserExtractor, deleteReqIdentification)
  */
 router.delete('/req-identification/delete/batch', UserExtractor, deleteReqIdentificationsBatch)
 
+/**
+ * Route to associate a requirement with a requirement identification.
+ * @method POST
+ * @path /req-identification/requirements/:id
+ * @middleware UserExtractor
+ */
+router.post('/req-identification/requirements/:id', UserExtractor, addRequirementToReqIdentification)
+
 // -----------------------------------------------------------------------------
 // TODO: Crear los siguientes endpoints para gestionar relaciones dentro de una
 // identificación de requerimientos:
+// -----------------------------------------------------------------------------
+
+/**
+ * NOTA: Todos los endpoints de creación, actualización y consulta deben retornar
+ * el objeto completo `ReqIdentificationRequirement`.
+ */
+
+// -----------------------------------------------------------------------------
+// ENDPOINTS PRINCIPALES
 // -----------------------------------------------------------------------------
 
 /**
@@ -176,33 +193,35 @@ router.delete('/req-identification/delete/batch', UserExtractor, deleteReqIdenti
  *
  * @method POST
  * @path /req-identification/requirements/:id
- * @body {
- *   requirementId: number,
- *   requirementName: string,
- *   requirementTypeIds: number[],
- *   legalVerbs: { legalVerbId: number, translation: string }[]
- * }
+ * @returns {ReqIdentificationRequirement}
  * @description Asocia un requerimiento con información completa a la identificación con ID `:id`.
  */
 
 /**
- * Route to associate a requirement with a requirement identification.
- * @method POST
- * @path /req-identification/requirements/:id
- * @middleware UserExtractor
- */
-router.post('/req-identification/requirements/:id', UserExtractor, addRequirementToReqIdentification)
-
-/**
  * Obtener todos los requerimientos asociados a una identificación de requerimientos.
- * Utiliza el modelo ReqIdentificationRequirement (sin incluir legalBasis por ahora).
  *
  * @method GET
  * @path /req-identification/requirements/:reqIdentificationId
  * @returns {ReqIdentificationRequirement[]}
- * @description Retorna los requerimientos enlazados a la identificación con sus tipos y verbos legales traducidos.
+ * @description Retorna todos los requerimientos enlazados a una identificación.
+ */
+
+/**
+ * Obtener un requerimiento específico asociado a una identificación.
  *
- * Modelo base: C:\Users\jelpt\Documents\Legal_Eye\Legal_Eye_Api\src\models\ReqIdentification.model.js
+ * @method GET
+ * @path /req-identification/requirements/:reqIdentificationId/:requirementId
+ * @returns {ReqIdentificationRequirement}
+ * @description Retorna un requerimiento asociado a una identificación.
+ */
+
+/**
+ * Filtrar requerimientos de una identificación por nombre parcial del requerimiento.
+ *
+ * @method GET
+ * @path /req-identification/requirements/:reqIdentificationId/search/name
+ * @returns {ReqIdentificationRequirement[]}
+ * @description Devuelve los requerimientos cuyo nombre coincida parcial o totalmente con el filtro.
  */
 
 /**
@@ -213,26 +232,36 @@ router.post('/req-identification/requirements/:id', UserExtractor, addRequiremen
  *   - Los verbos legales con sus traducciones (eliminando y reinsertando)
  *
  * @method PATCH
- * @path /req-identification/requirements/:id
+ * @path /req-identification/requirements/:reqIdentificationId/:requirementId
  * @body {
- *   requirementId: number,
  *   requirementName?: string,
  *   requirementTypeIds?: number[],
  *   legalVerbs?: { legalVerbId: number, translation: string }[]
  * }
- * @description Actualiza datos del requerimiento asociado a la identificación con ID `:id`.
+ * @returns {ReqIdentificationRequirement}
+ * @description Actualiza datos de un requerimiento asociado a una identificación.
  */
 
 /**
- * Desasociar un requerimiento de una identificación de requerimientos.
+ * Eliminar un requerimiento de una identificación de requerimientos.
  * Elimina también:
  *   - Sus tipos de requerimiento (`req_identifications_requirement_types`)
  *   - Sus verbos legales (`req_identifications_requirement_legal_verbs`)
  *
  * @method DELETE
- * @path /req-identification/requirements/:id
- * @queryParam requirementId
- * @description Elimina la asociación del requerimiento (y sus datos auxiliares) de la identificación con ID `:id`.
+ * @path /req-identification/requirements/:reqIdentificationId/:requirementId
+ * @description Elimina la asociación completa de un requerimiento.
+ */
+
+/**
+ * Eliminar múltiples requerimientos de una identificación.
+ *
+ * @method DELETE
+ * @path /req-identification/requirements/:reqIdentificationId
+ * @body {
+ *   requirementIds: number[]
+ * }
+ * @description Elimina varias asociaciones de requerimientos de una identificación.
  */
 
 export default router
