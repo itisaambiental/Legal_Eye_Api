@@ -22,7 +22,8 @@ import {
   updateReqIdentification,
   deleteReqIdentification,
   deleteReqIdentificationsBatch,
-  addRequirementToReqIdentification
+  addRequirementToReqIdentification,
+  getAllRequirementsFromReqIdentification
 } from '../controllers/ReqIdentification.controller.js'
 
 /**
@@ -165,10 +166,18 @@ router.delete('/req-identification/delete/batch', UserExtractor, deleteReqIdenti
 /**
  * Route to associate a requirement with a requirement identification.
  * @method POST
- * @path /req-identification/requirements/:id
+ * @path /req-identification/:reqIdentificationId/requirements/:requirementId
  * @middleware UserExtractor
  */
-router.post('/req-identification/requirements/:id', UserExtractor, addRequirementToReqIdentification)
+router.post('/req-identification/:reqIdentificationId/requirements/:requirementId', UserExtractor, addRequirementToReqIdentification)
+
+/**
+ * Route to get all requirements associated with a requirements identification.
+ * @method GET
+ * @path /req-identification/:reqIdentificationId/requirements
+ * @middleware UserExtractor
+ */
+router.get('/req-identification/:reqIdentificationId/requirements', UserExtractor, getAllRequirementsFromReqIdentification)
 
 // -----------------------------------------------------------------------------
 // TODO: Crear los siguientes endpoints para gestionar relaciones dentro de una
@@ -183,28 +192,6 @@ router.post('/req-identification/requirements/:id', UserExtractor, addRequiremen
 // -----------------------------------------------------------------------------
 // ENDPOINTS PRINCIPALES
 // -----------------------------------------------------------------------------
-
-/**
- * Asociar un requerimiento a una identificación de requerimientos.
- * También inserta:
- *   - Nombre del requerimiento personalizado
- *   - Tipos de requerimiento asociados
- *   - Verbos legales y sus traducciones
- *
- * @method POST
- * @path /req-identification/requirements/:id
- * @returns {ReqIdentificationRequirement}
- * @description Asocia un requerimiento con información completa a la identificación con ID `:id`.
- */
-
-/**
- * Obtener todos los requerimientos asociados a una identificación de requerimientos.
- *
- * @method GET
- * @path /req-identification/requirements/:reqIdentificationId
- * @returns {ReqIdentificationRequirement[]}
- * @description Retorna todos los requerimientos enlazados a una identificación.
- */
 
 /**
  * Obtener un requerimiento específico asociado a una identificación.

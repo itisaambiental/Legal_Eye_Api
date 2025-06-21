@@ -526,20 +526,18 @@ export const deleteReqIdentificationsBatch = async (req, res) => {
 /**
  * Associates a requirement to a requirement identification.
  * @function addRequirementToReqIdentification
- * @param {import('express').Request} req - Request with params.id and body (requirementId, requirementName, requirementTypeIds, legalVerbs)
+ * @param {import('express').Request} req - Request expects { reqIdentificationId, requirementId } and body (requirementName, requirementTypeIds, legalVerbs)
  * @param {import('express').Response} res - Response object.
  */
 export const addRequirementToReqIdentification = async (req, res) => {
-  const reqIdentificationId = Number(req.params.id)
-  const { requirementId, requirementName, requirementTypeIds, legalVerbs } = req.body
-
+  const { reqIdentificationId, requirementId } = req.params
+  const { requirementName, requirementTypeIds, legalVerbs } = req.body
   try {
-    const result = await ReqIdentificationService.addRequirementToReqIdentification(
-      reqIdentificationId,
-      { requirementId, requirementName, requirementTypeIds, legalVerbs }
+    const reqIdentificationRequirement = await ReqIdentificationService.addRequirementToReqIdentification(
+      reqIdentificationId, requirementId,
+      { requirementName, requirementTypeIds, legalVerbs }
     )
-
-    return res.status(201).json(result)
+    return res.status(201).json({ reqIdentificationRequirement })
   } catch (error) {
     if (error instanceof HttpException) {
       return res.status(error.status).json({
@@ -547,7 +545,30 @@ export const addRequirementToReqIdentification = async (req, res) => {
         ...(error.errors && { errors: error.errors })
       })
     }
-    console.error('Unexpected error in controller:', error)
+    return res.status(500).json({ message: 'Internal Server Error' })
+  }
+}
+
+/**
+ * Get all requirements associated with a requirements identification.
+ * @function getAllRequirementsFromReqIdentification
+ * @param {import('express').Request} req - Request expects { reqIdentificationId }
+ * @param {import('express').Response} res - Response object.
+ */
+export const getAllRequirementsFromReqIdentification = async (req, res) => {
+  const { reqIdentificationId } = req.params
+  try {
+    const reqIdentificationRequirements = await ReqIdentificationService.getAllRequirementsFromReqIdentification(
+      reqIdentificationId
+    )
+    return res.status(201).json({ reqIdentificationRequirements })
+  } catch (error) {
+    if (error instanceof HttpException) {
+      return res.status(error.status).json({
+        message: error.message,
+        ...(error.errors && { errors: error.errors })
+      })
+    }
     return res.status(500).json({ message: 'Internal Server Error' })
   }
 }

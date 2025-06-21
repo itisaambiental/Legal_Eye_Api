@@ -5,6 +5,8 @@ import AspectsRepository from '../../repositories/Aspects.repository.js'
 import LegalBasisRepository from '../../repositories/LegalBasis.repository.js'
 import RequirementRepository from '../../repositories/Requirements.repository.js'
 import ReqIdentificationRepository from '../../repositories/ReqIdentification.repository.js'
+import RequirementTypesRepository from '../../repositories/RequirementTypes.repository.js'
+import LegalVerbsRepository from '../../repositories/LegalVerbs.repository.js'
 import {
   reqIdentificationSchema,
   reqIdentificationUpdateSchema,
@@ -1101,49 +1103,88 @@ class ReqIdentificationService {
     }
   }
 
-  static async addRequirementToReqIdentification (reqIdentificationId, data) {
+  /**
+ * Associates a requirement to a requirement identification with optional metadata.
+ *
+ * @param {number} reqIdentificationId - The ID of the requirement identification.
+ * @param {number} requirementId - The ID of the requirement to associate.
+ * @param {Object} requirementData - The data related to the requirement association.
+ * @param {string} requirementData.requirementName - The name to assign to the requirement in this context.
+ * @param {number[]} [requirementData.requirementTypeIds] - Optional array of requirement type IDs to associate.
+ * @param {{ id: number, translation: string }[]} [requirementData.legalVerbs] - Optional array of legal verbs with translations.
+ *
+ * @returns {Promise<Object>} - Returns the linked requirement as stored in the identification.
+ *
+ * @throws {HttpException} - If validation fails, the requirement or types/verbs are not found, or an unexpected error occurs.
+ */
+  static async addRequirementToReqIdentification (reqIdentificationId, requirementId, requirementData) {
     try {
-      const parsedData = addRequirementToReqIdentificationSchema.parse(data)
-      const { requirementId, requirementName, requirementTypeIds = [], legalVerbs = [] } = parsedData
-
+      const parsedRequirement = addRequirementToReqIdentificationSchema.parse(requirementData)
       const reqIdentification = await ReqIdentificationRepository.findById(reqIdentificationId)
       if (!reqIdentification) {
-        throw new HttpException(404, `Requirement Identification with ID ${reqIdentificationId} not found`)
+        throw new HttpException(404, 'Requirement Identification not found')
       }
 
       const requirement = await RequirementRepository.findById(requirementId)
       if (!requirement) {
-        throw new HttpException(404, `Requirement with ID ${requirementId} not found`)
+        throw new HttpException(404, 'Requirement not found')
+      }
+
+      if (parsedRequirement.requirementTypeIds?.length > 0) {
+        const existingRequirementTypes = await RequirementTypesRepository.findByIds(parsedRequirement.requirementTypeIds)
+        if (existingRequirementTypes.length !== parsedRequirement.requirementTypeIds.length) {
+          const notFoundIds = parsedRequirement.requirementTypeIds.filter(
+            (id) => !existingRequirementTypes.some((rt) => rt.id === id)
+          )
+          throw new HttpException(404, 'Requirement types not found for IDs', { notFoundIds })
+        }
+      }
+
+      if (parsedRequirement.legalVerbs?.length > 0) {
+        const legalVerbIds = parsedRequirement.legalVerbs.map(v => v.id)
+        const existingLegalVerbs = await LegalVerbsRepository.findByIds(legalVerbIds)
+        if (existingLegalVerbs.length !== legalVerbIds.length) {
+          const notFoundIds = legalVerbIds.filter(
+            (id) => !existingLegalVerbs.some((lv) => lv.id === id)
+          )
+          throw new HttpException(404, 'Legal verbs not found for IDs', { notFoundIds })
+        }
       }
 
       const exists = await ReqIdentificationRepository.existsRequirementLink(reqIdentificationId, requirementId)
       if (exists) {
-        throw new HttpException(409, 'This requirement is already linked to the identification')
+        throw new HttpException(409, 'This requirement is already linked to the requirement identification')
       }
 
-      await ReqIdentificationRepository.linkRequirement(reqIdentificationId, requirementId, requirementName)
+      await ReqIdentificationRepository.linkRequirement(
+        reqIdentificationId,
+        requirementId,
+        parsedRequirement.requirementName
+      )
 
-      if (requirementTypeIds.length > 0) {
+      if (parsedRequirement.requirementTypeIds?.length > 0) {
         await ReqIdentificationRepository.linkRequirementTypesToRequirement(
           reqIdentificationId,
           requirementId,
-          requirementTypeIds
+          parsedRequirement.requirementTypeIds
         )
       }
 
-      if (legalVerbs.length > 0) {
+      if (parsedRequirement.legalVerbs?.length > 0) {
         await ReqIdentificationRepository.linkLegalVerbsTranslationsToRequirement(
           reqIdentificationId,
           requirementId,
-          legalVerbs
+          parsedRequirement.legalVerbs
         )
       }
 
-      return {
-        message: 'Requirement successfully linked to the identification',
+      const reqIdentificationRequirement =
+      await ReqIdentificationRepository.findRequirementFromReqIdentification(
         reqIdentificationId,
         requirementId
-      }
+      )
+
+      return reqIdentificationRequirement
     } catch (error) {
       if (error instanceof z.ZodError) {
         const validationErrors = error.errors.map((e) => ({
@@ -1158,6 +1199,30 @@ class ReqIdentificationService {
       }
 
       throw new HttpException(500, 'Unexpected error while linking requirement')
+    }
+  }
+
+  /**
+ * Retrieves all requirements associated with a requirement identification.
+ *
+ * @param {number} reqIdentificationId - The ID of the requirement identification.
+ * @returns {Promise<Object[]>} - An array of associated requirements with types, verbs, and legal basis.
+ * @throws {HttpException}
+ */
+  static async getAllRequirementsFromReqIdentification (reqIdentificationId) {
+    try {
+      const exists = await ReqIdentificationRepository.findById(reqIdentificationId)
+      if (!exists) {
+        throw new HttpException(404, 'Requirement identification not found')
+      }
+
+      const requirements = await ReqIdentificationRepository.findAllRequirementsByReqIdentification(reqIdentificationId)
+      return requirements
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error
+      }
+      throw new HttpException(500, 'Failed to retrieve requirements for requirement identification')
     }
   }
 }

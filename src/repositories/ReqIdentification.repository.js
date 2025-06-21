@@ -1,7 +1,12 @@
 import { pool } from '../config/db.config.js'
 import HttpException from '../services/errors/HttpException.js'
 import User from '../models/User.model.js'
-import { ReqIdentification } from '../models/ReqIdentification.model.js'
+import {
+  ReqIdentification,
+  ReqIdentificationRequirement,
+  ReqIdentificationRequirementLegalVerb,
+  ReqIdentificationRequirementLegalBasis
+} from '../models/ReqIdentification.model.js'
 import Article from '../models/Article.model.js'
 
 /**
@@ -2291,5 +2296,227 @@ class ReqIdentificationRepository {
       throw new HttpException(500, 'Error linking legal verbs to requirement')
     }
   }
+
+  /**
+ * Retrieves all requirements from a requirement identification.
+ *
+ * @param {number} reqIdentificationId
+ * @param {number} requirementId
+ * @returns {Promise<ReqIdentificationRequirement>}
+ * @throws {HttpException}
+ */
+  static async findRequirementFromReqIdentification (reqIdentificationId, requirementId) {
+    try {
+      const [requirementsRows] = await pool.query(`
+      SELECT r.*, rir.requirement_name
+      FROM req_identifications_requirements rir
+      JOIN requirements r ON r.id = rir.requirement_id
+      WHERE rir.req_identification_id = ? AND rir.requirement_id = ?
+    `, [reqIdentificationId, requirementId])
+
+      if (requirementsRows.length === 0) {
+        return null
+      }
+
+      const requirement = requirementsRows[0]
+
+      const [requirementTypesRows] = await pool.query(`
+      SELECT rt.*
+      FROM req_identifications_requirement_types rirt
+      JOIN requirement_types rt ON rt.id = rirt.requirement_type_id
+      WHERE rirt.req_identification_id = ? AND rirt.requirement_id = ?
+    `, [reqIdentificationId, requirementId])
+
+      const [legalVerbsRows] = await pool.query(`
+      SELECT lv.*, rirlv.translation
+      FROM req_identifications_requirement_legal_verbs rirlv
+      JOIN legal_verbs lv ON lv.id = rirlv.legal_verb_id
+      WHERE rirlv.req_identification_id = ? AND rirlv.requirement_id = ?
+    `, [reqIdentificationId, requirementId])
+
+      const [legalBasisRows] = await pool.query(`
+      SELECT 
+        lb.id AS legalBasisId,
+        lb.legal_name,
+        lb.abbreviation,
+        lb.classification,
+        lb.jurisdiction,
+        lb.state,
+        lb.municipality,
+        lb.url,
+        lb.last_reform,
+        rirlba.article_id AS articleId,
+        rirlba.article_type AS articleType,
+        rirlba.score AS articleScore,
+        a.article_name,
+        a.description AS articleDescription,
+        a.plain_description
+      FROM req_identifications_requirement_legal_basis rirlb
+      JOIN legal_basis lb ON lb.id = rirlb.legal_basis_id
+      LEFT JOIN req_identifications_requirement_legal_basis_articles rirlba
+        ON rirlba.req_identification_id = rirlb.req_identification_id
+        AND rirlba.requirement_id = rirlb.requirement_id
+        AND rirlba.legal_basis_id = rirlb.legal_basis_id
+      LEFT JOIN article a ON a.id = rirlba.article_id
+      WHERE rirlb.req_identification_id = ? AND rirlb.requirement_id = ?
+    `, [reqIdentificationId, requirementId])
+
+      const groupedLegalBasis = {}
+      for (const row of legalBasisRows) {
+        if (!groupedLegalBasis[row.legalBasisId]) {
+          groupedLegalBasis[row.legalBasisId] = {
+            legalBasisId: row.legalBasisId,
+            legalName: row.legal_name,
+            abbreviation: row.abbreviation,
+            classification: row.classification,
+            jurisdiction: row.jurisdiction,
+            state: row.state,
+            municipality: row.municipality,
+            url: row.url,
+            lastReform: row.last_reform,
+            articles: []
+          }
+        }
+
+        if (row.articleId) {
+          groupedLegalBasis[row.legalBasisId].articles.push({
+            articleId: row.articleId,
+            type: row.articleType,
+            score: row.articleScore,
+            articleName: row.article_name,
+            description: row.articleDescription,
+            plainDescription: row.plain_description
+          })
+        }
+      }
+
+      return {
+        ...requirement,
+        requirementTypes: requirementTypesRows,
+        legalVerbs: legalVerbsRows.map(row => ({
+          id: row.id,
+          name: row.name,
+          description: row.description,
+          translation: row.translation
+        })),
+        legalBasis: Object.values(groupedLegalBasis)
+      }
+    } catch (error) {
+      console.error('[findRequirementFromReqIdentification] Error:', error)
+      throw new HttpException(500, 'Error fetching requirement identification from the database')
+    }
+  }
+
+  /**
+ * Retrieves all requirements from a requirement identification.
+ *
+ * @param {number} reqIdentificationId
+ * @returns {Promise<ReqIdentificationRequirement[]>}
+ * @throws {HttpException}
+ */
+  static async findAllRequirementsByReqIdentification (reqIdentificationId) {
+    try {
+      const [requirementsRows] = await pool.query(`
+      SELECT r.*, rir.requirement_name
+      FROM req_identifications_requirements rir
+      JOIN requirements r ON r.id = rir.requirement_id
+      WHERE rir.req_identification_id = ?
+    `, [reqIdentificationId])
+
+      const results = []
+
+      for (const requirement of requirementsRows) {
+        const requirementId = requirement.id
+
+        const [requirementTypesRows] = await pool.query(`
+        SELECT rt.*
+        FROM req_identifications_requirement_types rirt
+        JOIN requirement_types rt ON rt.id = rirt.requirement_type_id
+        WHERE rirt.req_identification_id = ? AND rirt.requirement_id = ?
+      `, [reqIdentificationId, requirementId])
+
+        const [legalVerbsRows] = await pool.query(`
+        SELECT lv.*, rirlv.translation
+        FROM req_identifications_requirement_legal_verbs rirlv
+        JOIN legal_verbs lv ON lv.id = rirlv.legal_verb_id
+        WHERE rirlv.req_identification_id = ? AND rirlv.requirement_id = ?
+      `, [reqIdentificationId, requirementId])
+
+        const [legalBasisRows] = await pool.query(`
+        SELECT 
+          lb.id AS legalBasisId,
+          lb.legal_name,
+          lb.abbreviation,
+          lb.classification,
+          lb.jurisdiction,
+          lb.state,
+          lb.municipality,
+          lb.url,
+          lb.last_reform,
+          rirlba.article_id AS articleId,
+          rirlba.article_type AS articleType,
+          rirlba.score AS articleScore,
+          a.article_name,
+          a.description AS articleDescription,
+          a.plain_description
+        FROM req_identifications_requirement_legal_basis rirlb
+        JOIN legal_basis lb ON lb.id = rirlb.legal_basis_id
+        LEFT JOIN req_identifications_requirement_legal_basis_articles rirlba
+          ON rirlba.req_identification_id = rirlb.req_identification_id
+          AND rirlba.requirement_id = rirlb.requirement_id
+          AND rirlba.legal_basis_id = rirlb.legal_basis_id
+        LEFT JOIN article a ON a.id = rirlba.article_id
+        WHERE rirlb.req_identification_id = ? AND rirlb.requirement_id = ?
+      `, [reqIdentificationId, requirementId])
+
+        const groupedLegalBasis = {}
+        for (const row of legalBasisRows) {
+          if (!groupedLegalBasis[row.legalBasisId]) {
+            groupedLegalBasis[row.legalBasisId] = {
+              legalBasisId: row.legalBasisId,
+              legalName: row.legal_name,
+              abbreviation: row.abbreviation,
+              classification: row.classification,
+              jurisdiction: row.jurisdiction,
+              state: row.state,
+              municipality: row.municipality,
+              url: row.url,
+              lastReform: row.last_reform,
+              articles: []
+            }
+          }
+
+          if (row.articleId) {
+            groupedLegalBasis[row.legalBasisId].articles.push({
+              articleId: row.articleId,
+              type: row.articleType,
+              score: row.articleScore,
+              articleName: row.article_name,
+              description: row.articleDescription,
+              plainDescription: row.plain_description
+            })
+          }
+        }
+
+        results.push({
+          ...requirement,
+          requirementTypes: requirementTypesRows,
+          legalVerbs: legalVerbsRows.map(row => ({
+            id: row.id,
+            name: row.name,
+            description: row.description,
+            translation: row.translation
+          })),
+          legalBasis: Object.values(groupedLegalBasis)
+        })
+      }
+
+      return results
+    } catch (error) {
+      console.error('[findAllRequirementsByReqIdentification] Error:', error)
+      throw new HttpException(500, 'Error fetching requirements for the identification from the database')
+    }
+  }
 }
+
 export default ReqIdentificationRepository

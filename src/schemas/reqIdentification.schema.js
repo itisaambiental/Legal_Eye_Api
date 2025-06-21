@@ -128,12 +128,11 @@ export const legalVerbTranslationSchema = z.array(
   })
 )
 
+/**
+ * Zod validation schema for associate a requirement with a requirement identification.
+ * This schema defines the structure of a requirement to be added to a requirement identification.
+ */
 export const addRequirementToReqIdentificationSchema = z.object({
-  requirementId: z
-    .number({ required_error: 'requirementId is required' })
-    .int('requirementId must be an integer')
-    .positive('requirementId must be a positive integer'),
-
   requirementName: z
     .string({ required_error: 'requirementName is required' })
     .min(1, 'requirementName cannot be empty'),
@@ -145,7 +144,7 @@ export const addRequirementToReqIdentificationSchema = z.object({
   legalVerbs: z
     .array(
       z.object({
-        legalVerbId: z.number().int().positive(),
+        id: z.number().int().positive(),
         translation: z.string().min(1)
       })
     )
